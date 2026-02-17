@@ -33,7 +33,7 @@ export default defineNuxtModule<ModuleOptions>({
     forwardAuthHeader: true,
     services: [],
   },
-  setup(options, nuxt) {
+  async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
 
     const mode = options.mode ?? 'sdk'
@@ -58,6 +58,52 @@ export default defineNuxtModule<ModuleOptions>({
       route: `${basePath}/**`,
       handler: resolver.resolve('./runtime/server/api/odata'),
     })
+
+    // Register devtools handler
+    addServerHandler({
+      route: '/__sap_odata__/logs',
+      handler: resolver.resolve('./runtime/server/api/logs'),
+    })
+
+    addServerHandler({
+      route: '/__sap_odata__/config',
+      handler: resolver.resolve('./runtime/server/api/config'),
+    })
+
+    // DevTools integration
+    if (nuxt.options.dev) {
+      // Serve client app during development
+      nuxt.hook('vite:extendConfig', (config) => {
+        config.server = config.server || {}
+        config.server.fs = config.server.fs || {}
+        config.server.fs.allow = config.server.fs.allow || []
+        config.server.fs.allow.push(resolver.resolve('../client'))
+      })
+
+      // @ts-ignore
+      nuxt.hook('devtools:customTabs', (tabs) => {
+        tabs.push({
+          name: 'sap-odata',
+          title: 'SAP OData',
+          icon: 'logos:sap',
+          view: {
+            type: 'iframe',
+            src: '/__sap_odata__/client/index.html',
+          },
+        })
+      })
+
+      // Add a server middleware for the client files
+      // In a real build, we would use sirv or serve-static, 
+      // but for development, we can hook into nitro
+      nuxt.hook('nitro:config', (nitroConfig) => {
+        nitroConfig.publicAssets = nitroConfig.publicAssets || []
+        nitroConfig.publicAssets.push({
+          dir: resolver.resolve('../client'),
+          baseURL: '/__sap_odata__/client',
+        })
+      })
+    }
 
     nuxt.hook('nitro:build:before', async () => {
       if (!services.length) return
