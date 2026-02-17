@@ -1,16 +1,23 @@
 import { defineNuxtConfig } from 'nuxt/config'
+import { presetWind, presetIcons } from 'unocss'
 
 export default defineNuxtConfig({
   modules: [
-    '@nuxt/devtools-ui-kit'
+    '@nuxt/devtools-ui-kit',
+    '@unocss/nuxt'
   ],
+  unocss: {
+    presets: [
+      presetWind(),
+      presetIcons({
+        prefix: 'i-',
+        scale: 1.2,
+      }),
+    ],
+  },
   ssr: false,
   app: {
-    baseURL: '/__sap_odata__/client'
+    baseURL: '/__sap_odata__/client/'
   },
-  nitro: {
-    output: {
-      publicDir: '../dist/client'
-    }
-  }
+  compatibilityDate: '2026-02-17'
 })
