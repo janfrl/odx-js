@@ -145,9 +145,22 @@ export default defineEventHandler(async (event) => {
   try {
     if (method === 'GET') {
       let requestBuilder = entityApi.requestBuilder().getAll()
+      
       if (query.id) {
         requestBuilder = entityApi.requestBuilder().getByKey(query.id)
+      } else {
+        // Forward OData query parameters
+        const odataParams: Record<string, string> = {}
+        const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
+        keys.forEach(key => {
+          if (query[key]) odataParams[key] = String(query[key])
+        })
+        
+        if (Object.keys(odataParams).length > 0) {
+          requestBuilder = requestBuilder.withCustomParameters(odataParams)
+        }
       }
+      
       const res = await requestBuilder.execute(destination)
       logRequest(200)
       return res

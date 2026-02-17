@@ -9,6 +9,8 @@
   <style>
     body { background-color: #0c0c0d; color: #e2e2e3; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
     [v-cloak] { display: none !important; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body>
@@ -49,9 +51,10 @@
       </aside>
 
       <!-- Main -->
-      <main class="flex-1 overflow-auto p-6 bg-zinc-950">
-        <div v-if="activeTab === 'overview'">
-          <div class="grid grid-cols-3 gap-4 mb-8">
+      <main class="flex-1 overflow-auto p-6 bg-zinc-950 flex flex-col">
+        <!-- Tab: Overview -->
+        <div v-if="activeTab === 'overview'" class="space-y-8">
+          <div class="grid grid-cols-3 gap-4">
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-lg shadow-sm">
               <div class="text-[10px] uppercase font-bold text-zinc-500 mb-1">Status</div>
               <div class="text-green-400 text-sm font-semibold uppercase">Active</div>
@@ -81,158 +84,107 @@
           </div>
         </div>
 
-      <!-- Tab: Services -->
-      <div v-if="activeTab === 'services'">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-sm font-bold text-zinc-400">Configured SAP Services</h2>
-          <div class="flex gap-2">
-            <span v-if="isGeneratingAll" class="text-[10px] text-zinc-500 animate-pulse flex items-center gap-2">
-              <svg class="animate-spin h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              Generating all...
-            </span>
-          </div>
-        </div>
-
-        <div class="grid gap-4">
-          <div v-for="svc in services" :key="svc.name" class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700/50 transition-all group">
-            <!-- Top Row: Name, Status & Action -->
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="bg-zinc-800 p-2 rounded-lg group-hover:bg-blue-500/10 transition-colors">
-                  <svg class="w-4 h-4 text-zinc-400 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                </div>
-                <div>
-                  <div class="font-bold text-zinc-100 flex items-center gap-2">
-                    {{ svc.name }}
-                    <span :class="svc.isGenerated ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'" class="text-[9px] px-1.5 py-0.5 rounded border font-bold uppercase tracking-widest">
-                      {{ svc.isGenerated ? 'Active' : 'Missing SDK' }}
-                    </span>
+        <!-- Tab: Services -->
+        <div v-if="activeTab === 'services'" class="flex-1 flex flex-col min-h-0">
+          <!-- Service List -->
+          <div v-if="!selectedService" class="space-y-4">
+            <h2 class="text-sm font-bold text-zinc-400 mb-4">Configured SAP Services</h2>
+            <div class="grid gap-4">
+              <div v-for="svc in services" :key="svc.name" @click="selectedService = svc" class="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 hover:border-blue-500/50 transition-all group cursor-pointer flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="bg-zinc-800 p-2 rounded-lg group-hover:bg-blue-500/10 transition-colors text-zinc-400 group-hover:text-blue-400">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
                   </div>
-                  <div class="text-[10px] text-zinc-500 font-mono">/api/sap-odata/{{ svc.route || svc.name.toLowerCase() }}</div>
+                  <div>
+                    <div class="font-bold text-zinc-100 flex items-center gap-2">
+                      {{ svc.name }}
+                      <span :class="svc.isGenerated ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'" class="text-[9px] px-1.5 py-0.5 rounded border font-bold uppercase tracking-widest">
+                        {{ svc.isGenerated ? 'Active' : 'Missing SDK' }}
+                      </span>
+                    </div>
+                    <div class="text-[10px] text-zinc-500 font-mono">/api/sap-odata/{{ svc.route || svc.name.toLowerCase() }}</div>
+                  </div>
                 </div>
-              </div>
-
-              <button 
-                @click="generateService(svc.name)"
-                :disabled="generatingStatus[svc.name]"
-                class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase tracking-wider transition-all border border-zinc-700/50 disabled:opacity-50"
-              >
-                <svg v-if="!generatingStatus[svc.name]" class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                <svg v-else class="animate-spin h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span>{{ generatingStatus[svc.name] ? 'Wait...' : 'Regenerate' }}</span>
-              </button>
-            </div>
-
-            <!-- Entities Section -->
-            <div class="mb-4">
-              <div class="text-[9px] uppercase font-bold text-zinc-600 tracking-tight mb-2 flex justify-between">
-                <span>Available Entity Sets</span>
-                <span v-if="svc.entities && svc.entities.length" class="text-zinc-500 font-mono">{{ svc.entities.length }}</span>
-              </div>
-              <div v-if="svc.entities && svc.entities.length" class="flex flex-wrap gap-1.5">
-                <button 
-                  v-for="entity in svc.entities" 
-                  :key="entity"
-                  @click="exploreEntity(svc, entity)"
-                  class="text-[10px] bg-zinc-800/50 hover:bg-blue-500/20 hover:text-blue-400 border border-zinc-700/50 px-2.5 py-1 rounded transition-all font-mono flex items-center gap-1.5"
-                >
-                  <svg class="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10m4-10v10m4-10v10m4-10v10" /></svg>
-                  {{ entity }}
-                </button>
-              </div>
-              <div v-else class="text-[10px] text-zinc-700 italic py-2 border border-dashed border-zinc-800 rounded-lg text-center bg-zinc-950/20">
-                {{ svc.isGenerated ? 'No entities found in this service' : 'Generate SDK to see entities' }}
-              </div>
-            </div>
-
-            <!-- Bottom Row: Details -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-800/50">
-              <div class="flex flex-col gap-1">
-                <span class="text-[9px] uppercase font-bold text-zinc-600 tracking-tight">Source EDMX</span>
-                <span class="text-[10px] font-mono text-zinc-400 truncate" :title="svc.edmx">{{ svc.edmx }}</span>
-              </div>
-              <div class="flex flex-col gap-1">
-                <span class="text-[9px] uppercase font-bold text-zinc-600 tracking-tight">SDK Output</span>
-                <span class="text-[10px] font-mono text-zinc-400 truncate text-xs">.nuxt/sap-odata/generated/{{ svc.name }}</span>
+                <svg class="w-5 h-5 text-zinc-600 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Data Preview Overlay -->
-        <div v-if="preview" class="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/80 backdrop-blur-sm">
-          <div class="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[80vh] flex flex-col overflow-hidden">
-            <header class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-800/50">
+          <!-- Service Detail View -->
+          <div v-else class="flex-1 flex flex-col min-h-0">
+            <header class="flex items-center gap-4 mb-6">
+              <button @click="selectedService = null; selectedEntity = null" class="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-zinc-200 transition-colors">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+              </button>
               <div>
-                <h3 class="font-bold text-zinc-100">{{ preview.entity }}</h3>
-                <p class="text-xs text-zinc-500 font-mono">{{ preview.service.name }}</p>
+                <h2 class="text-lg font-bold text-zinc-100">{{ selectedService.name }}</h2>
+                <div class="text-[10px] text-zinc-500 font-mono">{{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}</div>
               </div>
-              <button @click="preview = null" class="p-2 hover:bg-zinc-700 rounded-lg transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              <button @click="generateService(selectedService.name)" :disabled="generatingStatus[selectedService.name]" class="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold uppercase tracking-wider transition-all border border-zinc-700/50 disabled:opacity-50">
+                <svg v-if="!generatingStatus[selectedService.name]" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <svg v-else class="animate-spin h-3 w-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <span>{{ generatingStatus[selectedService.name] ? 'Wait...' : 'Regenerate SDK' }}</span>
               </button>
             </header>
-            <div class="flex-1 overflow-auto p-4">
-              <div v-if="previewLoading" class="flex items-center justify-center py-20">
-                <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+
+            <!-- Entity Selection Tabs -->
+            <div class="flex gap-2 mb-6 overflow-x-auto shrink-0 no-scrollbar pb-2">
+              <button 
+                v-for="entity in selectedService.entities" 
+                :key="entity" 
+                @click="selectEntity(entity)" 
+                :class="selectedEntity === entity ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'" 
+                class="px-4 py-1.5 text-[11px] font-mono border rounded-full transition-all whitespace-nowrap flex items-center gap-2"
+              >
+                <svg class="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10m4-10v10m4-10v10m4-10v10" /></svg>
+                {{ entity }}
+              </button>
+            </div>
+
+            <!-- Explorer -->
+            <div v-if="selectedEntity" class="flex-1 flex flex-col min-h-0 bg-zinc-900/30 border border-zinc-800 rounded-xl overflow-hidden">
+              <div class="bg-zinc-900 border-b border-zinc-800 p-3 flex flex-wrap gap-3 items-end shrink-0">
+                <div class="flex flex-col gap-1 flex-1 min-w-[200px]"><label class="text-[9px] uppercase font-bold text-zinc-600 tracking-wider">Filter ($filter)</label><input v-model="queryParams.filter" @keyup.enter="refreshEntityData" type="text" placeholder="Name eq 'Test'" class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-[11px] font-mono focus:border-blue-500 outline-none w-full"></div>
+                <div class="flex flex-col gap-1 w-40"><label class="text-[9px] uppercase font-bold text-zinc-600 tracking-wider">Select ($select)</label><input v-model="queryParams.select" @keyup.enter="refreshEntityData" type="text" placeholder="ID,Name" class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-[11px] font-mono focus:border-blue-500 outline-none"></div>
+                <button @click="refreshEntityData" class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold uppercase px-4 py-2 rounded transition-colors mb-0.5">Run</button>
               </div>
-              <div v-else-if="previewError" class="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-sm">
-                {{ previewError }}
-              </div>
-              <div v-else class="overflow-hidden border border-zinc-800 rounded-lg">
-                <table class="w-full text-left text-[11px] border-collapse">
-                  <thead class="bg-zinc-800/50 text-zinc-500 uppercase text-[9px] font-bold tracking-widest border-b border-zinc-800">
-                    <tr>
-                      <th v-for="key in previewColumns" :key="key" class="px-3 py-2 border-r border-zinc-800 last:border-0">{{ key }}</th>
-                    </tr>
+              <div class="flex-1 overflow-auto">
+                <div v-if="previewLoading" class="flex items-center justify-center py-20"><svg class="animate-spin h-8 w-8 text-blue-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>
+                <div v-else-if="previewError" class="p-6 text-center"><div class="text-red-400 text-sm mb-2 font-bold">Query Failed</div><div class="text-zinc-500 text-xs font-mono bg-red-500/5 p-3 rounded border border-red-500/10">{{ previewError }}</div></div>
+                <table v-else class="w-full text-left text-[11px] border-collapse">
+                  <thead class="bg-zinc-800/80 sticky top-0 z-10 text-zinc-500 uppercase text-[9px] font-bold tracking-widest border-b border-zinc-700">
+                    <tr><th class="px-4 py-2 w-16 text-center">Actions</th><th v-for="key in previewColumns" :key="key" class="px-4 py-2 border-l border-zinc-800 last:border-0">{{ key }}</th></tr>
                   </thead>
                   <tbody class="divide-y divide-zinc-800 font-mono">
-                    <tr v-for="(row, idx) in previewData" :key="idx" class="hover:bg-zinc-800/30">
-                      <td v-for="key in previewColumns" :key="key" class="px-3 py-2 border-r border-zinc-800 last:border-0 text-zinc-400 truncate max-w-[200px]" :title="JSON.stringify(row[key])">
-                        {{ row[key] }}
-                      </td>
+                    <tr v-for="(row, idx) in previewData" :key="idx" class="hover:bg-blue-500/5 group transition-colors">
+                      <td class="px-4 py-2 text-center"><button @click="deleteItem(row)" class="text-zinc-600 hover:text-red-400 transition-colors"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></td>
+                      <td v-for="key in previewColumns" :key="key" class="px-4 py-2 border-l border-zinc-800 last:border-0 text-zinc-400 truncate max-w-[250px]" :title="JSON.stringify(row[key])">{{ row[key] }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
+            <div v-else class="flex-1 flex items-center justify-center border-2 border-dashed border-zinc-800 rounded-xl text-zinc-600 italic text-sm">Select an entity set to explore data</div>
           </div>
         </div>
-      </div>
 
-        <div v-if="activeTab === 'logs'">
+        <!-- Tab: Logs -->
+        <div v-if="activeTab === 'logs'" class="flex-1 flex flex-col min-h-0">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-sm font-bold text-zinc-400">Traffic Monitor</h2>
             <button @click="logs = []" class="text-[10px] text-zinc-500 hover:text-zinc-300">Clear Logs</button>
           </div>
-          <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex-1 overflow-auto">
             <table class="w-full text-[11px] text-left">
-              <thead class="bg-zinc-800 text-zinc-500 uppercase text-[9px] font-bold tracking-widest border-b border-zinc-800">
-                <tr>
-                  <th class="px-4 py-2">Status</th>
-                  <th class="px-4 py-2">Method</th>
-                  <th class="px-4 py-2">Entity Set</th>
-                  <th class="px-4 py-2 text-right">Duration</th>
-                </tr>
+              <thead class="bg-zinc-800 text-zinc-500 uppercase text-[9px] font-bold tracking-widest border-b border-zinc-800 sticky top-0">
+                <tr><th class="px-4 py-2">Status</th><th class="px-4 py-2">Method</th><th class="px-4 py-2">Entity Set</th><th class="px-4 py-2 text-right">Duration</th></tr>
               </thead>
               <tbody class="divide-y divide-zinc-800 font-mono">
                 <tr v-for="log in logs" :key="log.id" class="hover:bg-zinc-800/30 transition-colors">
-                  <td class="px-4 py-2">
-                    <span :class="log.status < 400 ? 'text-green-400' : 'text-red-400'">{{ log.status }}</span>
-                  </td>
+                  <td class="px-4 py-2"><span :class="log.status < 400 ? 'text-green-400' : 'text-red-400'">{{ log.status }}</span></td>
                   <td class="px-4 py-2 text-zinc-500">{{ log.method }}</td>
-                  <td class="px-4 py-2">
-                    <span class="text-zinc-300">{{ log.service }}</span>
-                    <span class="text-zinc-600">/</span>
-                    <span class="text-blue-400">{{ log.entitySet || '-' }}</span>
-                  </td>
+                  <td class="px-4 py-2"><span class="text-zinc-300">{{ log.service }}</span><span class="text-zinc-600">/</span><span class="text-blue-400">{{ log.entitySet || '-' }}</span></td>
                   <td class="px-4 py-2 text-right text-zinc-500">{{ log.duration }}ms</td>
-                </tr>
-                <tr v-if="logs.length === 0">
-                  <td colspan="4" class="px-4 py-8 text-center text-zinc-600 italic font-sans text-xs">No requests recorded yet...</td>
                 </tr>
               </tbody>
             </table>
@@ -248,35 +200,30 @@
       setup() {
         const activeTab = ref('overview')
         const logs = ref([])
-        const config = ref({
-          basePath: '/api/sap-odata',
-          mode: 'sdk',
-          services: [],
-          forwardAuthHeader: true
-        })
+        const config = ref({ basePath: '/api/sap-odata', mode: 'sdk', services: [], forwardAuthHeader: true })
+        const selectedService = ref(null)
+        const selectedEntity = ref(null)
         const generatingStatus = ref({})
-        const isGeneratingAll = ref(false)
-        const preview = ref(null)
         const previewLoading = ref(false)
         const previewError = ref(null)
         const previewData = ref([])
-        const previewColumns = computed(() => {
-          if (!previewData.value.length) return []
-          return Object.keys(previewData.value[0])
-        })
+        const queryParams = ref({ filter: '', select: '', top: 100 })
 
         async function refreshLogs() {
           try {
             const res = await fetch('/__sap_odata__/logs')
             logs.value = await res.json()
-          } catch (e) { console.error('Failed to fetch logs', e) }
+          } catch (e) {}
         }
 
         async function fetchConfig() {
           try {
             const res = await fetch('/__sap_odata__/config')
             config.value = await res.json()
-          } catch (e) { console.error('Failed to fetch config', e) }
+            if (selectedService.value) {
+              selectedService.value = config.value.services.find(s => s.name === selectedService.value.name)
+            }
+          } catch (e) {}
         }
 
         async function generateService(name) {
@@ -284,40 +231,49 @@
           try {
             const res = await fetch(`/__sap_odata__/generate?service=${name}`)
             const data = await res.json()
-            if (data.success) {
-              console.log('Generation successful:', data.message)
-              await fetchConfig() // Refresh to show new entities
-            } else {
-              alert('Generation failed: ' + (data.message || 'Unknown error'))
-            }
-          } catch (e) {
-            console.error('Failed to trigger generation', e)
-          } finally {
-            generatingStatus.value[name] = false
-          }
+            if (data.success) await fetchConfig()
+            else alert('Failed: ' + data.message)
+          } catch (e) { alert('Error triggering generation') }
+          finally { generatingStatus.value[name] = false }
         }
 
-        async function exploreEntity(service, entity) {
-          preview.value = { service, entity }
+        async function selectEntity(entity) {
+          selectedEntity.value = entity
+          await refreshEntityData()
+        }
+
+        async function refreshEntityData() {
+          if (!selectedService.value || !selectedEntity.value) return
           previewLoading.value = true
           previewError.value = null
-          previewData.value = []
-          
           try {
-            const route = service.route || service.name.toLowerCase()
-            const res = await fetch(`${config.value.basePath}/${route}/${entity}`)
-            if (!res.ok) throw new Error(`HTTP Error ${res.status}`)
+            const route = selectedService.value.route || selectedService.value.name.toLowerCase()
+            const url = new URL(`${window.location.origin}${config.value.basePath}/${route}/${selectedEntity.value}`)
+            if (queryParams.value.filter) url.searchParams.set('$filter', queryParams.value.filter)
+            if (queryParams.value.select) url.searchParams.set('$select', queryParams.value.select)
+            if (queryParams.value.top) url.searchParams.set('$top', queryParams.value.top)
+            const res = await fetch(url.toString())
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json()
             previewData.value = Array.isArray(data) ? data : (data.value || [data])
-          } catch (e) {
-            console.error('Failed to fetch entity data', e)
-            previewError.value = e.message
-          } finally {
-            previewLoading.value = false
-          }
+          } catch (e) { previewError.value = e.message }
+          finally { previewLoading.value = false }
+        }
+
+        async function deleteItem(row) {
+          const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
+          if (!idKey) return alert('No ID field found')
+          if (!confirm(`Delete item ${row[idKey]}?`)) return
+          try {
+            const route = selectedService.value.route || selectedService.value.name.toLowerCase()
+            const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${row[idKey]}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Delete failed')
+            await refreshEntityData()
+          } catch (e) { alert(e.message) }
         }
 
         const services = computed(() => config.value.services)
+        const previewColumns = computed(() => (previewData.value && previewData.value.length) ? Object.keys(previewData.value[0]).filter(k => k !== '__metadata') : [])
 
         onMounted(() => {
           fetchConfig()
@@ -325,22 +281,7 @@
           setInterval(refreshLogs, 3000)
         })
 
-        return { 
-          activeTab, 
-          logs, 
-          services, 
-          config, 
-          generatingStatus, 
-          isGeneratingAll, 
-          generateService, 
-          exploreEntity,
-          preview,
-          previewLoading,
-          previewError,
-          previewData,
-          previewColumns,
-          refreshLogs 
-        }
+        return { activeTab, logs, services, config, selectedService, selectedEntity, generatingStatus, generateService, selectEntity, refreshEntityData, deleteItem, queryParams, previewLoading, previewError, previewData, previewColumns }
       }
     }).mount('#app')
   </script>
