@@ -78,14 +78,6 @@ export default defineNuxtModule<ModuleOptions>({
 
     // DevTools integration
     if (nuxt.options.dev) {
-      // Serve client app during development
-      nuxt.hook('vite:extendConfig', (config) => {
-        config.server = config.server || {}
-        config.server.fs = config.server.fs || {}
-        config.server.fs.allow = config.server.fs.allow || []
-        config.server.fs.allow.push(resolver.resolve('../client'))
-      })
-
       // @ts-ignore
       nuxt.hook('devtools:customTabs', (tabs) => {
         tabs.push({
@@ -99,13 +91,11 @@ export default defineNuxtModule<ModuleOptions>({
         })
       })
 
-      // Add a server middleware for the client files
-      // In a real build, we would use sirv or serve-static, 
-      // but for development, we can hook into nitro
+      // Serve built client assets
       nuxt.hook('nitro:config', (nitroConfig) => {
         nitroConfig.publicAssets = nitroConfig.publicAssets || []
         nitroConfig.publicAssets.push({
-          dir: resolver.resolve('../client'),
+          dir: resolver.resolve('../client/.output/public'),
           baseURL: '/__sap_odata__/client',
         })
       })

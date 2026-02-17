@@ -12,6 +12,6 @@ export async function generateODataClient({ input, outputDir }: GenerateODataPar
     overwrite: true,
     clearOutputDir: true,
     packageJson: true,
-    transpile: true,
+    transpile: false,
   })
 }
