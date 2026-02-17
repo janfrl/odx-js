@@ -14,8 +14,7 @@ export default defineEventHandler(async (event) => {
   const url = event.node.req.url || ''
   const [path] = url.split('?')
   
-  // Extract service and entity set from path
-  // Expected: /api/sap-odata/dummy/Products/...
+  // Extract service and entity set
   const relativePath = path.startsWith(basePath + '/') 
     ? path.slice((basePath + '/').length) 
     : ''
@@ -50,8 +49,6 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // The generator creates a directory structure: [outputDir]/[serviceName]
-  // In module.ts we use: join(nuxt.options.buildDir, 'sap-odata', 'generated', svc.name)
   const generatedDir = join(
     buildDir,
     'sap-odata',
@@ -59,19 +56,29 @@ export default defineEventHandler(async (event) => {
     matched.name
   )
   
-  // The SDK usually has an index.js in the root of the generated service
-  const indexFile = join(generatedDir, 'index.js')
+  // Robustly find index.js (handle possible subfolder)
+  let indexFile = join(generatedDir, 'index.js')
+  if (!fs.existsSync(indexFile) && fs.existsSync(generatedDir)) {
+    const subdirs = fs.readdirSync(generatedDir).filter(f => fs.statSync(join(generatedDir, f)).isDirectory())
+    for (const subdir of subdirs) {
+      const potentialIndex = join(generatedDir, subdir, 'index.js')
+      if (fs.existsSync(potentialIndex)) {
+        indexFile = potentialIndex
+        break
+      }
+    }
+  }
 
+  // MOCK FALLBACK
   if (!fs.existsSync(indexFile)) {
     console.warn(`[nuxt-sap-odata] SDK not found at ${indexFile}. Falling back to mock data.`)
     logRequest(200)
     
-    // Return mock data based on entity set
-    if (entitySetName.toLowerCase() === 'products') {
+    if (entitySetName.toLowerCase() === 'exampleentities') {
       return [
-        { id: '1', Name: 'Mock Product A', Price: 100, Currency: 'EUR' },
-        { id: '2', Name: 'Mock Product B', Price: 250, Currency: 'EUR' },
-        { id: '3', Name: 'Mock Product C', Price: 45, Currency: 'USD' }
+        { ID: '1', Name: 'Example Item A' },
+        { ID: '2', Name: 'Example Item B' },
+        { ID: '3', Name: 'Example Item C' }
       ]
     }
 
@@ -88,27 +95,46 @@ export default defineEventHandler(async (event) => {
 
   const sdk = await import(pathToFileURL(indexFile).href)
   
-  // SAP Cloud SDK structure: 
-  // - It exports a function `[ServiceName]Api`
-  // - That function returns an object with a `requestBuilder()` method
-  const apiFactoryName = `${matched.name}Api`
-  if (!sdk[apiFactoryName]) {
+  // Find service factory (e.g., dummy() or DummyServiceApi())
+  const serviceFactoryName = Object.keys(sdk).find(k => 
+    typeof sdk[k] === 'function' && 
+    (k.toLowerCase() === matched.name.toLowerCase() || k.toLowerCase() === matched.name.toLowerCase() + 'api' || k === 'dummy')
+  )
+
+  if (!serviceFactoryName) {
+    logRequest(500)
     return {
-      error: `API Factory "${apiFactoryName}" not found in generated SDK`,
+      error: `Could not find service factory in SDK`,
       availableExports: Object.keys(sdk),
     }
   }
 
-  const api = sdk[apiFactoryName]()
+  const serviceInstance = sdk[serviceFactoryName]()
   
-  // Try to find the entity set on the API
-  // In SDK v3, it's often directly a property on the api object
-  const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-  
-  if (!entityApi) {
+  // Find entity API on service instance (including prototype for getters)
+  const getAllPropertyNames = (obj: any) => {
+    const props = new Set<string>()
+    let current = obj
+    while (current && current !== Object.prototype) {
+      Object.getOwnPropertyNames(current).forEach(p => props.add(p))
+      current = Object.getPrototypeOf(current)
+    }
+    return Array.from(props)
+  }
+
+  const allProps = getAllPropertyNames(serviceInstance)
+  const entityApiName = allProps.find(k => 
+    k.toLowerCase() === entitySetName.toLowerCase() || 
+    k.toLowerCase() === (entitySetName.toLowerCase() + 'api')
+  )
+
+  const entityApi = entityApiName ? (serviceInstance as any)[entityApiName] : null
+
+  if (!entityApi || !entityApi.requestBuilder) {
+    logRequest(404)
     return {
       error: `Entity set "${entitySetName}" not found on service "${matched.name}"`,
-      availableEntities: Object.keys(api).filter(k => typeof api[k] === 'object'),
+      availableEntities: allProps.filter(p => !['constructor', 'initApi'].includes(p) && !p.startsWith('_')),
     }
   }
 
@@ -119,12 +145,9 @@ export default defineEventHandler(async (event) => {
   try {
     if (method === 'GET') {
       let requestBuilder = entityApi.requestBuilder().getAll()
-      
-      // Basic query mapping (very simplified)
       if (query.id) {
         requestBuilder = entityApi.requestBuilder().getByKey(query.id)
       }
-
       const res = await requestBuilder.execute(destination)
       logRequest(200)
       return res
@@ -141,7 +164,6 @@ export default defineEventHandler(async (event) => {
       const body = await readBody(event)
       const id = query.id as string
       if (!id) throw new Error('ID is required for PATCH')
-      // This is a simplification; SDK PATCH usually needs the full entity or key
       const res = await entityApi.requestBuilder().update(body).execute(destination)
       logRequest(200)
       return res
@@ -157,6 +179,19 @@ export default defineEventHandler(async (event) => {
 
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   } catch (err: any) {
+    // If connection fails and we are in dev, try mock fallback
+    if (process.env.NODE_ENV === 'development' || config.public.odata?.mode === 'mock') {
+      console.warn(`[nuxt-sap-odata] Connection to ${destination.url} failed. Using mock data for ${entitySetName}.`)
+      if (entitySetName.toLowerCase() === 'exampleentities') {
+        logRequest(200)
+        return [
+          { ID: '1', Name: 'Example Item A (Mock)' },
+          { ID: '2', Name: 'Example Item B (Mock)' },
+          { ID: '3', Name: 'Example Item C (Mock)' }
+        ]
+      }
+    }
+
     console.error('[nuxt-sap-odata] OData Request Error:', err.message)
     const status = err.response?.status || 500
     logRequest(status)
