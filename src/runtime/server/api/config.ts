@@ -87,6 +87,10 @@ export default defineEventHandler(async () => {
     mode: config.public.odata?.mode || 'sdk',
     services: servicesWithEntities,
     buildDir: odataConfig?.buildDir,
-    forwardAuthHeader: odataConfig?.forwardAuthHeader
+    forwardAuthHeader: odataConfig?.forwardAuthHeader,
+    versions: {
+      node: process.version,
+      module: '1.0.0'
+    }
   }
 })
