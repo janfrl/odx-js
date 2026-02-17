@@ -9,10 +9,11 @@ import type { FetchOptions } from 'ofetch'
 export async function $odata<T = unknown>(
   service: string,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
-  options: FetchOptions<'json'> = {},
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
 ): Promise<T> {
   const client = createODataClient()
-  return client<T>(service, {
+  const path = options.entitySet ? `${service}/${options.entitySet}` : service
+  return client<T>(path, {
     method,
     query: options.query,
     body: options.body,
