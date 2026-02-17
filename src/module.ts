@@ -19,6 +19,7 @@ export interface ModuleOptions {
   destination?: string
   forwardAuthHeader?: boolean
   services?: SapODataService[]
+  buildDir?: string
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -44,6 +45,7 @@ export default defineNuxtModule<ModuleOptions>({
       destination: options.destination ?? '',
       forwardAuthHeader,
       services,
+      buildDir: nuxt.options.buildDir,
     }
     nuxt.options.runtimeConfig.public.odata = {
       mode,
