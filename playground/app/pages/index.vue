@@ -1,13 +1,13 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-// Accessing a specific entity set of the 'dummy' service
-const products = useOData('dummy').entities('Products')
+// Accessing the actual entity set from dummy.edmx
+const example = useOData('dummy').entities('ExampleEntities')
 
-const { data, pending, error, refresh } = await products.list()
+const { data, pending, error, refresh } = await example.list()
 
 async function addItem() {
-  // POST request to /api/sap-odata/dummy/Products
-  await products.create({ Name: 'New Product' })
+  // POST request to /api/sap-odata/dummy/ExampleEntities
+  await example.create({ Name: 'New Example' })
   refresh()
 }
 </script>
@@ -19,7 +19,7 @@ async function addItem() {
         Nuxt SAP OData
       </h1>
       <p class="text-sm text-slate-500">
-        Testing EntitySet abstraction: <code>dummy/Products</code>
+        Testing EntitySet abstraction: <code>dummy/ExampleEntities</code>
       </p>
     </header>
 
