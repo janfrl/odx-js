@@ -2,9 +2,11 @@ import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody }
 import { join } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
+// @ts-ignore
+import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
-  console.log('[nuxt-sap-odata] Handler called for URL:', event.node.req.url)
+  const startTime = Date.now()
   const config = useRuntimeConfig()
   const basePath = config.public?.odata?.basePath || '/api/sap-odata'
   const buildDir = config.odata?.buildDir as string
@@ -22,12 +24,26 @@ export default defineEventHandler(async (event) => {
   const serviceRoute = segments[0] || ''
   const entitySetName = segments[1] || ''
 
+  const logRequest = (status: number) => {
+    addODataLog({
+      id: Math.random().toString(36).substring(7),
+      timestamp: Date.now(),
+      method: event.node.req.method || 'GET',
+      url,
+      service: serviceRoute,
+      entitySet: entitySetName,
+      status,
+      duration: Date.now() - startTime
+    })
+  }
+
   const services = (config.odata?.services || []) as Array<{ name: string; route?: string }>
   const matched = services.find(
     (svc) => (svc.route || svc.name.toLowerCase()) === serviceRoute
   )
 
   if (!matched) {
+    logRequest(404)
     throw createError({
       statusCode: 404,
       statusMessage: `Unknown service "${serviceRoute}"`,
@@ -48,6 +64,7 @@ export default defineEventHandler(async (event) => {
 
   if (!fs.existsSync(indexFile)) {
     console.warn(`[nuxt-sap-odata] SDK not found at ${indexFile}. Falling back to mock data.`)
+    logRequest(200)
     
     // Return mock data based on entity set
     if (entitySetName.toLowerCase() === 'products') {
@@ -108,12 +125,16 @@ export default defineEventHandler(async (event) => {
         requestBuilder = entityApi.requestBuilder().getByKey(query.id)
       }
 
-      return await requestBuilder.execute(destination)
+      const res = await requestBuilder.execute(destination)
+      logRequest(200)
+      return res
     }
 
     if (method === 'POST') {
       const body = await readBody(event)
-      return await entityApi.requestBuilder().create(body).execute(destination)
+      const res = await entityApi.requestBuilder().create(body).execute(destination)
+      logRequest(201)
+      return res
     }
 
     if (method === 'PATCH') {
@@ -121,20 +142,26 @@ export default defineEventHandler(async (event) => {
       const id = query.id as string
       if (!id) throw new Error('ID is required for PATCH')
       // This is a simplification; SDK PATCH usually needs the full entity or key
-      return await entityApi.requestBuilder().update(body).execute(destination)
+      const res = await entityApi.requestBuilder().update(body).execute(destination)
+      logRequest(200)
+      return res
     }
 
     if (method === 'DELETE') {
       const id = query.id as string
       if (!id) throw new Error('ID is required for DELETE')
-      return await entityApi.requestBuilder().delete(id).execute(destination)
+      const res = await entityApi.requestBuilder().delete(id).execute(destination)
+      logRequest(204)
+      return res
     }
 
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   } catch (err: any) {
     console.error('[nuxt-sap-odata] OData Request Error:', err.message)
+    const status = err.response?.status || 500
+    logRequest(status)
     throw createError({
-      statusCode: err.response?.status || 500,
+      statusCode: status,
       statusMessage: err.message || 'Internal Server Error',
       data: err.response?.data
     })
