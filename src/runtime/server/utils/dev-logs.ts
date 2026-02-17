@@ -23,3 +23,7 @@ export function addODataLog(log: ODataLog) {
 export function getODataLogs() {
   return logs
 }
+
+export function clearODataLogs() {
+  logs.length = 0
+}

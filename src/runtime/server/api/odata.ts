@@ -1,7 +1,6 @@
 import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody } from '#imports'
 import { join } from 'pathe'
 import fs from 'node:fs'
-import { pathToFileURL } from 'node:url'
 // @ts-ignore
 import { addODataLog } from '../utils/dev-logs'
 
@@ -56,12 +55,12 @@ export default defineEventHandler(async (event) => {
     matched.name
   )
   
-  // Robustly find index.js (handle possible subfolder)
-  let indexFile = join(generatedDir, 'index.js')
+  // Robustly find index.ts (handle possible subfolder)
+  let indexFile = join(generatedDir, 'index.ts')
   if (!fs.existsSync(indexFile) && fs.existsSync(generatedDir)) {
     const subdirs = fs.readdirSync(generatedDir).filter(f => fs.statSync(join(generatedDir, f)).isDirectory())
     for (const subdir of subdirs) {
-      const potentialIndex = join(generatedDir, subdir, 'index.js')
+      const potentialIndex = join(generatedDir, subdir, 'index.ts')
       if (fs.existsSync(potentialIndex)) {
         indexFile = potentialIndex
         break
@@ -93,7 +92,10 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const sdk = await import(pathToFileURL(indexFile).href)
+  // Use jiti for dynamic import of TypeScript SDK
+  const { createJiti } = await import('jiti')
+  const jiti = createJiti(import.meta.url)
+  const sdk = await jiti.import(indexFile) as any
   
   // Find service factory (e.g., dummy() or DummyServiceApi())
   const serviceFactoryName = Object.keys(sdk).find(k => 
@@ -134,7 +136,7 @@ export default defineEventHandler(async (event) => {
     logRequest(404)
     return {
       error: `Entity set "${entitySetName}" not found on service "${matched.name}"`,
-      availableEntities: allProps.filter(p => !['constructor', 'initApi'].includes(p) && !p.startsWith('_')),
+      availableEntities: allProps.filter(p => !['constructor', 'initApi', 'batch', 'changeset'].includes(p) && !p.startsWith('_')),
     }
   }
 
@@ -149,13 +151,11 @@ export default defineEventHandler(async (event) => {
       if (query.id) {
         requestBuilder = entityApi.requestBuilder().getByKey(query.id)
       } else {
-        // Forward OData query parameters
         const odataParams: Record<string, string> = {}
         const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
         keys.forEach(key => {
           if (query[key]) odataParams[key] = String(query[key])
         })
-        
         if (Object.keys(odataParams).length > 0) {
           requestBuilder = requestBuilder.withCustomParameters(odataParams)
         }
@@ -198,9 +198,9 @@ export default defineEventHandler(async (event) => {
       if (entitySetName.toLowerCase() === 'exampleentities') {
         logRequest(200)
         return [
-          { ID: '1', Name: 'Example Item A (Mock)' },
-          { ID: '2', Name: 'Example Item B (Mock)' },
-          { ID: '3', Name: 'Example Item C (Mock)' }
+          { ID: '1', Name: 'Example Item A (Mocked)' },
+          { ID: '2', Name: 'Example Item B (Mocked)' },
+          { ID: '3', Name: 'Example Item C (Mocked)' }
         ]
       }
     }

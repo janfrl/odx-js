@@ -1,7 +1,11 @@
 import { defineEventHandler } from '#imports'
 // @ts-ignore
-import { getODataLogs } from '../utils/dev-logs'
+import { getODataLogs, clearODataLogs } from '../utils/dev-logs'
 
-export default defineEventHandler(() => {
+export default defineEventHandler((event) => {
+  if (event.node.req.method === 'DELETE') {
+    clearODataLogs()
+    return { success: true }
+  }
   return getODataLogs()
 })

@@ -13,12 +13,12 @@ export default defineEventHandler(async () => {
     const generatedDir = join(buildDir, 'sap-odata', 'generated', svc.name)
     
     // The SDK generator often puts the files in a subfolder named after the service
-    // Let's check for an index.js in any direct subfolder if it's not in the root
-    let indexFile = join(generatedDir, 'index.js')
+    // Let's check for an index.ts in any direct subfolder if it's not in the root
+    let indexFile = join(generatedDir, 'index.ts')
     if (!fs.existsSync(indexFile) && fs.existsSync(generatedDir)) {
       const subdirs = fs.readdirSync(generatedDir).filter(f => fs.statSync(join(generatedDir, f)).isDirectory())
       for (const subdir of subdirs) {
-        const potentialIndex = join(generatedDir, subdir, 'index.js')
+        const potentialIndex = join(generatedDir, subdir, 'index.ts')
         if (fs.existsSync(potentialIndex)) {
           indexFile = potentialIndex
           break
@@ -32,7 +32,9 @@ export default defineEventHandler(async () => {
     if (fs.existsSync(indexFile)) {
       isGenerated = true
       try {
-        const sdk = await import(pathToFileURL(indexFile).href)
+        const { createJiti } = await import('jiti')
+        const jiti = createJiti(import.meta.url)
+        const sdk = await jiti.import(indexFile) as any
         
         // In SDK v3, we look for service factories and then for getters on the instance
         const serviceFactoryKey = Object.keys(sdk).find(k => 
