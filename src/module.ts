@@ -46,6 +46,7 @@ export default defineNuxtModule<ModuleOptions>({
       forwardAuthHeader,
       services,
       buildDir: nuxt.options.buildDir,
+      rootDir: nuxt.options.rootDir,
     }
     nuxt.options.runtimeConfig.public.odata = {
       mode,
@@ -68,6 +69,11 @@ export default defineNuxtModule<ModuleOptions>({
     addServerHandler({
       route: '/__sap_odata__/config',
       handler: resolver.resolve('./runtime/server/api/config'),
+    })
+
+    addServerHandler({
+      route: '/__sap_odata__/generate',
+      handler: resolver.resolve('./runtime/server/api/generate'),
     })
 
     // DevTools integration
