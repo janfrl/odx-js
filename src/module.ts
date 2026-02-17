@@ -55,7 +55,7 @@ export default defineNuxtModule<ModuleOptions>({
     addImportsDir(resolver.resolve('./runtime/composables'))
 
     addServerHandler({
-      route: `${basePath}/:service`,
+      route: `${basePath}/**`,
       handler: resolver.resolve('./runtime/server/api/odata'),
     })
 
