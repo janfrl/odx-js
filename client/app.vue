@@ -130,6 +130,9 @@ const services = computed(() => config.value.services || [])
 const previewColumns = computed(() => (previewData.value && previewData.value.length) ? Object.keys(previewData.value[0]).filter(k => k !== '__metadata') : [])
 
 onMounted(() => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.add('dark')
+  }
   fetchConfig()
   refreshLogs()
   setInterval(refreshLogs, 3000)
@@ -286,6 +289,15 @@ onMounted(() => {
 </template>
 
 <style>
+/* CSS RESET FOR IFRAME */
+html, body, #__nuxt {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
