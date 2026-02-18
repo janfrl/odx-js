@@ -78,6 +78,21 @@ export default defineNuxtModule<ModuleOptions>({
 
     // DevTools integration
     if (nuxt.options.dev) {
+      const { spawn } = await import('node:child_process')
+      const clientPath = resolver.resolve('../client')
+      
+      // Start DevTools client dev server
+      const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+      const viteProcess = spawn(npmCmd, ['run', 'dev'], {
+        cwd: clientPath,
+        stdio: 'inherit',
+        shell: true
+      })
+
+      nuxt.hook('close', () => {
+        viteProcess.kill()
+      })
+
       // @ts-ignore
       nuxt.hook('devtools:customTabs', (tabs) => {
         tabs.push({
@@ -86,7 +101,9 @@ export default defineNuxtModule<ModuleOptions>({
           icon: 'logos:sap',
           view: {
             type: 'iframe',
-            src: '/__sap_odata__/client/index.html',
+            src: nuxt.options.dev 
+              ? 'http://localhost:3300/__sap_odata__/client/' 
+              : '/__sap_odata__/client/',
           },
         })
       })
@@ -96,7 +113,7 @@ export default defineNuxtModule<ModuleOptions>({
         nitroConfig.publicAssets = nitroConfig.publicAssets || []
         nitroConfig.publicAssets.push({
           dir: resolver.resolve('../client/.output/public'),
-          baseURL: '/__sap_odata__/client',
+          baseURL: '/__sap_odata__/client/',
         })
       })
     }
