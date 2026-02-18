@@ -1,6 +1,7 @@
 import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody } from '#imports'
 import { join } from 'pathe'
 import fs from 'node:fs'
+import { pathToFileURL } from 'node:url'
 // @ts-ignore
 import { addODataLog } from '../utils/dev-logs'
 
@@ -10,12 +11,11 @@ export default defineEventHandler(async (event) => {
   const basePath = config.public?.odata?.basePath || '/api/sap-odata'
   const buildDir = config.odata?.buildDir as string
 
-  const url = event.node.req.url || ''
-  const [path] = url.split('?')
-  
-  // Extract service and entity set
-  const relativePath = path.startsWith(basePath + '/') 
-    ? path.slice((basePath + '/').length) 
+  // Path extraction
+  const fullPath = event.path || ''
+  const [pathOnly] = fullPath.split('?')
+  const relativePath = pathOnly.startsWith(basePath) 
+    ? pathOnly.slice(basePath.length).replace(/^\//, '') 
     : ''
   
   const segments = relativePath.split('/').filter(Boolean)
@@ -26,8 +26,8 @@ export default defineEventHandler(async (event) => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
-      method: event.node.req.method || 'GET',
-      url,
+      method: event.method || 'GET',
+      url: fullPath,
       service: serviceRoute,
       entitySet: entitySetName,
       status,
@@ -42,126 +42,62 @@ export default defineEventHandler(async (event) => {
 
   if (!matched) {
     logRequest(404)
-    throw createError({
-      statusCode: 404,
-      statusMessage: `Unknown service "${serviceRoute}"`,
-    })
+    throw createError({ statusCode: 404, statusMessage: `Unknown service "${serviceRoute}"` })
   }
 
-  const generatedDir = join(
-    buildDir,
-    'sap-odata',
-    'generated',
-    matched.name
-  )
-  
-  // Robustly find index.ts (handle possible subfolder)
-  let indexFile = join(generatedDir, 'index.ts')
-  if (!fs.existsSync(indexFile) && fs.existsSync(generatedDir)) {
-    const subdirs = fs.readdirSync(generatedDir).filter(f => fs.statSync(join(generatedDir, f)).isDirectory())
-    for (const subdir of subdirs) {
-      const potentialIndex = join(generatedDir, subdir, 'index.ts')
-      if (fs.existsSync(potentialIndex)) {
-        indexFile = potentialIndex
-        break
-      }
-    }
-  }
+  const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name)
+  const indexFile = join(generatedDir, 'index.js')
 
   // MOCK FALLBACK
   if (!fs.existsSync(indexFile)) {
-    console.warn(`[nuxt-sap-odata] SDK not found at ${indexFile}. Falling back to mock data.`)
     logRequest(200)
-    
-    if (entitySetName.toLowerCase() === 'exampleentities') {
+    if (entitySetName.toLowerCase() === 'products') {
       return [
-        { ID: '1', Name: 'Example Item A' },
-        { ID: '2', Name: 'Example Item B' },
-        { ID: '3', Name: 'Example Item C' }
+        { id: '1', Name: 'Mock Product A', Price: 100, Currency: 'EUR' },
+        { id: '2', Name: 'Mock Product B', Price: 250, Currency: 'EUR' },
+        { id: '3', Name: 'Mock Product C', Price: 45, Currency: 'USD' }
       ]
     }
-
-    return {
-      service: matched.name,
-      entitySet: entitySetName,
-      message: 'Mock data fallback (SDK missing)',
-      sampleItems: [
-        { id: 1, Name: 'Sample Item 1' },
-        { id: 2, Name: 'Sample Item 2' }
+    if (entitySetName.toLowerCase() === 'suppliers') {
+      return [
+        { id: 'S1', Name: 'Global Trading Corp', Country: 'DE' },
+        { id: 'S2', Name: 'Tech components Ltd', Country: 'US' }
       ]
     }
-  }
-
-  // Use jiti for dynamic import of TypeScript SDK
-  const { createJiti } = await import('jiti')
-  const jiti = createJiti(import.meta.url)
-  const sdk = await jiti.import(indexFile) as any
-  
-  // Find service factory (e.g., dummy() or DummyServiceApi())
-  const serviceFactoryName = Object.keys(sdk).find(k => 
-    typeof sdk[k] === 'function' && 
-    (k.toLowerCase() === matched.name.toLowerCase() || k.toLowerCase() === matched.name.toLowerCase() + 'api' || k === 'dummy')
-  )
-
-  if (!serviceFactoryName) {
-    logRequest(500)
-    return {
-      error: `Could not find service factory in SDK`,
-      availableExports: Object.keys(sdk),
+    if (entitySetName.toLowerCase() === 'categories') {
+      return [
+        { id: 'CAT1', Name: 'Electronics' },
+        { id: 'CAT2', Name: 'Software' }
+      ]
     }
+    return { service: matched.name, entitySet: entitySetName, message: 'Mock data fallback' }
   }
 
-  const serviceInstance = sdk[serviceFactoryName]()
-  
-  // Find entity API on service instance (including prototype for getters)
-  const getAllPropertyNames = (obj: any) => {
-    const props = new Set<string>()
-    let current = obj
-    while (current && current !== Object.prototype) {
-      Object.getOwnPropertyNames(current).forEach(p => props.add(p))
-      current = Object.getPrototypeOf(current)
-    }
-    return Array.from(props)
-  }
-
-  const allProps = getAllPropertyNames(serviceInstance)
-  const entityApiName = allProps.find(k => 
-    k.toLowerCase() === entitySetName.toLowerCase() || 
-    k.toLowerCase() === (entitySetName.toLowerCase() + 'api')
-  )
-
-  const entityApi = entityApiName ? (serviceInstance as any)[entityApiName] : null
-
-  if (!entityApi || !entityApi.requestBuilder) {
-    logRequest(404)
-    return {
-      error: `Entity set "${entitySetName}" not found on service "${matched.name}"`,
-      availableEntities: allProps.filter(p => !['constructor', 'initApi', 'batch', 'changeset'].includes(p) && !p.startsWith('_')),
-    }
-  }
-
-  const method = event.node.req.method || 'GET'
-  const query = getQuery(event)
-  const destination = { url: config.odata?.destination || 'http://localhost:8080' }
-
+  // REAL SDK LOGIC
   try {
+    const sdk = await import(pathToFileURL(indexFile).href)
+    const apiFactoryName = `${matched.name}Api`
+    const api = sdk[apiFactoryName]()
+    const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
+    
+    if (!entityApi) throw new Error(`Entity set "${entitySetName}" not found`)
+
+    const method = event.method
+    const query = getQuery(event)
+    const destination = { url: config.odata?.destination || 'http://localhost:8080' }
+
     if (method === 'GET') {
-      let requestBuilder = entityApi.requestBuilder().getAll()
-      
+      let rb = entityApi.requestBuilder().getAll()
       if (query.id) {
-        requestBuilder = entityApi.requestBuilder().getByKey(query.id)
+        rb = entityApi.requestBuilder().getByKey(query.id)
       } else {
+        // Map OData query params
         const odataParams: Record<string, string> = {}
         const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-        keys.forEach(key => {
-          if (query[key]) odataParams[key] = String(query[key])
-        })
-        if (Object.keys(odataParams).length > 0) {
-          requestBuilder = requestBuilder.withCustomParameters(odataParams)
-        }
+        keys.forEach(key => { if (query[key]) odataParams[key] = String(query[key]) })
+        if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
       }
-      
-      const res = await requestBuilder.execute(destination)
+      const res = await rb.execute(destination)
       logRequest(200)
       return res
     }
@@ -175,8 +111,6 @@ export default defineEventHandler(async (event) => {
 
     if (method === 'PATCH') {
       const body = await readBody(event)
-      const id = query.id as string
-      if (!id) throw new Error('ID is required for PATCH')
       const res = await entityApi.requestBuilder().update(body).execute(destination)
       logRequest(200)
       return res
@@ -184,7 +118,6 @@ export default defineEventHandler(async (event) => {
 
     if (method === 'DELETE') {
       const id = query.id as string
-      if (!id) throw new Error('ID is required for DELETE')
       const res = await entityApi.requestBuilder().delete(id).execute(destination)
       logRequest(204)
       return res
@@ -192,25 +125,10 @@ export default defineEventHandler(async (event) => {
 
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   } catch (err: any) {
-    // If connection fails and we are in dev, try mock fallback
-    if (process.env.NODE_ENV === 'development' || config.public.odata?.mode === 'mock') {
-      console.warn(`[nuxt-sap-odata] Connection to ${destination.url} failed. Using mock data for ${entitySetName}.`)
-      if (entitySetName.toLowerCase() === 'exampleentities') {
-        logRequest(200)
-        return [
-          { ID: '1', Name: 'Example Item A (Mocked)' },
-          { ID: '2', Name: 'Example Item B (Mocked)' },
-          { ID: '3', Name: 'Example Item C (Mocked)' }
-        ]
-      }
-    }
-
-    console.error('[nuxt-sap-odata] OData Request Error:', err.message)
-    const status = err.response?.status || 500
-    logRequest(status)
+    logRequest(err.response?.status || 500)
     throw createError({
-      statusCode: status,
-      statusMessage: err.message || 'Internal Server Error',
+      statusCode: err.response?.status || 500,
+      statusMessage: err.message,
       data: err.response?.data
     })
   }
