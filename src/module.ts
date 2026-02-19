@@ -6,6 +6,7 @@ import {
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
 import { generateODataClient } from './generate'
+import { setupDevToolsUI } from './devtools'
 
 export interface SapODataService {
   name: string
@@ -20,6 +21,7 @@ export interface ModuleOptions {
   forwardAuthHeader?: boolean
   services?: SapODataService[]
   buildDir?: string
+  devtools?: boolean
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -32,6 +34,7 @@ export default defineNuxtModule<ModuleOptions>({
     basePath: '/api/sap-odata',
     forwardAuthHeader: true,
     services: [],
+    devtools: true,
   },
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
@@ -60,7 +63,7 @@ export default defineNuxtModule<ModuleOptions>({
       handler: resolver.resolve('./runtime/server/api/odata'),
     })
 
-    // Register devtools handler
+    // Register devtools API handlers
     addServerHandler({
       route: '/__sap_odata__/logs',
       handler: resolver.resolve('./runtime/server/api/logs'),
@@ -77,45 +80,8 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     // DevTools integration
-    if (nuxt.options.dev) {
-      const { spawn } = await import('node:child_process')
-      const clientPath = resolver.resolve('../client')
-      
-      // Start DevTools client dev server
-      const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-      const viteProcess = spawn(npmCmd, ['run', 'dev'], {
-        cwd: clientPath,
-        stdio: 'inherit',
-        shell: true
-      })
-
-      nuxt.hook('close', () => {
-        viteProcess.kill()
-      })
-
-      // @ts-ignore
-      nuxt.hook('devtools:customTabs', (tabs) => {
-        tabs.push({
-          name: 'sap-odata',
-          title: 'SAP OData',
-          icon: 'logos:sap',
-          view: {
-            type: 'iframe',
-            src: nuxt.options.dev 
-              ? 'http://localhost:3300/__sap_odata__/client/' 
-              : '/__sap_odata__/client/',
-          },
-        })
-      })
-
-      // Serve built client assets
-      nuxt.hook('nitro:config', (nitroConfig) => {
-        nitroConfig.publicAssets = nitroConfig.publicAssets || []
-        nitroConfig.publicAssets.push({
-          dir: resolver.resolve('../client/.output/public'),
-          baseURL: '/__sap_odata__/client/',
-        })
-      })
+    if (options.devtools && nuxt.options.dev) {
+      setupDevToolsUI(nuxt, resolver)
     }
 
     nuxt.hook('nitro:build:before', async () => {

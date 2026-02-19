@@ -6,12 +6,12 @@ import { pathToFileURL } from 'node:url'
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const buildDir = config.odata?.buildDir as string
-  const services = (config.odata?.services || []) as any[]
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string }>
 
   const enhancedServices = await Promise.all(services.map(async (svc) => {
     const outDir = join(buildDir, 'sap-odata', 'generated', svc.name)
     const indexFile = join(outDir, 'index.js')
-    
+
     let entities: string[] = []
     let isGenerated = false
 
@@ -23,16 +23,18 @@ export default defineEventHandler(async () => {
         if (sdk[apiFactoryName]) {
           const api = sdk[apiFactoryName]()
           // Extrahiere alle Keys, die wie Entity-APIs aussehen (enden oft auf 'Api' oder sind CamelCase)
-          entities = Object.keys(api).filter(k => 
-            typeof api[k] === 'object' && 
-            k !== 'requestBuilder' && 
-            !k.startsWith('_')
+          entities = Object.keys(api).filter(k =>
+            typeof api[k] === 'object'
+            && k !== 'requestBuilder'
+            && !k.startsWith('_'),
           )
         }
-      } catch (e) {
+      }
+      catch (e) {
         console.error(`Failed to parse SDK for ${svc.name}`, e)
       }
-    } else {
+    }
+    else {
       // Mock-Entities für den Playground, wenn noch kein SDK da ist
       entities = ['Products', 'Suppliers', 'Categories']
     }
@@ -40,7 +42,7 @@ export default defineEventHandler(async () => {
     return {
       ...svc,
       entities,
-      isGenerated
+      isGenerated,
     }
   }))
 
@@ -51,7 +53,7 @@ export default defineEventHandler(async () => {
     forwardAuthHeader: config.odata?.forwardAuthHeader,
     versions: {
       node: process.version,
-      module: '1.0.0'
-    }
+      module: '1.0.0',
+    },
   }
 })

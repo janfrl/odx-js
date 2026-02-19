@@ -3,26 +3,41 @@ import { defineNuxtConfig } from 'nuxt/config'
 export default defineNuxtConfig({
   modules: [
     '@nuxt/devtools-ui-kit',
-    '@unocss/nuxt'
   ],
+  unocss: {
+    shortcuts: {
+      'bg-base': 'bg-white dark:bg-[#050505]',
+      'border-base': 'border-zinc-200 dark:border-zinc-800',
+    },
+    theme: {
+      colors: {
+        primary: '#00dc82',
+      },
+    },
+  },
   ssr: false,
-  devServer: {
-    port: 3300
-  },
-  app: {
-    baseURL: '/__sap_odata__/client'
-  },
-  css: [
-    '@unocss/reset/tailwind.css'
-  ],
+
   devtools: { enabled: false },
-  nitro: {
-    devProxy: {
-      '/__sap_odata__/config': { target: 'http://localhost:3000/__sap_odata__/config', changeOrigin: true },
-      '/__sap_odata__/logs': { target: 'http://localhost:3000/__sap_odata__/logs', changeOrigin: true },
-      '/__sap_odata__/generate': { target: 'http://localhost:3000/__sap_odata__/generate', changeOrigin: true },
-      // Proxy für die echten OData-Anfragen vom Client zum Playground-Server
-      '/api/sap-odata': { target: 'http://localhost:3000/api/sap-odata', changeOrigin: true }
-    }
-  }
+
+  app: {
+    baseURL: '/__sap_odata_explorer',
+  },
+
+  // nitro: {
+  //   devProxy: {
+  //     '/__sap_odata__/config': { target: 'http://127.0.0.1:3000/__sap_odata__/config', changeOrigin: true },
+  //     '/__sap_odata__/logs': { target: 'http://127.0.0.1:3000/__sap_odata__/logs', changeOrigin: true },
+  //     '/__sap_odata__/generate': { target: 'http://127.0.0.1:3000/__sap_odata__/generate', changeOrigin: true },
+  //     '/api/sap-odata': { target: 'http://127.0.0.1:3000/api/sap-odata', changeOrigin: true },
+  //   },
+  // },
+
+  vite: {
+    server: {
+      hmr: {
+        // Instead of go through proxy, we directly connect real port of the client app
+        clientPort: +(process.env.PORT || 3300),
+      },
+    },
+  },
 })

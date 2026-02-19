@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const serviceName = query.service as string
 
-  const services = (config.odata?.services || []) as any[]
+  const services = (config.odata?.services || []) as Array<{ name: string, edmx: string }>
   const matched = services.find(s => s.name === serviceName)
 
   if (!matched) {
@@ -27,11 +27,13 @@ export default defineEventHandler(async (event) => {
       outputDir: outDir,
     })
     return { success: true, message: `Generated ${matched.name} successfully` }
-  } catch (err: any) {
-    console.error(`[nuxt-sap-odata] Generation failed for ${matched.name}:`, err.message)
+  }
+  catch (err: unknown) {
+    const error = err as Error
+    console.error(`[nuxt-sap-odata] Generation failed for ${matched.name}:`, error.message)
     throw createError({
       statusCode: 500,
-      statusMessage: `Generation failed: ${err.message}`
+      statusMessage: `Generation failed: ${error.message}`,
     })
   }
 })

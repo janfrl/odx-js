@@ -1,18 +1,4 @@
 {
-  "name": "nuxt-sap-odata-devtools-client",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "nuxi dev",
-    "build": "nuxi build",
-    "generate": "nuxi generate"
-  },
-  "dependencies": {
-    "@nuxt/devtools-ui-kit": "latest",
-    "nuxt": "^4.2.0"
-  },
-  "devDependencies": {
-    "@unocss/nuxt": "latest",
-    "unocss": "latest"
-  }
+  "name": "nuxt-sap-odata-client",
+  "private": true
 }
