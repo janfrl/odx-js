@@ -43,7 +43,7 @@ function close() {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex justify-end overflow-hidden pointer-events-none">
+  <div class="fixed inset-0 z-50 flex justify-end overflow-hidden pointer-events-none text-base">
     <!-- Backdrop Transition -->
     <Transition name="fade" appear>
       <div 
@@ -59,24 +59,33 @@ function close() {
         v-if="editor.show"
         class="w-full max-w-xl h-full flex flex-col rounded-none border-y-0 border-r-0 relative z-10 shadow-2xl pointer-events-auto"
       >
-        <div class="p-4 border-b border-base flex items-center justify-between shrink-0 bg-zinc-50 dark:bg-zinc-900/40">
+        <div class="p-4 border-b border-base flex items-center justify-between shrink-0 bg-zinc-50 dark:bg-zinc-900/40 font-sans">
           <div>
             <h3 class="font-bold capitalize text-base-content">{{ editor.mode }} Item</h3>
-            <p class="text-[9px] font-mono opacity-50 uppercase tracking-widest">{{ selectedEntity }}</p>
+            <p class="text-[9px] font-mono opacity-80 uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
+              {{ selectedEntity }}
+            </p>
           </div>
-          <NIconButton icon="i-carbon-close" variant="ghost" @click="close" />
+          <button 
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all border-none bg-transparent cursor-pointer"
+            @click="close"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </button>
         </div>
 
-        <div class="flex-1 p-6 flex flex-col overflow-hidden text-base">
-          <span class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-30 mb-2 font-mono">JSON Payload</span>
+        <div class="flex-1 p-6 flex flex-col overflow-hidden">
+          <span class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60 mb-2 font-mono text-zinc-700 dark:text-zinc-300">
+            JSON Payload
+          </span>
           <textarea
             v-model="editor.json"
             :readonly="editor.mode === 'view'"
             class="flex-1 bg-zinc-50 dark:bg-black border border-base rounded-lg p-4 font-mono text-xs focus:ring-1 focus:ring-primary/30 outline-none resize-none custom-scrollbar text-base-content"
           />
-          <NNote v-if="editor.error" n="red" class="mt-4 text-[10px]">
+          <div v-if="editor.error" class="mt-4 p-3 bg-red-500/10 text-red-500 text-[10px] rounded border border-red-500/20 font-bold font-sans">
             {{ editor.error }}
-          </NNote>
+          </div>
         </div>
 
         <div v-if="editor.mode !== 'view'" class="p-4 border-t border-base bg-zinc-50 dark:bg-zinc-900/40 flex justify-end gap-2 shrink-0">
@@ -112,7 +121,5 @@ function close() {
 }
 
 .fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
+.fade-leave-to { opacity: 0; }
 </style>
