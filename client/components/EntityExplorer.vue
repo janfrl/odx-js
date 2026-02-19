@@ -145,14 +145,14 @@ watch(selectedEntity, (newEntity) => {
           <NLoading />
         </div>
         <template v-else>
-          <table class="w-full text-left text-[11px] border-collapse min-w-max">
+          <table class="w-full text-left border-collapse min-w-max">
             <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-base">
               <tr class="text-zinc-600 dark:text-zinc-400 uppercase text-[9px] font-bold tracking-widest">
-                <th class="px-4 py-3 w-28 text-center border-r border-base font-bold uppercase text-[9px]">Actions</th>
-                <th v-for="key in previewColumns" :key="key" class="px-4 py-3 font-bold uppercase text-[9px]">{{ key }}</th>
+                <th class="px-4 py-3 w-28 text-center border-r border-base">Actions</th>
+                <th v-for="key in previewColumns" :key="key" class="px-4 py-3">{{ key }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/50 font-mono text-zinc-500">
+            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/50 font-mono text-zinc-500 text-[11px]">
               <tr v-for="(row, idx) in previewData" :key="idx" class="hover:bg-primary/5 transition-colors">
                 <td class="p-0 border-r border-base align-middle">
                   <div class="flex items-center justify-center gap-2">
