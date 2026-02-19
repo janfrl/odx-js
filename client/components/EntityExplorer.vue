@@ -82,7 +82,6 @@ watch(selectedEntity, (newEntity) => {
 
 <template>
   <div class="flex-1 flex flex-col overflow-hidden px-6">
-    <!-- Entity Tabs -->
     <div class="flex gap-4 overflow-x-auto no-scrollbar border-b border-base mb-4 shrink-0">
       <button
         v-for="entity in (selectedService?.entities || [])"
@@ -95,9 +94,8 @@ watch(selectedEntity, (newEntity) => {
       </button>
     </div>
 
-    <!-- Toolbar / Filter Bar -->
     <div v-if="selectedEntity" class="flex-1 flex flex-col min-h-0 bg-zinc-50 dark:bg-zinc-900/50 rounded-t-lg overflow-hidden border-t border-x border-base shadow-sm">
-      <div class="p-3 flex items-end gap-3 border-b border-base bg-white dark:bg-zinc-900 shrink-0 font-sans text-base">
+      <div class="p-3 flex items-end gap-3 border-b border-base bg-white dark:bg-zinc-900 shrink-0 font-sans">
         <div class="flex flex-col gap-1 w-24">
           <label class="text-[9px] uppercase font-bold text-zinc-400 tracking-[0.1em] ml-1">Key</label>
           <input
@@ -123,7 +121,8 @@ watch(selectedEntity, (newEntity) => {
         <div class="flex items-center gap-2">
           <NButton
             n="primary"
-            variant="solid"
+            variant="outline"
+            icon="i-carbon-play"
             class="px-4 font-bold uppercase text-[10px] h-[32px]"
             @click="refreshEntityData"
           >
@@ -131,6 +130,8 @@ watch(selectedEntity, (newEntity) => {
           </NButton>
           <NButton
             n="green"
+            variant="solid"
+            icon="i-carbon-add"
             class="px-4 font-bold uppercase text-[10px] h-[32px]"
             @click="openEditor('create')"
           >
@@ -139,7 +140,6 @@ watch(selectedEntity, (newEntity) => {
         </div>
       </div>
 
-      <!-- Table Area (Reaches Bottom) -->
       <div class="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-[#0c0c0d]">
         <div v-if="previewLoading" class="p-20 flex justify-center opacity-30">
           <NLoading />
@@ -147,12 +147,12 @@ watch(selectedEntity, (newEntity) => {
         <template v-else>
           <table class="w-full text-left text-[11px] border-collapse min-w-max">
             <thead class="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-base">
-              <tr class="text-zinc-500 uppercase text-[9px] font-bold tracking-widest">
-                <th class="px-4 py-3 w-28 text-center border-r border-base">Actions</th>
-                <th v-for="key in previewColumns" :key="key" class="px-4 py-3">{{ key }}</th>
+              <tr class="text-zinc-600 dark:text-zinc-400 uppercase text-[9px] font-bold tracking-widest">
+                <th class="px-4 py-3 w-28 text-center border-r border-base font-bold uppercase text-[9px]">Actions</th>
+                <th v-for="key in previewColumns" :key="key" class="px-4 py-3 font-bold uppercase text-[9px]">{{ key }}</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-base font-mono">
+            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800/50 font-mono text-zinc-500">
               <tr v-for="(row, idx) in previewData" :key="idx" class="hover:bg-primary/5 transition-colors">
                 <td class="p-0 border-r border-base align-middle">
                   <div class="flex items-center justify-center gap-2">
@@ -167,7 +167,7 @@ watch(selectedEntity, (newEntity) => {
                     </button>
                   </div>
                 </td>
-                <td v-for="key in previewColumns" :key="key" class="px-4 py-2.5 truncate max-w-[300px] text-zinc-600 dark:text-zinc-300">
+                <td v-for="key in previewColumns" :key="key" class="px-4 py-2.5 truncate max-w-[300px] text-zinc-600 dark:text-zinc-300 opacity-90">
                   {{ row[key] }}
                 </td>
               </tr>
@@ -176,6 +176,6 @@ watch(selectedEntity, (newEntity) => {
         </template>
       </div>
     </div>
-    <DataEditor v-if="editor.show" v-model:editor="editor" @refresh="refreshEntityData" />
+    <DataEditor v-model:editor="editor" @refresh="refreshEntityData" />
   </div>
 </template>

@@ -20,14 +20,18 @@ const stats = computed(() => [
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
       </svg>
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-base-content leading-none mb-1.5">SAP OData Integration</h1>
+        <h1 class="text-2xl font-bold tracking-tight text-base-content leading-none mb-1.5 font-sans">SAP OData Integration</h1>
         <p class="text-zinc-500 text-xs font-medium">Manage and test your SAP Cloud SDK services.</p>
       </div>
     </div>
 
-    <!-- Stats Grid -->
+    <!-- Stats Grid (Non-Interactive) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-base">
-      <NCard v-for="stat in stats" :key="stat.label" class="p-6 border-dashed relative bg-white dark:bg-zinc-900/20">
+      <div 
+        v-for="stat in stats" 
+        :key="stat.label" 
+        class="p-6 border border-dashed rounded-xl relative bg-zinc-50/20 dark:bg-zinc-900/10 border-zinc-200 dark:border-zinc-800"
+      >
         <div class="flex items-center justify-between opacity-30 mb-4 text-[9px] uppercase font-bold tracking-widest">
           <span>{{ stat.label }}</span>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -37,15 +41,15 @@ const stats = computed(() => [
         <div :class="stat.color" class="font-mono font-medium text-sm">
           {{ stat.value }}
         </div>
-      </NCard>
+      </div>
     </div>
 
     <!-- Config Sections -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start px-2">
       <!-- Configuration -->
       <section class="space-y-6">
-        <div class="flex items-center gap-2 opacity-50 uppercase text-[10px] font-bold tracking-[0.2em]">
-          <NIcon name="i-carbon-settings" />
+        <div class="flex items-center gap-2 opacity-40 uppercase text-[10px] font-bold tracking-[0.2em]">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           <span>Configuration</span>
         </div>
         <div class="space-y-4">
@@ -63,9 +67,9 @@ const stats = computed(() => [
       </section>
 
       <!-- Environment -->
-      <section class="space-y-6 text-base">
-        <div class="flex items-center gap-2 opacity-50 uppercase text-[10px] font-bold tracking-[0.2em]">
-          <NIcon name="i-carbon-gui" />
+      <section class="space-y-6">
+        <div class="flex items-center gap-2 opacity-40 uppercase text-[10px] font-bold tracking-[0.2em]">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
           <span>Environment</span>
         </div>
         <div class="space-y-4">
