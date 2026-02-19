@@ -24,7 +24,9 @@ export default defineNuxtConfig({
       },
     }),
   ],
+
   devtools: { enabled: true },
+
   odata: {
     services: [
       {

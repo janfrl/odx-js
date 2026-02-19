@@ -1,13 +1,4 @@
 {
   "private": true,
-  "name": "nuxt-sap-odata-playground",
-  "type": "module",
-  "scripts": {
-    "dev": "nuxi dev",
-    "build": "nuxi build",
-    "generate": "nuxi generate"
-  },
-  "dependencies": {
-    "nuxt": "^4.2.0"
-  }
+  "name": "nuxt-sap-odata-playground"
 }
