@@ -54,9 +54,17 @@ export function useSharedODataState() {
 
   async function generateService(name: string) {
     generatingStatus.value[name] = true
+    const start = Date.now()
     try {
       const res = await fetch(`/__sap_odata__/generate?service=${name}`)
       const data = (await res.json()) as { success: boolean }
+      
+      // Ensure at least 800ms of loading state for UX
+      const elapsed = Date.now() - start
+      if (elapsed < 800) {
+        await new Promise(resolve => setTimeout(resolve, 800 - elapsed))
+      }
+
       if (data.success) {
         await fetchConfig()
       }
