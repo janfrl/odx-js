@@ -21,11 +21,13 @@ const devtoolsClient = useDevtoolsClient()
 
 // Synchronisiere die .dark Klasse am Root-Element des Iframes
 watchEffect(() => {
-  if (devtoolsClient.value?.devtools?.colorMode) {
-    const isDark = devtoolsClient.value.devtools.colorMode.value === 'dark'
-    if (typeof document !== 'undefined') {
-      document.documentElement.classList.toggle('dark', isDark)
-    }
+  const mode = devtoolsClient.value?.devtools?.colorMode?.value
+  if (!mode) return
+
+  const isDark = mode === 'dark'
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.toggle('dark', isDark)
+    document.documentElement.style.colorScheme = isDark ? 'dark' : 'light'
   }
 })
 
@@ -372,11 +374,11 @@ onMounted(() => {
               <div
                 v-for="svc in services"
                 :key="svc.name"
-                class="bg-white dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 hover:border-[#00dc82]/40 transition-all group cursor-pointer shadow-sm relative border-dashed"
+                class="bg-white dark:bg-zinc-900/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 hover:border-[#00dc82]/40 group cursor-pointer shadow-sm relative border-dashed"
                 @click="selectedService = svc"
               >
                 <div class="flex items-start gap-4 mb-4">
-                  <div class="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-zinc-400 group-hover:text-[#00dc82] transition-colors">
+                  <div class="p-2.5 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-zinc-400 group-hover:text-[#00dc82]">
                     <svg
                       class="w-5 h-5"
                       fill="none"

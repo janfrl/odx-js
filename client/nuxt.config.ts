@@ -4,6 +4,17 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/devtools-ui-kit',
   ],
+  unocss: {
+    shortcuts: {
+      'bg-base': 'bg-white dark:bg-[#050505]',
+      'border-base': 'border-zinc-200 dark:border-zinc-800',
+    },
+    theme: {
+      colors: {
+        primary: '#00dc82',
+      },
+    },
+  },
   ssr: false,
 
   devtools: { enabled: false },
