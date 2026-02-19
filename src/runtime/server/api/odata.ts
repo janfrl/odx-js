@@ -2,6 +2,7 @@ import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody }
 import { join } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { createJiti } from 'jiti'
 // @ts-expect-error - virtual file
 import { addODataLog } from '../utils/dev-logs'
 
@@ -10,6 +11,8 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const basePath = config.public?.odata?.basePath || '/api/sap-odata'
   const buildDir = config.odata?.buildDir as string
+
+  const jiti = createJiti(import.meta.url)
 
   // Path extraction
   const fullPath = event.path || ''
@@ -47,41 +50,53 @@ export default defineEventHandler(async (event) => {
 
   const subDirName = matched.route || matched.name.toLowerCase()
   const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
-  const indexFile = join(generatedDir, 'index.js')
+  const indexFileTs = join(generatedDir, 'index.ts')
+  const indexFileJs = join(generatedDir, 'index.js')
 
-  // MOCK DATA GENERATOR
+  const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
+
   const getMockData = () => {
     logRequest(200)
-    if (entitySetName.toLowerCase() === 'exampleentities' || entitySetName.toLowerCase() === 'products') {
-      return [
+    // Basic mock mapping for dev explorer
+    const mockEntities: Record<string, any[]> = {
+      exampleentities: [
         { id: '1', Name: 'Mock Item A', Price: 100, Currency: 'EUR' },
-        { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' },
-        { id: '3', Name: 'Mock Item C', Price: 45, Currency: 'USD' },
+        { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' }
+      ],
+      products: [
+        { id: 'P1', Name: 'Notebook Professional', Category: 'Electronics' },
+        { id: 'P2', Name: 'Office Desk', Category: 'Furniture' }
       ]
     }
-    return { service: matched.name, entitySet: entitySetName, message: 'Mock data fallback' }
+    
+    return mockEntities[entitySetName.toLowerCase()] || { 
+      service: matched.name, 
+      entitySet: entitySetName, 
+      message: 'Mock data fallback (SDK missing or error)' 
+    }
   }
 
-  // Check if SDK exists, if not use mocks
-  if (!fs.existsSync(indexFile)) {
+  if (!targetFile) {
     return getMockData()
   }
 
-  // REAL SDK LOGIC
   try {
-    const sdk = await import(pathToFileURL(indexFile).href)
+    const sdk = targetFile.endsWith('.ts') 
+      ? await jiti.import(targetFile) 
+      : await import(pathToFileURL(targetFile).href)
+
     const apiFactoryName = `${matched.name}Api`
+    const apiFactory = sdk[apiFactoryName]
     
-    if (!sdk[apiFactoryName]) {
-      console.warn(`[nuxt-sap-odata] Factory ${apiFactoryName} not found in SDK. Using mocks.`)
+    if (!apiFactory) {
+      console.warn(`[nuxt-sap-odata] API Factory ${apiFactoryName} not found in SDK.`)
       return getMockData()
     }
 
-    const api = sdk[apiFactoryName]()
+    const api = apiFactory()
     const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
 
     if (!entityApi) {
-      console.warn(`[nuxt-sap-odata] Entity set ${entitySetName} not found in service. Using mocks.`)
       return getMockData()
     }
 
@@ -93,13 +108,10 @@ export default defineEventHandler(async (event) => {
       let rb = entityApi.requestBuilder().getAll()
       if (query.id) {
         rb = entityApi.requestBuilder().getByKey(query.id)
-      }
-      else {
+      } else {
         const odataParams: Record<string, string> = {}
         const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-        keys.forEach((key) => {
-          if (query[key]) odataParams[key] = String(query[key])
-        })
+        keys.forEach(key => { if (query[key]) odataParams[key] = String(query[key]) })
         if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
       }
       const res = await rb.execute(destination)
@@ -130,8 +142,8 @@ export default defineEventHandler(async (event) => {
 
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   }
-  catch (err: unknown) {
-    console.error('[nuxt-sap-odata] SDK Error, falling back to mocks:', (err as Error).message)
+  catch (err: any) {
+    console.error(`[nuxt-sap-odata] Proxy error for ${serviceRoute}/${entitySetName}:`, err.message)
     return getMockData()
   }
 })
