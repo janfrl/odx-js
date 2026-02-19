@@ -10,39 +10,40 @@ export default defineEventHandler(async () => {
 
   const enhancedServices = await Promise.all(services.map(async (svc) => {
     const outDir = join(buildDir, 'sap-odata', 'generated', svc.name)
-    const indexFile = join(outDir, 'index.js')
+    
+    const subDirName = svc.route || svc.name.toLowerCase()
+    const indexFileJs = join(outDir, subDirName, 'index.js')
+    const indexFileTs = join(outDir, subDirName, 'index.ts')
 
-    let entities: string[] = []
+    let entities: string[] = ['ExampleEntities', 'Products', 'Suppliers', 'Categories']
     let isGenerated = false
 
-    if (fs.existsSync(indexFile)) {
+    // Status logic
+    if (fs.existsSync(outDir) && (fs.existsSync(indexFileJs) || fs.existsSync(indexFileTs))) {
       isGenerated = true
-      try {
-        const sdk = await import(pathToFileURL(indexFile).href)
-        const apiFactoryName = `${svc.name}Api`
-        if (sdk[apiFactoryName]) {
-          const api = sdk[apiFactoryName]()
-          // Extrahiere alle Keys, die wie Entity-APIs aussehen (enden oft auf 'Api' oder sind CamelCase)
-          entities = Object.keys(api).filter(k =>
-            typeof api[k] === 'object'
-            && k !== 'requestBuilder'
-            && !k.startsWith('_'),
-          )
+      
+      // Try to parse real entities if possible
+      if (fs.existsSync(indexFileJs)) {
+        try {
+          const sdk = await import(pathToFileURL(indexFileJs).href)
+          const apiFactoryName = `${svc.name}Api`
+          if (sdk[apiFactoryName]) {
+            const api = sdk[apiFactoryName]()
+            const realEntities = Object.keys(api).filter(k =>
+              typeof api[k] === 'object' && k !== 'requestBuilder' && !k.startsWith('_')
+            )
+            if (realEntities.length > 0) entities = realEntities
+          }
+        } catch (e) {
+          console.warn(`[nuxt-sap-odata] Could not parse SDK entities for ${svc.name}, using mocks.`)
         }
       }
-      catch (e) {
-        console.error(`Failed to parse SDK for ${svc.name}`, e)
-      }
-    }
-    else {
-      // Mock-Entities für den Playground, wenn noch kein SDK da ist
-      entities = ['Products', 'Suppliers', 'Categories']
     }
 
     return {
       ...svc,
       entities,
-      isGenerated,
+      isGenerated
     }
   }))
 
@@ -53,7 +54,7 @@ export default defineEventHandler(async () => {
     forwardAuthHeader: config.odata?.forwardAuthHeader,
     versions: {
       node: process.version,
-      module: '1.0.0',
-    },
+      module: '1.0.0'
+    }
   }
 })

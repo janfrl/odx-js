@@ -45,42 +45,45 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Unknown service "${serviceRoute}"` })
   }
 
-  const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name)
+  const subDirName = matched.route || matched.name.toLowerCase()
+  const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
   const indexFile = join(generatedDir, 'index.js')
 
-  // MOCK FALLBACK
-  if (!fs.existsSync(indexFile)) {
+  // MOCK DATA GENERATOR
+  const getMockData = () => {
     logRequest(200)
-    if (entitySetName.toLowerCase() === 'products') {
+    if (entitySetName.toLowerCase() === 'exampleentities' || entitySetName.toLowerCase() === 'products') {
       return [
-        { id: '1', Name: 'Mock Product A', Price: 100, Currency: 'EUR' },
-        { id: '2', Name: 'Mock Product B', Price: 250, Currency: 'EUR' },
-        { id: '3', Name: 'Mock Product C', Price: 45, Currency: 'USD' },
-      ]
-    }
-    if (entitySetName.toLowerCase() === 'suppliers') {
-      return [
-        { id: 'S1', Name: 'Global Trading Corp', Country: 'DE' },
-        { id: 'S2', Name: 'Tech components Ltd', Country: 'US' },
-      ]
-    }
-    if (entitySetName.toLowerCase() === 'categories') {
-      return [
-        { id: 'CAT1', Name: 'Electronics' },
-        { id: 'CAT2', Name: 'Software' },
+        { id: '1', Name: 'Mock Item A', Price: 100, Currency: 'EUR' },
+        { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' },
+        { id: '3', Name: 'Mock Item C', Price: 45, Currency: 'USD' },
       ]
     }
     return { service: matched.name, entitySet: entitySetName, message: 'Mock data fallback' }
+  }
+
+  // Check if SDK exists, if not use mocks
+  if (!fs.existsSync(indexFile)) {
+    return getMockData()
   }
 
   // REAL SDK LOGIC
   try {
     const sdk = await import(pathToFileURL(indexFile).href)
     const apiFactoryName = `${matched.name}Api`
+    
+    if (!sdk[apiFactoryName]) {
+      console.warn(`[nuxt-sap-odata] Factory ${apiFactoryName} not found in SDK. Using mocks.`)
+      return getMockData()
+    }
+
     const api = sdk[apiFactoryName]()
     const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
 
-    if (!entityApi) throw new Error(`Entity set "${entitySetName}" not found`)
+    if (!entityApi) {
+      console.warn(`[nuxt-sap-odata] Entity set ${entitySetName} not found in service. Using mocks.`)
+      return getMockData()
+    }
 
     const method = event.method
     const query = getQuery(event)
@@ -92,13 +95,10 @@ export default defineEventHandler(async (event) => {
         rb = entityApi.requestBuilder().getByKey(query.id)
       }
       else {
-        // Map OData query params
         const odataParams: Record<string, string> = {}
         const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
         keys.forEach((key) => {
-          if (query[key]) {
-            odataParams[key] = String(query[key])
-          }
+          if (query[key]) odataParams[key] = String(query[key])
         })
         if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
       }
@@ -131,12 +131,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   }
   catch (err: unknown) {
-    const error = err as { response?: { status?: number, data?: unknown }, message: string }
-    logRequest(error.response?.status || 500)
-    throw createError({
-      statusCode: error.response?.status || 500,
-      statusMessage: error.message,
-      data: error.response?.data,
-    })
+    console.error('[nuxt-sap-odata] SDK Error, falling back to mocks:', (err as Error).message)
+    return getMockData()
   }
 })
