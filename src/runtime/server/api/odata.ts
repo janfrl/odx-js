@@ -2,7 +2,7 @@ import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody }
 import { join } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
-// @ts-ignore
+// @ts-expect-error - virtual file
 import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
@@ -14,10 +14,10 @@ export default defineEventHandler(async (event) => {
   // Path extraction
   const fullPath = event.path || ''
   const [pathOnly] = fullPath.split('?')
-  const relativePath = pathOnly.startsWith(basePath) 
-    ? pathOnly.slice(basePath.length).replace(/^\//, '') 
+  const relativePath = pathOnly.startsWith(basePath)
+    ? pathOnly.slice(basePath.length).replace(/^\//, '')
     : ''
-  
+
   const segments = relativePath.split('/').filter(Boolean)
   const serviceRoute = segments[0] || ''
   const entitySetName = segments[1] || ''
@@ -31,13 +31,13 @@ export default defineEventHandler(async (event) => {
       service: serviceRoute,
       entitySet: entitySetName,
       status,
-      duration: Date.now() - startTime
+      duration: Date.now() - startTime,
     })
   }
 
-  const services = (config.odata?.services || []) as Array<{ name: string; route?: string }>
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string }>
   const matched = services.find(
-    (svc) => (svc.route || svc.name.toLowerCase()) === serviceRoute
+    svc => (svc.route || svc.name.toLowerCase()) === serviceRoute,
   )
 
   if (!matched) {
@@ -55,19 +55,19 @@ export default defineEventHandler(async (event) => {
       return [
         { id: '1', Name: 'Mock Product A', Price: 100, Currency: 'EUR' },
         { id: '2', Name: 'Mock Product B', Price: 250, Currency: 'EUR' },
-        { id: '3', Name: 'Mock Product C', Price: 45, Currency: 'USD' }
+        { id: '3', Name: 'Mock Product C', Price: 45, Currency: 'USD' },
       ]
     }
     if (entitySetName.toLowerCase() === 'suppliers') {
       return [
         { id: 'S1', Name: 'Global Trading Corp', Country: 'DE' },
-        { id: 'S2', Name: 'Tech components Ltd', Country: 'US' }
+        { id: 'S2', Name: 'Tech components Ltd', Country: 'US' },
       ]
     }
     if (entitySetName.toLowerCase() === 'categories') {
       return [
         { id: 'CAT1', Name: 'Electronics' },
-        { id: 'CAT2', Name: 'Software' }
+        { id: 'CAT2', Name: 'Software' },
       ]
     }
     return { service: matched.name, entitySet: entitySetName, message: 'Mock data fallback' }
@@ -79,7 +79,7 @@ export default defineEventHandler(async (event) => {
     const apiFactoryName = `${matched.name}Api`
     const api = sdk[apiFactoryName]()
     const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-    
+
     if (!entityApi) throw new Error(`Entity set "${entitySetName}" not found`)
 
     const method = event.method
@@ -90,11 +90,16 @@ export default defineEventHandler(async (event) => {
       let rb = entityApi.requestBuilder().getAll()
       if (query.id) {
         rb = entityApi.requestBuilder().getByKey(query.id)
-      } else {
+      }
+      else {
         // Map OData query params
         const odataParams: Record<string, string> = {}
         const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-        keys.forEach(key => { if (query[key]) odataParams[key] = String(query[key]) })
+        keys.forEach((key) => {
+          if (query[key]) {
+            odataParams[key] = String(query[key])
+          }
+        })
         if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
       }
       const res = await rb.execute(destination)
@@ -124,12 +129,14 @@ export default defineEventHandler(async (event) => {
     }
 
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
-  } catch (err: any) {
-    logRequest(err.response?.status || 500)
+  }
+  catch (err: unknown) {
+    const error = err as { response?: { status?: number, data?: unknown }, message: string }
+    logRequest(error.response?.status || 500)
     throw createError({
-      statusCode: err.response?.status || 500,
-      statusMessage: err.message,
-      data: err.response?.data
+      statusCode: error.response?.status || 500,
+      statusMessage: error.message,
+      data: error.response?.data,
     })
   }
 })

@@ -1,5 +1,5 @@
 import { defineEventHandler } from '#imports'
-// @ts-ignore
+// @ts-expect-error - virtual file
 import { getODataLogs, clearODataLogs } from '../utils/dev-logs'
 
 export default defineEventHandler((event) => {
