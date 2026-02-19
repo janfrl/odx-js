@@ -8,11 +8,11 @@
     "generate": "nuxi generate"
   },
   "dependencies": {
+    "@nuxt/devtools-kit": "latest",
     "@nuxt/devtools-ui-kit": "latest",
-    "nuxt": "^4.2.0"
-  },
-  "devDependencies": {
     "@unocss/nuxt": "latest",
+    "@vueuse/nuxt": "latest",
+    "nuxt": "^4.2.0",
     "unocss": "latest"
   }
 }
