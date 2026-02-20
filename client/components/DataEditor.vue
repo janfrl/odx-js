@@ -1,26 +1,24 @@
 <script setup lang="ts">
+import type { EditorState } from '../composables/useODataState'
 import { useSharedODataState } from '../composables/useODataState'
 
-const props = defineProps<{
-  editor: any
-}>()
+const editor = defineModel<EditorState>('editor', { required: true })
 
-const emit = defineEmits(['update:editor', 'refresh'])
+const emit = defineEmits(['refresh'])
 
 const { selectedService, selectedEntity, config } = useSharedODataState()
 
 async function saveItem() {
   if (!selectedService.value || !selectedEntity.value) return
-  const edit = { ...props.editor }
-  edit.loading = true
-  edit.error = null
-  emit('update:editor', edit)
+
+  editor.value.loading = true
+  editor.value.error = null
 
   try {
-    const payload = JSON.parse(edit.json)
+    const payload = JSON.parse(editor.value.json)
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
-    const idKey = edit.original ? Object.keys(edit.original).find(k => k.toLowerCase() === 'id') : null
-    const id = idKey ? edit.original[idKey] : null
+    const idKey = editor.value.original ? Object.keys(editor.value.original).find(k => k.toLowerCase() === 'id') : null
+    const id = idKey ? (editor.value.original as Record<string, unknown>)[idKey] : null
 
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}${id ? `?id=${id}` : ''}`, {
       method: id ? 'PATCH' : 'POST',
@@ -30,16 +28,18 @@ async function saveItem() {
 
     if (!res.ok) throw new Error(`Server Error ${res.status}`)
 
-    emit('update:editor', { ...edit, show: false, loading: false })
+    editor.value.show = false
+    editor.value.loading = false
     emit('refresh')
   }
-  catch (e: any) {
-    emit('update:editor', { ...edit, error: e.message, loading: false })
+  catch (e: unknown) {
+    editor.value.error = (e as Error).message
+    editor.value.loading = false
   }
 }
 
 function close() {
-  emit('update:editor', { ...props.editor, show: false })
+  editor.value.show = false
 }
 </script>
 
@@ -73,7 +73,7 @@ function close() {
               {{ editor.mode }} Item
             </h3>
             <span class="text-[10px] text-muted opacity-50">/</span>
-            <span class="text-[10px] font-mono font-bold text-primary">{{ selectedEntity }}</span>
+            <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
           </div>
           <NIconButton
             icon="i-carbon-close"

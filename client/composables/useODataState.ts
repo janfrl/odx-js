@@ -15,6 +15,26 @@ export interface SapConfig {
   versions: { node: string, module: string }
 }
 
+export interface ODataLog {
+  id: string
+  timestamp: number
+  method: string
+  url: string
+  service: string
+  entitySet?: string
+  status?: number
+  duration?: number
+}
+
+export interface EditorState {
+  show: boolean
+  mode: 'view' | 'create' | 'update'
+  json: string
+  loading: boolean
+  error: string | null
+  original: Record<string, unknown> | null
+}
+
 const config = ref<SapConfig>({
   basePath: '/api/sap-odata',
   mode: 'sdk',
@@ -23,7 +43,7 @@ const config = ref<SapConfig>({
   versions: { node: '', module: '1.0.0' },
 })
 const activeTab = ref('services')
-const logs = ref<any[]>([])
+const logs = ref<ODataLog[]>([])
 const selectedService = ref<SapService | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
@@ -48,7 +68,7 @@ export function useSharedODataState() {
     try {
       const res = await fetch('/__sap_odata__/logs')
       if (res.ok) {
-        logs.value = (await res.json()) as any[]
+        logs.value = (await res.json()) as ODataLog[]
       }
     }
     catch { /* ignore */ }

@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
   const getMockData = () => {
     logRequest(200)
     // Basic mock mapping for dev explorer
-    const mockEntities: Record<string, any[]> = {
+    const mockEntities: Record<string, Record<string, unknown>[]> = {
       exampleentities: [
         { id: '1', Name: 'Mock Item A', Price: 100, Currency: 'EUR' },
         { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' },
@@ -145,8 +145,9 @@ export default defineEventHandler(async (event) => {
 
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   }
-  catch (err: any) {
-    console.error(`[nuxt-sap-odata] Proxy error for ${serviceRoute}/${entitySetName}:`, err.message)
+  catch (err: unknown) {
+    const error = err as Error
+    console.error(`[nuxt-sap-odata] Proxy error for ${serviceRoute}/${entitySetName}:`, error.message)
     return getMockData()
   }
 })
