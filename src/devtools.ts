@@ -34,9 +34,7 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver) {
     })
   }
 
-  // @ts-expect-error - devtools hook
   nuxt.hook('devtools:customTabs', (tabs) => {
-    // @ts-expect-error - devtools types
     tabs.push({
       name: 'sap-odata',
       title: 'SAP OData',
