@@ -73,7 +73,9 @@ const stats = computed(() => [
         <div class="space-y-4">
           <div class="flex justify-between items-center text-sm border-b border-zinc-200 dark:border-zinc-800 pb-4">
             <span class="opacity-50">Module Version</span>
-            <span class="text-primary font-mono text-xs font-bold px-2 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded">v1.0.0</span>
+            <NBadge n="gray" variant="outline" class="font-mono text-[10px] font-bold px-2 py-1">
+              v1.0.0
+            </NBadge>
           </div>
           <div class="flex justify-between items-center text-sm pt-2">
             <span class="opacity-50">Node.js Runtime</span>
