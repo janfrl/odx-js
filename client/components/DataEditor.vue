@@ -21,15 +21,15 @@ async function saveItem() {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const idKey = edit.original ? Object.keys(edit.original).find(k => k.toLowerCase() === 'id') : null
     const id = idKey ? edit.original[idKey] : null
-    
+
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}${id ? `?id=${id}` : ''}`, {
       method: id ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
-    
+
     if (!res.ok) throw new Error(`Server Error ${res.status}`)
-    
+
     emit('update:editor', { ...edit, show: false, loading: false })
     emit('refresh')
   } catch (e: any) {
@@ -46,16 +46,16 @@ function close() {
   <div class="fixed inset-0 z-50 flex justify-end overflow-hidden pointer-events-none text-base">
     <!-- Backdrop Transition -->
     <Transition name="fade" appear>
-      <div 
+      <div
         v-if="editor.show"
-        class="absolute inset-0 bg-black/20 backdrop-blur-sm pointer-events-auto" 
-        @click="close" 
+        class="absolute inset-0 bg-black/20 backdrop-blur-sm pointer-events-auto"
+        @click="close"
       />
     </Transition>
 
     <!-- Slide Panel Transition -->
     <Transition name="slide" appear>
-      <NCard 
+      <NCard
         v-if="editor.show"
         class="w-full max-w-xl h-full flex flex-col rounded-none border-y-0 border-r-0 relative z-10 shadow-2xl pointer-events-auto bg-content text-base"
       >
@@ -64,13 +64,13 @@ function close() {
           <div class="flex items-center gap-2 text-base">
             <h3 class="font-bold text-[11px] uppercase tracking-wider text-base-content">{{ editor.mode }} Item</h3>
             <span class="text-[10px] text-muted opacity-50">/</span>
-            <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
+            <span class="text-[10px] font-mono font-bold text-primary">{{ selectedEntity }}</span>
           </div>
-          <NIconButton 
-            icon="i-carbon-close" 
-            variant="ghost" 
+          <NIconButton
+            icon="i-carbon-close"
+            variant="ghost"
             class="text-muted hover:text-base"
-            @click="close" 
+            @click="close"
           />
         </div>
 
@@ -93,13 +93,13 @@ function close() {
 
         <!-- Footer -->
         <div v-if="editor.mode !== 'view'" class="p-4 border-t border-base bg-surface flex justify-end gap-6 shrink-0 px-8 text-base">
-          <button 
+          <button
             class="text-[11px] font-bold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors bg-transparent border-none cursor-pointer uppercase tracking-wider"
             @click="close"
           >
             Cancel
           </button>
-          
+
           <!-- Adaptive High Contrast Primary Button -->
           <button
             :disabled="editor.loading"
