@@ -23,7 +23,7 @@ const tabs = [
 </script>
 
 <template>
-  <div class="flex flex-col items-center py-4 gap-2 h-full bg-zinc-50/50 dark:bg-zinc-900/40">
+  <div class="flex flex-col items-center py-4 gap-2 h-full bg-zinc-50/50 dark:bg-zinc-900/40 text-base">
     <div class="flex flex-col gap-2 w-full items-center">
       <button
         v-for="tab in tabs"
@@ -47,13 +47,13 @@ const tabs = [
           />
         </svg>
 
-        <NBadge
+        <!-- Adaptive Badge: White text in Light Mode, Dark text in Dark Mode -->
+        <span
           v-if="tab.id === 'logs' && logs.length"
-          n="primary"
-          class="absolute -top-1 -right-1 scale-[0.6] font-bold"
+          class="absolute -top-1 -right-1 font-black text-[9px] min-w-[15px] h-[15px] flex items-center justify-center px-1 rounded-full shadow-sm bg-primary text-white dark:text-zinc-900"
         >
           {{ logs.length }}
-        </NBadge>
+        </span>
 
         <div class="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
           {{ tab.title }}
