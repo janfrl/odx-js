@@ -13,8 +13,8 @@ const { selectedService, activeTab } = useSharedODataState()
       >
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
       </svg>
-      <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-500">
-        SAP OData <span class="font-medium text-zinc-400 dark:text-zinc-500 opacity-70">Explorer</span>
+      <span class="text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-500 dark:text-zinc-400">
+        SAP OData <span class="font-medium text-zinc-500 dark:text-zinc-400 opacity-70">Explorer</span>
       </span>
     </div>
 

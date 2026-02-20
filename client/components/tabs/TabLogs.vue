@@ -8,7 +8,7 @@ const { logs, clearLogs } = useSharedODataState()
   <div class="h-full flex flex-col pt-8 px-6 bg-base text-base">
     <div class="flex justify-between items-center mb-8 shrink-0 px-2 font-sans">
       <div class="flex items-center gap-3">
-        <h1 class="text-sm font-bold opacity-90 uppercase tracking-wider text-base-content">
+        <h1 class="text-sm font-bold opacity-70 uppercase tracking-wider text-base-content">
           Traffic Monitor
         </h1>
         <NBadge

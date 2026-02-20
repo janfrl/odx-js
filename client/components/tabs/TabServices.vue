@@ -121,7 +121,7 @@ const ICONS = {
           <h2 class="text-lg font-bold leading-none mb-1 text-zinc-900 dark:text-zinc-100">
             {{ selectedService.name }}
           </h2>
-          <div class="text-[11px] font-mono text-zinc-400 opacity-90 tracking-tight">
+          <div class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 opacity-90 tracking-tight">
             {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
           </div>
         </div>

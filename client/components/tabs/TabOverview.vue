@@ -26,7 +26,7 @@ const stats = computed(() => [
         <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none mb-1.5 font-sans">
           SAP OData Integration
         </h1>
-        <p class="text-zinc-500 text-xs font-medium">
+        <p class="text-zinc-500 dark:text-zinc-400 opacity-90 text-xs font-medium">
           Manage and test your SAP Cloud SDK services.
         </p>
       </div>
