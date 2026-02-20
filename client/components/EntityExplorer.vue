@@ -37,7 +37,7 @@ async function refreshEntityData() {
   previewData.value = []
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
-    
+
     // Construct URL with raw query input
     let urlPath = `${config.value.basePath}/${route}/${selectedEntity.value}`
     if (queryInput.value && queryInput.value !== '?') {
@@ -204,8 +204,11 @@ watch(selectedEntity, (newEntity) => {
           </button>
         </div>
 
-                <template v-else>
-          <table v-if="previewData.length > 0" class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
+        <template v-else>
+          <table
+            v-if="previewData.length > 0"
+            class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max"
+          >
             <thead class="sticky top-0 z-10">
               <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
                 <!-- No rounding since it docks to the toolbar above -->
@@ -274,9 +277,14 @@ watch(selectedEntity, (newEntity) => {
               </tr>
             </tbody>
           </table>
-          <div v-else class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2">
+          <div
+            v-else
+            class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2"
+          >
             <div class="i-carbon-search w-8 h-8" />
-            <p class="text-xs">No items found for this query</p>
+            <p class="text-xs">
+              No items found for this query
+            </p>
           </div>
         </template>
       </div>

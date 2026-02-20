@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
       status,
       duration: Date.now() - startTime,
       requestBody,
-      responseBody
+      responseBody,
     })
   }
 
@@ -51,30 +51,30 @@ export default defineEventHandler(async (event) => {
   }
 
   const storage = useStorage('odata:mockdata')
-  
+
   const getValidProperties = (entitySet: string): string[] | null => {
     try {
       const rootDir = config.odata?.rootDir as string
       if (!rootDir || !matched.edmx) return null
-      
+
       const edmxPath = join(rootDir, matched.edmx)
       if (!fs.existsSync(edmxPath)) return null
-      
+
       const content = fs.readFileSync(edmxPath, 'utf-8')
       const entitySetRegex = new RegExp(`<EntitySet\\s+Name="${entitySet}"\\s+EntityType="([^"]+)"`)
       const setMatch = entitySetRegex.exec(content)
       if (!setMatch) return null
-      
+
       const fullEntityType = setMatch[1]
       if (!fullEntityType) return null
-      
+
       const entityTypeName = fullEntityType.split('.').pop()
       if (!entityTypeName) return null
 
       const entityTypeRegex = new RegExp(`<EntityType\\s+Name="${entityTypeName}"[\\s\\S]*?>([\\s\\S]*?)</EntityType>`)
       const typeMatch = entityTypeRegex.exec(content)
       if (!typeMatch || !typeMatch[1]) return null
-      
+
       const propertiesBlock = typeMatch[1]
       const propRegex = /<Property\s+Name="([^"]+)"/g
       const validProps: string[] = []
@@ -83,7 +83,8 @@ export default defineEventHandler(async (event) => {
         if (propMatch[1]) validProps.push(propMatch[1])
       }
       return validProps
-    } catch { return null }
+    }
+    catch { return null }
   }
 
   const handleMockDataRequest = async () => {
@@ -91,7 +92,7 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     const mockDataKeyColon = `${matched.name}:${entitySetName}.json`
     const mockDataKeySlash = `${matched.name}/${entitySetName}.json`
-    
+
     const activeKey = (await storage.hasItem(mockDataKeyColon)) ? mockDataKeyColon : mockDataKeySlash
     let data = (await storage.getItem(activeKey)) as any[] || []
 
@@ -110,10 +111,10 @@ export default defineEventHandler(async (event) => {
           const invalid = incoming.filter(p => !allowed.includes(p) && p !== 'ID' && p !== 'id')
           if (invalid.length > 0) {
             const msg = `Property validation failed. Unknown properties for ${entitySetName}: ${invalid.join(', ')}. Allowed: ${allowed.join(', ')}`
-            throw createError({ 
-              statusCode: 400, 
+            throw createError({
+              statusCode: 400,
               statusMessage: msg,
-              message: msg 
+              message: msg,
             })
           }
         }
@@ -147,9 +148,9 @@ export default defineEventHandler(async (event) => {
       }
 
       // $skip and $top
-      const skip = parseInt(String(query['$skip'] || '0'))
-      const top = parseInt(String(query['$top'] || ''))
-      
+      const skip = Number.parseInt(String(query['$skip'] || '0'))
+      const top = Number.parseInt(String(query['$top'] || ''))
+
       if (skip > 0) result = result.slice(skip)
       if (!isNaN(top) && top > 0) result = result.slice(0, top)
 
@@ -180,7 +181,7 @@ export default defineEventHandler(async (event) => {
         const msg = `Item with ID "${id}" not found`
         throw createError({ statusCode: 404, statusMessage: msg, message: msg })
       }
-      
+
       data[index] = { ...data[index], ...body }
       await storage.setItem(activeKey, data)
       return data[index]
@@ -202,71 +203,76 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 405, message: 'Method Not Allowed in Mockdata Mode' })
   }
 
-    // --- EXECUTION FLOW ---
-    let capturedBody: any = null
-    try {
-      if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
-        capturedBody = await readBody(event).catch(() => null)
-      }
-  
-      let response: any
-      const forceMockData = getQuery(event).mock === 'true'
-      const subDirName = matched.route || matched.name.toLowerCase()
-      const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
-      const indexFileTs = join(generatedDir, 'index.ts')
-      const indexFileJs = join(generatedDir, 'index.js')
-      const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
-  
-      if (forceMockData || !targetFile) {
-        response = await handleMockDataRequest()
-      } else {
-        try {
-          const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
-          const apiFactory = sdk[`${matched.name}Api`]
-          if (!apiFactory) throw new Error('API Factory not found')
-          const api = apiFactory()
-          const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-          if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
-  
-          const method = event.method
-          const query = getQuery(event)
-          const destination = { url: config.odata?.destination || 'http://localhost:8080' }
-  
-          if (method === 'GET') {
-            let rb = entityApi.requestBuilder().getAll()
-            if (query.id) rb = entityApi.requestBuilder().getByKey(query.id)
-            else {
-              const odataParams: Record<string, string> = {}
-              const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-              keys.forEach(k => { if (query[k]) odataParams[k] = String(query[k]) })
-              if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)      
-            }
-            response = await rb.execute(destination)
-          } else if (method === 'POST') {
-            response = await entityApi.requestBuilder().create(capturedBody).execute(destination)
-          } else if (method === 'PATCH') {
-            response = await entityApi.requestBuilder().update(capturedBody).execute(destination)
-          } else if (method === 'DELETE') {
-            response = await entityApi.requestBuilder().delete(query.id as string).execute(destination)
-          } else {
-            throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
+  // --- EXECUTION FLOW ---
+  let capturedBody: any = null
+  try {
+    if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
+      capturedBody = await readBody(event).catch(() => null)
+    }
+
+    let response: any
+    const forceMockData = getQuery(event).mock === 'true'
+    const subDirName = matched.route || matched.name.toLowerCase()
+    const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
+    const indexFileTs = join(generatedDir, 'index.ts')
+    const indexFileJs = join(generatedDir, 'index.js')
+    const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
+
+    if (forceMockData || !targetFile) {
+      response = await handleMockDataRequest()
+    }
+    else {
+      try {
+        const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
+        const apiFactory = sdk[`${matched.name}Api`]
+        if (!apiFactory) throw new Error('API Factory not found')
+        const api = apiFactory()
+        const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
+        if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
+
+        const method = event.method
+        const query = getQuery(event)
+        const destination = { url: config.odata?.destination || 'http://localhost:8080' }
+
+        if (method === 'GET') {
+          let rb = entityApi.requestBuilder().getAll()
+          if (query.id) rb = entityApi.requestBuilder().getByKey(query.id)
+          else {
+            const odataParams: Record<string, string> = {}
+            const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
+            keys.forEach((k) => { if (query[k]) odataParams[k] = String(query[k]) })
+            if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
           }
-        } catch (sdkErr: any) {
-          console.warn(`[nuxt-sap-odata] SDK failed, falling back to mockdata:`, sdkErr.message)
-          response = await handleMockDataRequest()
+          response = await rb.execute(destination)
+        }
+        else if (method === 'POST') {
+          response = await entityApi.requestBuilder().create(capturedBody).execute(destination)
+        }
+        else if (method === 'PATCH') {
+          response = await entityApi.requestBuilder().update(capturedBody).execute(destination)
+        }
+        else if (method === 'DELETE') {
+          response = await entityApi.requestBuilder().delete(query.id as string).execute(destination)
+        }
+        else {
+          throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
         }
       }
-  
-      // Log success
-      const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
-      logRequest(status, response, capturedBody)
-      return response
-  
-    } catch (err: any) {
-      // Log failure
-      const statusCode = err.statusCode || 500
-      logRequest(statusCode, { error: err.message || err.statusMessage }, capturedBody)
-      throw err
+      catch (sdkErr: any) {
+        console.warn(`[nuxt-sap-odata] SDK failed, falling back to mockdata:`, sdkErr.message)
+        response = await handleMockDataRequest()
+      }
     }
-  
+
+    // Log success
+    const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
+    logRequest(status, response, capturedBody)
+    return response
+  }
+  catch (err: any) {
+    // Log failure
+    const statusCode = err.statusCode || 500
+    logRequest(statusCode, { error: err.message || err.statusMessage }, capturedBody)
+    throw err
+  }
 })

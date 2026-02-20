@@ -90,7 +90,7 @@ export default defineNuxtModule<ModuleOptions>({
         driver: 'fs',
         base: resolve(nuxt.options.rootDir, '.data/mockdata'),
       }
-      
+
       nitroConfig.storage = nitroConfig.storage || {}
       nitroConfig.storage['odata:mockdata'] = storageConfig
 
