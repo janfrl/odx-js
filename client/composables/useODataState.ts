@@ -24,6 +24,8 @@ export interface ODataLog {
   entitySet?: string
   status?: number
   duration?: number
+  requestBody?: any
+  responseBody?: any
 }
 
 export interface EditorState {
