@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, useStorage, getQuery } from '#imports'
 
 export default defineEventHandler(async (event) => {
-  const storage = useStorage('odata:mocks')
+  const storage = useStorage('odata:mockdata')
   const method = event.method
   const query = getQuery(event)
   const service = query.service as string

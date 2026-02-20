@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
-  const storage = useStorage('odata:mocks')
+  const storage = useStorage('odata:mockdata')
   
   const getValidProperties = (entitySet: string): string[] | null => {
     try {
@@ -84,18 +84,18 @@ export default defineEventHandler(async (event) => {
     } catch { return null }
   }
 
-  const handleMockRequest = async () => {
+  const handleMockDataRequest = async () => {
     const method = event.method
     const query = getQuery(event)
-    const mockKeyColon = `${matched.name}:${entitySetName}.json`
-    const mockKeySlash = `${matched.name}/${entitySetName}.json`
+    const mockDataKeyColon = `${matched.name}:${entitySetName}.json`
+    const mockDataKeySlash = `${matched.name}/${entitySetName}.json`
     
-    const activeKey = (await storage.hasItem(mockKeyColon)) ? mockKeyColon : mockKeySlash
+    const activeKey = (await storage.hasItem(mockDataKeyColon)) ? mockDataKeyColon : mockDataKeySlash
     let data = (await storage.getItem(activeKey)) as any[] || []
 
     if (!Array.isArray(data)) {
       if (method === 'GET') return data
-      throw createError({ statusCode: 400, message: 'Mock data must be an array' })
+      throw createError({ statusCode: 400, message: 'Mockdata must be an array' })
     }
 
     // Property Validation
@@ -108,7 +108,11 @@ export default defineEventHandler(async (event) => {
           const invalid = incoming.filter(p => !allowed.includes(p) && p !== 'ID' && p !== 'id')
           if (invalid.length > 0) {
             const msg = `Property validation failed. Unknown properties for ${entitySetName}: ${invalid.join(', ')}. Allowed: ${allowed.join(', ')}`
-            throw createError({ statusCode: 400, statusMessage: msg, message: msg })
+            throw createError({ 
+              statusCode: 400, 
+              statusMessage: msg,
+              message: msg 
+            })
           }
         }
       }
@@ -119,7 +123,7 @@ export default defineEventHandler(async (event) => {
       if (id) {
         const item = data.find((item: any) => String(item.ID || item.id) === id)
         if (!item) {
-          const msg = `Item with ID "${id}" not found in mocks`
+          const msg = `Item with ID "${id}" not found in mockdata`
           throw createError({ statusCode: 404, statusMessage: msg, message: msg })
         }
         return item
@@ -170,21 +174,21 @@ export default defineEventHandler(async (event) => {
       return { success: true }
     }
 
-    throw createError({ statusCode: 405, message: 'Method Not Allowed in Mock Mode' })
+    throw createError({ statusCode: 405, message: 'Method Not Allowed in Mockdata Mode' })
   }
 
   // --- EXECUTION FLOW ---
   try {
     let response: any
-    const forceMock = getQuery(event).mock === 'true'
+    const forceMockData = getQuery(event).mock === 'true'
     const subDirName = matched.route || matched.name.toLowerCase()
     const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
     const indexFileTs = join(generatedDir, 'index.ts')
     const indexFileJs = join(generatedDir, 'index.js')
     const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
 
-    if (forceMock || !targetFile) {
-      response = await handleMockRequest()
+    if (forceMockData || !targetFile) {
+      response = await handleMockDataRequest()
     } else {
       try {
         const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
@@ -220,8 +224,8 @@ export default defineEventHandler(async (event) => {
           throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
         }
       } catch (sdkErr: any) {
-        console.warn(`[nuxt-sap-odata] SDK failed, falling back to mocks:`, sdkErr.message)
-        response = await handleMockRequest()
+        console.warn(`[nuxt-sap-odata] SDK failed, falling back to mockdata:`, sdkErr.message)
+        response = await handleMockDataRequest()
       }
     }
 
