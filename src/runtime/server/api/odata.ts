@@ -128,7 +128,30 @@ export default defineEventHandler(async (event) => {
         }
         return item
       }
-      return data
+
+      // Basic Filter/Query Support for Mocks
+      let result = [...data]
+
+      // Simple $filter parsing (e.g., "Name eq 'Test'")
+      const filter = query['$filter'] ? String(query['$filter']) : null
+      if (filter) {
+        const match = filter.match(/(\w+)\s+eq\s+'([^']+)'/)
+        if (match) {
+          const [_, prop, value] = match
+          if (prop) {
+            result = result.filter((item: any) => String(item[prop]) === value)
+          }
+        }
+      }
+
+      // $skip and $top
+      const skip = parseInt(String(query['$skip'] || '0'))
+      const top = parseInt(String(query['$top'] || ''))
+      
+      if (skip > 0) result = result.slice(skip)
+      if (!isNaN(top) && top > 0) result = result.slice(0, top)
+
+      return result
     }
 
     if (method === 'POST') {
