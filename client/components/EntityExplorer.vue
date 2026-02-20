@@ -182,15 +182,14 @@ watch(selectedEntity, (newEntity) => {
           <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
             <thead class="sticky top-0 z-10">
               <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
-                <!-- Explicit rounding for sticky header corners -->
-                <th class="rounded-tl-xl px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
+                <!-- No rounding since it docks to the toolbar above -->
+                <th class="px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
                   Actions
                 </th>
                 <th
                   v-for="(key, idx) in previewColumns"
                   :key="key"
                   class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]"
-                  :class="{ 'rounded-tr-xl': idx === previewColumns.length - 1 }"
                 >
                   {{ key }}
                 </th>
