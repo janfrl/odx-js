@@ -28,7 +28,6 @@ const ICONS = {
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
   queryParams.value.id = ''
-  await refreshEntityData()
 }
 
 async function refreshEntityData() {
