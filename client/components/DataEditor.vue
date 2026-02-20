@@ -57,42 +57,53 @@ function close() {
     <Transition name="slide" appear>
       <NCard 
         v-if="editor.show"
-        class="w-full max-w-xl h-full flex flex-col rounded-none border-y-0 border-r-0 relative z-10 shadow-2xl pointer-events-auto"
+        class="w-full max-w-xl h-full flex flex-col rounded-none border-y-0 border-r-0 relative z-10 shadow-2xl pointer-events-auto bg-content"
       >
-        <div class="p-4 border-b border-base flex items-center justify-between shrink-0 bg-zinc-50 dark:bg-zinc-900/40 font-sans">
-          <div>
-            <h3 class="font-bold capitalize text-base-content">{{ editor.mode }} Item</h3>
-            <p class="text-[9px] font-mono opacity-80 uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
-              {{ selectedEntity }}
-            </p>
+        <!-- Header -->
+        <div class="p-4 border-b border-base flex items-center justify-between shrink-0 bg-surface font-sans">
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-[11px] uppercase tracking-wider text-base-content">{{ editor.mode }} Item</h3>
+            <span class="text-[10px] text-muted opacity-50">/</span>
+            <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
           </div>
           <button 
-            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all border-none bg-transparent cursor-pointer"
+            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-base text-muted hover:text-base transition-all border-none bg-transparent cursor-pointer"
             @click="close"
           >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+              <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </button>
         </div>
 
+        <!-- Content -->
         <div class="flex-1 p-6 flex flex-col overflow-hidden">
-          <span class="text-[9px] font-bold uppercase tracking-[0.2em] opacity-60 mb-2 font-mono text-zinc-700 dark:text-zinc-300">
-            JSON Payload
-          </span>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-[9px] font-bold uppercase tracking-[0.2em] text-muted">JSON Payload</span>
+          </div>
           <textarea
             v-model="editor.json"
             :readonly="editor.mode === 'view'"
-            class="flex-1 bg-zinc-50 dark:bg-black border border-base rounded-lg p-4 font-mono text-xs focus:ring-1 focus:ring-primary/30 outline-none resize-none custom-scrollbar text-base-content"
+            class="flex-1 bg-base border border-base rounded-lg p-4 font-mono text-xs focus:ring-1 focus:ring-primary/30 outline-none resize-none custom-scrollbar text-base"
           />
           <div v-if="editor.error" class="mt-4 p-3 bg-red-500/10 text-red-500 text-[10px] rounded border border-red-500/20 font-bold font-sans">
             {{ editor.error }}
           </div>
         </div>
 
-        <div v-if="editor.mode !== 'view'" class="p-4 border-t border-base bg-zinc-50 dark:bg-zinc-900/40 flex justify-end gap-2 shrink-0">
-          <NButton variant="ghost" @click="close">Cancel</NButton>
+        <!-- Footer -->
+        <div v-if="editor.mode !== 'view'" class="p-4 border-t border-base bg-surface flex justify-end gap-3 shrink-0">
+          <NButton 
+            variant="ghost" 
+            class="px-4 font-bold uppercase text-[10px] h-[32px]"
+            @click="close"
+          >
+            Cancel
+          </NButton>
           <NButton
             n="primary"
-            class="px-6 font-bold uppercase text-[10px]"
+            variant="solid"
+            class="px-4 font-bold uppercase text-[10px] h-[32px]"
             :loading="editor.loading"
             @click="saveItem"
           >
