@@ -22,18 +22,21 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver) {
   // In local development, start a separate Nuxt Server and proxy to serve the client
   else {
     nuxt.hook('vite:extendConfig', (config) => {
-      config.server = config.server || {}
-      config.server.proxy = config.server.proxy || {}
-      config.server.proxy[DEVTOOLS_UI_ROUTE] = {
-        target: 'http://localhost:' + DEVTOOLS_UI_LOCAL_PORT + DEVTOOLS_UI_ROUTE,
-        changeOrigin: true,
-        followRedirects: true,
-        rewrite: path => path.replace(DEVTOOLS_UI_ROUTE, ''),
+      if (config.server) {
+        config.server.proxy ||= {}
+        config.server.proxy[DEVTOOLS_UI_ROUTE] = {
+          target: 'http://localhost:' + DEVTOOLS_UI_LOCAL_PORT + DEVTOOLS_UI_ROUTE,
+          changeOrigin: true,
+          followRedirects: true,
+          rewrite: path => path.replace(DEVTOOLS_UI_ROUTE, ''),
+        }
       }
     })
   }
 
+  // @ts-expect-error - devtools hook
   nuxt.hook('devtools:customTabs', (tabs) => {
+    // @ts-expect-error - devtools types
     tabs.push({
       name: 'sap-odata',
       title: 'SAP OData',
