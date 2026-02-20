@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import type { Nuxt } from 'nuxt/schema'
 import type { Resolver } from '@nuxt/kit'
 
-export const DEVTOOLS_UI_ROUTE = '/__sap_odata_explorer'
+export const DEVTOOLS_UI_ROUTE = '/__sap_odata__/client'
 export const DEVTOOLS_UI_LOCAL_PORT = 3300
 
 export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver) {
