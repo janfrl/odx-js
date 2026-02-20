@@ -84,7 +84,10 @@ async function deleteItem(row: Record<string, unknown>) {
   }
 }
 
-const previewColumns = computed(() => (previewData.value && previewData.value.length) ? Object.keys(previewData.value[0]).filter(k => k !== '__metadata') : [])
+const previewColumns = computed(() => {
+  const firstRow = previewData.value[0]
+  return firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
+})
 
 watch(selectedEntity, (newEntity) => {
   if (newEntity) refreshEntityData()
@@ -163,7 +166,7 @@ watch(selectedEntity, (newEntity) => {
           icon="i-carbon-add"
           @click="openEditor('create')"
         >
-          Add New Item
+          Create Item
         </NButton>
       </div>
 
