@@ -75,10 +75,9 @@ function close() {
             <span class="text-[10px] text-muted opacity-50">/</span>
             <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
           </div>
-          <NIconButton
+          <NButton
             icon="i-carbon-close"
-            variant="ghost"
-            class="text-muted hover:text-base"
+            class="!border-none !bg-transparent !shadow-none text-muted hover:text-base opacity-60 hover:opacity-100"
             @click="close"
           />
         </div>
