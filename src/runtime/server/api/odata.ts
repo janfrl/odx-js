@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
   const entitySetName = segments[1] || ''
 
   // Central log function
-  const logRequest = (status: number) => {
+  const logRequest = (status: number, responseBody?: any, requestBody?: any) => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
@@ -35,6 +35,8 @@ export default defineEventHandler(async (event) => {
       entitySet: entitySetName,
       status,
       duration: Date.now() - startTime,
+      requestBody,
+      responseBody
     })
   }
 
@@ -200,67 +202,71 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 405, message: 'Method Not Allowed in Mockdata Mode' })
   }
 
-  // --- EXECUTION FLOW ---
-  try {
-    let response: any
-    const forceMockData = getQuery(event).mock === 'true'
-    const subDirName = matched.route || matched.name.toLowerCase()
-    const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
-    const indexFileTs = join(generatedDir, 'index.ts')
-    const indexFileJs = join(generatedDir, 'index.js')
-    const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
-
-    if (forceMockData || !targetFile) {
-      response = await handleMockDataRequest()
-    } else {
-      try {
-        const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
-        const apiFactory = sdk[`${matched.name}Api`]
-        if (!apiFactory) throw new Error('API Factory not found')
-        const api = apiFactory()
-        const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-        if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
-
-        const method = event.method
-        const query = getQuery(event)
-        const destination = { url: config.odata?.destination || 'http://localhost:8080' }
-
-        if (method === 'GET') {
-          let rb = entityApi.requestBuilder().getAll()
-          if (query.id) rb = entityApi.requestBuilder().getByKey(query.id)
-          else {
-            const odataParams: Record<string, string> = {}
-            const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-            keys.forEach(k => { if (query[k]) odataParams[k] = String(query[k]) })
-            if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
-          }
-          response = await rb.execute(destination)
-        } else if (method === 'POST') {
-          const body = await readBody(event)
-          response = await entityApi.requestBuilder().create(body).execute(destination)
-        } else if (method === 'PATCH') {
-          const body = await readBody(event)
-          response = await entityApi.requestBuilder().update(body).execute(destination)
-        } else if (method === 'DELETE') {
-          response = await entityApi.requestBuilder().delete(query.id as string).execute(destination)
-        } else {
-          throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
-        }
-      } catch (sdkErr: any) {
-        console.warn(`[nuxt-sap-odata] SDK failed, falling back to mockdata:`, sdkErr.message)
-        response = await handleMockDataRequest()
+    // --- EXECUTION FLOW ---
+    let capturedBody: any = null
+    try {
+      if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
+        capturedBody = await readBody(event).catch(() => null)
       }
+  
+      let response: any
+      const forceMockData = getQuery(event).mock === 'true'
+      const subDirName = matched.route || matched.name.toLowerCase()
+      const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
+      const indexFileTs = join(generatedDir, 'index.ts')
+      const indexFileJs = join(generatedDir, 'index.js')
+      const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
+  
+      if (forceMockData || !targetFile) {
+        response = await handleMockDataRequest()
+      } else {
+        try {
+          const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
+          const apiFactory = sdk[`${matched.name}Api`]
+          if (!apiFactory) throw new Error('API Factory not found')
+          const api = apiFactory()
+          const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
+          if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
+  
+          const method = event.method
+          const query = getQuery(event)
+          const destination = { url: config.odata?.destination || 'http://localhost:8080' }
+  
+          if (method === 'GET') {
+            let rb = entityApi.requestBuilder().getAll()
+            if (query.id) rb = entityApi.requestBuilder().getByKey(query.id)
+            else {
+              const odataParams: Record<string, string> = {}
+              const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
+              keys.forEach(k => { if (query[k]) odataParams[k] = String(query[k]) })
+              if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)      
+            }
+            response = await rb.execute(destination)
+          } else if (method === 'POST') {
+            response = await entityApi.requestBuilder().create(capturedBody).execute(destination)
+          } else if (method === 'PATCH') {
+            response = await entityApi.requestBuilder().update(capturedBody).execute(destination)
+          } else if (method === 'DELETE') {
+            response = await entityApi.requestBuilder().delete(query.id as string).execute(destination)
+          } else {
+            throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
+          }
+        } catch (sdkErr: any) {
+          console.warn(`[nuxt-sap-odata] SDK failed, falling back to mockdata:`, sdkErr.message)
+          response = await handleMockDataRequest()
+        }
+      }
+  
+      // Log success
+      const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
+      logRequest(status, response, capturedBody)
+      return response
+  
+    } catch (err: any) {
+      // Log failure
+      const statusCode = err.statusCode || 500
+      logRequest(statusCode, { error: err.message || err.statusMessage }, capturedBody)
+      throw err
     }
-
-    // Log success
-    const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
-    logRequest(status)
-    return response
-
-  } catch (err: any) {
-    // Log failure
-    const statusCode = err.statusCode || 500
-    logRequest(statusCode)
-    throw err
-  }
+  
 })

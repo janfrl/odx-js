@@ -8,6 +8,8 @@ export interface ODataLog {
   entitySet?: string
   status?: number
   duration?: number
+  requestBody?: any
+  responseBody?: any
 }
 
 const MAX_LOGS = 50
