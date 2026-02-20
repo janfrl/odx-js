@@ -6,8 +6,15 @@ export default defineNuxtConfig({
   ],
   unocss: {
     shortcuts: {
-      'bg-base': 'bg-white dark:bg-[#050505]',
+      // Background levels
+      'bg-base': 'bg-zinc-100 dark:bg-[#050505]',
+      'bg-surface': 'bg-zinc-50 dark:bg-[#0a0a0a]',
+      'bg-content': 'bg-white dark:bg-[#0c0c0d]',
+      
+      // Border and Text
       'border-base': 'border-zinc-200 dark:border-zinc-800',
+      'text-base': 'text-zinc-900 dark:text-zinc-300',
+      'text-muted': 'text-zinc-500 dark:text-zinc-500',
     },
     theme: {
       colors: {
@@ -20,18 +27,8 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
 
   app: {
-    baseURL: '/__sap_odata_explorer',
+    baseURL: '/__sap_odata__/client',
   },
-
-  // nitro: {
-  //   devProxy: {
-  //     '/__sap_odata__/config': { target: 'http://127.0.0.1:3000/__sap_odata__/config', changeOrigin: true },
-  //     '/__sap_odata__/logs': { target: 'http://127.0.0.1:3000/__sap_odata__/logs', changeOrigin: true },
-  //     '/__sap_odata__/generate': { target: 'http://127.0.0.1:3000/__sap_odata__/generate', changeOrigin: true },
-  //     '/api/sap-odata': { target: 'http://127.0.0.1:3000/api/sap-odata', changeOrigin: true },
-  //   },
-  // },
-
   vite: {
     server: {
       hmr: {

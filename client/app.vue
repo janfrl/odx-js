@@ -7,7 +7,7 @@ const devtoolsClient = useDevtoolsClient()
 const { activeTab, fetchConfig, refreshLogs } = useSharedODataState()
 
 watchEffect(() => {
-  const mode = devtoolsClient.value?.devtools?.colorMode?.value
+  const mode = devtoolsClient.value?.devtools?.colorMode
   if (mode && typeof document !== 'undefined') {
     const isDark = mode === 'dark'
     document.documentElement.classList.toggle('dark', isDark)
@@ -24,13 +24,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-screen flex bg-base text-base overflow-hidden font-sans border-t border-base text-base">
+  <div class="h-screen flex bg-base text-base overflow-hidden font-sans border-t border-base">
     <!-- Sidebar -->
-    <DevToolsSidebar class="w-14 border-r border-base bg-zinc-50/50 dark:bg-zinc-900/20 shrink-0" />
+    <DevToolsSidebar class="w-14 border-r border-base bg-surface shrink-0" />
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-      <DevToolsHeader />
+      <DevToolsHeader class="bg-surface" />
 
       <main class="flex-1 overflow-hidden relative">
         <div class="h-full flex flex-col overflow-y-auto custom-scrollbar bg-base">
@@ -52,7 +52,6 @@ html, body, #__nuxt {
   overflow: hidden !important;
 }
 
-/* Custom Scrollbar styled to match the UI headers (Flat) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -63,19 +62,11 @@ html, body, #__nuxt {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #f4f4f5; /* zinc-100 */
-  border-radius: 0;
+  background: #d4d4d8;
+  border-radius: 10px;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #18181b; /* zinc-900 */
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #e4e4e7;
-}
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #27272a;
 }
 
