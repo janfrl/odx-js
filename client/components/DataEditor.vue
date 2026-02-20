@@ -61,7 +61,7 @@ function close() {
       >
         <!-- Header -->
         <div class="p-4 border-b border-base flex items-center justify-between shrink-0 bg-surface font-sans text-base">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 text-base">
             <h3 class="font-bold text-[11px] uppercase tracking-wider text-base-content">{{ editor.mode }} Item</h3>
             <span class="text-[10px] text-muted opacity-50">/</span>
             <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
@@ -100,9 +100,10 @@ function close() {
             Cancel
           </button>
           
+          <!-- Adaptive High Contrast Primary Button -->
           <button
             :disabled="editor.loading"
-            class="px-6 h-[32px] rounded-lg bg-white text-black font-bold uppercase text-[10px] tracking-wider hover:bg-zinc-100 active:scale-95 transition-all border-none cursor-pointer disabled:opacity-50"
+            class="px-6 h-[32px] rounded-lg bg-zinc-900 text-white dark:bg-white dark:text-black font-bold uppercase text-[10px] tracking-wider hover:opacity-90 active:scale-95 transition-all border-none cursor-pointer disabled:opacity-50"
             @click="saveItem"
           >
             {{ editor.loading ? '...' : (editor.mode === 'create' ? 'Create' : 'Save') }}
