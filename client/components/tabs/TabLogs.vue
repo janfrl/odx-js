@@ -36,7 +36,7 @@ const { logs, clearLogs } = useSharedODataState()
         <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
           <thead class="sticky top-0 z-10">
             <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
-              <th class="rounded-tl-xl px-6 py-4 w-20 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+              <th class="rounded-tl-xl px-6 py-4 w-20 text-center border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
                 Status
               </th>
               <th class="px-6 py-4 w-24 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
@@ -56,7 +56,7 @@ const { logs, clearLogs } = useSharedODataState()
               :key="log.id"
               class="hover:bg-primary/5 transition-colors group text-base"
             >
-              <td class="px-6 py-4 text-center border-r border-base">
+              <td class="px-6 py-4 text-center border-base">
                 <span
                   :class="log.status < 400 ? 'text-primary' : 'text-red-500'"
                   class="font-bold"
