@@ -34,6 +34,7 @@ async function refreshEntityData() {
   if (!selectedService.value || !selectedEntity.value) return
   previewLoading.value = true
   previewError.value = null
+  previewData.value = [] // Reset data before fetch
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const url = new URL(`${window.location.origin}${config.value.basePath}/${route}/${selectedEntity.value}`)
@@ -46,11 +47,25 @@ async function refreshEntityData() {
       if (queryParams.value.top) url.searchParams.set('$top', queryParams.value.top.toString())
     }
     const res = await fetch(url.toString())
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '')
+      let statusMessage = res.statusText || `Server Error ${res.status}`
+      try {
+        const errData = JSON.parse(errorText)
+        // message usually contains the specific error, statusMessage the generic one
+        statusMessage = errData.message || errData.statusMessage || (errData.data && errData.data.statusMessage) || statusMessage
+      }
+      catch {
+        if (errorText && errorText.length < 100) statusMessage = errorText
+      }
+      throw new Error(statusMessage)
+    }
     const data = await res.json()
     previewData.value = (Array.isArray(data) ? data : (data.value || [data])) as Record<string, unknown>[]
   }
   catch (e: unknown) {
     previewError.value = (e as Error).message
+    previewData.value = [] // Ensure table is empty on error
   }
   finally {
     previewLoading.value = false
@@ -177,8 +192,26 @@ watch(selectedEntity, (newEntity) => {
         >
           <NLoading />
         </div>
+        
+        <div 
+          v-else-if="previewError" 
+          class="p-12 flex flex-col items-center justify-center text-center space-y-3"
+        >
+          <div class="i-carbon-warning text-red-500 w-10 h-10 opacity-50" />
+          <div>
+            <p class="text-xs font-bold text-red-500 uppercase tracking-widest">Request Failed</p>
+            <p class="text-[11px] text-muted font-mono mt-1 max-w-md">{{ previewError }}</p>
+          </div>
+          <button 
+            @click="refreshEntityData" 
+            class="text-[10px] font-bold underline cursor-pointer bg-transparent border-none text-primary"
+          >
+            Retry Request
+          </button>
+        </div>
+
         <template v-else>
-          <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
+          <table v-if="previewData.length > 0" class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
             <thead class="sticky top-0 z-10">
               <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
                 <!-- No rounding since it docks to the toolbar above -->
@@ -247,6 +280,10 @@ watch(selectedEntity, (newEntity) => {
               </tr>
             </tbody>
           </table>
+          <div v-else class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2">
+            <div class="i-carbon-search w-8 h-8" />
+            <p class="text-xs">No items found for this query</p>
+          </div>
         </template>
       </div>
     </div>

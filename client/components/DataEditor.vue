@@ -26,7 +26,18 @@ async function saveItem() {
       body: JSON.stringify(payload),
     })
 
-    if (!res.ok) throw new Error(`Server Error ${res.status}`)
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '')
+      let msg = `Server Error ${res.status}`
+      try {
+        const errData = JSON.parse(errorText)
+        msg = errData.message || errData.statusMessage || msg
+      }
+      catch {
+        if (errorText && errorText.length < 100) msg = errorText
+      }
+      throw new Error(msg)
+    }
 
     editor.value.show = false
     editor.value.loading = false
