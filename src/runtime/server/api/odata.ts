@@ -3,7 +3,6 @@ import { join } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createJiti } from 'jiti'
-// @ts-expect-error - virtual file
 import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
@@ -16,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   // Path extraction
   const fullPath = event.path || ''
-  const [pathOnly] = fullPath.split('?')
+  const pathOnly = fullPath.split('?')[0] || ''
   const relativePath = pathOnly.startsWith(basePath)
     ? pathOnly.slice(basePath.length).replace(/^\//, '')
     : ''
