@@ -49,31 +49,72 @@ export default defineEventHandler(async (event) => {
 
   const storage = useStorage('odata:mocks')
   
-  const getMockData = async () => {
-    logRequest(200)
-
-    // Try both colon and slash as separators
+  const handleMockRequest = async () => {
+    const method = event.method
+    const query = getQuery(event)
     const mockKeyColon = `${matched.name}:${entitySetName}.json`
     const mockKeySlash = `${matched.name}/${entitySetName}.json`
+    
+    // Helper to find the actual key used in storage
+    const activeKey = (await storage.hasItem(mockKeyColon)) ? mockKeyColon : mockKeySlash
+    let data = (await storage.getItem(activeKey)) as any[] || []
 
-    if (await storage.hasItem(mockKeyColon)) {
-      return await storage.getItem(mockKeyColon)
-    }
-    if (await storage.hasItem(mockKeySlash)) {
-      return await storage.getItem(mockKeySlash)
+    if (!Array.isArray(data)) {
+      // If it's not an array, we can't easily do CRUD mocks on it
+      if (method === 'GET') { logRequest(200); return data }
+      throw createError({ statusCode: 400, statusMessage: 'Mock data must be an array for CRUD operations' })
     }
 
-    return {
-      service: matched.name,
-      entitySet: entitySetName,
-      message: `No mock data found for ${matched.name}/${entitySetName}. Create a mock file in .data/mockdata/${matched.name}/${entitySetName}.json or use the DevTools Data Editor.`,
+    if (method === 'GET') {
+      logRequest(200)
+      if (query.id) {
+        return data.find((item: any) => String(item.ID || item.id) === String(query.id))
+      }
+      return data
     }
+
+    if (method === 'POST') {
+      const body = await readBody(event)
+      const newItem = { ...body }
+      // Simple ID generation if missing
+      if (!newItem.ID && !newItem.id) newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
+      data.push(newItem)
+      await storage.setItem(activeKey, data)
+      logRequest(201)
+      return newItem
+    }
+
+    if (method === 'PATCH' || method === 'PUT') {
+      const body = await readBody(event)
+      const id = query.id || body.ID || body.id
+      const index = data.findIndex((item: any) => String(item.ID || item.id) === String(id))
+      if (index === -1) throw createError({ statusCode: 404, statusMessage: 'Item not found in mocks' })
+      
+      data[index] = { ...data[index], ...body }
+      await storage.setItem(activeKey, data)
+      logRequest(200)
+      return data[index]
+    }
+
+    if (method === 'DELETE') {
+      const id = query.id
+      const initialLength = data.length
+      data = data.filter((item: any) => String(item.ID || item.id) !== String(id))
+      
+      if (data.length === initialLength) throw createError({ statusCode: 404, statusMessage: 'Item not found in mocks' })
+      
+      await storage.setItem(activeKey, data)
+      logRequest(204)
+      return { success: true }
+    }
+
+    throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed in Mock Mode' })
   }
 
   // Check if we should force mock (optional, could be a header or query param)
   const forceMock = getQuery(event).mock === 'true'
   if (forceMock) {
-    return await getMockData()
+    return await handleMockRequest()
   }
 
   const subDirName = matched.route || matched.name.toLowerCase()
@@ -84,7 +125,7 @@ export default defineEventHandler(async (event) => {
   const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
 
   if (!targetFile) {
-    return await getMockData()
+    return await handleMockRequest()
   }
 
   try {
@@ -97,14 +138,14 @@ export default defineEventHandler(async (event) => {
 
     if (!apiFactory) {
       console.warn(`[nuxt-sap-odata] API Factory ${apiFactoryName} not found in SDK.`)
-      return await getMockData()
+      return await handleMockRequest()
     }
 
     const api = apiFactory()
     const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
 
     if (!entityApi) {
-      return await getMockData()
+      return await handleMockRequest()
     }
 
     const method = event.method
