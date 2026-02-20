@@ -192,25 +192,29 @@ watch(selectedEntity, (newEntity) => {
         >
           <NLoading />
         </div>
-        
-        <div 
-          v-else-if="previewError" 
-          class="p-12 flex flex-col items-center justify-center text-center space-y-3"
+
+        <div
+          v-else-if="previewError"
+          class="p-16 flex flex-col items-center justify-center text-center"
         >
-          <div class="i-carbon-warning text-red-500 w-10 h-10 opacity-50" />
-          <div>
-            <p class="text-xs font-bold text-red-500 uppercase tracking-widest">Request Failed</p>
-            <p class="text-[11px] text-muted font-mono mt-1 max-w-md">{{ previewError }}</p>
+          <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mb-6">
+            <div class="i-carbon-warning-filled text-red-500 w-7 h-7" />
           </div>
-          <button 
-            @click="refreshEntityData" 
-            class="text-[10px] font-bold underline cursor-pointer bg-transparent border-none text-primary"
+          <h3 class="text-xs font-bold text-red-500/80 uppercase tracking-widest mb-3">
+            OData Request Failed
+          </h3>
+          <p class="text-[12px] text-zinc-500 dark:text-zinc-400 font-mono mb-6 max-w-lg leading-relaxed">
+            {{ previewError }}
+          </p>
+          <button
+            class="text-[10px] font-bold uppercase tracking-wider hover:underline underline-offset-4 decoration-zinc-500/30 hover:decoration-primary text-muted hover:text-primary transition-all bg-transparent border-none cursor-pointer"
+            @click="refreshEntityData"
           >
             Retry Request
           </button>
         </div>
 
-        <template v-else>
+                <template v-else>
           <table v-if="previewData.length > 0" class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
             <thead class="sticky top-0 z-10">
               <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
