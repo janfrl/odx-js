@@ -23,14 +23,14 @@ const ICONS = {
         <h2 class="text-sm font-bold opacity-70 uppercase tracking-wider text-base-content">Available Services</h2>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-base">
         <div
           v-for="svc in services"
           :key="svc.name"
           class="p-6 border rounded-2xl transition-all duration-200 cursor-pointer group bg-zinc-50/50 dark:bg-zinc-900/40 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 relative"
           @click="selectedService = svc"
         >
-          <div class="flex items-start gap-4 text-base">
+          <div class="flex items-start gap-4">
             <div class="p-3 rounded-xl bg-white dark:bg-zinc-800 border border-base transition-all shadow-sm text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round" :d="ICONS.service" />
@@ -57,10 +57,7 @@ const ICONS = {
           </div>
           <div class="mt-6 pt-4 border-t border-base flex justify-between items-center text-[10px] uppercase font-bold tracking-widest relative z-10">
             <span class="opacity-40 group-hover:opacity-60 transition-opacity">SDK Generation</span>
-            <span 
-              :style="{ color: svc.isGenerated ? COLORS.green : COLORS.orange }" 
-              class="opacity-60 group-hover:opacity-80 transition-opacity"
-            >
+            <span :style="{ color: svc.isGenerated ? COLORS.green : COLORS.orange }" class="opacity-60 group-hover:opacity-80 transition-opacity">
               {{ svc.isGenerated ? 'Completed' : 'Pending' }}
             </span>
           </div>
@@ -68,8 +65,8 @@ const ICONS = {
       </div>
     </div>
 
-    <div v-else class="h-full flex flex-col pt-4 overflow-hidden bg-base">
-      <div class="px-6 flex items-center gap-4 mb-6 shrink-0 font-sans">
+    <div v-else class="h-full flex flex-col pt-8 overflow-hidden bg-base">
+      <div class="px-6 flex items-center gap-4 mb-6 shrink-0 font-sans text-base">
         <button
           class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all border border-transparent bg-transparent cursor-pointer"
           title="Back to services"
@@ -87,7 +84,7 @@ const ICONS = {
         </div>
         <button
           :disabled="generatingStatus[selectedService.name]"
-          class="text-[10px] uppercase tracking-[0.15em] font-bold text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors bg-transparent border-none cursor-pointer pb-0.5 border-b border-dashed border-zinc-200 dark:border-zinc-800 disabled:opacity-30 flex items-center gap-2"
+          class="text-[10px] uppercase tracking-[0.15em] font-bold text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer pb-0.5 border-b border-dashed border-base disabled:opacity-30 flex items-center gap-2"
           @click="generateService(selectedService.name)"
         >
           <svg v-if="generatingStatus[selectedService.name]" class="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

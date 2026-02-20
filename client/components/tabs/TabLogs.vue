@@ -8,7 +8,7 @@ const { logs, clearLogs } = useSharedODataState()
   <div class="h-full flex flex-col pt-8 px-6 bg-base text-base">
     <div class="flex justify-between items-center mb-8 shrink-0 px-2 font-sans">
       <div class="flex items-center gap-3">
-        <h1 class="text-sm font-bold opacity-90 uppercase tracking-wider">Traffic Monitor</h1>
+        <h1 class="text-sm font-bold opacity-90 uppercase tracking-wider text-base-content">Traffic Monitor</h1>
         <NBadge 
           v-if="logs.length" 
           n="gray" 
@@ -18,6 +18,7 @@ const { logs, clearLogs } = useSharedODataState()
           {{ logs.length }}
         </NBadge>
       </div>
+      <!-- Subtle secondary action style -->
       <button
         class="text-[10px] uppercase tracking-[0.15em] font-bold text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer pb-0.5 border-b border-dashed border-base"
         @click="clearLogs"
@@ -26,24 +27,25 @@ const { logs, clearLogs } = useSharedODataState()
       </button>
     </div>
 
-    <!-- Log Table Area -->
-    <div class="flex-1 min-h-0 bg-content rounded-t-lg border-t border-x border-base overflow-hidden shadow-sm">
-      <div class="h-full overflow-auto custom-scrollbar bg-content">
-        <table class="w-full text-left text-[11px] border-collapse min-w-max">
-          <thead class="sticky top-0 z-10 bg-surface border-b border-base text-muted">
-            <tr class="uppercase text-[9px] font-bold tracking-widest">
-              <th class="px-6 py-4 w-20 text-center">Status</th>
-              <th class="px-6 py-4 w-24">Method</th>
-              <th class="px-6 py-4">Resource / Path</th>
-              <th class="px-6 py-4 text-right">Duration</th>
+    <!-- Outer Wrapper -->
+    <div class="flex-1 min-h-0 bg-content rounded-t-xl border-t border-x border-base shadow-sm overflow-hidden flex flex-col">
+      <!-- Inner Scroll Container -->
+      <div class="flex-1 overflow-auto custom-scrollbar">
+        <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
+          <thead class="sticky top-0 z-10">
+            <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
+              <th class="rounded-tl-xl px-6 py-4 w-20 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Status</th>
+              <th class="px-6 py-4 w-24 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Method</th>
+              <th class="px-6 py-4 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Resource / Path</th>
+              <th class="rounded-tr-xl px-6 py-4 text-right border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Duration</th>
             </tr>
           </thead>
-          <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono">
-            <tr v-for="log in logs" :key="log.id" class="hover:bg-primary/5 transition-colors group">
-              <td class="px-6 py-4 text-center">
+          <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-base">
+            <tr v-for="log in logs" :key="log.id" class="hover:bg-primary/5 transition-colors group text-base">
+              <td class="px-6 py-4 text-center border-r border-base">
                 <span :class="log.status < 400 ? 'text-primary' : 'text-red-500'" class="font-bold">{{ log.status }}</span>
               </td>
-              <td class="px-6 py-4 opacity-80 uppercase text-[10px] tracking-tighter text-base">
+              <td class="px-6 py-4 opacity-80 uppercase text-[10px] tracking-tighter">
                 {{ log.method }}
               </td>
               <td class="px-6 py-4 truncate max-w-[400px] font-medium tracking-tight">
@@ -55,7 +57,7 @@ const { logs, clearLogs } = useSharedODataState()
             </tr>
             <tr v-if="logs.length === 0">
               <td colspan="4" class="px-6 py-16 text-center opacity-40 italic font-sans text-xs">
-                No activity recorded yet. Incoming requests will be captured here.
+                No activity recorded yet.
               </td>
             </tr>
           </tbody>

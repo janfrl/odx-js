@@ -87,95 +87,108 @@ watch(selectedEntity, (newEntity) => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden px-6">
-    <div class="flex gap-4 overflow-x-auto no-scrollbar border-b border-base mb-4 shrink-0">
-      <button
-        v-for="entity in (selectedService?.entities || [])"
-        :key="entity"
-        class="text-[11px] font-bold font-mono px-1 py-2 border-b-2 transition-all bg-transparent cursor-pointer relative"
-        :class="selectedEntity === entity ? 'text-primary border-primary' : 'text-muted border-transparent hover:text-base'"
-        @click="selectEntity(entity)"
-      >
-        {{ entity }}
-      </button>
+  <div class="flex-1 flex flex-col overflow-hidden px-6 text-base">
+    <!-- Row 1: Tabs -->
+    <div class="flex items-center border-b border-base mb-4 shrink-0 pr-1">
+      <div class="flex gap-4 overflow-x-auto custom-scrollbar pb-px pr-4">
+        <button
+          v-for="entity in (selectedService?.entities || [])"
+          :key="entity"
+          class="text-[11px] font-bold font-mono px-1 py-2 border-b-2 transition-all bg-transparent cursor-pointer relative whitespace-nowrap"
+          :class="selectedEntity === entity ? 'text-primary border-primary' : 'text-muted border-transparent hover:text-base'"
+          @click="selectEntity(entity)"
+        >
+          {{ entity }}
+        </button>
+      </div>
     </div>
 
-    <div v-if="selectedEntity" class="flex-1 flex flex-col min-h-0 bg-content rounded-t-lg overflow-hidden border-t border-x border-base shadow-sm">
-      <div class="p-3 flex items-end gap-3 border-b border-base bg-surface shrink-0 font-sans">
+    <!-- Main Container -->
+    <div v-if="selectedEntity" class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm">
+      <!-- Row 2: Filter Toolbar -->
+      <div class="p-3 pr-4 flex items-end gap-4 bg-surface shrink-0 font-sans border-b border-base">
         <div class="flex flex-col gap-1 w-24">
-          <label class="text-[9px] uppercase font-bold text-muted tracking-[0.1em] ml-1">Key</label>
+          <label class="text-[9px] uppercase font-bold text-zinc-600 dark:text-zinc-400 tracking-widest ml-1 opacity-70">Key</label>
           <input
             v-model="queryParams.id"
             type="text"
-            placeholder="ID..."
+            placeholder="ID"
             :disabled="!!queryParams.filter"
-            class="h-8 bg-base border border-base rounded px-2 text-xs font-mono outline-none focus:border-primary/50 disabled:opacity-30 text-base w-full"
+            class="h-8 bg-base border border-base rounded px-2 text-[11px] font-mono outline-none focus:border-zinc-500 disabled:opacity-30 text-base w-full"
             @keyup.enter="refreshEntityData"
           >
         </div>
         <div class="flex flex-col gap-1 flex-1">
-          <label class="text-[9px] uppercase font-bold text-muted tracking-[0.1em] ml-1">OData Filter Query</label>
+          <label class="text-[9px] uppercase font-bold text-zinc-600 dark:text-zinc-400 tracking-widest ml-1 opacity-70">OData Filter Query</label>
           <input
             v-model="queryParams.filter"
             type="text"
-            placeholder="e.g. Name eq 'Test'..."
+            placeholder="e.g. Name eq 'Test'"
             :disabled="!!queryParams.id"
-            class="h-8 bg-base border border-base rounded px-2 text-xs font-mono outline-none focus:border-primary/50 disabled:opacity-30 text-base w-full"
+            class="h-8 bg-base border border-base rounded px-2 text-[11px] font-mono outline-none focus:border-primary/50 disabled:opacity-30 text-base w-full"
             @keyup.enter="refreshEntityData"
           >
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center">
           <NButton
-            n="primary"
-            variant="outline"
+            class="px-4 h-[32px] transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"
             icon="i-carbon-play"
-            class="px-4 font-bold uppercase text-[10px] h-[32px]"
             @click="refreshEntityData"
           >
             Run
           </NButton>
-          <NButton
-            n="green"
-            variant="solid"
-            icon="i-carbon-add"
-            class="px-4 font-bold uppercase text-[10px] h-[32px]"
-            @click="openEditor('create')"
-          >
-            Add Item
-          </NButton>
         </div>
       </div>
 
+      <!-- Row 3: Action Toolbar -->
+      <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-surface border-b border-base shrink-0">
+        <div class="flex items-center gap-2">
+          <span v-if="previewData.length > 0" class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
+            Items ({{ previewData.length }})
+          </span>
+        </div>
+        <NButton
+          class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"
+          icon="i-carbon-add"
+          @click="openEditor('create')"
+        >
+          Create Item
+        </NButton>
+      </div>
+
+      <!-- Table Area -->
       <div class="flex-1 overflow-auto custom-scrollbar bg-content">
         <div v-if="previewLoading" class="p-20 flex justify-center opacity-30">
           <NLoading />
         </div>
         <template v-else>
-          <table class="w-full text-left text-[11px] border-collapse min-w-max">
-            <thead class="sticky top-0 z-10 bg-surface border-b border-base">
-              <tr class="text-muted uppercase text-[9px] font-bold tracking-widest">
-                <th class="px-4 py-3 w-28 text-center border-r border-base">Actions</th>
-                <th v-for="key in previewColumns" :key="key" class="px-4 py-3">{{ key }}</th>
+          <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
+            <thead class="sticky top-0 z-10">
+              <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
+                <!-- Explicit rounding for sticky header corners -->
+                <th class="rounded-tl-xl px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">Actions</th>
+                <th
+                  v-for="(key, idx) in previewColumns"
+                  :key="key"
+                  class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]"
+                  :class="{ 'rounded-tr-xl': idx === previewColumns.length - 1 }"
+                >
+                  {{ key }}
+                </th>
               </tr>
             </thead>
-            <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-base">
+            <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-base text-[11px]">
               <tr v-for="(row, idx) in previewData" :key="idx" class="hover:bg-primary/5 transition-colors">
                 <td class="p-0 border-r border-base align-middle">
                   <div class="flex items-center justify-center gap-2">
                     <button class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer" title="View" @click="openEditor('view', row)">
-                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor">
-                        <path :d="ICONS.view" />
-                      </svg>
+                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor"><path :d="ICONS.view" /></svg>
                     </button>
                     <button class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer" title="Edit" @click="openEditor('update', row)">
-                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor">
-                        <path :d="ICONS.edit" />
-                      </svg>
+                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor"><path :d="ICONS.edit" /></svg>
                     </button>
                     <button class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer" title="Delete" @click="deleteItem(row)">
-                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor">
-                        <path :d="ICONS.trash" />
-                      </svg>
+                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor"><path :d="ICONS.trash" /></svg>
                     </button>
                   </div>
                 </td>
