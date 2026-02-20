@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
   const serviceRoute = segments[0] || ''
   const entitySetName = segments[1] || ''
 
+  // Central log function
   const logRequest = (status: number) => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
@@ -37,38 +38,91 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const services = (config.odata?.services || []) as Array<{ name: string, route?: string }>
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, edmx: string }>
   const matched = services.find(
     svc => (svc.route || svc.name.toLowerCase()) === serviceRoute,
   )
 
   if (!matched) {
     logRequest(404)
-    throw createError({ statusCode: 404, statusMessage: `Unknown service "${serviceRoute}"` })
+    throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
   const storage = useStorage('odata:mocks')
   
+  const getValidProperties = (entitySet: string): string[] | null => {
+    try {
+      const rootDir = config.odata?.rootDir as string
+      if (!rootDir || !matched.edmx) return null
+      
+      const edmxPath = join(rootDir, matched.edmx)
+      if (!fs.existsSync(edmxPath)) return null
+      
+      const content = fs.readFileSync(edmxPath, 'utf-8')
+      const entitySetRegex = new RegExp(`<EntitySet\\s+Name="${entitySet}"\\s+EntityType="([^"]+)"`)
+      const setMatch = entitySetRegex.exec(content)
+      if (!setMatch) return null
+      
+      const fullEntityType = setMatch[1]
+      if (!fullEntityType) return null
+      
+      const entityTypeName = fullEntityType.split('.').pop()
+      if (!entityTypeName) return null
+
+      const entityTypeRegex = new RegExp(`<EntityType\\s+Name="${entityTypeName}"[\\s\\S]*?>([\\s\\S]*?)</EntityType>`)
+      const typeMatch = entityTypeRegex.exec(content)
+      if (!typeMatch || !typeMatch[1]) return null
+      
+      const propertiesBlock = typeMatch[1]
+      const propRegex = /<Property\s+Name="([^"]+)"/g
+      const validProps: string[] = []
+      let propMatch
+      while ((propMatch = propRegex.exec(propertiesBlock)) !== null) {
+        if (propMatch[1]) validProps.push(propMatch[1])
+      }
+      return validProps
+    } catch { return null }
+  }
+
   const handleMockRequest = async () => {
     const method = event.method
     const query = getQuery(event)
     const mockKeyColon = `${matched.name}:${entitySetName}.json`
     const mockKeySlash = `${matched.name}/${entitySetName}.json`
     
-    // Helper to find the actual key used in storage
     const activeKey = (await storage.hasItem(mockKeyColon)) ? mockKeyColon : mockKeySlash
     let data = (await storage.getItem(activeKey)) as any[] || []
 
     if (!Array.isArray(data)) {
-      // If it's not an array, we can't easily do CRUD mocks on it
-      if (method === 'GET') { logRequest(200); return data }
-      throw createError({ statusCode: 400, statusMessage: 'Mock data must be an array for CRUD operations' })
+      if (method === 'GET') return data
+      throw createError({ statusCode: 400, message: 'Mock data must be an array' })
+    }
+
+    // Property Validation
+    if (method === 'POST' || method === 'PATCH' || method === 'PUT') {
+      const body = await readBody(event).catch(() => null)
+      if (body && typeof body === 'object') {
+        const allowed = getValidProperties(entitySetName)
+        if (allowed) {
+          const incoming = Object.keys(body)
+          const invalid = incoming.filter(p => !allowed.includes(p) && p !== 'ID' && p !== 'id')
+          if (invalid.length > 0) {
+            const msg = `Property validation failed. Unknown properties for ${entitySetName}: ${invalid.join(', ')}. Allowed: ${allowed.join(', ')}`
+            throw createError({ statusCode: 400, statusMessage: msg, message: msg })
+          }
+        }
+      }
     }
 
     if (method === 'GET') {
-      logRequest(200)
-      if (query.id) {
-        return data.find((item: any) => String(item.ID || item.id) === String(query.id))
+      const id = query.id ? String(query.id) : undefined
+      if (id) {
+        const item = data.find((item: any) => String(item.ID || item.id) === id)
+        if (!item) {
+          const msg = `Item with ID "${id}" not found in mocks`
+          throw createError({ statusCode: 404, statusMessage: msg, message: msg })
+        }
+        return item
       }
       return data
     }
@@ -76,149 +130,110 @@ export default defineEventHandler(async (event) => {
     if (method === 'POST') {
       const body = await readBody(event).catch(() => null)
       if (!body || typeof body !== 'object') {
-        throw createError({ statusCode: 400, statusMessage: 'Invalid or missing JSON body for POST' })
+        const msg = 'Invalid or missing JSON body for POST'
+        throw createError({ statusCode: 400, statusMessage: msg, message: msg })
       }
-
       const newItem = { ...body }
-      // Simple ID generation if missing
-      if (!newItem.ID && !newItem.id) {
-        newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
-      }
-      
+      if (!newItem.ID && !newItem.id) newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
       data.push(newItem)
       await storage.setItem(activeKey, data)
-      logRequest(201)
       return newItem
     }
 
     if (method === 'PATCH' || method === 'PUT') {
       const body = await readBody(event).catch(() => null)
-      const id = query.id || (body && (body.ID || body.id))
-      
-      if (!id) {
-        throw createError({ statusCode: 400, statusMessage: 'Missing Item ID for update (provide via ?id= or in body)' })
-      }
-      if (!body || typeof body !== 'object') {
-        throw createError({ statusCode: 400, statusMessage: 'Invalid or missing JSON body for update' })
-      }
+      const id = (query.id ? String(query.id) : null) || (body && (body.ID || body.id))
+      if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing ID', message: 'Missing ID' })
+      if (!body || typeof body !== 'object') throw createError({ statusCode: 400, statusMessage: 'Invalid body', message: 'Invalid body' })
 
       const index = data.findIndex((item: any) => String(item.ID || item.id) === String(id))
       if (index === -1) {
-        throw createError({ statusCode: 404, statusMessage: `Item with ID "${id}" not found in mocks` })
+        const msg = `Item with ID "${id}" not found`
+        throw createError({ statusCode: 404, statusMessage: msg, message: msg })
       }
       
       data[index] = { ...data[index], ...body }
       await storage.setItem(activeKey, data)
-      logRequest(200)
       return data[index]
     }
 
     if (method === 'DELETE') {
-      const id = query.id
-      if (!id) {
-        throw createError({ statusCode: 400, statusMessage: 'Missing Item ID for deletion (provide via ?id=)' })
-      }
-
+      const id = query.id ? String(query.id) : null
+      if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing ID', message: 'Missing ID' })
       const initialLength = data.length
-      data = data.filter((item: any) => String(item.ID || item.id) !== String(id))
-      
+      data = data.filter((item: any) => String(item.ID || item.id) !== id)
       if (data.length === initialLength) {
-        throw createError({ statusCode: 404, statusMessage: `Item with ID "${id}" not found in mocks` })
+        const msg = `Item with ID "${id}" not found`
+        throw createError({ statusCode: 404, statusMessage: msg, message: msg })
       }
-      
       await storage.setItem(activeKey, data)
-      logRequest(204)
       return { success: true }
     }
 
-    throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed in Mock Mode' })
+    throw createError({ statusCode: 405, message: 'Method Not Allowed in Mock Mode' })
   }
 
-  // Check if we should force mock (optional, could be a header or query param)
-  const forceMock = getQuery(event).mock === 'true'
-  if (forceMock) {
-    return await handleMockRequest()
-  }
-
-  const subDirName = matched.route || matched.name.toLowerCase()
-  const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
-  const indexFileTs = join(generatedDir, 'index.ts')
-  const indexFileJs = join(generatedDir, 'index.js')
-
-  const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
-
-  if (!targetFile) {
-    return await handleMockRequest()
-  }
-
+  // --- EXECUTION FLOW ---
   try {
-    const sdk = targetFile.endsWith('.ts')
-      ? await jiti.import(targetFile)
-      : await import(pathToFileURL(targetFile).href)
+    let response: any
+    const forceMock = getQuery(event).mock === 'true'
+    const subDirName = matched.route || matched.name.toLowerCase()
+    const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
+    const indexFileTs = join(generatedDir, 'index.ts')
+    const indexFileJs = join(generatedDir, 'index.js')
+    const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
 
-    const apiFactoryName = `${matched.name}Api`
-    const apiFactory = sdk[apiFactoryName]
+    if (forceMock || !targetFile) {
+      response = await handleMockRequest()
+    } else {
+      try {
+        const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
+        const apiFactory = sdk[`${matched.name}Api`]
+        if (!apiFactory) throw new Error('API Factory not found')
+        const api = apiFactory()
+        const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
+        if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
 
-    if (!apiFactory) {
-      console.warn(`[nuxt-sap-odata] API Factory ${apiFactoryName} not found in SDK.`)
-      return await handleMockRequest()
-    }
+        const method = event.method
+        const query = getQuery(event)
+        const destination = { url: config.odata?.destination || 'http://localhost:8080' }
 
-    const api = apiFactory()
-    const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-
-    if (!entityApi) {
-      return await handleMockRequest()
-    }
-
-    const method = event.method
-    const query = getQuery(event)
-    const destination = { url: config.odata?.destination || 'http://localhost:8080' }
-
-    if (method === 'GET') {
-      let rb = entityApi.requestBuilder().getAll()
-      if (query.id) {
-        rb = entityApi.requestBuilder().getByKey(query.id)
+        if (method === 'GET') {
+          let rb = entityApi.requestBuilder().getAll()
+          if (query.id) rb = entityApi.requestBuilder().getByKey(query.id)
+          else {
+            const odataParams: Record<string, string> = {}
+            const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
+            keys.forEach(k => { if (query[k]) odataParams[k] = String(query[k]) })
+            if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
+          }
+          response = await rb.execute(destination)
+        } else if (method === 'POST') {
+          const body = await readBody(event)
+          response = await entityApi.requestBuilder().create(body).execute(destination)
+        } else if (method === 'PATCH') {
+          const body = await readBody(event)
+          response = await entityApi.requestBuilder().update(body).execute(destination)
+        } else if (method === 'DELETE') {
+          response = await entityApi.requestBuilder().delete(query.id as string).execute(destination)
+        } else {
+          throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
+        }
+      } catch (sdkErr: any) {
+        console.warn(`[nuxt-sap-odata] SDK failed, falling back to mocks:`, sdkErr.message)
+        response = await handleMockRequest()
       }
-      else {
-        const odataParams: Record<string, string> = {}
-        const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-        keys.forEach((key) => {
-          if (query[key]) odataParams[key] = String(query[key])
-        })
-        if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
-      }
-      const res = await rb.execute(destination)
-      logRequest(200)
-      return res
     }
 
-    if (method === 'POST') {
-      const body = await readBody(event)
-      const res = await entityApi.requestBuilder().create(body).execute(destination)
-      logRequest(201)
-      return res
-    }
+    // Log success
+    const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
+    logRequest(status)
+    return response
 
-    if (method === 'PATCH') {
-      const body = await readBody(event)
-      const res = await entityApi.requestBuilder().update(body).execute(destination)
-      logRequest(200)
-      return res
-    }
-
-    if (method === 'DELETE') {
-      const id = query.id as string
-      const res = await entityApi.requestBuilder().delete(id).execute(destination)
-      logRequest(204)
-      return res
-    }
-
-    throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
-  }
-  catch (err: unknown) {
-    const error = err as Error
-    console.error(`[nuxt-sap-odata] Proxy error for ${serviceRoute}/${entitySetName}:`, error.message)
-    return await getMockData()
+  } catch (err: any) {
+    // Log failure
+    const statusCode = err.statusCode || 500
+    logRequest(statusCode)
+    throw err
   }
 })
