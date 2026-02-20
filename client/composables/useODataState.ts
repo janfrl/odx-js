@@ -1,4 +1,4 @@
-import { ref, computed, getCurrentInstance, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
 
 export interface SapService {
   name: string
@@ -35,12 +35,13 @@ export function useSharedODataState() {
       const data = (await res.json()) as SapConfig
       config.value = data
       if (selectedService.value) {
-        const updated = data.services.find((s) => s.name === selectedService.value?.name)
+        const updated = data.services.find(s => s.name === selectedService.value?.name)
         if (updated) {
           selectedService.value = updated
         }
       }
-    } catch { /* ignore */ }
+    }
+    catch { /* ignore */ }
   }
 
   async function refreshLogs() {
@@ -49,7 +50,8 @@ export function useSharedODataState() {
       if (res.ok) {
         logs.value = (await res.json()) as any[]
       }
-    } catch { /* ignore */ }
+    }
+    catch { /* ignore */ }
   }
 
   async function generateService(name: string) {
@@ -58,7 +60,7 @@ export function useSharedODataState() {
     try {
       const res = await fetch(`/__sap_odata__/generate?service=${name}`)
       const data = (await res.json()) as { success: boolean }
-      
+
       // Ensure at least 800ms of loading state for UX
       const elapsed = Date.now() - start
       if (elapsed < 800) {
@@ -68,7 +70,8 @@ export function useSharedODataState() {
       if (data.success) {
         await fetchConfig()
       }
-    } finally {
+    }
+    finally {
       generatingStatus.value[name] = false
     }
   }
@@ -77,7 +80,8 @@ export function useSharedODataState() {
     try {
       await fetch('/__sap_odata__/logs', { method: 'DELETE' })
       logs.value = []
-    } catch { /* ignore */ }
+    }
+    catch { /* ignore */ }
   }
 
   const services = computed(() => config.value.services || [])
@@ -93,6 +97,6 @@ export function useSharedODataState() {
     fetchConfig,
     refreshLogs,
     generateService,
-    clearLogs
+    clearLogs,
   }
 }

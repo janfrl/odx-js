@@ -8,7 +8,7 @@ const stats = computed(() => [
   { label: 'Status', value: 'Active', color: 'text-green-500', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
   { label: 'Mode', value: config.value.mode, color: 'text-primary uppercase', icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' },
   { label: 'Base Path', value: config.value.basePath, color: 'text-zinc-600 dark:text-zinc-400', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
-  { label: 'Services', value: services.value.length.toString(), color: 'text-zinc-600 dark:text-zinc-400', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' }
+  { label: 'Services', value: services.value.length.toString(), color: 'text-zinc-600 dark:text-zinc-400', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
 ])
 </script>
 
@@ -16,30 +16,50 @@ const stats = computed(() => [
   <div class="p-8 space-y-10 bg-base text-base">
     <!-- Header -->
     <div class="flex items-center gap-5">
-      <svg viewBox="0 0 24 24" class="w-10 h-10 fill-primary opacity-90">
+      <svg
+        viewBox="0 0 24 24"
+        class="w-10 h-10 fill-primary opacity-90"
+      >
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
       </svg>
       <div>
-        <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none mb-1.5 font-sans">SAP OData Integration</h1>
-        <p class="text-zinc-500 text-xs font-medium">Manage and test your SAP Cloud SDK services.</p>
+        <h1 class="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-none mb-1.5 font-sans">
+          SAP OData Integration
+        </h1>
+        <p class="text-zinc-500 text-xs font-medium">
+          Manage and test your SAP Cloud SDK services.
+        </p>
       </div>
     </div>
 
     <!-- Stats Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-      <div 
-        v-for="stat in stats" 
-        :key="stat.label" 
+      <div
+        v-for="stat in stats"
+        :key="stat.label"
         class="p-6 border border-dashed rounded-xl relative bg-content border-base shadow-sm dark:shadow-none text-base"
       >
         <!-- Increased Label Contrast -->
         <div class="flex items-center justify-between opacity-60 mb-4 text-[9px] uppercase font-bold tracking-widest text-zinc-600 dark:text-zinc-400">
           <span>{{ stat.label }}</span>
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" :d="stat.icon" />
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              :d="stat.icon"
+            />
           </svg>
         </div>
-        <div :class="stat.color" class="font-mono font-bold text-[13px]">
+        <div
+          :class="stat.color"
+          class="font-mono font-bold text-[13px]"
+        >
           {{ stat.value }}
         </div>
       </div>
@@ -55,7 +75,11 @@ const stats = computed(() => [
         <div class="space-y-4">
           <div class="flex justify-between items-center text-sm border-b border-base pb-4">
             <span class="opacity-60 font-medium">Auth Forwarding</span>
-            <NBadge :n="config.forwardAuthHeader ? 'green' : 'orange'" variant="outline" class="uppercase text-[10px] font-bold tracking-widest px-2 py-1">
+            <NBadge
+              :n="config.forwardAuthHeader ? 'green' : 'orange'"
+              variant="outline"
+              class="uppercase text-[10px] font-bold tracking-widest px-2 py-1"
+            >
               {{ config.forwardAuthHeader ? 'Enabled' : 'Disabled' }}
             </NBadge>
           </div>
@@ -74,7 +98,11 @@ const stats = computed(() => [
         <div class="space-y-4">
           <div class="flex justify-between items-center text-sm border-b border-base pb-4">
             <span class="opacity-60 font-medium">Module Version</span>
-            <NBadge n="gray" variant="outline" class="font-mono text-[10px] font-bold px-2 py-1">
+            <NBadge
+              n="gray"
+              variant="outline"
+              class="font-mono text-[10px] font-bold px-2 py-1"
+            >
               v1.0.0
             </NBadge>
           </div>

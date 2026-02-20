@@ -21,7 +21,7 @@ const editor = ref({
 const ICONS = {
   view: 'M16 8c-6.6 0-12 8-12 8s5.4 8 12 8 12-8 12-8-5.4-8-12-8zm0 13c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z',
   edit: 'M26 4.5l-2.5-2.5c-0.7-0.7-1.8-0.7-2.5 0L4 19.1V24h4.9l17.1-17c0.7-0.7 0.7-1.8 0-2.5zM7.9 22H6v-1.9l13.1-13.1 1.9 1.9L7.9 22zM22.4 9.4l-1.9-1.9 1.6-1.6 1.9 1.9-1.6 1.6z',
-  trash: 'M12 12h2v12h-2z M18 12h2v12h-2z M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z M10 2h12v2H10z'
+  trash: 'M12 12h2v12h-2z M18 12h2v12h-2z M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z M10 2h12v2H10z',
 }
 
 async function selectEntity(entity: string) {
@@ -39,7 +39,8 @@ async function refreshEntityData() {
     const url = new URL(`${window.location.origin}${config.value.basePath}/${route}/${selectedEntity.value}`)
     if (queryParams.value.id) {
       url.searchParams.set('id', queryParams.value.id)
-    } else {
+    }
+    else {
       if (queryParams.value.filter) url.searchParams.set('$filter', queryParams.value.filter)
       if (queryParams.value.select) url.searchParams.set('$select', queryParams.value.select)
       if (queryParams.value.top) url.searchParams.set('$top', queryParams.value.top.toString())
@@ -47,9 +48,11 @@ async function refreshEntityData() {
     const res = await fetch(url.toString())
     const data = await res.json()
     previewData.value = Array.isArray(data) ? data : (data.value || [data])
-  } catch (e: any) {
+  }
+  catch (e: any) {
     previewError.value = e.message
-  } finally {
+  }
+  finally {
     previewLoading.value = false
   }
 }
@@ -74,7 +77,8 @@ async function deleteItem(row: any) {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
     if (res.ok) await refreshEntityData()
-  } catch (e: any) {
+  }
+  catch (e: any) {
     alert(e.message)
   }
 }
@@ -104,7 +108,10 @@ watch(selectedEntity, (newEntity) => {
     </div>
 
     <!-- Main Container -->
-    <div v-if="selectedEntity" class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm">
+    <div
+      v-if="selectedEntity"
+      class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm"
+    >
       <!-- Row 2: Filter Toolbar -->
       <div class="p-3 pr-4 flex items-end gap-4 bg-surface shrink-0 font-sans border-b border-base">
         <div class="flex flex-col gap-1 w-24">
@@ -143,7 +150,10 @@ watch(selectedEntity, (newEntity) => {
       <!-- Row 3: Action Toolbar -->
       <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-surface border-b border-base shrink-0">
         <div class="flex items-center gap-2">
-          <span v-if="previewData.length > 0" class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
+          <span
+            v-if="previewData.length > 0"
+            class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest"
+          >
             Items ({{ previewData.length }})
           </span>
         </div>
@@ -158,7 +168,10 @@ watch(selectedEntity, (newEntity) => {
 
       <!-- Table Area -->
       <div class="flex-1 overflow-auto custom-scrollbar bg-content">
-        <div v-if="previewLoading" class="p-20 flex justify-center opacity-30">
+        <div
+          v-if="previewLoading"
+          class="p-20 flex justify-center opacity-30"
+        >
           <NLoading />
         </div>
         <template v-else>
@@ -166,7 +179,9 @@ watch(selectedEntity, (newEntity) => {
             <thead class="sticky top-0 z-10">
               <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
                 <!-- Explicit rounding for sticky header corners -->
-                <th class="rounded-tl-xl px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">Actions</th>
+                <th class="rounded-tl-xl px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
+                  Actions
+                </th>
                 <th
                   v-for="(key, idx) in previewColumns"
                   :key="key"
@@ -178,21 +193,53 @@ watch(selectedEntity, (newEntity) => {
               </tr>
             </thead>
             <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-base text-[11px]">
-              <tr v-for="(row, idx) in previewData" :key="idx" class="hover:bg-primary/5 transition-colors">
+              <tr
+                v-for="(row, idx) in previewData"
+                :key="idx"
+                class="hover:bg-primary/5 transition-colors"
+              >
                 <td class="p-0 border-r border-base align-middle">
                   <div class="flex items-center justify-center gap-2">
-                    <button class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer" title="View" @click="openEditor('view', row)">
-                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor"><path :d="ICONS.view" /></svg>
+                    <button
+                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                      title="View"
+                      @click="openEditor('view', row)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        viewBox="0 0 32 32"
+                        fill="currentColor"
+                      ><path :d="ICONS.view" /></svg>
                     </button>
-                    <button class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer" title="Edit" @click="openEditor('update', row)">
-                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor"><path :d="ICONS.edit" /></svg>
+                    <button
+                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                      title="Edit"
+                      @click="openEditor('update', row)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        viewBox="0 0 32 32"
+                        fill="currentColor"
+                      ><path :d="ICONS.edit" /></svg>
                     </button>
-                    <button class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer" title="Delete" @click="deleteItem(row)">
-                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor"><path :d="ICONS.trash" /></svg>
+                    <button
+                      class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer"
+                      title="Delete"
+                      @click="deleteItem(row)"
+                    >
+                      <svg
+                        class="w-4 h-4"
+                        viewBox="0 0 32 32"
+                        fill="currentColor"
+                      ><path :d="ICONS.trash" /></svg>
                     </button>
                   </div>
                 </td>
-                <td v-for="key in previewColumns" :key="key" class="px-4 py-2.5 truncate max-w-[300px] opacity-90 text-[11px]">
+                <td
+                  v-for="key in previewColumns"
+                  :key="key"
+                  class="px-4 py-2.5 truncate max-w-[300px] opacity-90 text-[11px]"
+                >
                   {{ row[key] }}
                 </td>
               </tr>
@@ -201,6 +248,9 @@ watch(selectedEntity, (newEntity) => {
         </template>
       </div>
     </div>
-    <DataEditor v-model:editor="editor" @refresh="refreshEntityData" />
+    <DataEditor
+      v-model:editor="editor"
+      @refresh="refreshEntityData"
+    />
   </div>
 </template>

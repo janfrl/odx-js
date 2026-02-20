@@ -61,18 +61,18 @@ export default defineEventHandler(async (event) => {
     const mockEntities: Record<string, any[]> = {
       exampleentities: [
         { id: '1', Name: 'Mock Item A', Price: 100, Currency: 'EUR' },
-        { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' }
+        { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' },
       ],
       products: [
         { id: 'P1', Name: 'Notebook Professional', Category: 'Electronics' },
-        { id: 'P2', Name: 'Office Desk', Category: 'Furniture' }
-      ]
+        { id: 'P2', Name: 'Office Desk', Category: 'Furniture' },
+      ],
     }
-    
-    return mockEntities[entitySetName.toLowerCase()] || { 
-      service: matched.name, 
-      entitySet: entitySetName, 
-      message: 'Mock data fallback (SDK missing or error)' 
+
+    return mockEntities[entitySetName.toLowerCase()] || {
+      service: matched.name,
+      entitySet: entitySetName,
+      message: 'Mock data fallback (SDK missing or error)',
     }
   }
 
@@ -81,13 +81,13 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    const sdk = targetFile.endsWith('.ts') 
-      ? await jiti.import(targetFile) 
+    const sdk = targetFile.endsWith('.ts')
+      ? await jiti.import(targetFile)
       : await import(pathToFileURL(targetFile).href)
 
     const apiFactoryName = `${matched.name}Api`
     const apiFactory = sdk[apiFactoryName]
-    
+
     if (!apiFactory) {
       console.warn(`[nuxt-sap-odata] API Factory ${apiFactoryName} not found in SDK.`)
       return getMockData()
@@ -108,10 +108,13 @@ export default defineEventHandler(async (event) => {
       let rb = entityApi.requestBuilder().getAll()
       if (query.id) {
         rb = entityApi.requestBuilder().getByKey(query.id)
-      } else {
+      }
+      else {
         const odataParams: Record<string, string> = {}
         const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-        keys.forEach(key => { if (query[key]) odataParams[key] = String(query[key]) })
+        keys.forEach((key) => {
+          if (query[key]) odataParams[key] = String(query[key])
+        })
         if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
       }
       const res = await rb.execute(destination)

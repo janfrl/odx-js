@@ -14,7 +14,7 @@ export default defineEventHandler(async () => {
   const enhancedServices = await Promise.all(services.map(async (svc) => {
     const outDir = join(buildDir, 'sap-odata', 'generated', svc.name)
     const subDirName = svc.route || svc.name.toLowerCase()
-    
+
     const indexFileTs = join(outDir, subDirName, 'index.ts')
     const indexFileJs = join(outDir, subDirName, 'index.js')
 
@@ -26,23 +26,24 @@ export default defineEventHandler(async () => {
     if (targetFile) {
       isGenerated = true
       try {
-        const sdk = targetFile.endsWith('.ts') 
-          ? await jiti.import(targetFile) 
+        const sdk = targetFile.endsWith('.ts')
+          ? await jiti.import(targetFile)
           : await import(pathToFileURL(targetFile).href)
-          
+
         const apiFactoryName = `${svc.name}Api`
         const apiFactory = sdk[apiFactoryName]
 
         if (apiFactory) {
           const api = apiFactory()
           const sdkEntities = Object.keys(api).filter(k =>
-            typeof api[k] === 'object' && k !== 'requestBuilder' && !k.startsWith('_')
+            typeof api[k] === 'object' && k !== 'requestBuilder' && !k.startsWith('_'),
           )
           if (sdkEntities.length > 0) {
             entities = sdkEntities
           }
         }
-      } catch (e) {
+      }
+      catch {
         console.warn(`[nuxt-sap-odata] Metadata parsing failed for ${svc.name}, using mock entities.`)
       }
     }
@@ -50,7 +51,7 @@ export default defineEventHandler(async () => {
     return {
       ...svc,
       entities,
-      isGenerated
+      isGenerated,
     }
   }))
 
@@ -61,7 +62,7 @@ export default defineEventHandler(async () => {
     forwardAuthHeader: config.odata?.forwardAuthHeader,
     versions: {
       node: process.version,
-      module: '1.0.0'
-    }
+      module: '1.0.0',
+    },
   }
 })

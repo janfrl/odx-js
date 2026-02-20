@@ -8,11 +8,13 @@ const { logs, clearLogs } = useSharedODataState()
   <div class="h-full flex flex-col pt-8 px-6 bg-base text-base">
     <div class="flex justify-between items-center mb-8 shrink-0 px-2 font-sans">
       <div class="flex items-center gap-3">
-        <h1 class="text-sm font-bold opacity-90 uppercase tracking-wider text-base-content">Traffic Monitor</h1>
-        <NBadge 
-          v-if="logs.length" 
-          n="gray" 
-          variant="subtle" 
+        <h1 class="text-sm font-bold opacity-90 uppercase tracking-wider text-base-content">
+          Traffic Monitor
+        </h1>
+        <NBadge
+          v-if="logs.length"
+          n="gray"
+          variant="subtle"
           class="text-[10px] px-1.5 py-0.5 font-mono"
         >
           {{ logs.length }}
@@ -34,16 +36,31 @@ const { logs, clearLogs } = useSharedODataState()
         <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max">
           <thead class="sticky top-0 z-10">
             <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
-              <th class="rounded-tl-xl px-6 py-4 w-20 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Status</th>
-              <th class="px-6 py-4 w-24 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Method</th>
-              <th class="px-6 py-4 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Resource / Path</th>
-              <th class="rounded-tr-xl px-6 py-4 text-right border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">Duration</th>
+              <th class="rounded-tl-xl px-6 py-4 w-20 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+                Status
+              </th>
+              <th class="px-6 py-4 w-24 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+                Method
+              </th>
+              <th class="px-6 py-4 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+                Resource / Path
+              </th>
+              <th class="rounded-tr-xl px-6 py-4 text-right border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+                Duration
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-base">
-            <tr v-for="log in logs" :key="log.id" class="hover:bg-primary/5 transition-colors group text-base">
+            <tr
+              v-for="log in logs"
+              :key="log.id"
+              class="hover:bg-primary/5 transition-colors group text-base"
+            >
               <td class="px-6 py-4 text-center border-r border-base">
-                <span :class="log.status < 400 ? 'text-primary' : 'text-red-500'" class="font-bold">{{ log.status }}</span>
+                <span
+                  :class="log.status < 400 ? 'text-primary' : 'text-red-500'"
+                  class="font-bold"
+                >{{ log.status }}</span>
               </td>
               <td class="px-6 py-4 opacity-80 uppercase text-[10px] tracking-tighter">
                 {{ log.method }}
@@ -56,7 +73,10 @@ const { logs, clearLogs } = useSharedODataState()
               </td>
             </tr>
             <tr v-if="logs.length === 0">
-              <td colspan="4" class="px-6 py-16 text-center opacity-40 italic font-sans text-xs">
+              <td
+                colspan="4"
+                class="px-6 py-16 text-center opacity-40 italic font-sans text-xs"
+              >
                 No activity recorded yet.
               </td>
             </tr>
