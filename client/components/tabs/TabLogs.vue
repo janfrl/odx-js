@@ -13,9 +13,7 @@ const { logs, clearLogs } = useSharedODataState()
         </h1>
         <NBadge
           v-if="logs.length"
-          n="gray"
-          variant="subtle"
-          class="text-[10px] px-1.5 py-0.5 font-mono"
+          class="text-[11px] px-2 py-0.5 font-bold bg-zinc-100 dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 opacity-90"
         >
           {{ logs.length }}
         </NBadge>
