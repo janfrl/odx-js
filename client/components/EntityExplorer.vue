@@ -18,6 +18,12 @@ const editor = ref({
   original: null as any | null,
 })
 
+const ICONS = {
+  view: 'M16 8c-6.6 0-12 8-12 8s5.4 8 12 8 12-8 12-8-5.4-8-12-8zm0 13c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z',
+  edit: 'M26 4.5l-2.5-2.5c-0.7-0.7-1.8-0.7-2.5 0L4 19.1V24h4.9l17.1-17c0.7-0.7 0.7-1.8 0-2.5zM7.9 22H6v-1.9l13.1-13.1 1.9 1.9L7.9 22zM22.4 9.4l-1.9-1.9 1.6-1.6 1.9 1.9-1.6 1.6z',
+  trash: 'M12 12h2v12h-2z M18 12h2v12h-2z M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z M10 2h12v2H10z'
+}
+
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
   queryParams.value.id = ''
@@ -82,7 +88,6 @@ watch(selectedEntity, (newEntity) => {
 
 <template>
   <div class="flex-1 flex flex-col overflow-hidden px-6">
-    <!-- Entity Tabs -->
     <div class="flex gap-4 overflow-x-auto no-scrollbar border-b border-base mb-4 shrink-0">
       <button
         v-for="entity in (selectedService?.entities || [])"
@@ -95,7 +100,6 @@ watch(selectedEntity, (newEntity) => {
       </button>
     </div>
 
-    <!-- Toolbar / Filter Bar -->
     <div v-if="selectedEntity" class="flex-1 flex flex-col min-h-0 bg-content rounded-t-lg overflow-hidden border-t border-x border-base shadow-sm">
       <div class="p-3 flex items-end gap-3 border-b border-base bg-surface shrink-0 font-sans">
         <div class="flex flex-col gap-1 w-24">
@@ -142,7 +146,6 @@ watch(selectedEntity, (newEntity) => {
         </div>
       </div>
 
-      <!-- Table Area -->
       <div class="flex-1 overflow-auto custom-scrollbar bg-content">
         <div v-if="previewLoading" class="p-20 flex justify-center opacity-30">
           <NLoading />
@@ -160,17 +163,23 @@ watch(selectedEntity, (newEntity) => {
                 <td class="p-0 border-r border-base align-middle">
                   <div class="flex items-center justify-center gap-2">
                     <button class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer" title="View" @click="openEditor('view', row)">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor">
+                        <path :d="ICONS.view" />
+                      </svg>
                     </button>
                     <button class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer" title="Edit" @click="openEditor('update', row)">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor">
+                        <path :d="ICONS.edit" />
+                      </svg>
                     </button>
                     <button class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer" title="Delete" @click="deleteItem(row)">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <svg class="w-4 h-4" viewBox="0 0 32 32" fill="currentColor">
+                        <path :d="ICONS.trash" />
+                      </svg>
                     </button>
                   </div>
                 </td>
-                <td v-for="key in previewColumns" :key="key" class="px-4 py-2.5 truncate max-w-[300px] opacity-90">
+                <td v-for="key in previewColumns" :key="key" class="px-4 py-2.5 truncate max-w-[300px] opacity-90 text-[11px]">
                   {{ row[key] }}
                 </td>
               </tr>
