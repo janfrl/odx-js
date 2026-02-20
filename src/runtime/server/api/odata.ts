@@ -74,10 +74,17 @@ export default defineEventHandler(async (event) => {
     }
 
     if (method === 'POST') {
-      const body = await readBody(event)
+      const body = await readBody(event).catch(() => null)
+      if (!body || typeof body !== 'object') {
+        throw createError({ statusCode: 400, statusMessage: 'Invalid or missing JSON body for POST' })
+      }
+
       const newItem = { ...body }
       // Simple ID generation if missing
-      if (!newItem.ID && !newItem.id) newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
+      if (!newItem.ID && !newItem.id) {
+        newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
+      }
+      
       data.push(newItem)
       await storage.setItem(activeKey, data)
       logRequest(201)
@@ -85,10 +92,20 @@ export default defineEventHandler(async (event) => {
     }
 
     if (method === 'PATCH' || method === 'PUT') {
-      const body = await readBody(event)
-      const id = query.id || body.ID || body.id
+      const body = await readBody(event).catch(() => null)
+      const id = query.id || (body && (body.ID || body.id))
+      
+      if (!id) {
+        throw createError({ statusCode: 400, statusMessage: 'Missing Item ID for update (provide via ?id= or in body)' })
+      }
+      if (!body || typeof body !== 'object') {
+        throw createError({ statusCode: 400, statusMessage: 'Invalid or missing JSON body for update' })
+      }
+
       const index = data.findIndex((item: any) => String(item.ID || item.id) === String(id))
-      if (index === -1) throw createError({ statusCode: 404, statusMessage: 'Item not found in mocks' })
+      if (index === -1) {
+        throw createError({ statusCode: 404, statusMessage: `Item with ID "${id}" not found in mocks` })
+      }
       
       data[index] = { ...data[index], ...body }
       await storage.setItem(activeKey, data)
@@ -98,10 +115,16 @@ export default defineEventHandler(async (event) => {
 
     if (method === 'DELETE') {
       const id = query.id
+      if (!id) {
+        throw createError({ statusCode: 400, statusMessage: 'Missing Item ID for deletion (provide via ?id=)' })
+      }
+
       const initialLength = data.length
       data = data.filter((item: any) => String(item.ID || item.id) !== String(id))
       
-      if (data.length === initialLength) throw createError({ statusCode: 404, statusMessage: 'Item not found in mocks' })
+      if (data.length === initialLength) {
+        throw createError({ statusCode: 404, statusMessage: `Item with ID "${id}" not found in mocks` })
+      }
       
       await storage.setItem(activeKey, data)
       logRequest(204)
