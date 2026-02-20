@@ -1,4 +1,4 @@
-import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody } from '#imports'
+import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody, useStorage } from '#imports'
 import { join } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -47,6 +47,35 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: `Unknown service "${serviceRoute}"` })
   }
 
+  const storage = useStorage('odata:mocks')
+  
+  const getMockData = async () => {
+    logRequest(200)
+
+    // Try both colon and slash as separators
+    const mockKeyColon = `${matched.name}:${entitySetName}.json`
+    const mockKeySlash = `${matched.name}/${entitySetName}.json`
+
+    if (await storage.hasItem(mockKeyColon)) {
+      return await storage.getItem(mockKeyColon)
+    }
+    if (await storage.hasItem(mockKeySlash)) {
+      return await storage.getItem(mockKeySlash)
+    }
+
+    return {
+      service: matched.name,
+      entitySet: entitySetName,
+      message: `No mock data found for ${matched.name}/${entitySetName}. Create a mock file in .data/mockdata/${matched.name}/${entitySetName}.json or use the DevTools Data Editor.`,
+    }
+  }
+
+  // Check if we should force mock (optional, could be a header or query param)
+  const forceMock = getQuery(event).mock === 'true'
+  if (forceMock) {
+    return await getMockData()
+  }
+
   const subDirName = matched.route || matched.name.toLowerCase()
   const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
   const indexFileTs = join(generatedDir, 'index.ts')
@@ -54,29 +83,8 @@ export default defineEventHandler(async (event) => {
 
   const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
 
-  const getMockData = () => {
-    logRequest(200)
-    // Basic mock mapping for dev explorer
-    const mockEntities: Record<string, Record<string, unknown>[]> = {
-      exampleentities: [
-        { id: '1', Name: 'Mock Item A', Price: 100, Currency: 'EUR' },
-        { id: '2', Name: 'Mock Item B', Price: 250, Currency: 'EUR' },
-      ],
-      products: [
-        { id: 'P1', Name: 'Notebook Professional', Category: 'Electronics' },
-        { id: 'P2', Name: 'Office Desk', Category: 'Furniture' },
-      ],
-    }
-
-    return mockEntities[entitySetName.toLowerCase()] || {
-      service: matched.name,
-      entitySet: entitySetName,
-      message: 'Mock data fallback (SDK missing or error)',
-    }
-  }
-
   if (!targetFile) {
-    return getMockData()
+    return await getMockData()
   }
 
   try {
@@ -89,14 +97,14 @@ export default defineEventHandler(async (event) => {
 
     if (!apiFactory) {
       console.warn(`[nuxt-sap-odata] API Factory ${apiFactoryName} not found in SDK.`)
-      return getMockData()
+      return await getMockData()
     }
 
     const api = apiFactory()
     const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
 
     if (!entityApi) {
-      return getMockData()
+      return await getMockData()
     }
 
     const method = event.method
@@ -147,6 +155,6 @@ export default defineEventHandler(async (event) => {
   catch (err: unknown) {
     const error = err as Error
     console.error(`[nuxt-sap-odata] Proxy error for ${serviceRoute}/${entitySetName}:`, error.message)
-    return getMockData()
+    return await getMockData()
   }
 })

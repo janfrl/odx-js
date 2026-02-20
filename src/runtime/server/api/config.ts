@@ -1,13 +1,33 @@
 import { defineEventHandler, useRuntimeConfig } from '#imports'
-import { join } from 'pathe'
+import { join, resolve } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createJiti } from 'jiti'
 
+function extractEntitiesFromEdmx(edmxPath: string): string[] {
+  if (!fs.existsSync(edmxPath)) return []
+  try {
+    const content = fs.readFileSync(edmxPath, 'utf-8')
+    const entitySets: string[] = []
+    // Match <EntitySet Name="EntitySetName" ... />
+    const regex = /<EntitySet\s+Name="([^"]+)"/g
+    let match
+    while ((match = regex.exec(content)) !== null) {
+      if (match[1]) entitySets.push(match[1])
+    }
+    return entitySets
+  }
+  catch (e) {
+    console.error(`[nuxt-sap-odata] Failed to parse EDMX at ${edmxPath}`, e)
+    return []
+  }
+}
+
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const buildDir = config.odata?.buildDir as string
-  const services = (config.odata?.services || []) as Array<{ name: string, route?: string }>
+  const rootDir = config.odata?.rootDir as string
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, edmx: string }>
 
   const jiti = createJiti(import.meta.url)
 
@@ -18,7 +38,7 @@ export default defineEventHandler(async () => {
     const indexFileTs = join(outDir, subDirName, 'index.ts')
     const indexFileJs = join(outDir, subDirName, 'index.js')
 
-    let entities: string[] = ['ExampleEntities', 'Products', 'Suppliers', 'Categories']
+    let entities: string[] = []
     let isGenerated = false
 
     const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
@@ -44,8 +64,14 @@ export default defineEventHandler(async () => {
         }
       }
       catch {
-        console.warn(`[nuxt-sap-odata] Metadata parsing failed for ${svc.name}, using mock entities.`)
+        // Fallback to EDMX if SDK import fails
       }
+    }
+
+    // Fallback to EDMX parsing if no entities found yet
+    if (entities.length === 0) {
+      const edmxAbs = resolve(rootDir, svc.edmx)
+      entities = extractEntitiesFromEdmx(edmxAbs)
     }
 
     return {

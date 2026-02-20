@@ -2,7 +2,24 @@
 <edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx">
   <edmx:DataServices>
     <Schema Namespace="DummyService" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
-      <EntityType Name="ExampleEntity">
+      <EntityType Name="Product">
+        <Key>
+          <PropertyRef Name="ID" />
+        </Key>
+        <Property Name="ID" Type="Edm.String" Nullable="false" />
+        <Property Name="Name" Type="Edm.String" />
+        <Property Name="Price" Type="Edm.Decimal" />
+        <Property Name="Currency" Type="Edm.String" />
+      </EntityType>
+      <EntityType Name="Supplier">
+        <Key>
+          <PropertyRef Name="ID" />
+        </Key>
+        <Property Name="ID" Type="Edm.String" Nullable="false" />
+        <Property Name="Name" Type="Edm.String" />
+        <Property Name="City" Type="Edm.String" />
+      </EntityType>
+      <EntityType Name="Category">
         <Key>
           <PropertyRef Name="ID" />
         </Key>
@@ -10,7 +27,9 @@
         <Property Name="Name" Type="Edm.String" />
       </EntityType>
       <EntityContainer Name="DummyContainer">
-        <EntitySet Name="ExampleEntities" EntityType="DummyService.ExampleEntity" />
+        <EntitySet Name="Products" EntityType="DummyService.Product" />
+        <EntitySet Name="Suppliers" EntityType="DummyService.Supplier" />
+        <EntitySet Name="Categories" EntityType="DummyService.Category" />
       </EntityContainer>
     </Schema>
   </edmx:DataServices>
