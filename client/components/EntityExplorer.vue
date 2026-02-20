@@ -8,7 +8,7 @@ const { selectedService, selectedEntity, config } = useSharedODataState()
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
 const previewData = ref<Record<string, unknown>[]>([])
-const queryParams = ref({ id: '', filter: '', select: '', top: 50 })
+const queryInput = ref('?')
 
 const editor = ref<EditorState>({
   show: false,
@@ -27,32 +27,30 @@ const ICONS = {
 
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
-  queryParams.value.id = ''
+  queryInput.value = '?'
 }
 
 async function refreshEntityData() {
   if (!selectedService.value || !selectedEntity.value) return
   previewLoading.value = true
   previewError.value = null
-  previewData.value = [] // Reset data before fetch
+  previewData.value = []
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
-    const url = new URL(`${window.location.origin}${config.value.basePath}/${route}/${selectedEntity.value}`)
-    if (queryParams.value.id) {
-      url.searchParams.set('id', queryParams.value.id)
+    
+    // Construct URL with raw query input
+    let urlPath = `${config.value.basePath}/${route}/${selectedEntity.value}`
+    if (queryInput.value && queryInput.value !== '?') {
+      const q = queryInput.value.startsWith('?') ? queryInput.value : `?${queryInput.value}`
+      urlPath += q
     }
-    else {
-      if (queryParams.value.filter) url.searchParams.set('$filter', queryParams.value.filter)
-      if (queryParams.value.select) url.searchParams.set('$select', queryParams.value.select)
-      if (queryParams.value.top) url.searchParams.set('$top', queryParams.value.top.toString())
-    }
-    const res = await fetch(url.toString())
+
+    const res = await fetch(urlPath)
     if (!res.ok) {
       const errorText = await res.text().catch(() => '')
       let statusMessage = res.statusText || `Server Error ${res.status}`
       try {
         const errData = JSON.parse(errorText)
-        // message usually contains the specific error, statusMessage the generic one
         statusMessage = errData.message || errData.statusMessage || (errData.data && errData.data.statusMessage) || statusMessage
       }
       catch {
@@ -65,7 +63,7 @@ async function refreshEntityData() {
   }
   catch (e: unknown) {
     previewError.value = (e as Error).message
-    previewData.value = [] // Ensure table is empty on error
+    previewData.value = []
   }
   finally {
     previewLoading.value = false
@@ -130,29 +128,21 @@ watch(selectedEntity, (newEntity) => {
       v-if="selectedEntity"
       class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm"
     >
-      <!-- Row 2: Filter Toolbar -->
+      <!-- Row 2: Raw Request Toolbar -->
       <div class="p-3 pr-4 flex items-end gap-4 bg-surface shrink-0 font-sans border-b border-base text-base">
-        <div class="flex flex-col gap-1 w-24">
-          <label class="text-[9px] uppercase font-bold text-zinc-600 dark:text-zinc-400 tracking-widest ml-1 opacity-70">Key</label>
-          <input
-            v-model="queryParams.id"
-            type="text"
-            placeholder="ID"
-            :disabled="!!queryParams.filter"
-            class="h-8 bg-base border border-base rounded px-2 text-[11px] font-mono outline-none focus:border-zinc-500 disabled:opacity-30 text-base w-full"
-            @keyup.enter="refreshEntityData"
-          >
-        </div>
         <div class="flex flex-col gap-1 flex-1">
-          <label class="text-[9px] uppercase font-bold text-zinc-600 dark:text-zinc-400 tracking-widest ml-1 opacity-70">OData Filter Query</label>
-          <input
-            v-model="queryParams.filter"
-            type="text"
-            placeholder="e.g. Name eq 'Test'"
-            :disabled="!!queryParams.id"
-            class="h-8 bg-base border border-base rounded px-2 text-[11px] font-mono outline-none focus:border-primary/50 disabled:opacity-30 text-base w-full"
-            @keyup.enter="refreshEntityData"
-          >
+          <label class="text-[9px] uppercase font-bold text-zinc-600 dark:text-zinc-400 tracking-widest ml-1 opacity-70 mb-1">
+            OData Request Query
+          </label>
+          <div class="relative flex items-center">
+            <input
+              v-model="queryInput"
+              type="text"
+              placeholder="?id=... or ?$filter=..."
+              class="h-8 bg-base border border-base rounded px-3 text-[11px] font-mono outline-none focus:border-primary/50 text-base w-full transition-all"
+              @keyup.enter="refreshEntityData"
+            >
+          </div>
         </div>
         <div class="flex items-center">
           <NButton
