@@ -17,7 +17,7 @@ const { selectedService, activeTab } = useSharedODataState()
 
     <!-- Context Indicator -->
     <div v-if="activeTab === 'services' && selectedService" class="flex items-center gap-2 animate-fade-in">
-      <NBadge n="primary" variant="outline" class="font-mono text-[9px] uppercase tracking-widest px-2 py-0.5">
+      <NBadge n="primary" variant="outline" class="font-mono text-[10px] tracking-widest px-2 py-0.5">
         {{ selectedService.name }}
       </NBadge>
     </div>
