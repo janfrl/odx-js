@@ -14,10 +14,9 @@ const { selectedService, activeTab } = useSharedODataState()
         SAP OData <span class="font-medium text-zinc-400 dark:text-zinc-500 opacity-70">Explorer</span>
       </span>
     </div>
-    
+
     <!-- Context Indicator -->
     <div v-if="activeTab === 'services' && selectedService" class="flex items-center gap-2 animate-fade-in">
-      <div class="w-px h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
       <NBadge n="primary" variant="outline" class="font-mono text-[9px] uppercase tracking-widest px-2 py-0.5">
         {{ selectedService.name }}
       </NBadge>
