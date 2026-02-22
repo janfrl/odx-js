@@ -2,7 +2,7 @@
 import { Background } from '@vue-flow/background'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import * as dagre from 'dagre'
-import { markRaw, onMounted, ref, watch } from 'vue'
+import { markRaw, onMounted, ref, watch, nextTick } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 import SchemaNode from './SchemaNode.vue'
 
@@ -10,10 +10,19 @@ import SchemaNode from './SchemaNode.vue'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 
-const { selectedService } = useSharedODataState()
-const { nodes, edges, setNodes, setEdges, fitView, addNodes, onNodeClick } = useVueFlow()
+const { 
+  selectedService, 
+  globalNodes, 
+  globalEdges, 
+  globalViewport, 
+  initializedServices, 
+  lastSelectedServiceForGraph 
+} = useSharedODataState()
+
+const { fitView, onViewportChange, setViewport } = useVueFlow()
 
 const loading = ref(false)
+const isReady = ref(false)
 const schemaData = ref<any>(null)
 
 // Define custom node types
@@ -21,36 +30,61 @@ const nodeTypes = {
   schema: markRaw(SchemaNode),
 }
 
-async function fetchSchema() {
+// Save viewport changes to global state immediately
+onViewportChange((viewport) => {
+  if (isReady.value) {
+    globalViewport.value = { ...viewport }
+  }
+})
+
+async function fetchSchema(forceAutoFit = false) {
   if (!selectedService.value) return
-  loading.value = true
+  
+  const isNewService = !initializedServices.value.has(selectedService.value.name)
+  
+  // Only show the loading indicator if we actually need to do work (new service or force)
+  if (isNewService || forceAutoFit) {
+    loading.value = true
+    isReady.value = false
+  }
+  
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
     schemaData.value = await res.json()
-    generateGraph()
+    
+    if (isNewService || forceAutoFit) {
+      generateGraph(true)
+      initializedServices.value.add(selectedService.value.name)
+    } else {
+      await nextTick()
+      setViewport(globalViewport.value)
+      setTimeout(() => {
+        isReady.value = true
+        loading.value = false
+      }, 50)
+    }
+    
+    lastSelectedServiceForGraph.value = selectedService.value.name
   } catch (e) {
     console.error('Failed to fetch schema', e)
-  } finally {
     loading.value = false
   }
 }
 
-function generateGraph() {
+function generateGraph(autoFit = false) {
   if (!schemaData.value) return
 
   const newNodes: any[] = []
   const newEdges: any[] = []
 
-  // Create Nodes
   schemaData.value.entities.forEach((entity: any) => {
     newNodes.push({
       id: entity.name,
       type: 'schema',
       data: { entity },
-      position: { x: 0, y: 0 }, // Will be set by dagre
+      position: { x: 0, y: 0 },
     })
 
-    // Create Edges from Navigation Properties
     entity.navigationProperties.forEach((nav: any) => {
       const assoc = schemaData.value.associations.find((a: any) => 
         a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship
@@ -78,12 +112,10 @@ function generateGraph() {
     })
   })
 
-  // Apply Auto Layout with Dagre
   const g = new dagre.graphlib.Graph()
   g.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 150 })
   g.setDefaultEdgeLabel(() => ({}))
 
-  // Estimate dimensions for dagre
   newNodes.forEach(node => {
     const propCount = node.data.entity.properties.length
     g.setNode(node.id, { width: 200, height: 40 + (propCount * 22) })
@@ -92,21 +124,30 @@ function generateGraph() {
 
   dagre.layout(g)
 
-  // Map dagre positions back to VueFlow nodes
   newNodes.forEach(node => {
     const nodeWithPos = g.node(node.id)
     node.position = { x: nodeWithPos.x - 100, y: nodeWithPos.y - 50 }
   })
 
-  setNodes(newNodes)
-  setEdges(newEdges)
+  globalNodes.value = [...newNodes]
+  globalEdges.value = [...newEdges]
   
-  // Wait for DOM then fit
-  setTimeout(() => fitView({ padding: 0.2 }), 100)
+  if (autoFit) {
+    setTimeout(() => {
+      fitView({ padding: 0.2 })
+      setTimeout(() => {
+        isReady.value = true
+        loading.value = false
+      }, 100)
+    }, 50)
+  } else {
+    isReady.value = true
+    loading.value = false
+  }
 }
 
-function generateMermaidCode() {
-  if (!schemaData.value) return ''
+function copyMermaid() {
+  if (!schemaData.value) return
   let code = 'erDiagram\n'
   schemaData.value.entities.forEach((entity: any) => {
     const props = entity.properties.map((p: any) => `    ${p.type.split('.').pop()} ${p.name} ${p.isKey ? 'PK' : ''}`).join('\n')
@@ -125,39 +166,37 @@ function generateMermaidCode() {
       }
     })
   })
-  return code
-}
-
-function copyMermaid() {
-  const code = generateMermaidCode()
-  if (!code) return
   navigator.clipboard.writeText(code)
   alert('Mermaid diagram code copied to clipboard!')
 }
 
 onMounted(() => {
-  if (selectedService.value) fetchSchema()
+  if (selectedService.value) {
+    fetchSchema()
+  }
 })
 
 watch(selectedService, () => {
-  if (selectedService.value) fetchSchema()
+  if (selectedService.value) {
+    fetchSchema()
+  }
 })
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-base overflow-hidden relative">
-    <div class="p-4 border-b border-base bg-surface flex items-center justify-between shrink-0">
-      <div class="flex items-center gap-3">
+  <div class="h-full flex flex-col bg-base overflow-hidden relative text-base">
+    <div class="p-4 border-b border-base bg-surface flex items-center justify-between shrink-0 text-base">
+      <div class="flex items-center gap-3 text-base">
         <h2 class="text-sm font-bold uppercase tracking-wider opacity-70 flex items-center gap-2">
           <div class="i-carbon-flow-connection" />
           Entity Relationship Explorer
         </h2>
         <div v-if="loading" class="animate-pulse text-xs text-primary font-bold">Refining Schema...</div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 text-base">
         <button 
           class="px-3 py-1.5 text-[10px] font-bold uppercase bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-all border-none cursor-pointer flex items-center gap-1.5"
-          @click="generateGraph"
+          @click="fetchSchema(true)"
         >
           <div class="i-carbon-center-to-fit" />
           Auto Layout
@@ -172,13 +211,16 @@ watch(selectedService, () => {
       </div>
     </div>
 
-    <div class="flex-1 relative overflow-hidden bg-zinc-50 dark:bg-[#050505]">
+    <div 
+      class="flex-1 relative overflow-hidden bg-zinc-50 dark:bg-[#050505] transition-opacity duration-300"
+      :style="{ opacity: isReady ? 1 : 0 }"
+    >
       <VueFlow
-        :nodes="nodes"
-        :edges="edges"
+        v-model:nodes="globalNodes"
+        v-model:edges="globalEdges"
         :node-types="nodeTypes"
         :class="{ 'dark': true }"
-        :min-zoom="0.2"
+        :min-zoom="0.05"
         :max-zoom="4"
       >
         <Background pattern-color="#333" :gap="20" />
@@ -186,18 +228,18 @@ watch(selectedService, () => {
     </div>
 
     <!-- Instructions Overlay -->
-    <div class="absolute bottom-6 left-6 flex flex-col gap-2 pointer-events-none">
+    <div class="absolute bottom-6 left-6 flex flex-col gap-2 pointer-events-none text-base">
       <div class="p-3 bg-surface border border-base rounded-xl shadow-2xl opacity-90 backdrop-blur-md">
-        <h4 class="text-[10px] font-black uppercase mb-2 tracking-widest text-primary flex items-center gap-2">
+        <h4 class="text-[10px] font-black uppercase mb-2 tracking-widest text-primary flex items-center gap-2 text-base">
           <div class="i-carbon-information" />
           Explorer Controls
         </h4>
-        <div class="space-y-1.5">
-          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70">
+        <div class="space-y-1.5 text-base">
+          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70 text-base">
             <kbd class="px-1.5 py-0.5 bg-base border border-base rounded text-[8px]">Scroll</kbd>
             <span>to Zoom</span>
           </div>
-          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70">
+          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70 text-base">
             <kbd class="px-1.5 py-0.5 bg-base border border-base rounded text-[8px]">Drag</kbd>
             <span>to Pan / Move Entities</span>
           </div>
@@ -216,12 +258,8 @@ watch(selectedService, () => {
 }
 
 @keyframes dashdraw {
-  from {
-    stroke-dashoffset: 10;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
+  from { stroke-dashoffset: 10; }
+  to { stroke-dashoffset: 0; }
 }
 
 .vue-flow__edge-label {
@@ -232,11 +270,6 @@ watch(selectedService, () => {
   font-weight: bold;
 }
 
-.dark .vue-flow__edge-textbg {
-  fill: #050505;
-}
-
-.vue-flow__controls {
-  display: none;
-}
+.dark .vue-flow__edge-textbg { fill: #050505; }
+.vue-flow__controls { display: none; }
 </style>

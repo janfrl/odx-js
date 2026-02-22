@@ -50,6 +50,14 @@ const selectedService = ref<SapService | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 
+// Persistence for Schema Graph
+const globalNodes = ref<any[]>([])
+const globalEdges = ref<any[]>([])
+const globalViewport = ref<{ x: number, y: number, zoom: number }>({ x: 0, y: 0, zoom: 1 })
+const initializedServices = ref<Set<string>>(new Set())
+const lastSelectedServiceForGraph = ref<string | null>(null)
+const globalViewMode = ref<'explorer' | 'schema'>('explorer')
+
 export function useSharedODataState() {
   async function fetchConfig() {
     try {
@@ -123,6 +131,12 @@ export function useSharedODataState() {
     selectedService,
     selectedEntity,
     generatingStatus,
+    globalNodes,
+    globalEdges,
+    globalViewport,
+    globalViewMode,
+    initializedServices,
+    lastSelectedServiceForGraph,
     fetchConfig,
     refreshLogs,
     generateService,

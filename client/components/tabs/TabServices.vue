@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
 
-const { services, selectedService, config, generateService, generatingStatus, selectedEntity } = useSharedODataState()
-
-const viewMode = ref<'explorer' | 'schema'>('explorer')
+const { services, selectedService, config, generateService, generatingStatus, selectedEntity, globalViewMode } = useSharedODataState()
 
 const COLORS = {
   green: '#00dc82',
@@ -27,7 +24,7 @@ const ICONS = {
       v-if="!selectedService"
       class="p-8 space-y-8 overflow-y-auto custom-scrollbar"
     >
-      <div class="flex items-center justify-between px-2">
+      <div class="flex items-center justify-between px-2 text-base">
         <h2 class="text-sm font-bold opacity-70 uppercase tracking-wider text-base-content">
           Available Services
         </h2>
@@ -124,7 +121,7 @@ const ICONS = {
           </svg>
         </button>
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 mb-1">
+          <div class="flex items-center gap-2 mb-1 text-base">
             <h2 class="text-lg font-bold leading-none text-zinc-900 dark:text-zinc-100">
               {{ selectedService.name }}
             </h2>
@@ -146,18 +143,18 @@ const ICONS = {
         </div>
 
         <!-- View Toggle -->
-        <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center">
+        <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center text-base">
           <button 
             class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none"
-            :class="viewMode === 'explorer' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
-            @click="viewMode = 'explorer'"
+            :class="globalViewMode === 'explorer' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+            @click="globalViewMode = 'explorer'"
           >
             Data
           </button>
           <button 
             class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none"
-            :class="viewMode === 'schema' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
-            @click="viewMode = 'schema'"
+            :class="globalViewMode === 'schema' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+            @click="globalViewMode = 'schema'"
           >
             Schema
           </button>
@@ -165,8 +162,8 @@ const ICONS = {
       </div>
 
       <!-- Conditional Content -->
-      <EntityExplorer v-if="viewMode === 'explorer'" />
-      <SchemaExplorer v-else />
+      <EntityExplorer v-show="globalViewMode === 'explorer'" />
+      <SchemaExplorer v-show="globalViewMode === 'schema'" />
     </div>
   </div>
 </template>
