@@ -9,6 +9,7 @@ const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
 const previewData = ref<Record<string, unknown>[]>([])
 const queryInput = ref('?')
+const schema = ref<any>(null)
 
 const editor = ref<EditorState>({
   show: false,
@@ -28,6 +29,16 @@ const ICONS = {
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
   queryInput.value = '?'
+}
+
+async function fetchSchema() {
+  if (!selectedService.value) return
+  try {
+    const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
+    schema.value = await res.json()
+  } catch (e) {
+    console.error('Failed to fetch schema', e)
+  }
 }
 
 async function refreshEntityData() {
@@ -154,16 +165,34 @@ function downloadJson() {
 }
 
 const previewColumns = computed(() => {
+  // 1. Get properties from EDMX if available (Source of Truth for Casing)
+  const edmxEntity = schema.value?.entities?.find((e: any) => e.entitySet === selectedEntity.value || e.name === selectedEntity.value)
+  const edmxProps = edmxEntity?.properties?.map((p: any) => p.name) || []
+
+  // 2. Get properties from actual data (Fallbacks or dynamic data)
   const firstRow = previewData.value[0]
-  return firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
+  const dataProps = firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
+
+  // 3. Merge: Prioritize EDMX, then add anything unique from data
+  const combined = [...edmxProps]
+  dataProps.forEach(dp => {
+    // Add if not already in combined (case-insensitive check to avoid duplicates if data has wrong case)
+    if (!combined.some(cp => cp.toLowerCase() === dp.toLowerCase())) {
+      combined.push(dp)
+    }
+  })
+
+  return combined
 })
 
 watch(selectedService, (newSvc) => {
   if (newSvc && newSvc.entities && newSvc.entities.length > 0) {
     selectedEntity.value = newSvc.entities[0]
+    fetchSchema()
   }
   else {
     selectedEntity.value = null
+    schema.value = null
   }
 })
 
@@ -296,7 +325,7 @@ watch(selectedEntity, (newEntity) => {
             class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max text-base"
           >
             <thead class="sticky top-0 z-10 text-base">
-              <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em] text-base">
+              <tr class="text-zinc-800 dark:text-zinc-200 text-[9px] font-black tracking-wide text-base">
                 <!-- No rounding since it docks to the toolbar above -->
                 <th class="px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px] text-base">
                   Actions
@@ -304,7 +333,7 @@ watch(selectedEntity, (newEntity) => {
                 <th
                   v-for="key in previewColumns"
                   :key="key"
-                  class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px] text-base"
+                  class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold normal-case text-[10px] text-base opacity-80"
                 >
                   {{ key }}
                 </th>
