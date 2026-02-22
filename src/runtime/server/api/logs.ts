@@ -1,6 +1,6 @@
 import { defineEventHandler } from '#imports'
 // @ts-expect-error - virtual file
-import { getODataLogs, clearODataLogs } from '../utils/dev-logs'
+import { clearODataLogs, getODataLogs } from '../utils/dev-logs'
 
 export default defineEventHandler((event) => {
   if (event.node.req.method === 'DELETE') {

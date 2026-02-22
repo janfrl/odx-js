@@ -1,5 +1,5 @@
+import { useRequestHeaders, useRuntimeConfig } from '#imports'
 import { ofetch } from 'ofetch'
-import { useRuntimeConfig, useRequestHeaders } from '#imports'
 
 export function createODataClient() {
   const config = useRuntimeConfig()

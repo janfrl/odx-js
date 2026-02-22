@@ -1,11 +1,11 @@
 {
   "name": "nuxt-sap-odata",
-  "version": "1.0.0",
-  "description": "My new Nuxt module",
-  "repository": "Bechtle-AG/nuxt-sap-odata",
-  "packageManager": "pnpm@10.30.0",
-  "license": "MIT",
   "type": "module",
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.30.0",
+  "description": "My new Nuxt module",
+  "license": "MIT",
+  "repository": "Bechtle-AG/nuxt-sap-odata",
   "exports": {
     ".": {
       "types": "./dist/types.d.mts",
@@ -42,6 +42,7 @@
     "sirv": "^3.0.2"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^7.4.3",
     "@antfu/ni": "^28.2.0",
     "@iconify-json/carbon": "^1.2.18",
     "@nuxt/devtools": "^3.2.1",

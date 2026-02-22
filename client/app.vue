@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, watchEffect } from 'vue'
 import { useDevtoolsClient } from '@nuxt/devtools-kit/iframe-client'
+import { onMounted, watchEffect } from 'vue'
 import { useSharedODataState } from './composables/useODataState'
 
 const devtoolsClient = useDevtoolsClient()

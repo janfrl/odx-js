@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
-import { defineNuxtModule } from '@nuxt/kit'
 import { startSubprocess } from '@nuxt/devtools-kit'
+import { defineNuxtModule } from '@nuxt/kit'
 
 export default defineNuxtConfig({
   modules: [
@@ -8,7 +8,8 @@ export default defineNuxtConfig({
     // Subprocess to start the devtools client server
     defineNuxtModule({
       setup(_, nuxt) {
-        if (!nuxt.options.dev) return
+        if (!nuxt.options.dev)
+          return
 
         startSubprocess(
           {

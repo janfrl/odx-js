@@ -1,8 +1,8 @@
-import { defineEventHandler, getQuery, useRuntimeConfig, createError, readBody, useStorage } from '#imports'
-import { join } from 'pathe'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
+import { createError, defineEventHandler, getQuery, readBody, useRuntimeConfig, useStorage } from '#imports'
 import { createJiti } from 'jiti'
+import { join } from 'pathe'
 import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
@@ -55,32 +55,40 @@ export default defineEventHandler(async (event) => {
   const getValidProperties = (entitySet: string): string[] | null => {
     try {
       const rootDir = config.odata?.rootDir as string
-      if (!rootDir || !matched.edmx) return null
+      if (!rootDir || !matched.edmx)
+        return null
 
       const edmxPath = join(rootDir, matched.edmx)
-      if (!fs.existsSync(edmxPath)) return null
+      if (!fs.existsSync(edmxPath))
+        return null
 
       const content = fs.readFileSync(edmxPath, 'utf-8')
       const entitySetRegex = new RegExp(`<EntitySet\\s+Name="${entitySet}"\\s+EntityType="([^"]+)"`)
       const setMatch = entitySetRegex.exec(content)
-      if (!setMatch) return null
+      if (!setMatch)
+        return null
 
       const fullEntityType = setMatch[1]
-      if (!fullEntityType) return null
+      if (!fullEntityType)
+        return null
 
       const entityTypeName = fullEntityType.split('.').pop()
-      if (!entityTypeName) return null
+      if (!entityTypeName)
+        return null
 
       const entityTypeRegex = new RegExp(`<EntityType\\s+Name="${entityTypeName}"[\\s\\S]*?>([\\s\\S]*?)</EntityType>`)
       const typeMatch = entityTypeRegex.exec(content)
-      if (!typeMatch || !typeMatch[1]) return null
+      if (!typeMatch || !typeMatch[1])
+        return null
 
       const propertiesBlock = typeMatch[1]
       const propRegex = /<Property\s+Name="([^"]+)"/g
       const validProps: string[] = []
-      let propMatch
-      while ((propMatch = propRegex.exec(propertiesBlock)) !== null) {
-        if (propMatch[1]) validProps.push(propMatch[1])
+      let propMatch = propRegex.exec(propertiesBlock)
+      while (propMatch !== null) {
+        if (propMatch[1])
+          validProps.push(propMatch[1])
+        propMatch = propRegex.exec(propertiesBlock)
       }
       return validProps
     }
@@ -97,7 +105,8 @@ export default defineEventHandler(async (event) => {
     let data = (await storage.getItem(activeKey)) as any[] || []
 
     if (!Array.isArray(data)) {
-      if (method === 'GET') return data
+      if (method === 'GET')
+        return data
       throw createError({ statusCode: 400, message: 'Mockdata must be an array' })
     }
 
@@ -136,7 +145,7 @@ export default defineEventHandler(async (event) => {
       let result = [...data]
 
       // Simple $filter parsing (e.g., "Name eq 'Test'")
-      const filter = query['$filter'] ? String(query['$filter']) : null
+      const filter = query.$filter ? String(query.$filter) : null
       if (filter) {
         const match = filter.match(/(\w+)\s+eq\s+'([^']+)'/)
         if (match) {
@@ -148,11 +157,13 @@ export default defineEventHandler(async (event) => {
       }
 
       // $skip and $top
-      const skip = Number.parseInt(String(query['$skip'] || '0'))
-      const top = Number.parseInt(String(query['$top'] || ''))
+      const skip = Number.parseInt(String(query.$skip || '0'))
+      const top = Number.parseInt(String(query.$top || ''))
 
-      if (skip > 0) result = result.slice(skip)
-      if (!isNaN(top) && top > 0) result = result.slice(0, top)
+      if (skip > 0)
+        result = result.slice(skip)
+      if (!Number.isNaN(top) && top > 0)
+        result = result.slice(0, top)
 
       return result
     }
@@ -164,7 +175,8 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, statusMessage: msg, message: msg })
       }
       const newItem = { ...body }
-      if (!newItem.ID && !newItem.id) newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
+      if (!newItem.ID && !newItem.id)
+        newItem.ID = Math.random().toString(36).substring(7).toUpperCase()
       data.push(newItem)
       await storage.setItem(activeKey, data)
       return newItem
@@ -173,8 +185,10 @@ export default defineEventHandler(async (event) => {
     if (method === 'PATCH' || method === 'PUT') {
       const body = await readBody(event).catch(() => null)
       const id = (query.id ? String(query.id) : null) || (body && (body.ID || body.id))
-      if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing ID', message: 'Missing ID' })
-      if (!body || typeof body !== 'object') throw createError({ statusCode: 400, statusMessage: 'Invalid body', message: 'Invalid body' })
+      if (!id)
+        throw createError({ statusCode: 400, statusMessage: 'Missing ID', message: 'Missing ID' })
+      if (!body || typeof body !== 'object')
+        throw createError({ statusCode: 400, statusMessage: 'Invalid body', message: 'Invalid body' })
 
       const index = data.findIndex((item: any) => String(item.ID || item.id) === String(id))
       if (index === -1) {
@@ -189,7 +203,8 @@ export default defineEventHandler(async (event) => {
 
     if (method === 'DELETE') {
       const id = query.id ? String(query.id) : null
-      if (!id) throw createError({ statusCode: 400, statusMessage: 'Missing ID', message: 'Missing ID' })
+      if (!id)
+        throw createError({ statusCode: 400, statusMessage: 'Missing ID', message: 'Missing ID' })
       const initialLength = data.length
       data = data.filter((item: any) => String(item.ID || item.id) !== id)
       if (data.length === initialLength) {
@@ -225,10 +240,12 @@ export default defineEventHandler(async (event) => {
       try {
         const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
         const apiFactory = sdk[`${matched.name}Api`]
-        if (!apiFactory) throw new Error('API Factory not found')
+        if (!apiFactory)
+          throw new Error('API Factory not found')
         const api = apiFactory()
         const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-        if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
+        if (!entityApi)
+          throw new Error(`EntitySet ${entitySetName} not found`)
 
         const method = event.method
         const query = getQuery(event)
@@ -236,12 +253,18 @@ export default defineEventHandler(async (event) => {
 
         if (method === 'GET') {
           let rb = entityApi.requestBuilder().getAll()
-          if (query.id) rb = entityApi.requestBuilder().getByKey(query.id)
+          if (query.id) {
+            rb = entityApi.requestBuilder().getByKey(query.id)
+          }
           else {
             const odataParams: Record<string, string> = {}
             const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-            keys.forEach((k) => { if (query[k]) odataParams[k] = String(query[k]) })
-            if (Object.keys(odataParams).length > 0) rb = rb.withCustomParameters(odataParams)
+            keys.forEach((k) => {
+              if (query[k])
+                odataParams[k] = String(query[k])
+            })
+            if (Object.keys(odataParams).length > 0)
+              rb = rb.withCustomParameters(odataParams)
           }
           response = await rb.execute(destination)
         }

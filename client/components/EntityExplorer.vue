@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useSharedODataState } from '../composables/useODataState'
 import type { EditorState } from '../composables/useODataState'
+import { computed, ref, watch } from 'vue'
+import { useSharedODataState } from '../composables/useODataState'
 
 const { selectedService, selectedEntity, config } = useSharedODataState()
 
@@ -31,7 +31,8 @@ async function selectEntity(entity: string) {
 }
 
 async function refreshEntityData() {
-  if (!selectedService.value || !selectedEntity.value) return
+  if (!selectedService.value || !selectedEntity.value)
+    return
   previewLoading.value = true
   previewError.value = null
   previewData.value = []
@@ -54,7 +55,8 @@ async function refreshEntityData() {
         statusMessage = errData.message || errData.statusMessage || (errData.data && errData.data.statusMessage) || statusMessage
       }
       catch {
-        if (errorText && errorText.length < 100) statusMessage = errorText
+        if (errorText && errorText.length < 100)
+          statusMessage = errorText
       }
       throw new Error(statusMessage)
     }
@@ -82,16 +84,21 @@ function openEditor(mode: 'view' | 'create' | 'update', row: Record<string, unkn
 }
 
 async function deleteItem(row: Record<string, unknown>) {
-  if (!selectedService.value || !selectedEntity.value) return
+  if (!selectedService.value || !selectedEntity.value)
+    return
   const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
   const id = idKey ? row[idKey] : null
-  if (!id || !confirm(`Delete item ${id}?`)) return
+  // eslint-disable-next-line no-alert
+  if (!id || !confirm(`Delete item ${id}?`))
+    return
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
-    if (res.ok) await refreshEntityData()
+    if (res.ok)
+      await refreshEntityData()
   }
   catch (e: unknown) {
+    // eslint-disable-next-line no-alert
     alert((e as Error).message)
   }
 }
@@ -102,7 +109,8 @@ const previewColumns = computed(() => {
 })
 
 watch(selectedEntity, (newEntity) => {
-  if (newEntity) refreshEntityData()
+  if (newEntity)
+    refreshEntityData()
 }, { immediate: true })
 </script>
 
@@ -216,7 +224,7 @@ watch(selectedEntity, (newEntity) => {
                   Actions
                 </th>
                 <th
-                  v-for="(key, idx) in previewColumns"
+                  v-for="key in previewColumns"
                   :key="key"
                   class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]"
                 >

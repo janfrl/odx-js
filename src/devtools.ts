@@ -1,6 +1,6 @@
-import { existsSync } from 'node:fs'
-import type { Nuxt } from 'nuxt/schema'
 import type { Resolver } from '@nuxt/kit'
+import type { Nuxt } from 'nuxt/schema'
+import { existsSync } from 'node:fs'
 
 export const DEVTOOLS_UI_ROUTE = '/__sap_odata__/client'
 export const DEVTOOLS_UI_LOCAL_PORT = 3300
@@ -25,7 +25,7 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver) {
       if (config.server) {
         config.server.proxy ||= {}
         config.server.proxy[DEVTOOLS_UI_ROUTE] = {
-          target: 'http://localhost:' + DEVTOOLS_UI_LOCAL_PORT + DEVTOOLS_UI_ROUTE,
+          target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}`,
           changeOrigin: true,
           followRedirects: true,
           rewrite: path => path.replace(DEVTOOLS_UI_ROUTE, ''),

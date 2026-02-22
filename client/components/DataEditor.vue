@@ -2,14 +2,15 @@
 import type { EditorState } from '../composables/useODataState'
 import { useSharedODataState } from '../composables/useODataState'
 
-const editor = defineModel<EditorState>('editor', { required: true })
-
 const emit = defineEmits(['refresh'])
+
+const editor = defineModel<EditorState>('editor', { required: true })
 
 const { selectedService, selectedEntity, config } = useSharedODataState()
 
 async function saveItem() {
-  if (!selectedService.value || !selectedEntity.value) return
+  if (!selectedService.value || !selectedEntity.value)
+    return
 
   editor.value.loading = true
   editor.value.error = null
@@ -34,7 +35,8 @@ async function saveItem() {
         msg = errData.message || errData.statusMessage || msg
       }
       catch {
-        if (errorText && errorText.length < 100) msg = errorText
+        if (errorText && errorText.length < 100)
+          msg = errorText
       }
       throw new Error(msg)
     }

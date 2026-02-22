@@ -1,4 +1,4 @@
 {
-  "private": true,
-  "name": "nuxt-sap-odata-playground"
+  "name": "nuxt-sap-odata-playground",
+  "private": true
 }

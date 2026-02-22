@@ -1,19 +1,23 @@
-import { defineEventHandler, useRuntimeConfig } from '#imports'
-import { join, resolve } from 'pathe'
 import fs from 'node:fs'
+import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { defineEventHandler, useRuntimeConfig } from '#imports'
 import { createJiti } from 'jiti'
+import { join, resolve } from 'pathe'
 
 function extractEntitiesFromEdmx(edmxPath: string): string[] {
-  if (!fs.existsSync(edmxPath)) return []
+  if (!fs.existsSync(edmxPath))
+    return []
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8')
     const entitySets: string[] = []
     // Match <EntitySet Name="EntitySetName" ... />
     const regex = /<EntitySet\s+Name="([^"]+)"/g
-    let match
-    while ((match = regex.exec(content)) !== null) {
-      if (match[1]) entitySets.push(match[1])
+    let match = regex.exec(content)
+    while (match !== null) {
+      if (match[1])
+        entitySets.push(match[1])
+      match = regex.exec(content)
     }
     return entitySets
   }

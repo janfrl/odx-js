@@ -1,4 +1,4 @@
-import { defineEventHandler, useRuntimeConfig, createError, getQuery } from '#imports'
+import { createError, defineEventHandler, getQuery, useRuntimeConfig } from '#imports'
 import { join, resolve } from 'pathe'
 import { generateODataClient } from '../../../generate'
 
@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
   const outDir = join(buildDir, 'sap-odata', 'generated', matched.name)
 
   try {
+    // eslint-disable-next-line no-console
     console.log(`[nuxt-sap-odata] Manual generation triggered for ${matched.name}`)
     await generateODataClient({
       input: edmxAbs,

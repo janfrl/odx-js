@@ -1,5 +1,5 @@
-import { createODataClient } from './odata-client'
 import type { FetchOptions } from 'ofetch'
+import { createODataClient } from './odata-client'
 
 /**
  * Low-level OData util.

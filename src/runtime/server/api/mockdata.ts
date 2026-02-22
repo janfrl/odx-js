@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, useStorage, getQuery } from '#imports'
+import { defineEventHandler, getQuery, readBody, useStorage } from '#imports'
 
 export default defineEventHandler(async (event) => {
   const storage = useStorage('odata:mockdata')
