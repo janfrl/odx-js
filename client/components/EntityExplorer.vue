@@ -98,8 +98,8 @@ async function deleteItem(row: Record<string, unknown>) {
       devtoolsUiShowNotification({
         message: `Item ${id} deleted successfully`,
         icon: 'i-carbon-checkmark-outline',
-        classes: 'text-green-500 border-green-500/20 bg-green-500/5',
         position: 'bottom-right',
+        classes: 'text-base border-base',
       })
       await refreshEntityData()
     }
@@ -108,8 +108,8 @@ async function deleteItem(row: Record<string, unknown>) {
     devtoolsUiShowNotification({
       message: (e as Error).message,
       icon: 'i-carbon-error',
-      classes: 'text-red-500 border-red-500/20 bg-red-500/5',
       position: 'bottom-right',
+      classes: 'text-base border-base',
     })
   }
 }
@@ -126,8 +126,8 @@ async function clearData() {
     devtoolsUiShowNotification({
       message: `All mock data for ${selectedEntity.value} cleared`,
       icon: 'i-carbon-trash-can',
-      classes: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
       position: 'bottom-right',
+      classes: 'text-base border-base',
     })
     await refreshEntityData()
   }
@@ -135,8 +135,8 @@ async function clearData() {
     devtoolsUiShowNotification({
       message: (e as Error).message,
       icon: 'i-carbon-error',
-      classes: 'text-red-500 border-red-500/20 bg-red-500/5',
       position: 'bottom-right',
+      classes: 'text-base border-base',
     })
   }
 }

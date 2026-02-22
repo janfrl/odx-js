@@ -44,8 +44,8 @@ async function saveItem() {
     devtoolsUiShowNotification({
       message: `Item ${id ? 'updated' : 'created'} successfully`,
       icon: 'i-carbon-checkmark-outline',
-      classes: 'text-green-500 border-green-500/20 bg-green-500/5',
       position: 'bottom-right',
+      classes: 'text-base border-base',
     })
 
     editor.value.show = false

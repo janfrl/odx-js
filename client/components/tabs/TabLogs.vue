@@ -14,8 +14,8 @@ async function runClear() {
   devtoolsUiShowNotification({
     message: 'Traffic history purged',
     icon: 'i-carbon-trash-can',
-    classes: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
     position: 'bottom-right',
+    classes: 'text-base border-base',
   })
 }
 </script>

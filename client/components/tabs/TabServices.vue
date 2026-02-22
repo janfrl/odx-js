@@ -22,8 +22,8 @@ async function runGenerate(name: string) {
   devtoolsUiShowNotification({
     message: `SDK for ${name} regenerated successfully`,
     icon: 'i-carbon-checkmark-outline',
-    classes: 'text-green-500 border-green-500/20 bg-green-500/5',
     position: 'bottom-right',
+    classes: 'text-base border-base',
   })
 }
 </script>
@@ -141,8 +141,8 @@ async function runGenerate(name: string) {
               title="Regenerate SDK from EDMX"
               @click="runGenerate(selectedService.name)"
             >
-              <div 
-                class="w-4 h-4 i-carbon-renew" 
+              <div
+                class="w-4 h-4 i-carbon-renew"
                 :class="{ 'animate-spin': generatingStatus[selectedService.name] }"
               />
             </button>
@@ -154,14 +154,14 @@ async function runGenerate(name: string) {
 
         <!-- View Toggle -->
         <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center text-base">
-          <button 
+          <button
             class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
             :class="globalViewMode === 'explorer' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
             @click="globalViewMode = 'explorer'"
           >
             Data
           </button>
-          <button 
+          <button
             class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
             :class="globalViewMode === 'schema' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
             @click="globalViewMode = 'schema'"

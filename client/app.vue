@@ -18,6 +18,10 @@ watchEffect(() => {
 onMounted(() => {
   fetchConfig()
   refreshLogs()
+  
+  // Prime the standard notification position to avoid the initial "top-center" jump
+  devtoolsUiShowNotification({ message: '', duration: 0, position: 'bottom-right' })
+
   const interval = setInterval(refreshLogs, 3000)
   return () => clearInterval(interval)
 })
@@ -41,7 +45,7 @@ onMounted(() => {
       </main>
     </div>
 
-    <NNotification />
+    <NNotification position="bottom-right" />
   </div>
 </template>
 
@@ -52,6 +56,16 @@ html, body, #__nuxt {
   height: 100% !important;
   width: 100% !important;
   overflow: hidden !important;
+}
+
+/* Force standard notification to bottom-right if it ignores the prop */
+.fixed.left-0.right-0.top-0.z-999, 
+.fixed.left-0.right-0.bottom-0.z-999 {
+  top: auto !important;
+  bottom: 0 !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  padding: 1.5rem !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -71,9 +85,4 @@ html, body, #__nuxt {
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #27272a;
 }
-
-.slide-enter-active, .slide-leave-active { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-.slide-enter-from, .slide-leave-to { transform: translateX(100%); }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

@@ -10,13 +10,13 @@ import SchemaNode from './SchemaNode.vue'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 
-const { 
-  selectedService, 
-  globalNodes, 
-  globalEdges, 
-  globalViewport, 
-  initializedServices, 
-  lastSelectedServiceForGraph 
+const {
+  selectedService,
+  globalNodes,
+  globalEdges,
+  globalViewport,
+  initializedServices,
+  lastSelectedServiceForGraph
 } = useSharedODataState()
 
 const { fitView, onViewportChange, setViewport, onPaneReady } = useVueFlow()
@@ -55,9 +55,9 @@ onPaneReady(() => {
 
 async function fetchSchema(forceAutoFit = false) {
   if (!selectedService.value) return
-  
+
   const isNewService = !initializedServices.value.has(selectedService.value.name)
-  
+
   // ONLY hide the graph for a brand new service entry to hide the "top-left" jump.
   // For manual "Auto Layout" clicks, keep it visible for fast feedback.
   if (isNewService) {
@@ -67,11 +67,11 @@ async function fetchSchema(forceAutoFit = false) {
     loading.value = true
     // isReady remains true here
   }
-  
+
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
     schemaData.value = await res.json()
-    
+
     if (isNewService || forceAutoFit) {
       generateGraph(forceAutoFit)
     } else {
@@ -82,7 +82,7 @@ async function fetchSchema(forceAutoFit = false) {
         loading.value = false
       }, 100)
     }
-    
+
     lastSelectedServiceForGraph.value = selectedService.value.name
   } catch (e) {
     console.error('Failed to fetch schema', e)
@@ -105,14 +105,14 @@ function generateGraph(autoFit = false) {
     })
 
     entity.navigationProperties.forEach((nav: any) => {
-      const assoc = schemaData.value.associations.find((a: any) => 
+      const assoc = schemaData.value.associations.find((a: any) =>
         a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship
       )
-      
+
       if (assoc) {
         const targetEnd = assoc.ends.find((e: any) => e.role === nav.toRole)
         const targetEntityName = targetEnd?.type.split('.').pop()
-        
+
         if (targetEntityName && targetEntityName !== entity.name) {
           const edgeId = [entity.name, targetEntityName, assoc.name].sort().join('-')
           if (!newEdges.find(e => e.id === edgeId)) {
@@ -150,7 +150,7 @@ function generateGraph(autoFit = false) {
 
   globalNodes.value = [...newNodes]
   globalEdges.value = [...newEdges]
-  
+
   if (autoFit) {
     setTimeout(() => {
       fitView({ padding: 0.2, duration: 800 })
@@ -188,8 +188,8 @@ function copyMermaid() {
   devtoolsUiShowNotification({
     message: 'Mermaid diagram code copied to clipboard!',
     icon: 'i-carbon-copy',
-    classes: 'text-primary border-primary/20 bg-primary/5',
     position: 'bottom-right',
+    classes: 'text-base border-base',
   })
 }
 
@@ -239,7 +239,7 @@ watch(selectedService, () => {
       </div>
 
       <!-- Graph Area -->
-      <div 
+      <div
         class="flex-1 relative overflow-hidden bg-white dark:bg-[#050505] transition-opacity duration-300 text-base"
         :style="{ opacity: isReady ? 1 : 0 }"
       >
