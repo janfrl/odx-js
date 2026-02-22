@@ -45,6 +45,7 @@ async function saveItem() {
       message: `Item ${id ? 'updated' : 'created'} successfully`,
       icon: 'i-carbon-checkmark-outline',
       classes: 'text-green-500 border-green-500/20 bg-green-500/5',
+      position: 'bottom-right',
     })
 
     editor.value.show = false

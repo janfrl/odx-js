@@ -23,6 +23,7 @@ async function runGenerate(name: string) {
     message: `SDK for ${name} regenerated successfully`,
     icon: 'i-carbon-checkmark-outline',
     classes: 'text-green-500 border-green-500/20 bg-green-500/5',
+    position: 'bottom-right',
   })
 }
 </script>
