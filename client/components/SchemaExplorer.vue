@@ -42,7 +42,6 @@ async function fetchSchema(forceAutoFit = false) {
   
   const isNewService = !initializedServices.value.has(selectedService.value.name)
   
-  // Only show the loading indicator if we actually need to do work (new service or force)
   if (isNewService || forceAutoFit) {
     loading.value = true
     isReady.value = false
@@ -184,62 +183,68 @@ watch(selectedService, () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-base overflow-hidden relative text-base">
-    <div class="p-4 border-b border-base bg-surface flex items-center justify-between shrink-0 text-base">
-      <div class="flex items-center gap-3 text-base">
-        <h2 class="text-sm font-bold uppercase tracking-wider opacity-70 flex items-center gap-2">
-          <div class="i-carbon-flow-connection" />
-          Entity Relationship Explorer
-        </h2>
-        <div v-if="loading" class="animate-pulse text-xs text-primary font-bold">Refining Schema...</div>
+  <div class="flex-1 flex flex-col overflow-hidden px-6 text-base relative">
+    <div class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm">
+      <!-- Action Toolbar: Styled to match Data view exactly -->
+      <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-base shrink-0">
+        <div class="flex items-center gap-3">
+          <span class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+            <div class="i-carbon-flow-connection text-primary" />
+            Architecture Overview
+          </span>
+          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight">
+            Refining...
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer"
+            @click="fetchSchema(true)"
+          >
+            <div class="i-carbon-center-to-fit w-3.5 h-3.5" />
+            Auto Layout
+          </button>
+          <button
+            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer"
+            @click="copyMermaid"
+          >
+            <div class="i-carbon-copy w-3.5 h-3.5" />
+            Mermaid
+          </button>
+        </div>
       </div>
-      <div class="flex items-center gap-2 text-base">
-        <button 
-          class="px-3 py-1.5 text-[10px] font-bold uppercase bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-all border-none cursor-pointer flex items-center gap-1.5"
-          @click="fetchSchema(true)"
-        >
-          <div class="i-carbon-center-to-fit" />
-          Auto Layout
-        </button>
-        <button 
-          class="px-3 py-1.5 text-[10px] font-bold uppercase bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 rounded-md hover:bg-zinc-500/20 transition-all border-none cursor-pointer flex items-center gap-1.5"
-          @click="copyMermaid"
-        >
-          <div class="i-carbon-copy" />
-          Copy Mermaid
-        </button>
-      </div>
-    </div>
 
-    <div 
-      class="flex-1 relative overflow-hidden bg-zinc-50 dark:bg-[#050505] transition-opacity duration-300"
-      :style="{ opacity: isReady ? 1 : 0 }"
-    >
-      <VueFlow
-        v-model:nodes="globalNodes"
-        v-model:edges="globalEdges"
-        :node-types="nodeTypes"
-        :class="{ 'dark': true }"
-        :min-zoom="0.05"
-        :max-zoom="4"
+      <!-- Graph Area -->
+      <div 
+        class="flex-1 relative overflow-hidden bg-zinc-50 dark:bg-[#050505] transition-opacity duration-300"
+        :style="{ opacity: isReady ? 1 : 0 }"
       >
-        <Background pattern-color="#333" :gap="20" />
-      </VueFlow>
+        <VueFlow
+          v-model:nodes="globalNodes"
+          v-model:edges="globalEdges"
+          :node-types="nodeTypes"
+          :class="{ 'dark': true }"
+          :min-zoom="0.05"
+          :max-zoom="4"
+        >
+          <Background pattern-color="#333" :gap="20" />
+        </VueFlow>
+      </div>
     </div>
 
     <!-- Instructions Overlay -->
-    <div class="absolute bottom-6 left-6 flex flex-col gap-2 pointer-events-none text-base">
+    <div class="absolute bottom-6 left-10 flex flex-col gap-2 pointer-events-none text-base">
       <div class="p-3 bg-surface border border-base rounded-xl shadow-2xl opacity-90 backdrop-blur-md">
-        <h4 class="text-[10px] font-black uppercase mb-2 tracking-widest text-primary flex items-center gap-2 text-base">
+        <h4 class="text-[10px] font-black uppercase mb-2 tracking-widest text-primary flex items-center gap-2">
           <div class="i-carbon-information" />
           Explorer Controls
         </h4>
         <div class="space-y-1.5 text-base">
-          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70 text-base">
+          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70">
             <kbd class="px-1.5 py-0.5 bg-base border border-base rounded text-[8px]">Scroll</kbd>
             <span>to Zoom</span>
           </div>
-          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70 text-base">
+          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70">
             <kbd class="px-1.5 py-0.5 bg-base border border-base rounded text-[8px]">Drag</kbd>
             <span>to Pan / Move Entities</span>
           </div>

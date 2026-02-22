@@ -13,8 +13,8 @@ defineProps<{
 
 <template>
   <div class="schema-node border border-base rounded-lg bg-content shadow-xl overflow-hidden min-w-[180px]">
-    <!-- Header -->
-    <div class="px-3 py-2 bg-primary/10 border-b border-base flex items-center gap-2">
+    <!-- Header: Matches Data Table Header color -->
+    <div class="px-3 py-2 bg-zinc-100 dark:bg-zinc-900 border-b border-base flex items-center gap-2">
       <div class="i-carbon-table text-primary w-3.5 h-3.5" />
       <span class="text-[11px] font-black uppercase tracking-wider text-base">{{ data.entity.name }}</span>
     </div>
