@@ -3,7 +3,7 @@ import type { EditorState } from '../composables/useODataState'
 import { computed, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 
-const { selectedService, selectedEntity, config } = useSharedODataState()
+const { selectedService, selectedEntity, config, clearEntityMockData } = useSharedODataState()
 
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
@@ -103,9 +103,47 @@ async function deleteItem(row: Record<string, unknown>) {
   }
 }
 
+async function clearData() {
+  if (!selectedService.value || !selectedEntity.value)
+    return
+  // eslint-disable-next-line no-alert
+  if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`))
+    return
+
+  try {
+    await clearEntityMockData(selectedService.value.name, selectedEntity.value)
+    await refreshEntityData()
+  }
+  catch (e: unknown) {
+    // eslint-disable-next-line no-alert
+    alert((e as Error).message)
+  }
+}
+
+function downloadJson() {
+  if (previewData.value.length === 0)
+    return
+  const blob = new Blob([JSON.stringify(previewData.value, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${selectedEntity.value}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 const previewColumns = computed(() => {
   const firstRow = previewData.value[0]
   return firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
+})
+
+watch(selectedService, (newSvc) => {
+  if (newSvc && newSvc.entities && newSvc.entities.length > 0) {
+    selectedEntity.value = newSvc.entities[0]
+  }
+  else {
+    selectedEntity.value = null
+  }
 })
 
 watch(selectedEntity, (newEntity) => {
@@ -172,6 +210,25 @@ watch(selectedEntity, (newEntity) => {
           >
             Items ({{ previewData.length }})
           </span>
+          <div
+            v-if="previewData.length > 0"
+            class="flex items-center gap-1 ml-2"
+          >
+            <NButton
+              class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
+              icon="i-carbon-download"
+              @click="downloadJson"
+            >
+              JSON
+            </NButton>
+            <NButton
+              class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-red-500 transition-colors text-[10px] uppercase font-bold"
+              icon="i-carbon-trash-can"
+              @click="clearData"
+            >
+              Clear
+            </NButton>
+          </div>
         </div>
         <NButton
           class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"

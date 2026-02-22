@@ -156,6 +156,22 @@ export default defineEventHandler(async (event) => {
         }
       }
 
+      // $orderby (e.g., "Name asc" or "Price desc")
+      const orderby = query.$orderby ? String(query.$orderby) : null
+      if (orderby) {
+        const [prop, dir] = orderby.split(/\s+/)
+        if (prop) {
+          result.sort((a: any, b: any) => {
+            const valA = a[prop]
+            const valB = b[prop]
+            if (valA === valB)
+              return 0
+            const multiplier = dir?.toLowerCase() === 'desc' ? -1 : 1
+            return valA > valB ? multiplier : -multiplier
+          })
+        }
+      }
+
       // $skip and $top
       const skip = Number.parseInt(String(query.$skip || '0'))
       const top = Number.parseInt(String(query.$top || ''))
@@ -164,6 +180,23 @@ export default defineEventHandler(async (event) => {
         result = result.slice(skip)
       if (!Number.isNaN(top) && top > 0)
         result = result.slice(0, top)
+
+      // $select (e.g., "Name,Price")
+      const select = query.$select ? String(query.$select) : null
+      if (select) {
+        const props = select.split(',').map(s => s.trim())
+        result = result.map((item: any) => {
+          const newItem: any = {}
+          props.forEach((p) => {
+            if (p in item)
+              newItem[p] = item[p]
+          })
+          // Keep ID if present even if not selected, or should we be strict?
+          // Usually SAP OData is strict, but for DX we might keep ID.
+          // Let's be strict but ensure ID is selectable.
+          return newItem
+        })
+      }
 
       return result
     }

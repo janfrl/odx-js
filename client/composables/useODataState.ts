@@ -106,6 +106,13 @@ export function useSharedODataState() {
     catch { /* ignore */ }
   }
 
+  async function clearEntityMockData(service: string, entitySet: string) {
+    try {
+      await fetch(`/__sap_odata__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
+    }
+    catch { /* ignore */ }
+  }
+
   const services = computed(() => config.value.services || [])
 
   return {
@@ -120,5 +127,6 @@ export function useSharedODataState() {
     refreshLogs,
     generateService,
     clearLogs,
+    clearEntityMockData,
   }
 }
