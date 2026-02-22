@@ -45,7 +45,7 @@ onMounted(() => {
       </main>
     </div>
 
-    <NNotification position="bottom-right" />
+    <NNotification />
   </div>
 </template>
 
