@@ -1,5 +1,5 @@
 [
-  { "id": "1", "Name": "Mock Product A", "Price": 100, "Currency": "EUR" },
-  { "id": "2", "Name": "Mock Product B", "Price": 250, "Currency": "EUR" },
-  { "id": "3", "Name": "Mock Product C", "Price": 45, "Currency": "USD" }
+  { "ID": "1", "Name": "Mock Product A", "Price": 100, "Currency": "EUR", "SupplierID": "S1", "CategoryID": "C1" },
+  { "ID": "2", "Name": "Mock Product B", "Price": 250, "Currency": "EUR", "SupplierID": "S2", "CategoryID": "C2" },
+  { "ID": "3", "Name": "Mock Product C", "Price": 45, "Currency": "USD", "SupplierID": "S1", "CategoryID": "C1" }
 ]
