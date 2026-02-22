@@ -11,7 +11,7 @@ function toggleExpand(id: string) {
 
 async function runClear() {
   await clearLogs()
-  useDevtoolsUiNotification().show({
+  devtoolsUiShowNotification({
     message: 'Traffic history purged',
     icon: 'i-carbon-trash-can',
     classes: 'text-amber-500 border-amber-500/20 bg-amber-500/5',

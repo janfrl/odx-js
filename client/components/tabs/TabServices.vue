@@ -19,7 +19,7 @@ const ICONS = {
 
 async function runGenerate(name: string) {
   await generateService(name)
-  useDevtoolsUiNotification().show({
+  devtoolsUiShowNotification({
     message: `SDK for ${name} regenerated successfully`,
     icon: 'i-carbon-checkmark-outline',
     classes: 'text-green-500 border-green-500/20 bg-green-500/5',

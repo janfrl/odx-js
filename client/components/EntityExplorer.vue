@@ -95,7 +95,7 @@ async function deleteItem(row: Record<string, unknown>) {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
     if (res.ok) {
-      useDevtoolsUiNotification().show({
+      devtoolsUiShowNotification({
         message: `Item ${id} deleted successfully`,
         icon: 'i-carbon-checkmark-outline',
         classes: 'text-green-500 border-green-500/20 bg-green-500/5',
@@ -104,7 +104,7 @@ async function deleteItem(row: Record<string, unknown>) {
     }
   }
   catch (e: unknown) {
-    useDevtoolsUiNotification().show({
+    devtoolsUiShowNotification({
       message: (e as Error).message,
       icon: 'i-carbon-error',
       classes: 'text-red-500 border-red-500/20 bg-red-500/5',
@@ -121,7 +121,7 @@ async function clearData() {
 
   try {
     await clearEntityMockData(selectedService.value.name, selectedEntity.value)
-    useDevtoolsUiNotification().show({
+    devtoolsUiShowNotification({
       message: `All mock data for ${selectedEntity.value} cleared`,
       icon: 'i-carbon-trash-can',
       classes: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
@@ -129,7 +129,7 @@ async function clearData() {
     await refreshEntityData()
   }
   catch (e: unknown) {
-    useDevtoolsUiNotification().show({
+    devtoolsUiShowNotification({
       message: (e as Error).message,
       icon: 'i-carbon-error',
       classes: 'text-red-500 border-red-500/20 bg-red-500/5',
