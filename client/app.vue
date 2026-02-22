@@ -36,7 +36,6 @@ onMounted(() => {
         <div class="h-full flex flex-col overflow-y-auto custom-scrollbar bg-base">
           <TabsTabOverview v-if="activeTab === 'overview'" />
           <TabsTabServices v-if="activeTab === 'services'" />
-          <TabsTabSchema v-if="activeTab === 'schema'" />
           <TabsTabLogs v-if="activeTab === 'logs'" />
         </div>
       </main>

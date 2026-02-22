@@ -1,7 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
+import EntityExplorer from '../EntityExplorer.vue'
+import SchemaExplorer from '../SchemaExplorer.vue'
 
 const { services, selectedService, config, generateService, generatingStatus, selectedEntity } = useSharedODataState()
+
+const viewMode = ref<'explorer' | 'schema'>('explorer')
 
 const COLORS = {
   green: '#00dc82',
@@ -97,6 +102,7 @@ const ICONS = {
       v-else
       class="h-full flex flex-col pt-8 overflow-hidden bg-base"
     >
+      <!-- Service Header -->
       <div class="px-6 flex items-center gap-4 mb-6 shrink-0 font-sans text-base">
         <button
           class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-all border border-transparent bg-transparent cursor-pointer"
@@ -118,38 +124,49 @@ const ICONS = {
           </svg>
         </button>
         <div class="min-w-0 flex-1">
-          <h2 class="text-lg font-bold leading-none mb-1 text-zinc-900 dark:text-zinc-100">
-            {{ selectedService.name }}
-          </h2>
+          <div class="flex items-center gap-2 mb-1">
+            <h2 class="text-lg font-bold leading-none text-zinc-900 dark:text-zinc-100">
+              {{ selectedService.name }}
+            </h2>
+            <button
+              :disabled="generatingStatus[selectedService.name]"
+              class="p-1 rounded-md text-muted hover:text-primary hover:bg-primary/5 transition-all cursor-pointer border-none disabled:opacity-30"
+              title="Regenerate SDK from EDMX"
+              @click="generateService(selectedService.name)"
+            >
+              <div 
+                class="w-4 h-4 i-carbon-renew" 
+                :class="{ 'animate-spin': generatingStatus[selectedService.name] }"
+              />
+            </button>
+          </div>
           <div class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 opacity-90 tracking-tight">
             {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
           </div>
         </div>
-        <button
-          :disabled="generatingStatus[selectedService.name]"
-          class="text-[10px] uppercase tracking-[0.15em] font-bold text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer pb-0.5 border-b border-dashed border-base disabled:opacity-30 flex items-center gap-2"
-          @click="generateService(selectedService.name)"
-        >
-          <svg
-            v-if="generatingStatus[selectedService.name]"
-            class="animate-spin h-3 w-3"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+
+        <!-- View Toggle -->
+        <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center">
+          <button 
+            class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none"
+            :class="viewMode === 'explorer' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+            @click="viewMode = 'explorer'"
           >
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke-dasharray="31.4"
-              stroke-dashoffset="10"
-            />
-          </svg>
-          {{ generatingStatus[selectedService.name] ? 'Generating...' : 'Regenerate SDK' }}
-        </button>
+            Data
+          </button>
+          <button 
+            class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none"
+            :class="viewMode === 'schema' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+            @click="viewMode = 'schema'"
+          >
+            Schema
+          </button>
+        </div>
       </div>
-      <EntityExplorer />
+
+      <!-- Conditional Content -->
+      <EntityExplorer v-if="viewMode === 'explorer'" />
+      <SchemaExplorer v-else />
     </div>
   </div>
 </template>

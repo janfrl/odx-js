@@ -3,8 +3,8 @@ import { Background } from '@vue-flow/background'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import * as dagre from 'dagre'
 import { markRaw, onMounted, ref, watch } from 'vue'
-import { useSharedODataState } from '../../composables/useODataState'
-import SchemaNode from '../SchemaNode.vue'
+import { useSharedODataState } from '../composables/useODataState'
+import SchemaNode from './SchemaNode.vue'
 
 // Styles
 import '@vue-flow/core/dist/style.css'
