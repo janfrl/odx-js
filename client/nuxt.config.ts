@@ -19,6 +19,11 @@ export default defineNuxtConfig({
         clientPort: +(process.env.PORT || 3300),
       },
     },
+    optimizeDeps: {
+      include: [
+        'dagre',
+      ],
+    },
   },
   unocss: {
     shortcuts: {
