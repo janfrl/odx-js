@@ -19,7 +19,7 @@ const {
   lastSelectedServiceForGraph 
 } = useSharedODataState()
 
-const { fitView, onViewportChange, setViewport } = useVueFlow()
+const { fitView, onViewportChange, setViewport, onPaneReady } = useVueFlow()
 
 const loading = ref(false)
 const isReady = ref(false)
@@ -37,14 +37,35 @@ onViewportChange((viewport) => {
   }
 })
 
+// Ensure fitView works correctly on the first render or restoration
+onPaneReady(() => {
+  const serviceName = selectedService.value?.name || ''
+  if (!initializedServices.value.has(serviceName)) {
+    // Instant fit for the very first time to avoid "sliding" animation on entry
+    fitView({ padding: 0.2 })
+    initializedServices.value.add(serviceName)
+    // Slightly longer delay to ensure the browser has painted the correctly positioned nodes
+    setTimeout(() => isReady.value = true, 100)
+  } else {
+    // Restore exact viewport from global state
+    setViewport(globalViewport.value)
+    setTimeout(() => isReady.value = true, 100)
+  }
+})
+
 async function fetchSchema(forceAutoFit = false) {
   if (!selectedService.value) return
   
   const isNewService = !initializedServices.value.has(selectedService.value.name)
   
-  if (isNewService || forceAutoFit) {
+  // ONLY hide the graph for a brand new service entry to hide the "top-left" jump.
+  // For manual "Auto Layout" clicks, keep it visible for fast feedback.
+  if (isNewService) {
     loading.value = true
     isReady.value = false
+  } else if (forceAutoFit) {
+    loading.value = true
+    // isReady remains true here
   }
   
   try {
@@ -52,15 +73,14 @@ async function fetchSchema(forceAutoFit = false) {
     schemaData.value = await res.json()
     
     if (isNewService || forceAutoFit) {
-      generateGraph(true)
-      initializedServices.value.add(selectedService.value.name)
+      generateGraph(forceAutoFit)
     } else {
       await nextTick()
       setViewport(globalViewport.value)
       setTimeout(() => {
         isReady.value = true
         loading.value = false
-      }, 50)
+      }, 100)
     }
     
     lastSelectedServiceForGraph.value = selectedService.value.name
@@ -133,14 +153,13 @@ function generateGraph(autoFit = false) {
   
   if (autoFit) {
     setTimeout(() => {
-      fitView({ padding: 0.2 })
+      fitView({ padding: 0.2, duration: 800 })
       setTimeout(() => {
         isReady.value = true
         loading.value = false
-      }, 100)
+      }, 800)
     }, 50)
   } else {
-    isReady.value = true
     loading.value = false
   }
 }
@@ -184,12 +203,12 @@ watch(selectedService, () => {
 
 <template>
   <div class="flex-1 flex flex-col overflow-hidden px-6 text-base relative">
-    <div class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm">
+    <div class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm text-base">
       <!-- Action Toolbar: Styled to match Data view exactly -->
       <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-base shrink-0 rounded-t-xl text-base">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 text-base">
           <span class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2 text-base">
-            <div class="i-carbon-flow-connection text-primary" />
+            <div class="i-carbon-flow-connection text-primary text-base" />
             Architecture Overview
           </span>
           <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight text-base">
@@ -198,17 +217,17 @@ watch(selectedService, () => {
         </div>
         <div class="flex items-center gap-2 text-base">
           <button
-            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer"
+            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer text-base"
             @click="fetchSchema(true)"
           >
-            <div class="i-carbon-center-to-fit w-3.5 h-3.5" />
+            <div class="i-carbon-center-to-fit w-3.5 h-3.5 text-base" />
             Auto Layout
           </button>
           <button
-            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer"
+            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer text-base"
             @click="copyMermaid"
           >
-            <div class="i-carbon-copy w-3.5 h-3.5" />
+            <div class="i-carbon-copy w-3.5 h-3.5 text-base" />
             Mermaid
           </button>
         </div>
@@ -216,7 +235,7 @@ watch(selectedService, () => {
 
       <!-- Graph Area -->
       <div 
-        class="flex-1 relative overflow-hidden bg-zinc-50 dark:bg-[#050505] transition-opacity duration-300"
+        class="flex-1 relative overflow-hidden bg-white dark:bg-[#050505] transition-opacity duration-300 text-base"
         :style="{ opacity: isReady ? 1 : 0 }"
       >
         <VueFlow
