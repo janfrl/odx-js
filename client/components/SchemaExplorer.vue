@@ -186,17 +186,17 @@ watch(selectedService, () => {
   <div class="flex-1 flex flex-col overflow-hidden px-6 text-base relative">
     <div class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm">
       <!-- Action Toolbar: Styled to match Data view exactly -->
-      <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-base shrink-0">
+      <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b border-base shrink-0 rounded-t-xl text-base">
         <div class="flex items-center gap-3">
-          <span class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+          <span class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2 text-base">
             <div class="i-carbon-flow-connection text-primary" />
             Architecture Overview
           </span>
-          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight">
+          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight text-base">
             Refining...
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 text-base">
           <button
             class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px] flex items-center gap-2 rounded-md cursor-pointer"
             @click="fetchSchema(true)"
@@ -229,26 +229,6 @@ watch(selectedService, () => {
         >
           <Background pattern-color="#333" :gap="20" />
         </VueFlow>
-      </div>
-    </div>
-
-    <!-- Instructions Overlay -->
-    <div class="absolute bottom-6 left-10 flex flex-col gap-2 pointer-events-none text-base">
-      <div class="p-3 bg-surface border border-base rounded-xl shadow-2xl opacity-90 backdrop-blur-md">
-        <h4 class="text-[10px] font-black uppercase mb-2 tracking-widest text-primary flex items-center gap-2">
-          <div class="i-carbon-information" />
-          Explorer Controls
-        </h4>
-        <div class="space-y-1.5 text-base">
-          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70">
-            <kbd class="px-1.5 py-0.5 bg-base border border-base rounded text-[8px]">Scroll</kbd>
-            <span>to Zoom</span>
-          </div>
-          <div class="flex items-center gap-2 text-[9px] font-bold opacity-70">
-            <kbd class="px-1.5 py-0.5 bg-base border border-base rounded text-[8px]">Drag</kbd>
-            <span>to Pan / Move Entities</span>
-          </div>
-        </div>
       </div>
     </div>
   </div>
