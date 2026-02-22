@@ -16,6 +16,15 @@ const ICONS = {
   chevronRight: 'M9 5l7 7-7 7',
   chevronLeft: 'M15 19l-7-7 7-7',
 }
+
+async function runGenerate(name: string) {
+  await generateService(name)
+  useDevtoolsUiNotification().show({
+    message: `SDK for ${name} regenerated successfully`,
+    icon: 'i-carbon-checkmark-outline',
+    classes: 'text-green-500 border-green-500/20 bg-green-500/5',
+  })
+}
 </script>
 
 <template>
@@ -121,15 +130,15 @@ const ICONS = {
           </svg>
         </button>
         <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2 mb-1 text-base">
-            <h2 class="text-lg font-bold leading-none text-zinc-900 dark:text-zinc-100">
+          <div class="flex items-center gap-2 mb-1 text-base text-base">
+            <h2 class="text-lg font-bold leading-none text-zinc-900 dark:text-zinc-100 text-base">
               {{ selectedService.name }}
             </h2>
             <button
               :disabled="generatingStatus[selectedService.name]"
               class="p-1 rounded-md text-muted hover:text-primary hover:bg-primary/5 transition-all cursor-pointer border-none disabled:opacity-30"
               title="Regenerate SDK from EDMX"
-              @click="generateService(selectedService.name)"
+              @click="runGenerate(selectedService.name)"
             >
               <div 
                 class="w-4 h-4 i-carbon-renew" 
@@ -137,7 +146,7 @@ const ICONS = {
               />
             </button>
           </div>
-          <div class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 opacity-90 tracking-tight">
+          <div class="text-[11px] font-mono text-zinc-500 dark:text-zinc-400 opacity-90 tracking-tight text-base">
             {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
           </div>
         </div>
@@ -145,14 +154,14 @@ const ICONS = {
         <!-- View Toggle -->
         <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center text-base">
           <button 
-            class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none"
+            class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
             :class="globalViewMode === 'explorer' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
             @click="globalViewMode = 'explorer'"
           >
             Data
           </button>
           <button 
-            class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none"
+            class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
             :class="globalViewMode === 'schema' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
             @click="globalViewMode = 'schema'"
           >

@@ -40,6 +40,8 @@ onMounted(() => {
         </div>
       </main>
     </div>
+
+    <NNotification />
   </div>
 </template>
 

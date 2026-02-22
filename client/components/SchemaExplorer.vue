@@ -185,7 +185,11 @@ function copyMermaid() {
     })
   })
   navigator.clipboard.writeText(code)
-  alert('Mermaid diagram code copied to clipboard!')
+  useDevtoolsUiNotification().show({
+    message: 'Mermaid diagram code copied to clipboard!',
+    icon: 'i-carbon-copy',
+    classes: 'text-primary border-primary/20 bg-primary/5',
+  })
 }
 
 onMounted(() => {

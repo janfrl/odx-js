@@ -41,6 +41,12 @@ async function saveItem() {
       throw new Error(msg)
     }
 
+    useDevtoolsUiNotification().show({
+      message: `Item ${id ? 'updated' : 'created'} successfully`,
+      icon: 'i-carbon-checkmark-outline',
+      classes: 'text-green-500 border-green-500/20 bg-green-500/5',
+    })
+
     editor.value.show = false
     editor.value.loading = false
     emit('refresh')

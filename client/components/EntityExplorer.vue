@@ -88,35 +88,52 @@ async function deleteItem(row: Record<string, unknown>) {
     return
   const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
   const id = idKey ? row[idKey] : null
-  // eslint-disable-next-line no-alert
+  
   if (!id || !confirm(`Delete item ${id}?`))
     return
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
-    if (res.ok)
+    if (res.ok) {
+      useDevtoolsUiNotification().show({
+        message: `Item ${id} deleted successfully`,
+        icon: 'i-carbon-checkmark-outline',
+        classes: 'text-green-500 border-green-500/20 bg-green-500/5',
+      })
       await refreshEntityData()
+    }
   }
   catch (e: unknown) {
-    // eslint-disable-next-line no-alert
-    alert((e as Error).message)
+    useDevtoolsUiNotification().show({
+      message: (e as Error).message,
+      icon: 'i-carbon-error',
+      classes: 'text-red-500 border-red-500/20 bg-red-500/5',
+    })
   }
 }
 
 async function clearData() {
   if (!selectedService.value || !selectedEntity.value)
     return
-  // eslint-disable-next-line no-alert
+  
   if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`))
     return
 
   try {
     await clearEntityMockData(selectedService.value.name, selectedEntity.value)
+    useDevtoolsUiNotification().show({
+      message: `All mock data for ${selectedEntity.value} cleared`,
+      icon: 'i-carbon-trash-can',
+      classes: 'text-amber-500 border-amber-500/20 bg-amber-500/5',
+    })
     await refreshEntityData()
   }
   catch (e: unknown) {
-    // eslint-disable-next-line no-alert
-    alert((e as Error).message)
+    useDevtoolsUiNotification().show({
+      message: (e as Error).message,
+      icon: 'i-carbon-error',
+      classes: 'text-red-500 border-red-500/20 bg-red-500/5',
+    })
   }
 }
 
