@@ -375,6 +375,23 @@ watch(selectedEntity, (newEntity) => {
         </template>
       </div>
     </div>
+
+    <!-- Placeholder when no entity is selected -->
+    <div
+      v-else
+      class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-zinc-500/5 rounded-t-xl border-t border-x border-base border-dashed"
+    >
+      <div class="w-16 h-16 rounded-2xl bg-base border border-base flex items-center justify-center mb-6 shadow-sm">
+        <div class="i-carbon-ibm-cloud-direct-link-2-dedicated text-zinc-400 w-8 h-8" />
+      </div>
+      <h3 class="text-sm font-bold text-base uppercase tracking-widest mb-2">
+        Select an Entity
+      </h3>
+      <p class="text-[12px] text-muted max-w-[280px] leading-relaxed">
+        Choose one of the available entity sets above to explore, edit, or create OData records.
+      </p>
+    </div>
+
     <DataEditor
       v-model:editor="editor"
       @refresh="refreshEntityData"
