@@ -10,6 +10,10 @@
         <Property Name="Name" Type="Edm.String" />
         <Property Name="Price" Type="Edm.Decimal" />
         <Property Name="Currency" Type="Edm.String" />
+        <Property Name="SupplierID" Type="Edm.String" />
+        <Property Name="CategoryID" Type="Edm.String" />
+        <NavigationProperty Name="Supplier" Relationship="DummyService.Product_Supplier_ManyToOne" FromRole="Product" ToRole="Supplier" />
+        <NavigationProperty Name="Category" Relationship="DummyService.Product_Category_ManyToOne" FromRole="Product" ToRole="Category" />
       </EntityType>
       <EntityType Name="Supplier">
         <Key>
@@ -18,6 +22,7 @@
         <Property Name="ID" Type="Edm.String" Nullable="false" />
         <Property Name="Name" Type="Edm.String" />
         <Property Name="City" Type="Edm.String" />
+        <NavigationProperty Name="Products" Relationship="DummyService.Product_Supplier_ManyToOne" FromRole="Supplier" ToRole="Product" />
       </EntityType>
       <EntityType Name="Category">
         <Key>
@@ -25,11 +30,30 @@
         </Key>
         <Property Name="ID" Type="Edm.String" Nullable="false" />
         <Property Name="Name" Type="Edm.String" />
+        <NavigationProperty Name="Products" Relationship="DummyService.Product_Category_ManyToOne" FromRole="Category" ToRole="Product" />
       </EntityType>
+
+      <Association Name="Product_Supplier_ManyToOne">
+        <End Role="Product" Type="DummyService.Product" Multiplicity="*" />
+        <End Role="Supplier" Type="DummyService.Supplier" Multiplicity="1" />
+      </Association>
+      <Association Name="Product_Category_ManyToOne">
+        <End Role="Product" Type="DummyService.Product" Multiplicity="*" />
+        <End Role="Category" Type="DummyService.Category" Multiplicity="1" />
+      </Association>
+
       <EntityContainer Name="DummyContainer">
         <EntitySet Name="Products" EntityType="DummyService.Product" />
         <EntitySet Name="Suppliers" EntityType="DummyService.Supplier" />
         <EntitySet Name="Categories" EntityType="DummyService.Category" />
+        <AssociationSet Name="Product_Supplier_AssocSet" Association="DummyService.Product_Supplier_ManyToOne">
+          <End Role="Product" EntitySet="Products" />
+          <End Role="Supplier" EntitySet="Suppliers" />
+        </AssociationSet>
+        <AssociationSet Name="Product_Category_AssocSet" Association="DummyService.Product_Category_ManyToOne">
+          <End Role="Product" EntitySet="Products" />
+          <End Role="Category" EntitySet="Categories" />
+        </AssociationSet>
       </EntityContainer>
     </Schema>
   </edmx:DataServices>
