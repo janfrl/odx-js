@@ -5,6 +5,47 @@ import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { addODataLog } from '../utils/dev-logs'
 
+/**
+ * Recursively flattens OData V2 'results' structures and removes metadata.
+ */
+function flattenOData(data: any): any {
+  if (!data || typeof data !== 'object')
+    return data
+
+  // 1. Handle OData V2 results wrapper
+  if (data.results && Array.isArray(data.results)) {
+    return flattenOData(data.results)
+  }
+
+  // 2. Handle Arrays
+  if (Array.isArray(data)) {
+    return data.map(item => flattenOData(item))
+  }
+
+  // 3. Handle Objects (Flatten properties)
+  const flattened: any = {}
+  let hasActualData = false
+
+  for (const key in data) {
+    if (key === '__metadata' || key === '__deferred')
+      continue
+
+    const value = flattenOData(data[key])
+
+    // We keep the key even if the value is null (e.g. for non-expanded nav props)
+    // This allows the UI to detect that the property exists.
+    flattened[key] = value
+
+    // Primitive values or non-null objects count as "actual data"
+    if (value !== null && value !== undefined) {
+      hasActualData = true
+    }
+  }
+
+  // Return the object if it has any properties (even if all are null)
+  return Object.keys(flattened).length > 0 ? flattened : null
+}
+
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = useRuntimeConfig()
@@ -288,19 +329,19 @@ export default defineEventHandler(async (event) => {
     let response: any
     const forceMockData = getQuery(event).mock === 'true'
     const isLocalService = !matched.url || !matched.url.startsWith('http')
-    
+
     // Try different possible paths for the SDK index file
     const possibleDirs = [
       join(buildDir, 'sap-odata', 'generated', matched.name),
-      join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase())
+      join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
     ]
-    
+
     let targetFile: string | null = null
     for (const dir of possibleDirs) {
       const ts = join(dir, 'index.ts')
       const js = join(dir, 'index.js')
-      if (fs.existsSync(ts)) { targetFile = ts; break; }
-      if (fs.existsSync(js)) { targetFile = js; break; }
+      if (fs.existsSync(ts)) { targetFile = ts; break }
+      if (fs.existsSync(js)) { targetFile = js; break }
     }
 
     // If it's a local service without a dedicated remote URL, we should prefer mock data
@@ -310,31 +351,32 @@ export default defineEventHandler(async (event) => {
       if (!targetFile && !forceMockData && !isLocalService) {
         console.warn(`[nuxt-sap-odata] No SDK found for ${matched.name}, falling back to mock data. Checked:`, possibleDirs)
       }
-      
+
       // If it's local and we have targetFile, we COULD try SDK, but without URL it will fail or hit wrong target.
       // So if it's local, we only use SDK if a specific destination is provided.
       if (isLocalService && targetFile && (config.odata?.destination || '').includes(matched.name.toLowerCase())) {
-         // allow SDK if destination seems to match the service name
-      } else if (isLocalService) {
-         response = await handleMockDataRequest()
-         const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
-         logRequest(status, response, capturedBody)
-         return response
+        // allow SDK if destination seems to match the service name
+      }
+      else if (isLocalService) {
+        response = await handleMockDataRequest()
+        const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
+        logRequest(status, response, capturedBody)
+        return response
       }
     }
     else {
       try {
         const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
-        
+
         // Find API factory case-insensitively
         // We check: [Name]Api, [Route]Api, [Name], [Route]
         const possibleFactoryNames = [
           `${matched.name}Api`.toLowerCase(),
           `${serviceRoute}Api`.toLowerCase(),
           matched.name.toLowerCase(),
-          serviceRoute.toLowerCase()
+          serviceRoute.toLowerCase(),
         ]
-        
+
         const actualFactoryKey = Object.keys(sdk).find(k => possibleFactoryNames.includes(k.toLowerCase()))
         const apiFactory = actualFactoryKey ? sdk[actualFactoryKey] : null
 
@@ -344,18 +386,18 @@ export default defineEventHandler(async (event) => {
         }
 
         const api = apiFactory()
-        
+
         // Find EntitySet case-insensitively
         // We check: [entitySet], [entitySet]Api
         const targetEntitySet = entitySetName.toLowerCase()
         const targetEntitySetApi = `${entitySetName}Api`.toLowerCase()
-        
+
         // Find the actual key on the api object (including getters in prototype)
         let actualEntitySetKey = ''
-        
+
         // 1. Check direct properties
         actualEntitySetKey = Object.keys(api).find(k => k.toLowerCase() === targetEntitySet || k.toLowerCase() === targetEntitySetApi) || ''
-        
+
         // 2. Check prototype (for getters in classes)
         if (!actualEntitySetKey) {
           const proto = Object.getPrototypeOf(api)
@@ -375,7 +417,7 @@ export default defineEventHandler(async (event) => {
 
         const method = event.method
         const query = getQuery(event)
-        
+
         // Use service-specific URL if it's a remote URL, otherwise fallback to global destination
         // Normalize URL by removing trailing slash to prevent double-slashes in the request path
         const serviceUrl = matched.url && matched.url.startsWith('http') ? matched.url.replace(/\/$/, '') : null
@@ -388,16 +430,17 @@ export default defineEventHandler(async (event) => {
             const rawResponse = await entityApi.requestBuilder().getByKey(resourceId).executeRaw(destination)
             let res = rawResponse.data
             // Unwrap single entity (V2 puts it in 'd')
-            if (res && res.d) res = res.d
-            
+            if (res && res.d)
+              res = res.d
+
             logRequest(200, res, capturedBody)
-            return res
+            return flattenOData(res)
           }
 
           let rb = entityApi.requestBuilder().getAll()
-          
+
           const customParams: Record<string, string> = {}
-          
+
           // 1. Collect all OData parameters starting with $
           // We pass them as custom parameters to be as generic as possible
           for (const k in query) {
@@ -416,7 +459,7 @@ export default defineEventHandler(async (event) => {
                 const schema = entityApi.schema || {}
                 const schemaKey = Object.keys(schema).find(key => key.toLowerCase() === k.toLowerCase())
                 const realKey = (schemaKey && schema[schemaKey]._fieldName) ? schema[schemaKey]._fieldName : k
-                
+
                 const formattedVal = (typeof val === 'string' && isNaN(Number(val))) ? `'${val}'` : val
                 smartFilters.push(`${realKey} eq ${formattedVal}`)
               }
@@ -425,16 +468,16 @@ export default defineEventHandler(async (event) => {
 
           if (smartFilters.length > 0) {
             const smartStr = smartFilters.join(' and ')
-            customParams['$filter'] = customParams['$filter']
-              ? `(${customParams['$filter']}) and (${smartStr})`
+            customParams.$filter = customParams.$filter
+              ? `(${customParams.$filter}) and (${smartStr})`
               : smartStr
           }
 
           // 3. Apply all collected parameters to the Request Builder
           if (Object.keys(customParams).length > 0) {
             // Encode filters to prevent "unescaped characters" errors
-            if (customParams['$filter']) {
-              customParams['$filter'] = encodeURI(customParams['$filter'])
+            if (customParams.$filter) {
+              customParams.$filter = encodeURI(customParams.$filter)
             }
             rb = rb.addCustomQueryParameters(customParams)
           }
@@ -447,25 +490,29 @@ export default defineEventHandler(async (event) => {
           // Use executeRaw() to get the un-deserialized JSON from the backend.
           // This preserves the original PascalCase casing of the property names.
           const rawResponse = await rb.executeRaw(destination)
-          
+
           // Unwrap OData results (V2: data.d.results or data.d, V4: data.value)
           let res = rawResponse.data
           if (res && typeof res === 'object') {
             if ('d' in res) {
               res = res.d.results || res.d
-            } else if ('value' in res) {
+            }
+            else if ('value' in res) {
               res = res.value
             }
           }
 
           logRequest(200, res, capturedBody, finalUrl)
-          return res
+
+          // Return flattened data to the client, but log remains original
+          return flattenOData(res)
         }
         else if (method === 'POST') {
           response = await entityApi.requestBuilder().create(capturedBody).execute(destination)
         }
         else if (method === 'PATCH' || method === 'PUT') {
-          if (!resourceId) throw new Error('ID is required in the URL (e.g. Entity(ID)) for updates')
+          if (!resourceId)
+            throw new Error('ID is required in the URL (e.g. Entity(ID)) for updates')
           // Note: This is a simplified update. Usually one might fetch first or use a partial entity.
           // For now, we assume the capturedBody contains the fields to update.
           const res = await entityApi.requestBuilder().update(capturedBody).execute(destination)
@@ -474,7 +521,8 @@ export default defineEventHandler(async (event) => {
         }
         else if (method === 'DELETE') {
           const id = resourceId || (query.id as string)
-          if (!id) throw new Error('ID is required for DELETE (either in URL or ?id= parameter)')
+          if (!id)
+            throw new Error('ID is required for DELETE (either in URL or ?id= parameter)')
           const res = await entityApi.requestBuilder().delete(id).execute(destination)
           logRequest(204, null, capturedBody)
           return res
