@@ -22,7 +22,10 @@ export interface ModuleOptions {
   forwardAuthHeader?: boolean
   services?: SapODataService[]
   buildDir?: string
-  devtools?: boolean
+  devtools?: {
+    enabled?: boolean
+    maxLogs?: number
+  }
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -35,7 +38,10 @@ export default defineNuxtModule<ModuleOptions>({
     basePath: '/api/sap-odata',
     forwardAuthHeader: true,
     services: [],
-    devtools: true,
+    devtools: {
+      enabled: true,
+      maxLogs: 100,
+    },
   },
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
@@ -52,6 +58,9 @@ export default defineNuxtModule<ModuleOptions>({
       services,
       buildDir: nuxt.options.buildDir,
       rootDir: nuxt.options.rootDir,
+      devtools: {
+        maxLogs: options.devtools?.maxLogs ?? 100,
+      },
     }
     nuxt.options.runtimeConfig.public.odata = {
       mode,
