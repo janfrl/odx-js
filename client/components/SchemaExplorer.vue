@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import type { NodeTypesObject } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { useVueFlow, VueFlow } from '@vue-flow/core'
-import type { NodeTypesObject } from '@vue-flow/core'
 import { useElementSize } from '@vueuse/core'
 import * as dagre from 'dagre'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { markRaw, nextTick, onMounted, ref, watch, computed } from 'vue'
+import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 import SchemaNode from './SchemaNode.vue'
 
@@ -35,23 +35,28 @@ const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
 
 const elk = new ELK()
 
-// State to remember the focal point before resize
-let focalPoint: { x: number, y: number, zoom: number } | null = null
+// State to remember the view before resize (width, height, x, y, zoom)
+let preTransitionState: { x: number, y: number, zoom: number } | null = null
 
 async function toggleFullscreen() {
-  if (!containerRef.value) return
-  
+  if (!containerRef.value)
+    return
+
   const view = getViewport()
-  // Calculate focal point (the point currently in the center of the viewport)
-  focalPoint = {
-    x: (-view.x + (containerRef.value.clientWidth / 2)) / view.zoom,
-    y: (-view.y + (containerRef.value.clientHeight / 2)) / view.zoom,
-    zoom: view.zoom
+  const w = containerRef.value.clientWidth
+  const h = containerRef.value.clientHeight
+
+  // Capture current center in project coordinates
+  preTransitionState = {
+    x: (-view.x + (w / 2)) / view.zoom,
+    y: (-view.y + (h / 2)) / view.zoom,
+    zoom: view.zoom,
   }
 
   if (!document.fullscreenElement) {
     await containerRef.value.requestFullscreen().catch(console.error)
-  } else {
+  }
+  else {
     await document.exitFullscreen().catch(console.error)
   }
 }
@@ -60,22 +65,27 @@ function fitToScreen() {
   fitView({ padding: 0.2, duration: 400 })
 }
 
-// Update fullscreen state and maintain focal point
+// Watch for container size changes to adjust the view instantly
+watch([width, height], () => {
+  if (preTransitionState) {
+    // requestAnimationFrame ensures we wait for the browser to paint the new size
+    requestAnimationFrame(() => {
+      if (!preTransitionState)
+        return
+
+      // Restore the focal point instantly
+      setCenter(preTransitionState.x, preTransitionState.y, { zoom: preTransitionState.zoom })
+      preTransitionState = null
+    })
+  }
+})
+
+// Update fullscreen state
 onMounted(() => {
   document.addEventListener('fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement
-    
-    if (focalPoint) {
-      // Use nextTick to ensure VueFlow has updated its internal dimensions
-      nextTick(() => {
-        // Center on the exact point we were looking at, keeping the SAME zoom
-        setCenter(focalPoint!.x, focalPoint!.y, { zoom: focalPoint!.zoom })
-        focalPoint = null
-      })
-    }
   })
 })
-
 
 // Define custom node types
 const nodeTypes: NodeTypesObject = {
