@@ -22,15 +22,26 @@ export default defineEventHandler(async (event) => {
 
   const segments = relativePath.split('/').filter(Boolean)
   const serviceRoute = segments[0] || ''
-  const entitySetName = segments[1] || ''
+  let entitySetName = segments[1] || ''
+  let resourceId = ''
+
+  // Support for Entity(Key) syntax
+  if (entitySetName.includes('(')) {
+    const match = entitySetName.match(/^([^(]+)\(([^)]+)\)$/)
+    if (match) {
+      entitySetName = match[1]!
+      resourceId = match[2]!.replace(/^'|'$/g, '') // Remove quotes if present
+    }
+  }
 
   // Central log function
-  const logRequest = (status: number, responseBody?: any, requestBody?: any) => {
+  const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string) => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
       method: event.method || 'GET',
       url: fullPath,
+      targetUrl, // New: The real OData backend URL
       service: serviceRoute,
       entitySet: entitySetName,
       status,
@@ -139,7 +150,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (method === 'GET') {
-      const id = query.id ? String(query.id) : undefined
+      const id = resourceId || (query.id ? String(query.id) : undefined)
       if (id) {
         const item = data.find((item: any) => String(item.ID || item.id) === id)
         if (!item) {
@@ -152,7 +163,15 @@ export default defineEventHandler(async (event) => {
       // Basic Filter/Query Support for Mocks
       let result = [...data]
 
-      // Simple $filter parsing (e.g., "Name eq 'Test'")
+      // Apply Smart Filters from query
+      for (const k in query) {
+        if (!k.startsWith('$') && k !== 'mock') {
+          const val = String(query[k])
+          result = result.filter((item: any) => String(item[k]) === val)
+        }
+      }
+
+      // Standard OData Filter parsing (very basic)
       const filter = query.$filter ? String(query.$filter) : null
       if (filter) {
         const match = filter.match(/(\w+)\s+eq\s+'([^']+)'/)
@@ -358,34 +377,107 @@ export default defineEventHandler(async (event) => {
         const query = getQuery(event)
         
         // Use service-specific URL if it's a remote URL, otherwise fallback to global destination
-        const serviceUrl = matched.url && matched.url.startsWith('http') ? matched.url : null
-        const destination = { url: serviceUrl || config.odata?.destination || 'http://localhost:8080' }
+        // Normalize URL by removing trailing slash to prevent double-slashes in the request path
+        const serviceUrl = matched.url && matched.url.startsWith('http') ? matched.url.replace(/\/$/, '') : null
+        const globalDest = (config.odata?.destination || 'http://localhost:8080').replace(/\/$/, '')
+        const destination = { url: serviceUrl || globalDest }
 
         if (method === 'GET') {
+          if (resourceId) {
+            // Standard OData GetByKey
+            const rawResponse = await entityApi.requestBuilder().getByKey(resourceId).executeRaw(destination)
+            let res = rawResponse.data
+            // Unwrap single entity (V2 puts it in 'd')
+            if (res && res.d) res = res.d
+            
+            logRequest(200, res, capturedBody)
+            return res
+          }
+
           let rb = entityApi.requestBuilder().getAll()
-          if (query.id) {
-            rb = entityApi.requestBuilder().getByKey(query.id)
+          
+          const customParams: Record<string, string> = {}
+          
+          // 1. Collect all OData parameters starting with $
+          // We pass them as custom parameters to be as generic as possible
+          for (const k in query) {
+            if (k.startsWith('$')) {
+              customParams[k] = String(query[k])
+            }
           }
-          else {
-            const odataParams: Record<string, string> = {}
-            const keys = ['$filter', '$select', '$expand', '$top', '$skip', '$orderby']
-            keys.forEach((k) => {
-              if (query[k])
-                odataParams[k] = String(query[k])
-            })
-            if (Object.keys(odataParams).length > 0)
-              rb = rb.withCustomParameters(odataParams)
+
+          // 2. Build smart filters for non-$ parameters
+          const smartFilters: string[] = []
+          for (const k in query) {
+            if (!k.startsWith('$') && k !== 'mock' && k !== 'id') {
+              const val = query[k]
+              if (val !== undefined && val !== null) {
+                // Helper to find the real OData field name from the SDK schema
+                const schema = entityApi.schema || {}
+                const schemaKey = Object.keys(schema).find(key => key.toLowerCase() === k.toLowerCase())
+                const realKey = (schemaKey && schema[schemaKey]._fieldName) ? schema[schemaKey]._fieldName : k
+                
+                const formattedVal = (typeof val === 'string' && isNaN(Number(val))) ? `'${val}'` : val
+                smartFilters.push(`${realKey} eq ${formattedVal}`)
+              }
+            }
           }
-          response = await rb.execute(destination)
+
+          if (smartFilters.length > 0) {
+            const smartStr = smartFilters.join(' and ')
+            customParams['$filter'] = customParams['$filter']
+              ? `(${customParams['$filter']}) and (${smartStr})`
+              : smartStr
+          }
+
+          // 3. Apply all collected parameters to the Request Builder
+          if (Object.keys(customParams).length > 0) {
+            // Encode filters to prevent "unescaped characters" errors
+            if (customParams['$filter']) {
+              customParams['$filter'] = encodeURI(customParams['$filter'])
+            }
+            rb = rb.addCustomQueryParameters(customParams)
+          }
+
+          // Pre-calculate URL for logging purposes
+
+          // Pre-calculate URL for logging purposes
+          const finalUrl = await rb.url(destination).catch(() => 'unknown')
+
+          // Use executeRaw() to get the un-deserialized JSON from the backend.
+          // This preserves the original PascalCase casing of the property names.
+          const rawResponse = await rb.executeRaw(destination)
+          
+          // Unwrap OData results (V2: data.d.results or data.d, V4: data.value)
+          let res = rawResponse.data
+          if (res && typeof res === 'object') {
+            if ('d' in res) {
+              res = res.d.results || res.d
+            } else if ('value' in res) {
+              res = res.value
+            }
+          }
+
+          logRequest(200, res, capturedBody, finalUrl)
+          return res
         }
         else if (method === 'POST') {
           response = await entityApi.requestBuilder().create(capturedBody).execute(destination)
         }
-        else if (method === 'PATCH') {
-          response = await entityApi.requestBuilder().update(capturedBody).execute(destination)
+        else if (method === 'PATCH' || method === 'PUT') {
+          if (!resourceId) throw new Error('ID is required in the URL (e.g. Entity(ID)) for updates')
+          // Note: This is a simplified update. Usually one might fetch first or use a partial entity.
+          // For now, we assume the capturedBody contains the fields to update.
+          const res = await entityApi.requestBuilder().update(capturedBody).execute(destination)
+          logRequest(200, res, capturedBody)
+          return res
         }
         else if (method === 'DELETE') {
-          response = await entityApi.requestBuilder().delete(query.id as string).execute(destination)
+          const id = resourceId || (query.id as string)
+          if (!id) throw new Error('ID is required for DELETE (either in URL or ?id= parameter)')
+          const res = await entityApi.requestBuilder().delete(id).execute(destination)
+          logRequest(204, null, capturedBody)
+          return res
         }
         else {
           throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
@@ -405,7 +497,9 @@ export default defineEventHandler(async (event) => {
   catch (err: any) {
     // Log failure
     const statusCode = err.statusCode || 500
-    logRequest(statusCode, { error: err.message || err.statusMessage }, capturedBody)
+    // Try to extract URL from the error or the event if possible
+    const targetUrl = err.config?.url || err.request?.url
+    logRequest(statusCode, { error: err.message || err.statusMessage }, capturedBody, targetUrl)
     throw err
   }
 })

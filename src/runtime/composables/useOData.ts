@@ -15,26 +15,21 @@ export function useOData(service: string) {
       list: <T = unknown>(query?: ODataQuery) =>
         useFetch<T[]>(fullPath, { query }),
 
-      get: <T = unknown>(key: string | number, query?: ODataQuery) =>
-        useFetch<T>(fullPath, {
-          query: { id: key, ...query },
-        }),
+      get: <T = unknown>(key: string | number, query?: ODataQuery) => {
+        const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
+        return useFetch<T>(itemPath, { query })
+      },
 
       create: <T = unknown>(body: ODataBody) =>
         $odata<T>(service, 'POST', { body, entitySet }),
 
       update: <T = unknown>(key: string | number, body: ODataBody) =>
-        $odata<T>(service, 'PATCH', {
-          query: { id: key },
+        $odata<T>(`${service}/${entitySet}(${typeof key === 'string' ? `'${key}'` : key})`, 'PATCH', {
           body,
-          entitySet,
         }),
 
       remove: <T = unknown>(key: string | number) =>
-        $odata<T>(service, 'DELETE', {
-          query: { id: key },
-          entitySet,
-        }),
+        $odata<T>(`${service}/${entitySet}(${typeof key === 'string' ? `'${key}'` : key})`, 'DELETE'),
     }
   }
 
