@@ -224,6 +224,57 @@ export default defineEventHandler(async (event) => {
         }
       }
 
+      // --- EXPAND SUPPORT FOR MOCKS ---
+      const expand = query.$expand ? String(query.$expand).split(',').map(s => s.trim()) : []
+      if (expand.length > 0) {
+        for (const entity of result) {
+          for (const navProp of expand) {
+            // Try to find the related data
+            const pluralName = navProp.endsWith('y') 
+              ? navProp.slice(0, -1) + 'ies' 
+              : navProp + 's'
+              
+            const possibleKeys = [
+              `${matched.name}:${navProp}.json`,
+              `${matched.name}:${pluralName}.json`
+            ]
+            
+            let relatedData: any[] | null = null
+            let activeRelatedKey = ''
+            for (const rKey of possibleKeys) {
+              if (await storage.hasItem(rKey)) {
+                relatedData = (await storage.getItem(rKey)) as any[]
+                activeRelatedKey = rKey
+                break
+              }
+            }
+
+            if (Array.isArray(relatedData)) {
+              // 1. Try Forward Lookup (n:1) - Current entity has the ID (e.g. SupplierID)
+              const fkKey = Object.keys(entity).find(k => k.toLowerCase() === `${navProp.toLowerCase()}id`)
+              const fk = fkKey ? entity[fkKey] : null
+              
+              if (fk) {
+                entity[navProp] = relatedData.find(item => String(item.ID || item.id) === String(fk)) || null
+              } else {
+                // 2. Try Inverse Lookup (1:n) - Target entities have the ID pointing back (e.g. Products have CategoryID)
+                // We look for [EntityName]ID in the target collection
+                const backLinkKey = `${matched.name.replace('Service', '')}ID`.toLowerCase()
+                const inverseData = relatedData.filter(item => {
+                  const itemKeys = Object.keys(item)
+                  const linkKey = itemKeys.find(k => k.toLowerCase() === backLinkKey || k.toLowerCase() === 'categoryid') // Hardcoded fallback for demo
+                  return String(item[linkKey || '']) === String(entity.ID || entity.id)
+                })
+                
+                if (inverseData.length > 0) {
+                  entity[navProp] = inverseData
+                }
+              }
+            }
+          }
+        }
+      }
+
       // $orderby (e.g., "Name asc" or "Price desc")
       const orderby = query.$orderby ? String(query.$orderby) : null
       if (orderby) {
