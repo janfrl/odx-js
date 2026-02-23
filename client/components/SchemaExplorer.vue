@@ -25,10 +25,33 @@ const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut } =
 
 const loading = ref(false)
 const isReady = ref(false)
+const isFullscreen = ref(false)
+const containerRef = ref<HTMLElement | null>(null)
 const schemaData = ref<any>(null)
 const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
 
 const elk = new ELK()
+
+function toggleFullscreen() {
+  if (!containerRef.value) return
+  
+  if (!document.fullscreenElement) {
+    containerRef.value.requestFullscreen().catch(err => {
+      console.error(`Error attempting to enable full-screen mode: ${err.message}`)
+    })
+    isFullscreen.value = true
+  } else {
+    document.exitFullscreen()
+    isFullscreen.value = false
+  }
+}
+
+// Listen for ESC key or other ways to exit fullscreen
+onMounted(() => {
+  document.addEventListener('fullscreenchange', () => {
+    isFullscreen.value = !!document.fullscreenElement
+  })
+})
 
 // Define custom node types
 const nodeTypes: NodeTypesObject = {
@@ -348,6 +371,7 @@ watch(selectedService, () => {
 
       <!-- Graph Area -->
       <div
+        ref="containerRef"
         class="flex-1 relative overflow-hidden bg-white dark:bg-[#050505] transition-opacity duration-300 text-base"
         :style="{ opacity: isReady ? 1 : 0 }"
       >
@@ -381,13 +405,26 @@ watch(selectedService, () => {
               </button>
             </div>
 
-            <button
-              class="w-10 h-10 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl text-zinc-400 hover:text-primary hover:border-primary/50 transition-all cursor-pointer flex items-center justify-center"
-              title="Reset View"
-              @click="fetchSchema(true)"
-            >
-              <div class="i-carbon-center-to-fit w-5 h-5" />
-            </button>
+            <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
+              <button
+                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
+                title="Reset View"
+                @click="fetchSchema(true)"
+              >
+                <div class="i-carbon-center-to-fit w-5 h-5" />
+              </button>
+              <div class="h-px bg-zinc-800 mx-2" />
+              <button
+                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
+                :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
+                @click="toggleFullscreen"
+              >
+                <div 
+                  class="w-5 h-5" 
+                  :class="isFullscreen ? 'i-carbon-minimize' : 'i-carbon-maximize'" 
+                />
+              </button>
+            </div>
           </div>
         </VueFlow>
       </div>
