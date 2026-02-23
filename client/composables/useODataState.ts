@@ -90,7 +90,18 @@ export function useSharedODataState() {
     const start = Date.now()
     try {
       const res = await fetch(`/__sap_odata__/generate?service=${name}`)
-      const data = (await res.json()) as { success: boolean }
+      
+      let data: any
+      const text = await res.text()
+      try {
+        data = JSON.parse(text)
+      } catch (e) {
+        throw new Error(`Server returned invalid response: ${text.slice(0, 100)}...`)
+      }
+
+      if (!res.ok) {
+        throw new Error(data.statusMessage || data.message || `Generation failed with status ${res.status}`)
+      }
 
       // Ensure at least 800ms of loading state for UX
       const elapsed = Date.now() - start
@@ -101,6 +112,10 @@ export function useSharedODataState() {
       if (data.success) {
         await fetchConfig()
       }
+    }
+    catch (err: any) {
+      console.error('[nuxt-sap-odata] Generate failed:', err)
+      // You might want to show a notification here
     }
     finally {
       generatingStatus.value[name] = false

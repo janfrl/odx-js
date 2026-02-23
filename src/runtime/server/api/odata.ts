@@ -460,12 +460,12 @@ export default defineEventHandler(async (event) => {
         console.warn(`[nuxt-sap-odata] No SDK found for ${matched.name}, falling back to mock data. Checked:`, possibleDirs)
       }
 
-      // If it's local and we have targetFile, we COULD try SDK, but without URL it will fail or hit wrong target.
-      // So if it's local, we only use SDK if a specific destination is provided.
+      // 1. If we have a target file and a specific destination, we can try the SDK even for local-sourced services
       if (isLocalService && targetFile && (config.odata?.destination || '').includes(matched.name.toLowerCase())) {
-        // allow SDK if destination seems to match the service name
+        // allow SDK execution below
       }
-      else if (isLocalService) {
+      // 2. Otherwise, if the SDK is missing OR we are forced to mock OR it's a local service, use mock data
+      else {
         response = await handleMockDataRequest()
         const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
         logRequest(status, response, capturedBody)
