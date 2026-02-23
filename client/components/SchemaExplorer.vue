@@ -3,6 +3,7 @@ import type { NodeTypesObject } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { useVueFlow, VueFlow } from '@vue-flow/core'
 import * as dagre from 'dagre'
+import ELK from 'elkjs/lib/elk.bundled.js'
 import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 import SchemaNode from './SchemaNode.vue'
@@ -20,16 +21,23 @@ const {
   lastSelectedServiceForGraph,
 } = useSharedODataState()
 
-const { fitView, onViewportChange, setViewport, onPaneReady } = useVueFlow()
+const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut } = useVueFlow()
 
 const loading = ref(false)
 const isReady = ref(false)
 const schemaData = ref<any>(null)
+const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
+
+const elk = new ELK()
 
 // Define custom node types
 const nodeTypes: NodeTypesObject = {
   schema: markRaw(SchemaNode),
 }
+
+watch(layoutMode, () => {
+  generateGraph(true)
+})
 
 // Save viewport changes to global state immediately
 onViewportChange((viewport) => {
@@ -96,13 +104,14 @@ async function fetchSchema(forceAutoFit = false) {
   }
 }
 
-function generateGraph(autoFit = false) {
+async function generateGraph(autoFit = false) {
   if (!schemaData.value)
     return
 
   const newNodes: any[] = []
   const newEdges: any[] = []
 
+  // 1. Create Nodes and Edges
   schemaData.value.entities.forEach((entity: any) => {
     newNodes.push({
       id: entity.name,
@@ -138,22 +147,95 @@ function generateGraph(autoFit = false) {
     })
   })
 
-  const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 150 })
-  g.setDefaultEdgeLabel(() => ({}))
+  // 2. Decide Layout Strategy
+  if (layoutMode.value === 'elk') {
+    const elkGraph = {
+      id: 'root',
+      layoutOptions: {
+        'elk.algorithm': 'layered',
+        'elk.direction': 'RIGHT',
+        'elk.spacing.nodeNode': '100',
+        'elk.layered.spacing.nodeNodeBetweenLayers': '150',
+        'elk.padding': '[top=50,left=50,bottom=50,right=50]',
+      },
+      children: newNodes.map(n => ({
+        id: n.id,
+        width: 250,
+        height: 60 + (n.data.entity.properties.length * 22),
+      })),
+      edges: newEdges.map(e => ({
+        id: e.id,
+        sources: [e.source],
+        targets: [e.target],
+      })),
+    }
 
-  newNodes.forEach((node) => {
-    const propCount = node.data.entity.properties.length
-    g.setNode(node.id, { width: 200, height: 40 + (propCount * 22) })
-  })
-  newEdges.forEach(edge => g.setEdge(edge.source, edge.target))
+    const layoutedGraph = await elk.layout(elkGraph)
+    newNodes.forEach((node) => {
+      const elkNode = layoutedGraph.children?.find(c => c.id === node.id)
+      if (elkNode) {
+        node.position = { x: elkNode.x || 0, y: elkNode.y || 0 }
+      }
+    })
+  }
+  else {
+    const connectedNodeIds = new Set<string>()
+    newEdges.forEach((e) => {
+      connectedNodeIds.add(e.source)
+      connectedNodeIds.add(e.target)
+    })
 
-  dagre.layout(g)
+    const connectedNodes = newNodes.filter(n => connectedNodeIds.has(n.id))
+    const isolatedNodes = newNodes.filter(n => !connectedNodeIds.has(n.id))
 
-  newNodes.forEach((node) => {
-    const nodeWithPos = g.node(node.id)
-    node.position = { x: nodeWithPos.x - 100, y: nodeWithPos.y - 50 }
-  })
+    // 3. Layout Connected Nodes via Dagre
+    const g = new dagre.graphlib.Graph()
+    g.setGraph({ rankdir: 'LR', nodesep: 100, ranksep: 200 })
+    g.setDefaultEdgeLabel(() => ({}))
+
+    connectedNodes.forEach((node) => {
+      const propCount = node.data.entity.properties.length
+      g.setNode(node.id, { width: 250, height: 60 + (propCount * 22) })
+    })
+
+    if (layoutMode.value === 'hierarchical') {
+      isolatedNodes.forEach((node) => {
+        g.setNode(node.id, { width: 250, height: 60 + (node.data.entity.properties.length * 22) })
+      })
+    }
+
+    newEdges.forEach(edge => g.setEdge(edge.source, edge.target))
+    dagre.layout(g)
+
+    // Apply positions from Dagre
+    let maxX = 0
+    let maxY = 0
+
+    newNodes.forEach((node) => {
+      const dNode = g.node(node.id)
+      if (dNode) {
+        node.position = { x: dNode.x - 125, y: dNode.y - 50 }
+        maxX = Math.max(maxX, node.position.x + 250)
+        maxY = Math.max(maxY, node.position.y + 100)
+      }
+    })
+
+    // 4. Layout Isolated Nodes in a Grid (if Compact Mode)
+    if (layoutMode.value === 'compact' && isolatedNodes.length > 0) {
+      const cols = Math.ceil(Math.sqrt(isolatedNodes.length))
+      const startX = 0
+      const startY = maxY + 200
+
+      isolatedNodes.forEach((node, idx) => {
+        const col = idx % cols
+        const row = Math.floor(idx / cols)
+        node.position = {
+          x: startX + (col * 350),
+          y: startY + (row * 400),
+        }
+      })
+    }
+  }
 
   globalNodes.value = [...newNodes]
   globalEdges.value = [...newEdges]
@@ -222,31 +304,45 @@ watch(selectedService, () => {
   <div class="flex-1 flex flex-col overflow-hidden px-6 text-base relative">
     <div class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm text-base">
       <!-- Action Toolbar: Balanced style like Data view -->
-      <div class="py-2 pl-4 pr-2 flex items-center justify-between bg-surface border-b border-base shrink-0 rounded-t-xl text-base">
+      <div class="py-2 px-4 flex items-center justify-between bg-surface border-b border-base shrink-0 rounded-t-xl text-base">
         <div class="flex items-center gap-3 text-base">
-          <span class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2 text-base">
-            <div class="i-carbon-flow-connection text-primary" />
-            Architecture Overview
-          </span>
-          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight text-base">
+          <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center">
+            <button
+              class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
+              :class="layoutMode === 'elk' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+              @click="layoutMode = 'elk'"
+            >
+              ELK
+            </button>
+            <button
+              class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
+              :class="layoutMode === 'hierarchical' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+              @click="layoutMode = 'hierarchical'"
+            >
+              Dagre (Tree)
+            </button>
+            <button
+              class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
+              :class="layoutMode === 'compact' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+              @click="layoutMode = 'compact'"
+            >
+              Dagre (Grid)
+            </button>
+          </div>
+
+          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight ml-4">
             Refining...
           </div>
         </div>
+
         <div class="flex items-center gap-2 text-base">
-          <NButton
-            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"
-            icon="i-carbon-center-to-fit"
-            @click="fetchSchema(true)"
-          >
-            Auto Layout
-          </NButton>
-          <NButton
-            class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"
-            icon="i-carbon-copy"
+          <button
+            class="px-4 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border border-base bg-zinc-500/10 text-muted hover:bg-zinc-500/20 hover:text-base flex items-center gap-1.5 shadow-sm"
             @click="copyMermaid"
           >
+            <div class="i-carbon-copy w-3 h-3" />
             Mermaid
-          </NButton>
+          </button>
         </div>
       </div>
 
@@ -264,6 +360,35 @@ watch(selectedService, () => {
           :max-zoom="4"
         >
           <Background pattern-color="#333" :gap="20" />
+
+          <!-- Floating Controls -->
+          <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
+            <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
+              <button
+                class="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
+                title="Zoom In"
+                @click="zoomIn"
+              >
+                <div class="i-carbon-add w-4 h-4" />
+              </button>
+              <div class="h-px bg-zinc-800 mx-2" />
+              <button
+                class="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
+                title="Zoom Out"
+                @click="zoomOut"
+              >
+                <div class="i-carbon-subtract w-4 h-4" />
+              </button>
+            </div>
+
+            <button
+              class="w-10 h-10 bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl text-zinc-400 hover:text-primary hover:border-primary/50 transition-all cursor-pointer flex items-center justify-center"
+              title="Reset View"
+              @click="fetchSchema(true)"
+            >
+              <div class="i-carbon-center-to-fit w-5 h-5" />
+            </button>
+          </div>
         </VueFlow>
       </div>
     </div>
