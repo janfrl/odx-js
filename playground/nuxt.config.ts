@@ -32,7 +32,7 @@ export default defineNuxtConfig({
     services: [
       {
         name: 'DummyService',
-        edmx: 'edmx/dummy.edmx',
+        url: 'edmx/dummy.edmx',
         route: 'dummy',
       },
     ],
