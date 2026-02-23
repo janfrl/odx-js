@@ -20,6 +20,7 @@ export interface ODataLog {
   timestamp: number
   method: string
   url: string
+  targetUrl?: string
   service: string
   entitySet?: string
   status?: number
