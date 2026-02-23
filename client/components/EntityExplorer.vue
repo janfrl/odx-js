@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EditorState } from '../composables/useODataState'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 
 const { selectedService, selectedEntity, config, clearEntityMockData } = useSharedODataState()
@@ -54,10 +54,18 @@ async function fetchSchema() {
     return
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
-    schema.value = await res.json()
+    if (!res.ok) {
+      throw new Error(`Schema API returned ${res.status}: ${res.statusText}`)
+    }
+    const text = await res.text()
+    if (!text) {
+      throw new Error('Schema API returned an empty response')
+    }
+    schema.value = JSON.parse(text)
   }
   catch (e) {
-    console.error('Failed to fetch schema', e)
+    console.error('[nuxt-sap-odata] Failed to fetch schema:', e)
+    schema.value = null
   }
 }
 
@@ -184,17 +192,52 @@ function downloadJson() {
   URL.revokeObjectURL(url)
 }
 
+function isNavigationProperty(key: string) {
+  return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
+    np.name.toLowerCase() === key.toLowerCase()
+  )
+}
+
+const currentEntitySchema = computed(() => {
+  const entityName = selectedEntity.value
+  if (!schema.value || !entityName)
+    return null
+
+  // Find the entity by set name or type name with robust plural handling (e.g. Categories -> Category)
+  return schema.value.entities?.find((e: any) =>
+    e.entitySet === entityName
+    || e.name === entityName
+    || entityName.toLowerCase().startsWith(e.name.toLowerCase())
+    || e.name.toLowerCase().startsWith(entityName.toLowerCase())
+    || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
+  ) || null
+})
+
 const previewColumns = computed(() => {
-  const edmxEntity = schema.value?.entities?.find((e: any) => e.entitySet === selectedEntity.value || e.name === selectedEntity.value)
+  const edmxEntity = currentEntitySchema.value
+
   const edmxProps = edmxEntity?.properties?.map((p: any) => p.name) || []
+  const edmxNavProps = edmxEntity?.navigationProperties?.map((np: any) => np.name) || []
 
   const firstRow = previewData.value[0]
   const dataProps = firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
 
+  // Combined result
   const combined = [...edmxProps]
+
+  // Add properties found in data that are not in schema (e.g. dynamic properties)
   dataProps.forEach((dp) => {
-    if (!combined.some(cp => cp.toLowerCase() === dp.toLowerCase())) {
+    const isRegular = combined.some(cp => cp.toLowerCase() === dp.toLowerCase())
+    const isNav = edmxNavProps.some((np: string) => np.toLowerCase() === dp.toLowerCase())
+    if (!isRegular && !isNav) {
       combined.push(dp)
+    }
+  })
+
+  // Ensure navigation properties are included as columns
+  edmxNavProps.forEach((np: string) => {
+    if (!combined.some(cp => cp.toLowerCase() === np.toLowerCase())) {
+      combined.push(np)
     }
   })
 
@@ -210,12 +253,18 @@ watch(selectedService, (newSvc) => {
     selectedEntity.value = null
     schema.value = null
   }
-})
+}, { immediate: true })
 
 watch(selectedEntity, (newEntity) => {
   if (newEntity)
     refreshEntityData()
 }, { immediate: true })
+
+onMounted(() => {
+  if (selectedService.value) {
+    fetchSchema()
+  }
+})
 </script>
 
 <template>
@@ -404,7 +453,33 @@ watch(selectedEntity, (newEntity) => {
                   :key="key"
                   class="px-4 py-2.5 truncate max-w-[300px] opacity-90"
                 >
-                  {{ row[key] }}
+                  <template v-if="Array.isArray(row[key])">
+                    <button
+                      class="text-[10px] bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5 font-bold hover:bg-primary/20 transition-colors cursor-pointer"
+                      @click.stop="openEditor('view', row[key] as any)"
+                    >
+                      {{ (row[key] as any[]).length }} Items
+                    </button>
+                  </template>
+                  <template v-else-if="row[key] && typeof row[key] === 'object'">
+                    <button
+                      class="text-[10px] bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded px-1.5 py-0.5 font-bold hover:bg-zinc-500/20 transition-colors cursor-pointer"
+                      @click.stop="openEditor('view', row[key] as any)"
+                    >
+                      Object
+                    </button>
+                  </template>
+                  <template v-else-if="row[key] === null">
+                    <template v-if="isNavigationProperty(key as string)">
+                      <span class="text-[9px] opacity-30 italic font-sans">Not expanded</span>
+                    </template>
+                    <template v-else>
+                      <span class="opacity-20">-</span>
+                    </template>
+                  </template>
+                  <template v-else>
+                    {{ row[key] }}
+                  </template>
                 </td>
               </tr>
             </tbody>
