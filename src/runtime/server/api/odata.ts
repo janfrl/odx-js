@@ -4,6 +4,74 @@ import { createError, defineEventHandler, getQuery, readBody, useRuntimeConfig, 
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { addODataLog } from '../utils/dev-logs'
+import { XMLParser } from 'fast-xml-parser'
+
+/**
+ * Extracts ReferentialConstraint for a specific navigation property.
+ */
+async function getNavigationMetadata(serviceName: string, entitySetName: string, navPropName: string, config: any, buildDir: string) {
+  try {
+    const services = (config.odata?.services || []) as any[]
+    const svc = services.find(s => s.name === serviceName)
+    if (!svc) return null
+
+    const rootDir = config.odata?.rootDir as string
+    let edmxPath = svc.url.startsWith('http')
+      ? join(buildDir, 'sap-odata', 'temp', `${svc.name}.edmx`)
+      : join(rootDir, svc.url)
+
+    if (!fs.existsSync(edmxPath)) return null
+
+    const xml = fs.readFileSync(edmxPath, 'utf-8')
+    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '' })
+    const jsonObj = parser.parse(xml)
+
+    const edmx = jsonObj['edmx:Edmx'] || jsonObj.Edmx
+    const schema = Array.isArray(edmx?.['edmx:DataServices']?.Schema) 
+      ? edmx['edmx:DataServices'].Schema[0] 
+      : edmx?.['edmx:DataServices']?.Schema
+
+    if (!schema) return null
+
+    // 1. Find the EntityType for this EntitySet
+    const entityContainers = Array.isArray(schema.EntityContainer) ? schema.EntityContainer : [schema.EntityContainer]
+    const container = entityContainers[0]
+    const entitySet = (Array.isArray(container?.EntitySet) ? container.EntitySet : [container?.EntitySet])
+      .find((es: any) => es.Name === entitySetName)
+    
+    if (!entitySet) return null
+    const fullEntityType = entitySet.EntityType
+    const entityTypeName = fullEntityType.split('.').pop()
+
+    // 2. Find the NavigationProperty in the EntityType
+    const entityType = (Array.isArray(schema.EntityType) ? schema.EntityType : [schema.EntityType])
+      .find((et: any) => et.Name === entityTypeName)
+    
+    if (!entityType) return null
+    const navProp = (Array.isArray(entityType.NavigationProperty) ? entityType.NavigationProperty : [entityType.NavigationProperty])
+      .find((np: any) => np.Name === navPropName)
+    
+    if (!navProp) return null
+    const relationshipName = navProp.Relationship.split('.').pop()
+
+    // 3. Find the Association and its ReferentialConstraint
+    const association = (Array.isArray(schema.Association) ? schema.Association : [schema.Association])
+      .find((assoc: any) => assoc.Name === relationshipName)
+    
+    if (!association || !association.ReferentialConstraint) return null
+
+    const constraint = association.ReferentialConstraint
+    return {
+      dependentProperty: constraint.Dependent?.PropertyRef?.Name || constraint.Dependent?.PropertyRef?.name,
+      principalProperty: constraint.Principal?.PropertyRef?.Name || constraint.Principal?.PropertyRef?.name,
+      principalRole: constraint.Principal?.Role || constraint.Principal?.role,
+      dependentRole: constraint.Dependent?.Role || constraint.Dependent?.role
+    }
+  } catch (e) {
+    console.error('[nuxt-sap-odata] Failed to parse navigation metadata:', e)
+    return null
+  }
+}
 
 /**
  * Recursively flattens OData V2 'results' structures and removes metadata.
@@ -227,47 +295,36 @@ export default defineEventHandler(async (event) => {
       // --- EXPAND SUPPORT FOR MOCKS ---
       const expand = query.$expand ? String(query.$expand).split(',').map(s => s.trim()) : []
       if (expand.length > 0) {
-        for (const entity of result) {
-          for (const navProp of expand) {
-            // Try to find the related data
-            const pluralName = navProp.endsWith('y') 
-              ? navProp.slice(0, -1) + 'ies' 
-              : navProp + 's'
-              
-            const possibleKeys = [
-              `${matched.name}:${navProp}.json`,
-              `${matched.name}:${pluralName}.json`
-            ]
-            
-            let relatedData: any[] | null = null
-            let activeRelatedKey = ''
-            for (const rKey of possibleKeys) {
-              if (await storage.hasItem(rKey)) {
-                relatedData = (await storage.getItem(rKey)) as any[]
-                activeRelatedKey = rKey
-                break
-              }
+        for (const navProp of expand) {
+          const meta = await getNavigationMetadata(matched.name, entitySetName, navProp, config, buildDir)
+          
+          const pluralName = navProp.endsWith('y') ? navProp.slice(0, -1) + 'ies' : navProp + 's'
+          const possibleKeys = [`${matched.name}:${navProp}.json`, `${matched.name}:${pluralName}.json`]
+          
+          let relatedData: any[] | null = null
+          for (const rKey of possibleKeys) {
+            if (await storage.hasItem(rKey)) {
+              relatedData = (await storage.getItem(rKey)) as any[]
+              break
             }
+          }
 
-            if (Array.isArray(relatedData)) {
-              // 1. Try Forward Lookup (n:1) - Current entity has the ID (e.g. SupplierID)
-              const fkKey = Object.keys(entity).find(k => k.toLowerCase() === `${navProp.toLowerCase()}id`)
-              const fk = fkKey ? entity[fkKey] : null
+          if (Array.isArray(relatedData) && meta) {
+            for (const entity of result) {
+              // Decide if it's a forward or inverse lookup based on meta
+              // If the current entity is 'Dependent', it's a forward lookup (n:1)
+              // If the current entity is 'Principal', it's an inverse lookup (1:n)
               
-              if (fk) {
-                entity[navProp] = relatedData.find(item => String(item.ID || item.id) === String(fk)) || null
+              if (entity[meta.dependentProperty] !== undefined) {
+                // Forward Lookup (e.g. Product -> Supplier)
+                const fkValue = entity[meta.dependentProperty]
+                entity[navProp] = relatedData.find(item => String(item[meta.principalProperty]) === String(fkValue)) || null
               } else {
-                // 2. Try Inverse Lookup (1:n) - Target entities have the ID pointing back (e.g. Products have CategoryID)
-                // We look for [EntityName]ID in the target collection
-                const backLinkKey = `${matched.name.replace('Service', '')}ID`.toLowerCase()
-                const inverseData = relatedData.filter(item => {
-                  const itemKeys = Object.keys(item)
-                  const linkKey = itemKeys.find(k => k.toLowerCase() === backLinkKey || k.toLowerCase() === 'categoryid') // Hardcoded fallback for demo
-                  return String(item[linkKey || '']) === String(entity.ID || entity.id)
-                })
-                
-                if (inverseData.length > 0) {
-                  entity[navProp] = inverseData
+                // Inverse Lookup (e.g. Category -> Products)
+                const pkValue = entity[meta.principalProperty]
+                const children = relatedData.filter(item => String(item[meta.dependentProperty]) === String(pkValue))
+                if (children.length > 0) {
+                  entity[navProp] = children
                 }
               }
             }
