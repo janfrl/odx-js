@@ -32,7 +32,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest watch",
+    "test:watch": "vitest watch"
   },
   "dependencies": {
     "@nuxt/devtools-kit": "^3.2.1",
