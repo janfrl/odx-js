@@ -215,33 +215,22 @@ function isNavigationProperty(key: string) {
 
 const previewColumns = computed(() => {
   const edmxEntity = currentEntitySchema.value
+  if (!edmxEntity) return []
 
-  const edmxProps = edmxEntity?.properties?.map((p: any) => p.name) || []
-  const edmxNavProps = edmxEntity?.navigationProperties?.map((np: any) => np.name) || []
+  const edmxProps = edmxEntity.properties?.map((p: any) => p.name) || []
+  const edmxNavProps = edmxEntity.navigationProperties?.map((np: any) => np.name) || []
 
-  const firstRow = previewData.value[0]
-  const dataProps = firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
+  // Final column list: properties followed by navigation properties
+  const combined = [...edmxProps, ...edmxNavProps]
 
-  // Combined result
-  const combined = [...edmxProps]
-
-  // Add properties found in data that are not in schema (e.g. dynamic properties)
-  dataProps.forEach((dp) => {
-    const isRegular = combined.some(cp => cp.toLowerCase() === dp.toLowerCase())
-    const isNav = edmxNavProps.some((np: string) => np.toLowerCase() === dp.toLowerCase())
-    if (!isRegular && !isNav) {
-      combined.push(dp)
-    }
+  // Filter out redundant technical properties based on ReferentialConstraints
+  // (e.g. Hide 'SupplierID' if it's the dependent property for the 'Supplier' navigation)
+  return combined.filter((col) => {
+    const isTechnicalFK = schema.value?.associations?.some((assoc: any) => {
+      return assoc.constraint?.dependentProperty === col
+    })
+    return !isTechnicalFK
   })
-
-  // Ensure navigation properties are included as columns
-  edmxNavProps.forEach((np: string) => {
-    if (!combined.some(cp => cp.toLowerCase() === np.toLowerCase())) {
-      combined.push(np)
-    }
-  })
-
-  return combined
 })
 
 watch(selectedService, (newSvc) => {
