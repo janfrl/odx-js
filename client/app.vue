@@ -18,7 +18,7 @@ watchEffect(() => {
 onMounted(() => {
   fetchConfig()
   refreshLogs()
-  
+
   // Prime the standard notification position to avoid the initial "top-center" jump
   devtoolsUiShowNotification({ message: '', duration: 0, position: 'bottom-right' })
 
@@ -59,7 +59,7 @@ html, body, #__nuxt {
 }
 
 /* Force standard notification to bottom-right if it ignores the prop */
-.fixed.left-0.right-0.top-0.z-999, 
+.fixed.left-0.right-0.top-0.z-999,
 .fixed.left-0.right-0.bottom-0.z-999 {
   top: auto !important;
   bottom: 0 !important;

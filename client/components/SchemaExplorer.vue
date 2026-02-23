@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Background } from '@vue-flow/background'
-import { VueFlow, useVueFlow } from '@vue-flow/core'
+import { useVueFlow, VueFlow } from '@vue-flow/core'
 import * as dagre from 'dagre'
-import { markRaw, onMounted, ref, watch, nextTick } from 'vue'
+import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 import SchemaNode from './SchemaNode.vue'
 
@@ -16,7 +16,7 @@ const {
   globalEdges,
   globalViewport,
   initializedServices,
-  lastSelectedServiceForGraph
+  lastSelectedServiceForGraph,
 } = useSharedODataState()
 
 const { fitView, onViewportChange, setViewport, onPaneReady } = useVueFlow()
@@ -46,7 +46,8 @@ onPaneReady(() => {
     initializedServices.value.add(serviceName)
     // Slightly longer delay to ensure the browser has painted the correctly positioned nodes
     setTimeout(() => isReady.value = true, 100)
-  } else {
+  }
+  else {
     // Restore exact viewport from global state
     setViewport(globalViewport.value)
     setTimeout(() => isReady.value = true, 100)
@@ -54,7 +55,8 @@ onPaneReady(() => {
 })
 
 async function fetchSchema(forceAutoFit = false) {
-  if (!selectedService.value) return
+  if (!selectedService.value)
+    return
 
   const isNewService = !initializedServices.value.has(selectedService.value.name)
 
@@ -63,7 +65,8 @@ async function fetchSchema(forceAutoFit = false) {
   if (isNewService) {
     loading.value = true
     isReady.value = false
-  } else if (forceAutoFit) {
+  }
+  else if (forceAutoFit) {
     loading.value = true
     // isReady remains true here
   }
@@ -74,7 +77,8 @@ async function fetchSchema(forceAutoFit = false) {
 
     if (isNewService || forceAutoFit) {
       generateGraph(forceAutoFit)
-    } else {
+    }
+    else {
       await nextTick()
       setViewport(globalViewport.value)
       setTimeout(() => {
@@ -84,14 +88,16 @@ async function fetchSchema(forceAutoFit = false) {
     }
 
     lastSelectedServiceForGraph.value = selectedService.value.name
-  } catch (e) {
+  }
+  catch (e) {
     console.error('Failed to fetch schema', e)
     loading.value = false
   }
 }
 
 function generateGraph(autoFit = false) {
-  if (!schemaData.value) return
+  if (!schemaData.value)
+    return
 
   const newNodes: any[] = []
   const newEdges: any[] = []
@@ -106,7 +112,7 @@ function generateGraph(autoFit = false) {
 
     entity.navigationProperties.forEach((nav: any) => {
       const assoc = schemaData.value.associations.find((a: any) =>
-        a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship
+        a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship,
       )
 
       if (assoc) {
@@ -123,7 +129,7 @@ function generateGraph(autoFit = false) {
               label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
               animated: true,
               labelStyle: { fill: '#10b981', fontWeight: 700, fontSize: '10px' },
-              style: { stroke: '#10b981', strokeWidth: 2 }
+              style: { stroke: '#10b981', strokeWidth: 2 },
             })
           }
         }
@@ -135,7 +141,7 @@ function generateGraph(autoFit = false) {
   g.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 150 })
   g.setDefaultEdgeLabel(() => ({}))
 
-  newNodes.forEach(node => {
+  newNodes.forEach((node) => {
     const propCount = node.data.entity.properties.length
     g.setNode(node.id, { width: 200, height: 40 + (propCount * 22) })
   })
@@ -143,7 +149,7 @@ function generateGraph(autoFit = false) {
 
   dagre.layout(g)
 
-  newNodes.forEach(node => {
+  newNodes.forEach((node) => {
     const nodeWithPos = g.node(node.id)
     node.position = { x: nodeWithPos.x - 100, y: nodeWithPos.y - 50 }
   })
@@ -159,13 +165,15 @@ function generateGraph(autoFit = false) {
         loading.value = false
       }, 800)
     }, 50)
-  } else {
+  }
+  else {
     loading.value = false
   }
 }
 
 function copyMermaid() {
-  if (!schemaData.value) return
+  if (!schemaData.value)
+    return
   let code = 'erDiagram\n'
   schemaData.value.entities.forEach((entity: any) => {
     const props = entity.properties.map((p: any) => `    ${p.type.split('.').pop()} ${p.name} ${p.isKey ? 'PK' : ''}`).join('\n')
@@ -176,9 +184,12 @@ function copyMermaid() {
     entity.navigationProperties.forEach((nav: any) => {
       const assoc = schemaData.value.associations.find((a: any) => a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship)
       if (assoc && !addedAssocs.has(assoc.name)) {
-        const end1 = assoc.ends[0]; const end2 = assoc.ends[1]
-        const type1 = end1.type.split('.').pop(); const type2 = end2.type.split('.').pop()
-        const m1 = end1.multiplicity === '*' ? '}o' : '||'; const m2 = end2.multiplicity === '*' ? 'o{' : '||'
+        const end1 = assoc.ends[0]
+        const end2 = assoc.ends[1]
+        const type1 = end1.type.split('.').pop()
+        const type2 = end2.type.split('.').pop()
+        const m1 = end1.multiplicity === '*' ? '}o' : '||'
+        const m2 = end2.multiplicity === '*' ? 'o{' : '||'
         code += `  ${type1} ${m1}--${m2} ${type2} : "${assoc.name}"\n`
         addedAssocs.add(assoc.name)
       }
@@ -247,7 +258,7 @@ watch(selectedService, () => {
           v-model:nodes="globalNodes"
           v-model:edges="globalEdges"
           :node-types="nodeTypes"
-          :class="{ 'dark': true }"
+          class="dark"
           :min-zoom="0.05"
           :max-zoom="4"
         >

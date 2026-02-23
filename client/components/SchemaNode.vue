@@ -21,15 +21,15 @@ defineProps<{
 
     <!-- Properties -->
     <div class="py-1">
-      <div 
-        v-for="prop in data.entity.properties" 
+      <div
+        v-for="prop in data.entity.properties"
         :key="prop.name"
         class="px-3 py-1 flex items-center justify-between gap-4 hover:bg-primary/5 group transition-colors"
       >
         <div class="flex items-center gap-1.5 overflow-hidden">
-          <div 
-            v-if="prop.isKey" 
-            class="i-carbon-key text-amber-500 w-2.5 h-2.5 shrink-0" 
+          <div
+            v-if="prop.isKey"
+            class="i-carbon-key text-amber-500 w-2.5 h-2.5 shrink-0"
             title="Primary Key"
           />
           <div v-else class="w-2.5 h-2.5 shrink-0" />

@@ -1,11 +1,11 @@
-packages:
-  - '.'
-  - 'client'
-  - 'playground'
-
 shellEmulator: true
 
 trustPolicy: no-downgrade
+
+packages:
+  - .
+  - client
+  - playground
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
