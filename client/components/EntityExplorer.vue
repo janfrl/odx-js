@@ -192,12 +192,6 @@ function downloadJson() {
   URL.revokeObjectURL(url)
 }
 
-function isNavigationProperty(key: string) {
-  return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
-    np.name.toLowerCase() === key.toLowerCase()
-  )
-}
-
 const currentEntitySchema = computed(() => {
   const entityName = selectedEntity.value
   if (!schema.value || !entityName)
@@ -212,6 +206,12 @@ const currentEntitySchema = computed(() => {
     || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
   ) || null
 })
+
+function isNavigationProperty(key: string) {
+  return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
+    np.name.toLowerCase() === key.toLowerCase()
+  )
+}
 
 const previewColumns = computed(() => {
   const edmxEntity = currentEntitySchema.value

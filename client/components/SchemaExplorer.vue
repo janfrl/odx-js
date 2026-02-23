@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { NodeTypesObject } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { useVueFlow, VueFlow } from '@vue-flow/core'
 import * as dagre from 'dagre'
@@ -26,7 +27,7 @@ const isReady = ref(false)
 const schemaData = ref<any>(null)
 
 // Define custom node types
-const nodeTypes = {
+const nodeTypes: NodeTypesObject = {
   schema: markRaw(SchemaNode),
 }
 

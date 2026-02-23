@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+import type { NodeProps } from '@vue-flow/core'
 
-defineProps<{
-  data: {
-    entity: {
-      name: string
-      properties: Array<{ name: string, type: string, isKey: boolean }>
-    }
+interface EntityData {
+  entity: {
+    name: string
+    properties: Array<{ name: string, type: string, isKey: boolean }>
   }
-}>()
+}
+
+defineProps<NodeProps<EntityData>>()
 </script>
 
 <template>
