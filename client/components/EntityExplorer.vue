@@ -6,10 +6,28 @@ import { useSharedODataState } from '../composables/useODataState'
 const { selectedService, selectedEntity, config, clearEntityMockData } = useSharedODataState()
 
 const previewLoading = ref(false)
+const showLoadingIndicator = ref(false)
 const previewError = ref<string | null>(null)
 const previewData = ref<Record<string, unknown>[]>([])
 const queryInput = ref('?')
 const schema = ref<any>(null)
+
+let loadingTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Delay loading indicator to avoid flickering on fast requests
+watch(previewLoading, (isLoading) => {
+  if (loadingTimeout)
+    clearTimeout(loadingTimeout)
+
+  if (isLoading) {
+    loadingTimeout = setTimeout(() => {
+      showLoadingIndicator.value = true
+    }, 400)
+  }
+  else {
+    showLoadingIndicator.value = false
+  }
+})
 
 const editor = ref<EditorState>({
   show: false,
@@ -32,11 +50,13 @@ async function selectEntity(entity: string) {
 }
 
 async function fetchSchema() {
-  if (!selectedService.value) return
+  if (!selectedService.value)
+    return
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
     schema.value = await res.json()
-  } catch (e) {
+  }
+  catch (e) {
     console.error('Failed to fetch schema', e)
   }
 }
@@ -46,7 +66,7 @@ async function refreshEntityData() {
     return
   previewLoading.value = true
   previewError.value = null
-  previewData.value = []
+  // We no longer clear previewData here to keep the old table visible until new data arrives
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
 
@@ -99,7 +119,7 @@ async function deleteItem(row: Record<string, unknown>) {
     return
   const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
   const id = idKey ? row[idKey] : null
-  
+
   if (!id || !confirm(`Delete item ${id}?`))
     return
   try {
@@ -128,7 +148,7 @@ async function deleteItem(row: Record<string, unknown>) {
 async function clearData() {
   if (!selectedService.value || !selectedEntity.value)
     return
-  
+
   if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`))
     return
 
@@ -165,18 +185,14 @@ function downloadJson() {
 }
 
 const previewColumns = computed(() => {
-  // 1. Get properties from EDMX if available (Source of Truth for Casing)
   const edmxEntity = schema.value?.entities?.find((e: any) => e.entitySet === selectedEntity.value || e.name === selectedEntity.value)
   const edmxProps = edmxEntity?.properties?.map((p: any) => p.name) || []
 
-  // 2. Get properties from actual data (Fallbacks or dynamic data)
   const firstRow = previewData.value[0]
   const dataProps = firstRow ? Object.keys(firstRow).filter(k => k !== '__metadata') : []
 
-  // 3. Merge: Prioritize EDMX, then add anything unique from data
   const combined = [...edmxProps]
-  dataProps.forEach(dp => {
-    // Add if not already in combined (case-insensitive check to avoid duplicates if data has wrong case)
+  dataProps.forEach((dp) => {
     if (!combined.some(cp => cp.toLowerCase() === dp.toLowerCase())) {
       combined.push(dp)
     }
@@ -187,7 +203,7 @@ const previewColumns = computed(() => {
 
 watch(selectedService, (newSvc) => {
   if (newSvc && newSvc.entities && newSvc.entities.length > 0) {
-    selectedEntity.value = newSvc.entities[0]
+    selectedEntity.value = newSvc.entities[0] ?? null
     fetchSchema()
   }
   else {
@@ -235,7 +251,7 @@ watch(selectedEntity, (newEntity) => {
               v-model="queryInput"
               type="text"
               placeholder="?id=... or ?$filter=..."
-              class="h-8 bg-base border border-base rounded px-3 text-[11px] font-mono outline-none focus:border-primary/50 text-base w-full transition-all text-base"
+              class="h-8 bg-base border border-base rounded px-3 text-[11px] font-mono outline-none focus:border-primary/50 text-base w-full transition-all"
               @keyup.enter="refreshEntityData"
             >
           </div>
@@ -253,7 +269,7 @@ watch(selectedEntity, (newEntity) => {
 
       <!-- Row 3: Action Toolbar -->
       <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-surface border-b border-base shrink-0 text-base">
-        <div class="flex items-center gap-2 text-base text-base">
+        <div class="flex items-center gap-2 text-base">
           <span
             v-if="previewData.length > 0"
             class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest text-base"
@@ -290,16 +306,17 @@ watch(selectedEntity, (newEntity) => {
       </div>
 
       <!-- Table Area -->
-      <div class="flex-1 overflow-auto custom-scrollbar bg-content text-base">
+      <div class="flex-1 overflow-auto custom-scrollbar bg-content text-base relative">
+        <!-- Persistent loading overlay for long requests -->
         <div
-          v-if="previewLoading"
-          class="p-20 flex justify-center opacity-30 text-base"
+          v-if="showLoadingIndicator"
+          class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-[#0c0c0d]/50 backdrop-blur-[1px]"
         >
-          <NLoading />
+          <NLoading class="opacity-50" />
         </div>
 
         <div
-          v-else-if="previewError"
+          v-if="previewError"
           class="p-16 flex flex-col items-center justify-center text-center text-base"
         >
           <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mb-6 text-base">
@@ -323,59 +340,59 @@ watch(selectedEntity, (newEntity) => {
           <table
             v-if="previewData.length > 0"
             class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max text-base"
+            :class="{ 'opacity-50 pointer-events-none transition-opacity duration-300': previewLoading && !showLoadingIndicator }"
           >
             <thead class="sticky top-0 z-10 text-base">
               <tr class="text-zinc-800 dark:text-zinc-200 text-[9px] font-black tracking-wide text-base">
-                <!-- No rounding since it docks to the toolbar above -->
-                <th class="px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px] text-base">
+                <th class="px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
                   Actions
                 </th>
                 <th
                   v-for="key in previewColumns"
                   :key="key"
-                  class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold normal-case text-[10px] text-base opacity-80"
+                  class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold normal-case text-[10px] opacity-80"
                 >
                   {{ key }}
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-base text-[11px] text-base">
+            <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-[11px]">
               <tr
                 v-for="(row, idx) in previewData"
                 :key="idx"
-                class="hover:bg-primary/5 transition-colors text-base"
+                class="hover:bg-primary/5 transition-colors"
               >
-                <td class="p-0 border-r border-base align-middle text-base text-base">
-                  <div class="flex items-center justify-center gap-2 text-base">
+                <td class="p-0 border-r border-base align-middle">
+                  <div class="flex items-center justify-center gap-2">
                     <button
-                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer text-base"
+                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
                       title="View"
                       @click="openEditor('view', row)"
                     >
                       <svg
-                        class="w-4 h-4 text-base"
+                        class="w-4 h-4"
                         viewBox="0 0 32 32"
                         fill="currentColor"
                       ><path :d="ICONS.view" /></svg>
                     </button>
                     <button
-                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer text-base"
+                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
                       title="Edit"
                       @click="openEditor('update', row)"
                     >
                       <svg
-                        class="w-4 h-4 text-base"
+                        class="w-4 h-4"
                         viewBox="0 0 32 32"
                         fill="currentColor"
                       ><path :d="ICONS.edit" /></svg>
                     </button>
                     <button
-                      class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer text-base"
+                      class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer"
                       title="Delete"
                       @click="deleteItem(row)"
                     >
                       <svg
-                        class="w-4 h-4 text-base"
+                        class="w-4 h-4"
                         viewBox="0 0 32 32"
                         fill="currentColor"
                       ><path :d="ICONS.trash" /></svg>
@@ -385,7 +402,7 @@ watch(selectedEntity, (newEntity) => {
                 <td
                   v-for="key in previewColumns"
                   :key="key"
-                  class="px-4 py-2.5 truncate max-w-[300px] opacity-90 text-[11px] text-base"
+                  class="px-4 py-2.5 truncate max-w-[300px] opacity-90"
                 >
                   {{ row[key] }}
                 </td>
@@ -393,13 +410,17 @@ watch(selectedEntity, (newEntity) => {
             </tbody>
           </table>
           <div
-            v-else
-            class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2 text-base"
+            v-else-if="!previewLoading"
+            class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2"
           >
-            <div class="i-carbon-search w-8 h-8 text-base" />
-            <p class="text-xs text-base">
+            <div class="i-carbon-search w-8 h-8" />
+            <p class="text-xs">
               No items found for this query
             </p>
+          </div>
+          <!-- Initial load spinner -->
+          <div v-else-if="showLoadingIndicator" class="p-20 flex justify-center opacity-30">
+            <NLoading />
           </div>
         </template>
       </div>
@@ -413,10 +434,10 @@ watch(selectedEntity, (newEntity) => {
       <div class="w-16 h-16 rounded-2xl bg-base border border-base flex items-center justify-center mb-6 shadow-sm">
         <div class="i-carbon-ibm-cloud-direct-link-2-dedicated text-zinc-400 w-8 h-8" />
       </div>
-      <h3 class="text-sm font-bold text-base uppercase tracking-widest mb-2">
+      <h3 class="text-sm font-bold uppercase tracking-widest mb-2">
         Select an Entity
       </h3>
-      <p class="text-[12px] text-muted max-w-[280px] leading-relaxed">
+      <p class="text-[12px] text-muted max-w-[280px] leading-relaxed text-base">
         Choose one of the available entity sets above to explore, edit, or create OData records.
       </p>
     </div>
