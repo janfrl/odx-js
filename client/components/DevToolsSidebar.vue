@@ -23,42 +23,44 @@ const tabs = [
 </script>
 
 <template>
-  <div class="flex flex-col items-center py-4 gap-2 h-full bg-zinc-50/50 dark:bg-zinc-900/40 text-base">
-    <div class="flex flex-col gap-2 w-full items-center">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        class="w-10 h-10 flex items-center justify-center rounded-xl transition-all relative border-none cursor-pointer group"
-        :title="tab.title"
-        :class="activeTab === tab.id ? 'text-primary bg-primary/10 shadow-sm' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'"
-        @click="activeTab = tab.id"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
+  <div v-bind="$attrs">
+    <div class="flex flex-col items-center py-4 gap-2 h-full bg-zinc-50/50 dark:bg-zinc-900/40 text-base">
+      <div class="flex flex-col gap-2 w-full items-center">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          class="w-10 h-10 flex items-center justify-center rounded-xl transition-all relative border-none cursor-pointer group"
+          :title="tab.title"
+          :class="activeTab === tab.id ? 'text-primary bg-primary/10 shadow-sm' : 'text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'"
+          @click="activeTab = tab.id"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            :d="tab.path"
-          />
-        </svg>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              :d="tab.path"
+            />
+          </svg>
 
-        <!-- Adaptive Badge: White text in Light Mode, Dark text in Dark Mode -->
-        <span
-          v-if="tab.id === 'logs' && logs.length"
-          class="absolute -top-1 -right-1 font-black text-[9px] min-w-[15px] h-[15px] flex items-center justify-center px-1 rounded-full shadow-sm bg-primary text-white dark:text-zinc-900"
-        >
-          {{ logs.length }}
-        </span>
+          <!-- Adaptive Badge: White text in Light Mode, Dark text in Dark Mode -->
+          <span
+            v-if="tab.id === 'logs' && logs.length"
+            class="absolute -top-1 -right-1 font-black text-[9px] min-w-[15px] h-[15px] flex items-center justify-center px-1 rounded-full shadow-sm bg-primary text-white dark:text-zinc-900"
+          >
+            {{ logs.length }}
+          </span>
 
-        <div class="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
-          {{ tab.title }}
-        </div>
-      </button>
+          <div class="absolute left-full ml-2 px-2 py-1 bg-zinc-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
+            {{ tab.title }}
+          </div>
+        </button>
+      </div>
     </div>
   </div>
 </template>
