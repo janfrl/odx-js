@@ -2,7 +2,7 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { useVueFlow, VueFlow } from '@vue-flow/core'
-import { useElementSize } from '@vueuse/core'
+import { useElementSize, useEventListener } from '@vueuse/core'
 import * as dagre from 'dagre'
 import ELK from 'elkjs/lib/elk.bundled.js'
 import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
@@ -64,6 +64,21 @@ async function toggleFullscreen() {
 function fitToScreen() {
   fitView({ padding: 0.2, duration: 400 })
 }
+
+// Handle Keyboard Shortcuts
+useEventListener('keydown', (e) => {
+  const isInput = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
+  if (isInput) return
+
+  // Toggle Fullscreen with 'f' key
+  if (e.key === 'f' || e.key === 'F') {
+    toggleFullscreen()
+  }
+  // Fit View with 'r' key
+  if (e.key === 'r' || e.key === 'R') {
+    fitToScreen()
+  }
+})
 
 // Watch for container size changes to adjust the view instantly
 watch([width, height], () => {
@@ -419,55 +434,56 @@ watch(selectedService, () => {
         >
           <Background pattern-color="#333" :gap="20" />
 
-          <!-- Floating Controls -->
-          <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-            <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
-              <button
-                class="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
-                title="Zoom In"
-                @click="zoomIn"
-              >
-                <div class="i-carbon-add w-4 h-4" />
-              </button>
-              <div class="h-px bg-zinc-800 mx-2" />
-              <button
-                class="p-2.5 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors border-none bg-transparent cursor-pointer flex items-center justify-center"
-                title="Zoom Out"
-                @click="zoomOut"
-              >
-                <div class="i-carbon-subtract w-4 h-4" />
-              </button>
-            </div>
-
-            <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
-                title="Recalculate Layout"
-                @click="fetchSchema(true)"
-              >
-                <div class="i-carbon-renew w-5 h-5" />
-              </button>
-              <div class="h-px bg-zinc-800 mx-2" />
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
-                title="Fit to Screen"
-                @click="fitToScreen"
-              >
-                <div class="i-carbon-center-to-fit w-5 h-5" />
-              </button>
-              <div class="h-px bg-zinc-800 mx-2" />
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
-                :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
-                @click="toggleFullscreen"
-              >
-                <div
-                  class="w-5 h-5"
-                  :class="isFullscreen ? 'i-carbon-minimize' : 'i-carbon-maximize'"
-                />
-              </button>
-            </div>
-          </div>
+                    <!-- Floating Controls -->
+                    <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
+                      <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
+                        <button
+                          class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
+                          title="Zoom In"
+                          @click="zoomIn"
+                        >
+                          <div class="i-carbon-add w-4 h-4" />
+                        </button>
+                        <div class="h-px bg-zinc-800 mx-2" />
+                        <button
+                          class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-b-lg"
+                          title="Zoom Out"
+                          @click="zoomOut"
+                        >
+                          <div class="i-carbon-subtract w-4 h-4" />
+                        </button>
+                      </div>
+          
+                      <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
+                        <button
+                          class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
+                          title="Recalculate Layout"
+                          @click="fetchSchema(true)"
+                        >
+                          <div class="i-carbon-renew w-5 h-5" />
+                        </button>
+                        <div class="h-px bg-zinc-800 mx-2" />
+                        <button
+                          class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10"
+                          title="Fit to Screen (R)"
+                          @click="fitToScreen"
+                        >
+                          <div class="i-carbon-center-to-fit w-5 h-5" />
+                        </button>
+                        <div class="h-px bg-zinc-800 mx-2" />
+                        <button
+                          class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-b-lg"
+                          :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
+                          @click="toggleFullscreen"
+                        >
+                          <div 
+                            class="w-5 h-5" 
+                            :class="isFullscreen ? 'i-carbon-minimize' : 'i-carbon-maximize'" 
+                          />
+                        </button>
+                      </div>
+                    </div>
+          
         </VueFlow>
       </div>
     </div>
