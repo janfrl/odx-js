@@ -6,12 +6,13 @@ import {
   useLogger,
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
+import fs from 'node:fs'
 import { setupDevToolsUI } from './devtools'
 import { generateODataClient } from './generate'
 
 export interface SapODataService {
   name: string
-  edmx: string
+  url: string
   route?: string
 }
 
@@ -50,12 +51,50 @@ export default defineNuxtModule<ModuleOptions>({
     const mode = options.mode ?? 'sdk'
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
-    const services = options.services ?? []
+    
+    // 1. Unified Service Discovery & Merging
+    const prefix = 'NUXT_ODATA_SERVICES_'
+    
+    // Start with services from nuxt.config.ts and apply overrides from env
+    const services = (options.services || []).map((s: any) => {
+      const envKey = s.name.toUpperCase()
+      const envUrl = process.env[`${prefix}${envKey}_URL`]
+      const envName = process.env[`${prefix}${envKey}_NAME`]
+      
+      return {
+        ...s,
+        url: envUrl || s.url || s.edmx, // Env URL wins, then config url, then config edmx
+        name: envName || s.name         // Env Name wins, then config name (preserves casing)
+      }
+    })
+
+    // Find all unique service keys in process.env to discover new services
+    const envServiceKeys = new Set<string>()
+    for (const key in process.env) {
+      if (key.startsWith(prefix)) {
+        const parts = key.slice(prefix.length).split('_')
+        if (parts.length > 0) envServiceKeys.add(parts[0]!)
+      }
+    }
+
+    // Add services that ONLY exist in environment variables
+    for (const key of envServiceKeys) {
+      const alreadyHandled = (options.services || []).some(s => s.name.toUpperCase() === key)
+      if (alreadyHandled) continue
+
+      const url = process.env[`${prefix}${key}_URL`]
+      if (url) {
+        const name = process.env[`${prefix}${key}_NAME`] || key
+        services.push({ name, url })
+      }
+    }
+
+    const allServices = services
 
     nuxt.options.runtimeConfig.odata = {
       destination: options.destination ?? '',
       forwardAuthHeader,
-      services,
+      services: allServices,
       buildDir: nuxt.options.buildDir,
       rootDir: nuxt.options.rootDir,
       devtools: {
@@ -120,15 +159,49 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     nuxt.hook('nitro:build:before', async () => {
-      if (!services.length)
+      if (!allServices.length)
         return
       const outRoot = join(nuxt.options.buildDir, 'sap-odata', 'generated')
-      for (const svc of services) {
-        const edmxAbs = resolve(nuxt.options.rootDir, svc.edmx)
+      for (const svc of allServices) {
+        if (!svc.url) {
+          logger.warn(`[nuxt-sap-odata] Service ${svc.name} has no URL or EDMX source defined. Skipping.`)
+          continue
+        }
+
+        let inputPath = svc.url
+
+        // If URL is remote, we need to download the metadata first
+        if (svc.url.startsWith('http')) {
+          const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
+          const tempDir = join(nuxt.options.buildDir, 'sap-odata', 'temp')
+          if (!fs.existsSync(tempDir))
+            fs.mkdirSync(tempDir, { recursive: true })
+
+          const tempFile = join(tempDir, `${svc.name}.edmx`)
+          logger.info(`[nuxt-sap-odata] downloading metadata for ${svc.name} from ${metadataUrl}`)
+
+          try {
+            const response = await fetch(metadataUrl)
+            if (!response.ok)
+              throw new Error(`Failed to fetch metadata: ${response.statusText}`)
+            const xml = await response.text()
+            fs.writeFileSync(tempFile, xml)
+            inputPath = tempFile
+          }
+          catch (err) {
+            logger.error(`[nuxt-sap-odata] Could not download metadata for ${svc.name}:`, err)
+            continue // Skip generation for this service
+          }
+        }
+        else {
+          // Local path
+          inputPath = resolve(nuxt.options.rootDir, svc.url)
+        }
+
         const outDir = join(outRoot, svc.name)
-        logger.info('[nuxt-sap-odata] generating', svc.name, 'from', edmxAbs)
+        logger.info('[nuxt-sap-odata] generating client for', svc.name)
         await generateODataClient({
-          input: edmxAbs,
+          input: inputPath,
           outputDir: outDir,
         })
       }
