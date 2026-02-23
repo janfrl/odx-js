@@ -78,6 +78,14 @@ useEventListener('keydown', (e) => {
   if (e.key === 'r' || e.key === 'R') {
     fitToScreen()
   }
+  // Zoom In with '+' or '=' key
+  if (e.key === '+' || e.key === '=') {
+    zoomIn()
+  }
+  // Zoom Out with '-' key
+  if (e.key === '-') {
+    zoomOut()
+  }
 })
 
 // Watch for container size changes to adjust the view instantly
@@ -434,27 +442,25 @@ watch(selectedService, () => {
         >
           <Background pattern-color="#333" :gap="20" />
 
-                    <!-- Floating Controls -->
-                    <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-                      <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
-                        <button
-                          class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
-                          title="Zoom In"
-                          @click="zoomIn"
-                        >
-                          <div class="i-carbon-add w-4 h-4" />
-                        </button>
-                        <div class="h-px bg-zinc-800 mx-2" />
-                        <button
-                          class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-b-lg"
-                          title="Zoom Out"
-                          @click="zoomOut"
-                        >
-                          <div class="i-carbon-subtract w-4 h-4" />
-                        </button>
-                      </div>
-          
-                      <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
+                              <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
+                                <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
+                                  <button
+                                    class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
+                                    title="Zoom In (+)"
+                                    @click="zoomIn"
+                                  >
+                                    <div class="i-carbon-add w-4 h-4" />
+                                  </button>
+                                  <div class="h-px bg-zinc-800 mx-2" />
+                                  <button
+                                    class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-b-lg"
+                                    title="Zoom Out (-)"
+                                    @click="zoomOut"
+                                  >
+                                    <div class="i-carbon-subtract w-4 h-4" />
+                                  </button>
+                                </div>
+                                          <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
                         <button
                           class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
                           title="Recalculate Layout"
