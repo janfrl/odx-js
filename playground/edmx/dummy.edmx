@@ -36,10 +36,26 @@
       <Association Name="Product_Supplier_ManyToOne">
         <End Role="Product" Type="DummyService.Product" Multiplicity="*" />
         <End Role="Supplier" Type="DummyService.Supplier" Multiplicity="1" />
+        <ReferentialConstraint>
+          <Principal Role="Supplier">
+            <PropertyRef Name="ID" />
+          </Principal>
+          <Dependent Role="Product">
+            <PropertyRef Name="SupplierID" />
+          </Dependent>
+        </ReferentialConstraint>
       </Association>
       <Association Name="Product_Category_ManyToOne">
         <End Role="Product" Type="DummyService.Product" Multiplicity="*" />
         <End Role="Category" Type="DummyService.Category" Multiplicity="1" />
+        <ReferentialConstraint>
+          <Principal Role="Category">
+            <PropertyRef Name="ID" />
+          </Principal>
+          <Dependent Role="Product">
+            <PropertyRef Name="CategoryID" />
+          </Dependent>
+        </ReferentialConstraint>
       </Association>
 
       <EntityContainer Name="DummyContainer">
