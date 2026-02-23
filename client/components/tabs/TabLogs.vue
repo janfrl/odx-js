@@ -96,6 +96,17 @@ async function runClear() {
                   colspan="4"
                   class="bg-zinc-50/50 dark:bg-zinc-900/50 p-6 border-b border-base text-base"
                 >
+                  <!-- Target URL Section -->
+                  <div class="mb-8 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-base font-mono text-[10px]">
+                    <div class="flex items-center gap-2 opacity-50 uppercase text-[9px] font-bold tracking-widest mb-2">
+                      <div class="i-carbon-link w-3 h-3" />
+                      Target URL (Backend)
+                    </div>
+                    <div class="break-all text-primary select-all">
+                      {{ log.targetUrl || 'Internal / Mock Request' }}
+                    </div>
+                  </div>
+
                   <div class="grid grid-cols-2 gap-8 text-base">
                     <!-- Request Details -->
                     <div class="flex flex-col space-y-3">

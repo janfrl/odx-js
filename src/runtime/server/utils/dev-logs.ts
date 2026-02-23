@@ -1,11 +1,10 @@
-import { useRuntimeConfig } from '#imports'
-
 // Simple in-memory log storage for development
 export interface ODataLog {
   id: string
   timestamp: number
   method: string
   url: string
+  targetUrl?: string
   service: string
   entitySet?: string
   status?: number
@@ -14,14 +13,12 @@ export interface ODataLog {
   responseBody?: any
 }
 
+const MAX_LOGS = 100
 const logs: ODataLog[] = []
 
 export function addODataLog(log: ODataLog) {
-  const config = useRuntimeConfig()
-  const maxLogs = config.odata?.devtools?.maxLogs ?? 100
-
   logs.unshift(log)
-  while (logs.length > maxLogs) {
+  if (logs.length > MAX_LOGS) {
     logs.pop()
   }
 }
