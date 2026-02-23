@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing service query parameter' })
   }
 
-  const services = (config.odata?.services || []) as Array<{ name: string, edmx: string }>
+  const services = (config.odata?.services || []) as Array<{ name: string, url: string }>
   const svc = services.find(s => s.name === serviceName)
 
   if (!svc) {
@@ -20,7 +20,15 @@ export default defineEventHandler(async (event) => {
   }
 
   const rootDir = config.odata?.rootDir as string
-  const edmxPath = resolve(rootDir, svc.edmx)
+  const buildDir = config.odata?.buildDir as string
+  
+  let edmxPath = ''
+  if (svc.url.startsWith('http')) {
+    edmxPath = resolve(buildDir, 'sap-odata/temp', `${svc.name}.edmx`)
+  }
+  else {
+    edmxPath = resolve(rootDir, svc.url)
+  }
 
   if (!fs.existsSync(edmxPath)) {
     throw createError({ statusCode: 404, message: `EDMX file not found at ${edmxPath}` })

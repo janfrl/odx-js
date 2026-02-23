@@ -31,7 +31,7 @@ export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const buildDir = config.odata?.buildDir as string
   const rootDir = config.odata?.rootDir as string
-  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, edmx: string }>
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, url: string }>
 
   const jiti = createJiti(import.meta.url)
 
@@ -39,13 +39,20 @@ export default defineEventHandler(async () => {
     const outDir = join(buildDir, 'sap-odata', 'generated', svc.name)
     const subDirName = svc.route || svc.name.toLowerCase()
 
-    const indexFileTs = join(outDir, subDirName, 'index.ts')
-    const indexFileJs = join(outDir, subDirName, 'index.js')
+    const possiblePaths = [
+      join(outDir, 'index.ts'),
+      join(outDir, 'index.js'),
+      join(outDir, subDirName, 'index.ts'),
+      join(outDir, subDirName, 'index.js')
+    ]
 
     let entities: string[] = []
     let isGenerated = false
+    let targetFile: string | null = null
 
-    const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) { targetFile = p; break; }
+    }
 
     if (targetFile) {
       isGenerated = true
@@ -74,7 +81,13 @@ export default defineEventHandler(async () => {
 
     // Fallback to EDMX parsing if no entities found yet
     if (entities.length === 0) {
-      const edmxAbs = resolve(rootDir, svc.edmx)
+      let edmxAbs = ''
+      if (svc.url.startsWith('http')) {
+        edmxAbs = join(buildDir, 'sap-odata', 'temp', `${svc.name}.edmx`)
+      }
+      else {
+        edmxAbs = resolve(rootDir, svc.url)
+      }
       entities = extractEntitiesFromEdmx(edmxAbs)
     }
 
