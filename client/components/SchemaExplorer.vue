@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { NodeTypesObject } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { useVueFlow, VueFlow } from '@vue-flow/core'
+import type { NodeTypesObject } from '@vue-flow/core'
+import { useElementSize } from '@vueuse/core'
 import * as dagre from 'dagre'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
+import { markRaw, nextTick, onMounted, ref, watch, computed } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 import SchemaNode from './SchemaNode.vue'
 
@@ -21,37 +22,60 @@ const {
   lastSelectedServiceForGraph,
 } = useSharedODataState()
 
-const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut } = useVueFlow()
+const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut, getViewport, setCenter } = useVueFlow()
+
+const containerRef = ref<HTMLElement | null>(null)
+const { width, height } = useElementSize(containerRef)
 
 const loading = ref(false)
 const isReady = ref(false)
 const isFullscreen = ref(false)
-const containerRef = ref<HTMLElement | null>(null)
 const schemaData = ref<any>(null)
 const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
 
 const elk = new ELK()
 
-function toggleFullscreen() {
+// State to remember the focal point before resize
+let focalPoint: { x: number, y: number, zoom: number } | null = null
+
+async function toggleFullscreen() {
   if (!containerRef.value) return
   
+  const view = getViewport()
+  // Calculate focal point (the point currently in the center of the viewport)
+  focalPoint = {
+    x: (-view.x + (containerRef.value.clientWidth / 2)) / view.zoom,
+    y: (-view.y + (containerRef.value.clientHeight / 2)) / view.zoom,
+    zoom: view.zoom
+  }
+
   if (!document.fullscreenElement) {
-    containerRef.value.requestFullscreen().catch(err => {
-      console.error(`Error attempting to enable full-screen mode: ${err.message}`)
-    })
-    isFullscreen.value = true
+    await containerRef.value.requestFullscreen().catch(console.error)
   } else {
-    document.exitFullscreen()
-    isFullscreen.value = false
+    await document.exitFullscreen().catch(console.error)
   }
 }
 
-// Listen for ESC key or other ways to exit fullscreen
+function fitToScreen() {
+  fitView({ padding: 0.2, duration: 400 })
+}
+
+// Update fullscreen state and maintain focal point
 onMounted(() => {
   document.addEventListener('fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement
+    
+    if (focalPoint) {
+      // Use nextTick to ensure VueFlow has updated its internal dimensions
+      nextTick(() => {
+        // Center on the exact point we were looking at, keeping the SAME zoom
+        setCenter(focalPoint!.x, focalPoint!.y, { zoom: focalPoint!.zoom })
+        focalPoint = null
+      })
+    }
   })
 })
+
 
 // Define custom node types
 const nodeTypes: NodeTypesObject = {
@@ -408,8 +432,16 @@ watch(selectedService, () => {
             <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl overflow-hidden">
               <button
                 class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
-                title="Reset View"
+                title="Recalculate Layout"
                 @click="fetchSchema(true)"
+              >
+                <div class="i-carbon-renew w-5 h-5" />
+              </button>
+              <div class="h-px bg-zinc-800 mx-2" />
+              <button
+                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center"
+                title="Fit to Screen"
+                @click="fitToScreen"
               >
                 <div class="i-carbon-center-to-fit w-5 h-5" />
               </button>
@@ -419,9 +451,9 @@ watch(selectedService, () => {
                 :title="isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'"
                 @click="toggleFullscreen"
               >
-                <div 
-                  class="w-5 h-5" 
-                  :class="isFullscreen ? 'i-carbon-minimize' : 'i-carbon-maximize'" 
+                <div
+                  class="w-5 h-5"
+                  :class="isFullscreen ? 'i-carbon-minimize' : 'i-carbon-maximize'"
                 />
               </button>
             </div>
