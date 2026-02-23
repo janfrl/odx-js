@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, edmx: string }>
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, url: string }>
   const matched = services.find(
     svc => (svc.route || svc.name.toLowerCase()) === serviceRoute,
   )
@@ -55,10 +55,18 @@ export default defineEventHandler(async (event) => {
   const getValidProperties = (entitySet: string): string[] | null => {
     try {
       const rootDir = config.odata?.rootDir as string
-      if (!rootDir || !matched.edmx)
+      if (!rootDir || !matched.url)
         return null
 
-      const edmxPath = join(rootDir, matched.edmx)
+      let edmxPath = ''
+      if (matched.url.startsWith('http')) {
+        // Look into temp directory for downloaded metadata
+        edmxPath = join(buildDir, 'sap-odata', 'temp', `${matched.name}.edmx`)
+      }
+      else {
+        edmxPath = join(rootDir, matched.url)
+      }
+
       if (!fs.existsSync(edmxPath))
         return null
 
@@ -260,29 +268,98 @@ export default defineEventHandler(async (event) => {
 
     let response: any
     const forceMockData = getQuery(event).mock === 'true'
-    const subDirName = matched.route || matched.name.toLowerCase()
-    const generatedDir = join(buildDir, 'sap-odata', 'generated', matched.name, subDirName)
-    const indexFileTs = join(generatedDir, 'index.ts')
-    const indexFileJs = join(generatedDir, 'index.js')
-    const targetFile = fs.existsSync(indexFileTs) ? indexFileTs : (fs.existsSync(indexFileJs) ? indexFileJs : null)
+    const isLocalService = !matched.url || !matched.url.startsWith('http')
+    
+    // Try different possible paths for the SDK index file
+    const possibleDirs = [
+      join(buildDir, 'sap-odata', 'generated', matched.name),
+      join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase())
+    ]
+    
+    let targetFile: string | null = null
+    for (const dir of possibleDirs) {
+      const ts = join(dir, 'index.ts')
+      const js = join(dir, 'index.js')
+      if (fs.existsSync(ts)) { targetFile = ts; break; }
+      if (fs.existsSync(js)) { targetFile = js; break; }
+    }
 
-    if (forceMockData || !targetFile) {
-      response = await handleMockDataRequest()
+    // If it's a local service without a dedicated remote URL, we should prefer mock data
+    // unless a global destination is set AND it's not Northwind (or we are sure)
+    // For safety: Local source + No specific URL = Mock Data
+    if (forceMockData || !targetFile || isLocalService) {
+      if (!targetFile && !forceMockData && !isLocalService) {
+        console.warn(`[nuxt-sap-odata] No SDK found for ${matched.name}, falling back to mock data. Checked:`, possibleDirs)
+      }
+      
+      // If it's local and we have targetFile, we COULD try SDK, but without URL it will fail or hit wrong target.
+      // So if it's local, we only use SDK if a specific destination is provided.
+      if (isLocalService && targetFile && (config.odata?.destination || '').includes(matched.name.toLowerCase())) {
+         // allow SDK if destination seems to match the service name
+      } else if (isLocalService) {
+         response = await handleMockDataRequest()
+         const status = event.method === 'POST' ? 201 : (event.method === 'DELETE' ? 204 : 200)
+         logRequest(status, response, capturedBody)
+         return response
+      }
     }
     else {
       try {
         const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
-        const apiFactory = sdk[`${matched.name}Api`]
-        if (!apiFactory)
-          throw new Error('API Factory not found')
+        
+        // Find API factory case-insensitively
+        // We check: [Name]Api, [Route]Api, [Name], [Route]
+        const possibleFactoryNames = [
+          `${matched.name}Api`.toLowerCase(),
+          `${serviceRoute}Api`.toLowerCase(),
+          matched.name.toLowerCase(),
+          serviceRoute.toLowerCase()
+        ]
+        
+        const actualFactoryKey = Object.keys(sdk).find(k => possibleFactoryNames.includes(k.toLowerCase()))
+        const apiFactory = actualFactoryKey ? sdk[actualFactoryKey] : null
+
+        if (!apiFactory) {
+          const available = Object.keys(sdk).filter(k => typeof sdk[k] === 'function')
+          throw new Error(`API Factory for "${matched.name}" not found. Available exports: ${available.join(', ') || 'none'}. Checked: ${possibleFactoryNames.join(', ')}`)
+        }
+
         const api = apiFactory()
-        const entityApi = api[entitySetName] || api[entitySetName.charAt(0).toLowerCase() + entitySetName.slice(1)]
-        if (!entityApi)
-          throw new Error(`EntitySet ${entitySetName} not found`)
+        
+        // Find EntitySet case-insensitively
+        // We check: [entitySet], [entitySet]Api
+        const targetEntitySet = entitySetName.toLowerCase()
+        const targetEntitySetApi = `${entitySetName}Api`.toLowerCase()
+        
+        // Find the actual key on the api object (including getters in prototype)
+        let actualEntitySetKey = ''
+        
+        // 1. Check direct properties
+        actualEntitySetKey = Object.keys(api).find(k => k.toLowerCase() === targetEntitySet || k.toLowerCase() === targetEntitySetApi) || ''
+        
+        // 2. Check prototype (for getters in classes)
+        if (!actualEntitySetKey) {
+          const proto = Object.getPrototypeOf(api)
+          if (proto) {
+            actualEntitySetKey = Object.getOwnPropertyNames(proto).find(k => k.toLowerCase() === targetEntitySet || k.toLowerCase() === targetEntitySetApi) || ''
+          }
+        }
+
+        const entityApi = actualEntitySetKey ? api[actualEntitySetKey] : null
+
+        if (!entityApi) {
+          // Fallback for debugging: collect all possible keys from proto and instance
+          const allKeys = [...Object.keys(api), ...Object.getOwnPropertyNames(Object.getPrototypeOf(api) || {})]
+          const available = allKeys.filter(k => k !== 'constructor' && !k.startsWith('_'))
+          throw new Error(`EntitySet "${entitySetName}" not found on service "${matched.name}". Available: ${available.join(', ')}`)
+        }
 
         const method = event.method
         const query = getQuery(event)
-        const destination = { url: config.odata?.destination || 'http://localhost:8080' }
+        
+        // Use service-specific URL if it's a remote URL, otherwise fallback to global destination
+        const serviceUrl = matched.url && matched.url.startsWith('http') ? matched.url : null
+        const destination = { url: serviceUrl || config.odata?.destination || 'http://localhost:8080' }
 
         if (method === 'GET') {
           let rb = entityApi.requestBuilder().getAll()
