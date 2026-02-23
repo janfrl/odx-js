@@ -400,7 +400,6 @@ onMounted(() => {
 
         <template v-else>
           <table
-            v-if="previewData.length > 0"
             class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max text-base"
             :class="{ 'opacity-50 pointer-events-none transition-opacity duration-300': previewLoading && !showLoadingIndicator }"
           >
@@ -418,7 +417,7 @@ onMounted(() => {
                 </th>
               </tr>
             </thead>
-            <tbody class="divide-y border-base dark:divide-zinc-800/50 font-mono text-[11px]">
+            <tbody v-if="previewData.length > 0" class="divide-y border-base dark:divide-zinc-800/50 font-mono text-[11px]">
               <tr
                 v-for="(row, idx) in previewData"
                 :key="idx"
@@ -497,8 +496,9 @@ onMounted(() => {
               </tr>
             </tbody>
           </table>
+
           <div
-            v-else-if="!previewLoading"
+            v-if="previewData.length === 0 && !previewLoading"
             class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2"
           >
             <div class="i-carbon-search w-8 h-8" />
@@ -507,7 +507,7 @@ onMounted(() => {
             </p>
           </div>
           <!-- Initial load spinner -->
-          <div v-else-if="showLoadingIndicator" class="p-20 flex justify-center opacity-30">
+          <div v-else-if="previewLoading && showLoadingIndicator" class="p-20 flex justify-center opacity-30">
             <NLoading />
           </div>
         </template>
