@@ -112,13 +112,37 @@ async function refreshEntityData() {
 }
 
 function openEditor(mode: 'view' | 'create' | 'update', row: Record<string, unknown> | null = null) {
+  let initialJson = ''
+  if (row) {
+    initialJson = JSON.stringify(row, null, 2)
+  }
+  else if (mode === 'create' && currentEntitySchema.value) {
+    // Generate template from schema
+    const template: Record<string, any> = {}
+    currentEntitySchema.value.properties?.forEach((p: any) => {
+      if (p.type.includes('Int') || p.type.includes('Decimal') || p.type.includes('Double')) {
+        template[p.name] = 0
+      }
+      else if (p.type.includes('Boolean')) {
+        template[p.name] = false
+      }
+      else {
+        template[p.name] = ''
+      }
+    })
+    initialJson = JSON.stringify(template, null, 2)
+  }
+  else {
+    initialJson = JSON.stringify({ ID: '', Name: '' }, null, 2)
+  }
+
   editor.value = {
     show: true,
     mode,
     error: null,
     loading: false,
     original: row,
-    json: row ? JSON.stringify(row, null, 2) : JSON.stringify({ ID: '', Name: '' }, null, 2),
+    json: initialJson,
   }
 }
 
