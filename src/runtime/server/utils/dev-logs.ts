@@ -10,6 +10,7 @@ export interface ODataLog {
   status?: number
   duration?: number
   requestBody?: any
+  requestHeaders?: Record<string, string>
   responseBody?: any
 }
 

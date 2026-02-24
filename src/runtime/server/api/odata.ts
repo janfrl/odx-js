@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string) => {
+  const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>) => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
@@ -70,6 +70,7 @@ export default defineEventHandler(async (event) => {
       status,
       duration: Date.now() - startTime,
       requestBody: serializeLogBody(requestBody),
+      requestHeaders,
       responseBody: serializeLogBody(responseBody),
     })
   }
@@ -124,7 +125,8 @@ export default defineEventHandler(async (event) => {
 
     if (getQuery(event).mock === 'true' || !targetFile) {
       const response = await handleMockDataRequest()
-      logRequest(200, response, capturedBody)
+      const customHeaders: Record<string, string> = matched ? { ...config.odata?.headers, ...matched.headers } : {}
+      logRequest(200, response, capturedBody, 'Internal Mock Storage', customHeaders)
       return response
     }
 
@@ -233,12 +235,12 @@ export default defineEventHandler(async (event) => {
       else if (res?.value)
         res = res.value
 
-      logRequest(200, res, capturedBody, currentTargetUrl)
+      logRequest(200, res, capturedBody, currentTargetUrl, customHeaders)
       return flattenOData(res)
     }
     else if (method === 'POST') {
       const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
-      logRequest(201, res, capturedBody, currentTargetUrl)
+      logRequest(201, res, capturedBody, currentTargetUrl, customHeaders)
       return res
     }
 
@@ -246,11 +248,12 @@ export default defineEventHandler(async (event) => {
   }
   catch (err: any) {
     const response = await handleMockDataRequest()
+    const customHeaders: Record<string, string> = matched ? { ...config.odata?.headers, ...matched.headers } : {}
     logRequest(err.response?.status || 500, {
       error: err.message,
       cause: err.cause?.message,
       backendError: err.response?.data,
-    }, capturedBody, currentTargetUrl)
+    }, capturedBody, currentTargetUrl, customHeaders)
     return response
   }
 })

@@ -161,7 +161,13 @@ async function refreshEntityData() {
 function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<string, unknown> | null = null) {
   let initialJson = ''
   if (mode === 'headers') {
-    initialJson = JSON.stringify(sessionHeaders.value, null, 2)
+    // Find service-specific headers from config if available
+    const svcConfig = config.value.services?.find(s => s.name === selectedService.value?.name)
+    const combinedHeaders = {
+      ...(svcConfig as any)?.headers,
+      ...sessionHeaders.value,
+    }
+    initialJson = JSON.stringify(combinedHeaders, null, 2)
   }
   else if (row) {
     initialJson = JSON.stringify(row, null, 2)

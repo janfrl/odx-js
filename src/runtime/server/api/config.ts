@@ -59,7 +59,7 @@ export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const buildDir = config.odata?.buildDir as string
   const rootDir = config.odata?.rootDir as string
-  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, url: string }>
+  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, url: string, headers?: Record<string, string> }>
 
   const jiti = createJiti(import.meta.url)
 
