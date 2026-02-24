@@ -145,6 +145,22 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  // Helper to ensure data is serializable for logging
+  const serializeLogBody = (data: any) => {
+    if (!data) return data
+    try {
+      // If it's an SDK object with a toJSON or similar, use it, 
+      // or just do a simple JSON cycle-safe or limited-depth copy
+      // For now, a simple parse(stringify) often strips SDK class metadata 
+      // but might fail on circular refs. 
+      // We use the same flattening as for the response.
+      return flattenOData(data)
+    }
+    catch {
+      return '[Non-serializable Data]'
+    }
+  }
+
   // Central log function
   const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string) => {
     addODataLog({
@@ -157,8 +173,8 @@ export default defineEventHandler(async (event) => {
       entitySet: entitySetName,
       status,
       duration: Date.now() - startTime,
-      requestBody,
-      responseBody,
+      requestBody: serializeLogBody(requestBody),
+      responseBody: serializeLogBody(responseBody),
     })
   }
 
@@ -625,7 +641,9 @@ export default defineEventHandler(async (event) => {
           return flattenOData(res)
         }
         else if (method === 'POST') {
-          response = await entityApi.requestBuilder().create(capturedBody).execute(destination)
+          const res = await entityApi.requestBuilder().create(capturedBody).execute(destination)
+          logRequest(201, res, capturedBody)
+          return res
         }
         else if (method === 'PATCH' || method === 'PUT') {
           if (!resourceId)

@@ -423,7 +423,7 @@ onMounted(() => {
               <tr
                 v-for="(row, idx) in previewData"
                 :key="idx"
-                class="hover:bg-primary/5 transition-colors"
+                class="hover:bg-primary/10 transition-colors"
               >
                 <td class="p-0 border-r border-base align-middle">
                   <div class="flex items-center justify-center gap-2">

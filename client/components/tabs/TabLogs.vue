@@ -47,7 +47,7 @@ async function runClear() {
     <div class="flex-1 min-h-0 bg-content rounded-t-xl border-t border-x border-base shadow-sm overflow-hidden flex flex-col text-base">
       <!-- Inner Scroll Container -->
       <div class="flex-1 overflow-auto custom-scrollbar text-base">
-        <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max text-base">
+        <table class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max table-fixed text-base">
           <thead class="sticky top-0 z-10 text-base">
             <tr class="text-zinc-800 dark:text-zinc-200 uppercase text-[9px] font-black tracking-[0.15em]">
               <th class="rounded-tl-xl px-6 py-4 w-20 text-center border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
@@ -70,8 +70,8 @@ async function runClear() {
               :key="log.id"
             >
               <tr
-                class="hover:bg-primary/5 transition-colors group text-base cursor-pointer"
-                :class="expandedLog === log.id ? 'bg-primary/5' : ''"
+                class="hover:bg-primary/10 transition-colors group text-base cursor-pointer"
+                :class="expandedLog === log.id ? 'bg-primary/10' : ''"
                 @click="toggleExpand(log.id)"
               >
                 <td class="px-6 py-4 text-center border-base">
@@ -98,11 +98,11 @@ async function runClear() {
                 >
                   <!-- Target URL Section -->
                   <div class="mb-8 p-4 bg-zinc-100 dark:bg-zinc-800 rounded-lg border border-base font-mono text-[10px]">
-                    <div class="flex items-center gap-2 opacity-50 uppercase text-[9px] font-bold tracking-widest mb-2">
+                    <div class="flex items-center gap-2 opacity-80 uppercase text-[9px] font-bold tracking-widest mb-2">
                       <div class="i-carbon-link w-3 h-3" />
                       Target URL (Backend)
                     </div>
-                    <div class="break-all text-primary select-all">
+                    <div class="break-all text-zinc-600 dark:text-zinc-400 select-all">
                       {{ log.targetUrl || 'Internal / Mock Request' }}
                     </div>
                   </div>
@@ -110,7 +110,7 @@ async function runClear() {
                   <div class="grid grid-cols-2 gap-8 text-base">
                     <!-- Request Details -->
                     <div class="flex flex-col space-y-3">
-                      <div class="flex items-center gap-2 opacity-50 uppercase text-[9px] font-bold tracking-widest mb-4 shrink-0 text-base">
+                      <div class="flex items-center gap-2 opacity-80 uppercase text-[9px] font-bold tracking-widest mb-4 shrink-0 text-base">
                         <div class="i-carbon-upload w-3 h-3 text-base" />
                         Request Payload
                       </div>
@@ -118,7 +118,7 @@ async function runClear() {
                         v-if="log.requestBody"
                         class="bg-base rounded-lg border border-base p-4 max-h-[300px] overflow-auto custom-scrollbar flex-1 text-base"
                       >
-                        <pre class="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 text-base">{{ JSON.stringify(log.requestBody, null, 2) }}</pre>
+                        <pre class="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 text-base whitespace-pre-wrap break-all">{{ JSON.stringify(log.requestBody, null, 2) }}</pre>
                       </div>
                       <div
                         v-else
@@ -131,7 +131,7 @@ async function runClear() {
 
                     <!-- Response Details -->
                     <div class="flex flex-col space-y-3 border-l border-base pl-8 text-base text-base">
-                      <div class="flex items-center gap-2 opacity-50 uppercase text-[9px] font-bold tracking-widest mb-4 shrink-0 text-base text-base">
+                      <div class="flex items-center gap-2 opacity-80 uppercase text-[9px] font-bold tracking-widest mb-4 shrink-0 text-base text-base">
                         <div class="i-carbon-download w-3 h-3 text-base" />
                         Response Body
                       </div>
@@ -139,7 +139,7 @@ async function runClear() {
                         v-if="log.responseBody"
                         class="bg-base rounded-lg border border-base p-4 max-h-[300px] overflow-auto custom-scrollbar flex-1 text-base text-base"
                       >
-                        <pre class="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 text-base">{{ JSON.stringify(log.responseBody, null, 2) }}</pre>
+                        <pre class="text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400 text-base whitespace-pre-wrap break-all">{{ JSON.stringify(log.responseBody, null, 2) }}</pre>
                       </div>
                       <div
                         v-else
