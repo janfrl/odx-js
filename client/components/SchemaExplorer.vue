@@ -153,7 +153,7 @@ onEdgeClick(({ event, edge }) => {
       x: event.clientX,
       y: event.clientY
     }
-    
+
     // Auto-focus the input in next tick
     nextTick(() => {
       const el = document.getElementById('edge-label-input')
@@ -598,7 +598,7 @@ watch(selectedService, () => {
           <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
           
           <div 
-            class="fixed z-[100] flex flex-col gap-3 p-3 bg-white dark:bg-zinc-900 border border-base rounded-xl shadow-2xl"
+            class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-base rounded-xl shadow-2xl"
             :style="{ 
               left: `${editingLabelPos.x}px`, 
               top: `${editingLabelPos.y}px`,
@@ -610,28 +610,19 @@ watch(selectedService, () => {
                 id="edge-label-input"
                 v-model="editingLabelValue"
                 type="text"
-                placeholder="Label..."
-                class="bg-base border border-base rounded-lg px-3 py-1.5 text-[12px] font-bold outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/10 w-40 transition-all"
+                placeholder="Label... (Enter to save)"
+                class="bg-base border border-base rounded-lg px-3 py-1.5 text-[12px] font-bold outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/10 w-48 transition-all"
                 @keyup.enter="saveEdgeLabel"
                 @keyup.esc="cancelEdgeEdit"
-                @keyup.delete="deleteEdge"
+                @keydown.ctrl.delete="deleteEdge"
               >
+              
               <NButton
                 icon="i-carbon-trash-can"
-                class="!bg-red-500/10 hover:!bg-red-500 text-red-500 hover:text-white !border-none h-[32px] w-[32px] !rounded-lg"
-                title="Delete connection"
+                class="!bg-red-500/10 hover:!bg-red-500 text-red-500 hover:text-white !border-none h-[32px] w-[32px] !rounded-lg shrink-0"
+                title="Delete connection (Ctrl + Del)"
                 @click="deleteEdge"
               />
-            </div>
-            <div class="flex justify-between items-center px-1 border-t border-base pt-2">
-              <div class="flex items-center gap-1.5">
-                <span class="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-base text-[9px] font-bold">Enter</span>
-                <span class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">to save</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span class="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-base text-[9px] font-bold">Esc</span>
-                <span class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">to cancel</span>
-              </div>
             </div>
           </div>
         </template>
