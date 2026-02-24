@@ -32,11 +32,13 @@ function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
     return null
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
-    
+
     // Explicit attributes
-    if (content.includes('Version="4.0"')) return 'v4'
-    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"')) return 'v2'
-    
+    if (content.includes('Version="4.0"'))
+      return 'v4'
+    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"'))
+      return 'v2'
+
     // Heuristics based on namespaces or structure
     if (content.includes('http://schemas.microsoft.com/ado/2007/06/edmx')) {
       // Adelphi/ADO namespaces usually indicate V2/V3 (SAP uses this for V2)

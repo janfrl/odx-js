@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createError, defineEventHandler, getQuery, readBody, useRuntimeConfig, useStorage } from '#imports'
-import { XMLParser } from 'fast-xml-parser'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { addODataLog } from '../utils/dev-logs'
@@ -10,12 +9,16 @@ import { addODataLog } from '../utils/dev-logs'
  * Recursive flattener for OData V2 'results' structures and removes metadata.
  */
 function flattenOData(data: any): any {
-  if (!data || typeof data !== 'object') return data
-  if (data.results && Array.isArray(data.results)) return flattenOData(data.results)
-  if (Array.isArray(data)) return data.map(item => flattenOData(item))
+  if (!data || typeof data !== 'object')
+    return data
+  if (data.results && Array.isArray(data.results))
+    return flattenOData(data.results)
+  if (Array.isArray(data))
+    return data.map(item => flattenOData(item))
   const flattened: any = {}
   for (const key in data) {
-    if (key === '__metadata' || key === '__deferred') continue
+    if (key === '__metadata' || key === '__deferred')
+      continue
     flattened[key] = flattenOData(data[key])
   }
   return Object.keys(flattened).length > 0 ? flattened : null
@@ -45,8 +48,14 @@ export default defineEventHandler(async (event) => {
   }
 
   const serializeLogBody = (data: any) => {
-    if (!data) return data
-    try { return flattenOData(data) } catch { return '[Non-serializable Data]' }
+    if (!data)
+      return data
+    try {
+      return flattenOData(data)
+    }
+    catch {
+      return '[Non-serializable Data]'
+    }
   }
 
   const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string) => {
@@ -78,10 +87,11 @@ export default defineEventHandler(async (event) => {
     const method = event.method
     const query = getQuery(event)
     const mockDataKey = `${matched.name}:${entitySetName}.json`
-    let data = (await storage.getItem(mockDataKey)) as any[] || []
+    const data = (await storage.getItem(mockDataKey)) as any[] || []
     if (method === 'GET') {
       const id = resourceId || (query.id ? String(query.id) : undefined)
-      if (id) return data.find((item: any) => String(item.ID || item.id) === id)
+      if (id)
+        return data.find((item: any) => String(item.ID || item.id) === id)
       return data
     }
     return data
@@ -102,8 +112,14 @@ export default defineEventHandler(async (event) => {
 
     let targetFile: string | null = null
     for (const dir of possibleDirs) {
-      if (fs.existsSync(join(dir, 'index.ts'))) { targetFile = join(dir, 'index.ts'); break }
-      if (fs.existsSync(join(dir, 'index.js'))) { targetFile = join(dir, 'index.js'); break }
+      if (fs.existsSync(join(dir, 'index.ts'))) {
+        targetFile = join(dir, 'index.ts')
+        break
+      }
+      if (fs.existsSync(join(dir, 'index.js'))) {
+        targetFile = join(dir, 'index.js')
+        break
+      }
     }
 
     if (getQuery(event).mock === 'true' || !targetFile) {
@@ -113,7 +129,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
-    
+
     // Find API factory
     const possibleNames = [`${matched.name}Api`, `${serviceRoute}Api`, matched.name, serviceRoute]
     let apiFactory: any = null
@@ -124,42 +140,47 @@ export default defineEventHandler(async (event) => {
         break
       }
     }
-    if (!apiFactory) apiFactory = Object.values(sdk).find(v => typeof v === 'function')
-    if (!apiFactory) throw new Error(`API Factory not found for ${matched.name}`)
+    if (!apiFactory)
+      apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+    if (!apiFactory)
+      throw new Error(`API Factory not found for ${matched.name}`)
 
     let api: any
     try {
       api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
-    } catch (e) {
+    }
+    catch {
       api = (apiFactory as any)()
     }
 
     // URL Logic
     const globalDest = (config.odata?.destination || '').replace(/\/$/, '')
     let baseUrl = (matched.url && matched.url.startsWith('http')) ? matched.url.replace(/\/$/, '') : globalDest
-    
+
     if (!baseUrl) {
       const response = await handleMockDataRequest()
       logRequest(200, response, capturedBody)
       return response
     }
-    
+
     // Auto-strip duplicate SAP paths
     if (baseUrl.includes('/sap/opu/odata/')) {
       baseUrl = baseUrl.split('/sap/opu/odata/')[0]!
     }
-    
+
     currentTargetUrl = baseUrl
-    
+
     // Destination Object
     const isTrustAll = config.odata?.rejectUnauthorized === false
-    const destination: any = { 
+    const destination: any = {
       url: baseUrl,
-      isTrustingAllCertificates: isTrustAll
+      isTrustingAllCertificates: isTrustAll,
     }
-    
+
     const auth = matched.auth || config.odata?.auth || {}
-    if (auth.bearerToken) destination.authTokens = [{ value: auth.bearerToken }]
+    if (auth.bearerToken) {
+      destination.authTokens = [{ value: auth.bearerToken }]
+    }
     else if (auth.username && auth.password) {
       destination.username = auth.username
       destination.password = auth.password
@@ -169,12 +190,14 @@ export default defineEventHandler(async (event) => {
     const whitelist = ['x-sap-client', 'sap-language', 'accept-language']
     for (const h of whitelist) {
       const val = event.headers.get(h)
-      if (val) customHeaders[h] = val
+      if (val)
+        customHeaders[h] = val
     }
 
     // Entity API lookup
     const getAllKeys = (obj: any): string[] => {
-      let keys: string[] = []; let current = obj
+      let keys: string[] = []
+      let current = obj
       while (current && current !== Object.prototype) {
         keys = keys.concat(Object.getOwnPropertyNames(current))
         current = Object.getPrototypeOf(current)
@@ -184,7 +207,8 @@ export default defineEventHandler(async (event) => {
     const allKeys = getAllKeys(api)
     const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
     const entityApi = actualKey ? api[actualKey] : null
-    if (!entityApi) throw new Error(`EntitySet ${entitySetName} not found`)
+    if (!entityApi)
+      throw new Error(`EntitySet ${entitySetName} not found`)
 
     const method = event.method
     const query = getQuery(event)
@@ -192,16 +216,22 @@ export default defineEventHandler(async (event) => {
     if (method === 'GET') {
       const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
       const customParams: Record<string, string> = {}
-      for (const k in query) { if (k.startsWith('$')) customParams[k] = String(query[k]) }
-      if (Object.keys(customParams).length > 0) rb.addCustomQueryParameters(customParams)
-      
+      for (const k in query) {
+        if (k.startsWith('$'))
+          customParams[k] = String(query[k])
+      }
+      if (Object.keys(customParams).length > 0)
+        rb.addCustomQueryParameters(customParams)
+
       rb.addCustomHeaders(customHeaders)
       currentTargetUrl = await rb.url(destination).catch(() => baseUrl)
-      
+
       const rawResponse = await rb.executeRaw(destination)
       let res = rawResponse.data
-      if (res?.d) res = res.d.results || res.d
-      else if (res?.value) res = res.value
+      if (res?.d)
+        res = res.d.results || res.d
+      else if (res?.value)
+        res = res.value
 
       logRequest(200, res, capturedBody, currentTargetUrl)
       return flattenOData(res)
@@ -211,15 +241,15 @@ export default defineEventHandler(async (event) => {
       logRequest(201, res, capturedBody, currentTargetUrl)
       return res
     }
-    
+
     throw createError({ statusCode: 405, message: 'Method Not Allowed' })
   }
   catch (err: any) {
     const response = await handleMockDataRequest()
-    logRequest(err.response?.status || 500, { 
-      error: err.message, 
+    logRequest(err.response?.status || 500, {
+      error: err.message,
       cause: err.cause?.message,
-      backendError: err.response?.data 
+      backendError: err.response?.data,
     }, capturedBody, currentTargetUrl)
     return response
   }

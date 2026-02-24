@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import https from 'node:https'
 import process from 'node:process'
@@ -75,10 +76,12 @@ export default defineNuxtModule<ModuleOptions>({
 
     // Helper to safely parse JSON from environment variables
     const parseEnvJson = (envValue: string | undefined): Record<string, string> => {
-      if (!envValue) return {}
+      if (!envValue)
+        return {}
       try {
         return JSON.parse(envValue)
-      } catch (e) {
+      }
+      catch {
         logger.warn(`[nuxt-sap-odata] Failed to parse JSON from environment variable: ${envValue}. Ensure it is a valid JSON string.`)
         return {}
       }
@@ -94,7 +97,7 @@ export default defineNuxtModule<ModuleOptions>({
       const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
 
       // Merge headers: Config < Env JSON < Env Individual
-      const envHeadersJson = parseEnvJson(process.env[`${prefix}${envKey}_HEADERS`]);
+      const envHeadersJson = parseEnvJson(process.env[`${prefix}${envKey}_HEADERS`])
       const envHeadersIndividual: Record<string, string> = {}
       const headerPrefix = `${prefix}${envKey}_HEADERS_`
       for (const key in process.env) {
@@ -144,7 +147,7 @@ export default defineNuxtModule<ModuleOptions>({
         const password = process.env[`${prefix}${key}_AUTH_PASSWORD`]
         const bearerToken = process.env[`${prefix}${key}_AUTH_BEARER_TOKEN`]
 
-        const envHeadersJson = parseEnvJson(process.env[`${prefix}${key}_HEADERS`]);
+        const envHeadersJson = parseEnvJson(process.env[`${prefix}${key}_HEADERS`])
         const envHeadersIndividual: Record<string, string> = {}
         const headerPrefix = `${prefix}${key}_HEADERS_`
         for (const k in process.env) {
@@ -176,9 +179,9 @@ export default defineNuxtModule<ModuleOptions>({
     const globalHeaders: Record<string, string> = { ...options.headers }
     const envGlobalHeadersJson = parseEnvJson(process.env.NUXT_ODATA_HEADERS)
     const globalHeaderPrefixIndividual = 'NUXT_ODATA_HEADERS_'
-    
+
     Object.assign(globalHeaders, envGlobalHeadersJson)
-    
+
     for (const key in process.env) {
       if (key.startsWith(globalHeaderPrefixIndividual)) {
         const headerName = key.slice(globalHeaderPrefixIndividual.length).replace(/_/g, '-')
