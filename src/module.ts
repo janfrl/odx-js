@@ -21,6 +21,7 @@ export interface SapODataService {
     password?: string
     bearerToken?: string
   }
+  headers?: Record<string, string>
 }
 
 export interface ModuleOptions {
@@ -32,6 +33,7 @@ export interface ModuleOptions {
     password?: string
     bearerToken?: string
   }
+  headers?: Record<string, string>
   rejectUnauthorized?: boolean
   forwardAuthHeader?: boolean
   services?: SapODataService[]
@@ -71,6 +73,17 @@ export default defineNuxtModule<ModuleOptions>({
 
     const prefix = 'NUXT_ODATA_SERVICES_'
 
+    // Helper to safely parse JSON from environment variables
+    const parseEnvJson = (envValue: string | undefined): Record<string, string> => {
+      if (!envValue) return {}
+      try {
+        return JSON.parse(envValue)
+      } catch (e) {
+        logger.warn(`[nuxt-sap-odata] Failed to parse JSON from environment variable: ${envValue}. Ensure it is a valid JSON string.`)
+        return {}
+      }
+    }
+
     // Start with services from nuxt.config.ts and apply overrides from env
     const services = (options.services || []).map((s: SapODataService) => {
       const envKey = s.name.toUpperCase()
@@ -80,6 +93,17 @@ export default defineNuxtModule<ModuleOptions>({
       const envPass = process.env[`${prefix}${envKey}_AUTH_PASSWORD`]
       const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
 
+      // Merge headers: Config < Env JSON < Env Individual
+      const envHeadersJson = parseEnvJson(process.env[`${prefix}${envKey}_HEADERS`]);
+      const envHeadersIndividual: Record<string, string> = {}
+      const headerPrefix = `${prefix}${envKey}_HEADERS_`
+      for (const key in process.env) {
+        if (key.startsWith(headerPrefix)) {
+          const headerName = key.slice(headerPrefix.length).replace(/_/g, '-')
+          envHeadersIndividual[headerName] = process.env[key]!
+        }
+      }
+
       return {
         ...s,
         url: envUrl || s.url,
@@ -88,6 +112,11 @@ export default defineNuxtModule<ModuleOptions>({
           username: envUser || s.auth?.username,
           password: envPass || s.auth?.password,
           bearerToken: envToken || s.auth?.bearerToken,
+        },
+        headers: {
+          ...s.headers,
+          ...envHeadersJson,
+          ...envHeadersIndividual,
         },
       }
     })
@@ -115,10 +144,21 @@ export default defineNuxtModule<ModuleOptions>({
         const password = process.env[`${prefix}${key}_AUTH_PASSWORD`]
         const bearerToken = process.env[`${prefix}${key}_AUTH_BEARER_TOKEN`]
 
+        const envHeadersJson = parseEnvJson(process.env[`${prefix}${key}_HEADERS`]);
+        const envHeadersIndividual: Record<string, string> = {}
+        const headerPrefix = `${prefix}${key}_HEADERS_`
+        for (const k in process.env) {
+          if (k.startsWith(headerPrefix)) {
+            const headerName = k.slice(headerPrefix.length).replace(/_/g, '-')
+            envHeadersIndividual[headerName] = process.env[k]!
+          }
+        }
+
         services.push({
           name,
           url,
           auth: { username, password, bearerToken },
+          headers: { ...envHeadersJson, ...envHeadersIndividual },
         })
       }
     }
@@ -132,9 +172,24 @@ export default defineNuxtModule<ModuleOptions>({
       bearerToken: process.env.NUXT_ODATA_AUTH_BEARER_TOKEN || options.auth?.bearerToken,
     }
 
+    // Global headers merging: Config < Env JSON < Env Individual
+    const globalHeaders: Record<string, string> = { ...options.headers }
+    const envGlobalHeadersJson = parseEnvJson(process.env.NUXT_ODATA_HEADERS)
+    const globalHeaderPrefixIndividual = 'NUXT_ODATA_HEADERS_'
+    
+    Object.assign(globalHeaders, envGlobalHeadersJson)
+    
+    for (const key in process.env) {
+      if (key.startsWith(globalHeaderPrefixIndividual)) {
+        const headerName = key.slice(globalHeaderPrefixIndividual.length).replace(/_/g, '-')
+        globalHeaders[headerName] = process.env[key]!
+      }
+    }
+
     nuxt.options.runtimeConfig.odata = {
       destination: options.destination ?? '',
       auth: globalAuth,
+      headers: globalHeaders,
       forwardAuthHeader,
       rejectUnauthorized,
       services: allServices,

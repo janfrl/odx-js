@@ -556,6 +556,19 @@ export default defineEventHandler(async (event) => {
         const serviceUrl = matched.url && matched.url.startsWith('http') ? matched.url.replace(/\/$/, '') : null
         const globalDest = (config.odata?.destination || 'http://localhost:8080').replace(/\/$/, '')
         
+        // 1. Prepare Headers
+        const customHeaders: Record<string, string> = {
+          ...config.odata?.headers,
+          ...matched.headers,
+        }
+
+        // Whitelist specific incoming headers from the frontend to be forwarded
+        const whitelist = ['x-sap-client', 'sap-language', 'accept-language']
+        for (const h of whitelist) {
+          const val = event.headers.get(h)
+          if (val) customHeaders[h] = val
+        }
+
         // Priority: Service-specific auth -> Global auth
         const auth = matched.auth || config.odata?.auth || {}
         
@@ -579,7 +592,10 @@ export default defineEventHandler(async (event) => {
         if (method === 'GET') {
           if (resourceId) {
             // Standard OData GetByKey
-            const rawResponse = await entityApi.requestBuilder().getByKey(resourceId).executeRaw(destination)
+            const rawResponse = await entityApi.requestBuilder()
+              .getByKey(resourceId)
+              .addCustomHeaders(customHeaders)
+              .executeRaw(destination)
             let res = rawResponse.data
             // Unwrap single entity (V2 puts it in 'd')
             if (res && res.d)
@@ -634,7 +650,8 @@ export default defineEventHandler(async (event) => {
             rb = rb.addCustomQueryParameters(customParams)
           }
 
-          // Pre-calculate URL for logging purposes
+          // 4. Add Custom Headers
+          rb = rb.addCustomHeaders(customHeaders)
 
           // Pre-calculate URL for logging purposes
           const finalUrl = await rb.url(destination).catch(() => 'unknown')
@@ -660,7 +677,10 @@ export default defineEventHandler(async (event) => {
           return flattenOData(res)
         }
         else if (method === 'POST') {
-          const res = await entityApi.requestBuilder().create(capturedBody).execute(destination)
+          const res = await entityApi.requestBuilder()
+            .create(capturedBody)
+            .addCustomHeaders(customHeaders)
+            .execute(destination)
           logRequest(201, res, capturedBody)
           return res
         }
@@ -669,7 +689,10 @@ export default defineEventHandler(async (event) => {
             throw new Error('ID is required in the URL (e.g. Entity(ID)) for updates')
           // Note: This is a simplified update. Usually one might fetch first or use a partial entity.
           // For now, we assume the capturedBody contains the fields to update.
-          const res = await entityApi.requestBuilder().update(capturedBody).execute(destination)
+          const res = await entityApi.requestBuilder()
+            .update(capturedBody)
+            .addCustomHeaders(customHeaders)
+            .execute(destination)
           logRequest(200, res, capturedBody)
           return res
         }
@@ -677,7 +700,10 @@ export default defineEventHandler(async (event) => {
           const id = resourceId || (query.id as string)
           if (!id)
             throw new Error('ID is required for DELETE (either in URL or ?id= parameter)')
-          const res = await entityApi.requestBuilder().delete(id).execute(destination)
+          const res = await entityApi.requestBuilder()
+            .delete(id)
+            .addCustomHeaders(customHeaders)
+            .execute(destination)
           logRequest(204, null, capturedBody)
           return res
         }
