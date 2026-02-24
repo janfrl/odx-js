@@ -261,13 +261,12 @@ function downloadJson() {
 }
 
 watch(selectedService, (newSvc) => {
-  if (newSvc && newSvc.entities && newSvc.entities.length > 0) {
-    selectedEntity.value = newSvc.entities[0] ?? null
+  // Reset entity selection when service changes to prevent auto-selecting the first one
+  selectedEntity.value = null
+  schema.value = null
+
+  if (newSvc) {
     fetchSchema()
-  }
-  else {
-    selectedEntity.value = null
-    schema.value = null
   }
 }, { immediate: true })
 
