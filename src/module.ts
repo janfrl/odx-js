@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import https from 'node:https'
 import process from 'node:process'
 import {
   addImportsDir,
@@ -8,7 +9,6 @@ import {
   useLogger,
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
-import { Agent } from 'undici'
 import { setupDevToolsUI } from './devtools'
 import { generateODataClient } from './generate'
 
@@ -51,7 +51,7 @@ export default defineNuxtModule<ModuleOptions>({
     mode: 'sdk',
     basePath: '/api/sap-odata',
     forwardAuthHeader: true,
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
     services: [],
     devtools: {
       enabled: true,
@@ -65,9 +65,10 @@ export default defineNuxtModule<ModuleOptions>({
     const mode = options.mode ?? 'sdk'
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
-    const rejectUnauthorized = options.rejectUnauthorized ?? true
 
-    // 1. Unified Service Discovery & Merging
+    // Check option and environment variable (Nuxt mapping fallback)
+    const rejectUnauthorized = options.rejectUnauthorized !== false && process.env.NUXT_ODATA_REJECT_UNAUTHORIZED !== 'false'
+
     const prefix = 'NUXT_ODATA_SERVICES_'
 
     // Start with services from nuxt.config.ts and apply overrides from env
@@ -200,6 +201,24 @@ export default defineNuxtModule<ModuleOptions>({
       setupDevToolsUI(nuxt, resolver)
     }
 
+    // Helper for robust metadata downloading via Node https module
+    const httpsGet = (url: string, headers: Record<string, string>): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const options = {
+          headers,
+          rejectUnauthorized,
+        }
+        https.get(url, options, (res) => {
+          if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+            return reject(new Error(`Status: ${res.statusCode}`))
+          }
+          let data = ''
+          res.on('data', chunk => data += chunk)
+          res.on('end', () => resolve(data))
+        }).on('error', reject)
+      })
+    }
+
     nuxt.hook('nitro:build:before', async () => {
       if (!allServices.length)
         return
@@ -232,22 +251,8 @@ export default defineNuxtModule<ModuleOptions>({
               headers.Authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
             }
 
-            // In Node.js, we use an undici Agent if rejectUnauthorized is false
-            // This is cleaner than the global NODE_TLS_REJECT_UNAUTHORIZED hack
-            const fetchOptions: any = { headers }
-            if (!rejectUnauthorized) {
-              fetchOptions.dispatcher = new Agent({
-                connect: {
-                  rejectUnauthorized: false,
-                },
-              })
-            }
-
-            const response = await fetch(metadataUrl, fetchOptions)
-
-            if (!response.ok)
-              throw new Error(`Failed to fetch metadata: ${response.statusText} (${response.status})`)
-            const xml = await response.text()
+            // Using robust httpsGet to ignore SSL errors if rejectUnauthorized is false
+            const xml = await httpsGet(metadataUrl, headers)
             fs.writeFileSync(tempFile, xml)
             inputPath = tempFile
           }
