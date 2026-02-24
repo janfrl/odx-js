@@ -6,10 +6,10 @@ const emit = defineEmits(['refresh'])
 
 const editor = defineModel<EditorState>('editor', { required: true })
 
-const { selectedService, selectedEntity, config } = useSharedODataState()
+const { selectedService, selectedEntity, config, sessionHeaders } = useSharedODataState()
 
 async function saveItem() {
-  if (!selectedService.value || !selectedEntity.value)
+  if (editor.value.mode !== 'headers' && (!selectedService.value || !selectedEntity.value))
     return
 
   editor.value.loading = true
@@ -17,7 +17,22 @@ async function saveItem() {
 
   try {
     const payload = JSON.parse(editor.value.json)
-    const route = selectedService.value.route || selectedService.value.name.toLowerCase()
+
+    if (editor.value.mode === 'headers') {
+      sessionHeaders.value = payload
+      devtoolsUiShowNotification({
+        message: 'Session headers updated',
+        icon: 'i-carbon-settings-adjust',
+        position: 'bottom-right',
+        classes: 'text-base border-base',
+      })
+      editor.value.show = false
+      editor.value.loading = false
+      emit('refresh')
+      return
+    }
+
+    const route = selectedService.value!.route || selectedService.value!.name.toLowerCase()
     const idKey = editor.value.original ? Object.keys(editor.value.original).find(k => k.toLowerCase() === 'id') : null
     const id = idKey ? (editor.value.original as Record<string, unknown>)[idKey] : null
 
@@ -90,10 +105,12 @@ function close() {
         <div class="p-4 border-b border-base flex items-center justify-between shrink-0 bg-surface font-sans text-base">
           <div class="flex items-center gap-2 text-base">
             <h3 class="font-bold text-[11px] uppercase tracking-wider text-base-content">
-              {{ editor.mode }} Item
+              {{ editor.mode === 'headers' ? 'Session Headers' : `${editor.mode} Item` }}
             </h3>
-            <span class="text-[10px] text-muted opacity-50">/</span>
-            <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
+            <template v-if="editor.mode !== 'headers'">
+              <span class="text-[10px] text-muted opacity-50">/</span>
+              <span class="text-[10px] font-mono font-bold text-primary opacity-80">{{ selectedEntity }}</span>
+            </template>
           </div>
           <NButton
             icon="i-carbon-close"

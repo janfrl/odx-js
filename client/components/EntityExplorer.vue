@@ -3,7 +3,7 @@ import type { EditorState } from '../composables/useODataState'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 
-const { selectedService, selectedEntity, config, clearEntityMockData } = useSharedODataState()
+const { selectedService, selectedEntity, config, clearEntityMockData, sessionHeaders } = useSharedODataState()
 
 const previewLoading = ref(false)
 const showLoadingIndicator = ref(false)
@@ -127,7 +127,12 @@ async function refreshEntityData() {
       urlPath += q
     }
 
-    const res = await fetch(urlPath)
+    const res = await fetch(urlPath, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...sessionHeaders.value,
+      },
+    })
     if (!res.ok) {
       const errorText = await res.text().catch(() => '')
       let statusMessage = res.statusText || `Server Error ${res.status}`
@@ -153,9 +158,12 @@ async function refreshEntityData() {
   }
 }
 
-function openEditor(mode: 'view' | 'create' | 'update', row: Record<string, unknown> | null = null) {
+function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<string, unknown> | null = null) {
   let initialJson = ''
-  if (row) {
+  if (mode === 'headers') {
+    initialJson = JSON.stringify(sessionHeaders.value, null, 2)
+  }
+  else if (row) {
     initialJson = JSON.stringify(row, null, 2)
   }
   else if (mode === 'create' && currentEntitySchema.value) {
@@ -340,24 +348,30 @@ onMounted(() => {
           >
             Items ({{ previewData.length }})
           </span>
-          <div
-            v-if="previewData.length > 0"
-            class="flex items-center gap-1 ml-2 text-base"
-          >
+          <div class="flex items-center gap-1 ml-2 text-base">
             <NButton
               class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
-              icon="i-carbon-download"
-              @click="downloadJson"
+              icon="i-carbon-settings-adjust"
+              @click="openEditor('headers')"
             >
-              JSON
+              Headers
             </NButton>
-            <NButton
-              class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-red-500 transition-colors text-[10px] uppercase font-bold"
-              icon="i-carbon-trash-can"
-              @click="clearData"
-            >
-              Clear
-            </NButton>
+            <template v-if="previewData.length > 0">
+              <NButton
+                class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
+                icon="i-carbon-download"
+                @click="downloadJson"
+              >
+                JSON
+              </NButton>
+              <NButton
+                class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-red-500 transition-colors text-[10px] uppercase font-bold"
+                icon="i-carbon-trash-can"
+                @click="clearData"
+              >
+                Clear
+              </NButton>
+            </template>
           </div>
         </div>
         <NButton

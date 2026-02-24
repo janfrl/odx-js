@@ -32,7 +32,7 @@ export interface ODataLog {
 
 export interface EditorState {
   show: boolean
-  mode: 'view' | 'create' | 'update'
+  mode: 'view' | 'create' | 'update' | 'headers'
   json: string
   loading: boolean
   error: string | null
@@ -51,6 +51,7 @@ const logs = ref<ODataLog[]>([])
 const selectedService = ref<SapService | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
+const sessionHeaders = ref<Record<string, string>>({})
 
 // Persistence for Schema Graph
 const globalNodes = ref<any[]>([])
@@ -149,6 +150,7 @@ export function useSharedODataState() {
     selectedService,
     selectedEntity,
     generatingStatus,
+    sessionHeaders,
     globalNodes,
     globalEdges,
     globalViewport,
