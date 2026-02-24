@@ -22,7 +22,7 @@ const {
   lastSelectedServiceForGraph,
 } = useSharedODataState()
 
-const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut, getViewport, setCenter } = useVueFlow()
+const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut, getViewport, setCenter, addEdges, onConnect, onEdgesChange, onEdgeClick } = useVueFlow()
 
 const containerRef = ref<HTMLElement | null>(null)
 const { width, height } = useElementSize(containerRef)
@@ -32,6 +32,11 @@ const isReady = ref(false)
 const isFullscreen = ref(false)
 const schemaData = ref<any>(null)
 const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
+
+// Label Editing State
+const editingEdgeId = ref<string | null>(null)
+const editingLabelValue = ref('')
+const editingLabelPos = ref({ x: 0, y: 0 })
 
 const elk = new ELK()
 
@@ -120,6 +125,73 @@ watch(layoutMode, () => {
   generateGraph(true)
 })
 
+// Handle manual connections drawn by the user
+onConnect((params) => {
+  const edgeId = `manual-${params.source}-${params.target}`
+  if (globalEdges.value.find(e => e.id === edgeId)) return
+
+  const newEdge = {
+    ...params,
+    id: edgeId,
+    label: '', // Start empty
+    animated: true,
+    style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5,5' },
+    labelStyle: { fill: '#3b82f6', fontWeight: 700, fontSize: '10px' },
+    data: { isManual: true }
+  }
+  globalEdges.value = [...globalEdges.value, newEdge]
+})
+
+// Handle manual label editing on click
+onEdgeClick(({ event, edge }) => {
+  if (edge.data?.isManual) {
+    editingEdgeId.value = edge.id
+    editingLabelValue.value = (edge.label as string) || ''
+    
+    // Position the input near the mouse click
+    editingLabelPos.value = {
+      x: event.clientX,
+      y: event.clientY
+    }
+    
+    // Auto-focus the input in next tick
+    nextTick(() => {
+      const el = document.getElementById('edge-label-input')
+      el?.focus()
+    })
+  }
+})
+
+function saveEdgeLabel() {
+  if (editingEdgeId.value) {
+    globalEdges.value = globalEdges.value.map(e => 
+      e.id === editingEdgeId.value ? { ...e, label: editingLabelValue.value } : e
+    )
+    cancelEdgeEdit()
+  }
+}
+
+function cancelEdgeEdit() {
+  editingEdgeId.value = null
+  editingLabelValue.value = ''
+}
+
+function deleteEdge() {
+  if (editingEdgeId.value) {
+    globalEdges.value = globalEdges.value.filter(e => e.id !== editingEdgeId.value)
+    cancelEdgeEdit()
+  }
+}
+
+// Handle edge deletions or other changes
+onEdgesChange((changes) => {
+  changes.forEach((change) => {
+    if (change.type === 'remove') {
+      globalEdges.value = globalEdges.value.filter(e => e.id !== change.id)
+    }
+  })
+})
+
 // Save viewport changes to global state immediately
 onViewportChange((viewport) => {
   if (isReady.value) {
@@ -192,6 +264,11 @@ async function generateGraph(autoFit = false) {
   const newNodes: any[] = []
   const newEdges: any[] = []
 
+  // Preserve existing manual edges
+  const manualEdges = globalEdges.value.filter(e => e.data?.isManual)
+  
+  // ...
+
   // 1. Create Nodes and Edges
   schemaData.value.entities.forEach((entity: any) => {
     newNodes.push({
@@ -226,6 +303,13 @@ async function generateGraph(autoFit = false) {
         }
       }
     })
+  })
+
+  // Add preserved manual edges
+  manualEdges.forEach(me => {
+    if (!newEdges.find(e => e.id === me.id)) {
+      newEdges.push(me)
+    }
   })
 
   // 2. Decide Layout Strategy
@@ -335,6 +419,13 @@ async function generateGraph(autoFit = false) {
   }
 }
 
+function resetGraph() {
+  if (window.confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
+    globalEdges.value = globalEdges.value.filter(e => !e.data?.isManual)
+    fetchSchema(true)
+  }
+}
+
 function copyMermaid() {
   if (!schemaData.value)
     return
@@ -417,6 +508,23 @@ watch(selectedService, () => {
         </div>
 
         <div class="flex items-center gap-2 text-base">
+          <NButton
+            class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
+            icon="i-carbon-renew"
+            title="Recalculate positions"
+            @click="fetchSchema(true)"
+          >
+            Auto Layout
+          </NButton>
+          <NButton
+            class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-red-500 transition-colors text-[10px] uppercase font-bold"
+            icon="i-carbon-reset"
+            title="Clear manual work"
+            @click="resetGraph"
+          >
+            Reset
+          </NButton>
+          <div class="w-px h-4 bg-base mx-1 opacity-50" />
           <button
             class="px-4 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border border-base bg-zinc-500/10 text-muted hover:bg-zinc-500/20 hover:text-base flex items-center gap-1.5 shadow-sm"
             @click="copyMermaid"
@@ -464,14 +572,6 @@ watch(selectedService, () => {
             <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
               <button
                 class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
-                title="Recalculate Layout"
-                @click="fetchSchema(true)"
-              >
-                <div class="i-carbon-renew w-5 h-5" />
-              </button>
-              <div class="h-px bg-zinc-800 mx-2" />
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10"
                 title="Fit to Screen (R)"
                 @click="fitToScreen"
               >
@@ -491,6 +591,50 @@ watch(selectedService, () => {
             </div>
           </div>
         </VueFlow>
+
+        <!-- Floating Edge Label Editor -->
+        <template v-if="editingEdgeId">
+          <!-- Backdrop to catch clicks outside -->
+          <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
+          
+          <div 
+            class="fixed z-[100] flex flex-col gap-3 p-3 bg-white dark:bg-zinc-900 border border-base rounded-xl shadow-2xl"
+            :style="{ 
+              left: `${editingLabelPos.x}px`, 
+              top: `${editingLabelPos.y}px`,
+              transform: 'translate(-50%, -120%)'
+            }"
+          >
+            <div class="flex items-center gap-2">
+              <input
+                id="edge-label-input"
+                v-model="editingLabelValue"
+                type="text"
+                placeholder="Label..."
+                class="bg-base border border-base rounded-lg px-3 py-1.5 text-[12px] font-bold outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/10 w-40 transition-all"
+                @keyup.enter="saveEdgeLabel"
+                @keyup.esc="cancelEdgeEdit"
+                @keyup.delete="deleteEdge"
+              >
+              <NButton
+                icon="i-carbon-trash-can"
+                class="!bg-red-500/10 hover:!bg-red-500 text-red-500 hover:text-white !border-none h-[32px] w-[32px] !rounded-lg"
+                title="Delete connection"
+                @click="deleteEdge"
+              />
+            </div>
+            <div class="flex justify-between items-center px-1 border-t border-base pt-2">
+              <div class="flex items-center gap-1.5">
+                <span class="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-base text-[9px] font-bold">Enter</span>
+                <span class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">to save</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-base text-[9px] font-bold">Esc</span>
+                <span class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">to cancel</span>
+              </div>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
   </div>
