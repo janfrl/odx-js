@@ -555,7 +555,26 @@ export default defineEventHandler(async (event) => {
         // Normalize URL by removing trailing slash to prevent double-slashes in the request path
         const serviceUrl = matched.url && matched.url.startsWith('http') ? matched.url.replace(/\/$/, '') : null
         const globalDest = (config.odata?.destination || 'http://localhost:8080').replace(/\/$/, '')
-        const destination = { url: serviceUrl || globalDest }
+        
+        // Priority: Service-specific auth -> Global auth
+        const auth = matched.auth || config.odata?.auth || {}
+        
+        const destination: any = { 
+          url: serviceUrl || globalDest 
+        }
+
+        // Support for bypassing SSL verification
+        if (config.odata?.rejectUnauthorized === false) {
+          destination.isTrustAll = true
+        }
+
+        if (auth.bearerToken) {
+          destination.authTokens = [{ value: auth.bearerToken }]
+        }
+        else if (auth.username && auth.password) {
+          destination.username = auth.username
+          destination.password = auth.password
+        }
 
         if (method === 'GET') {
           if (resourceId) {

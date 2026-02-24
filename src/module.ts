@@ -8,6 +8,7 @@ import {
   useLogger,
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
+import { Agent } from 'undici'
 import { setupDevToolsUI } from './devtools'
 import { generateODataClient } from './generate'
 
@@ -15,12 +16,23 @@ export interface SapODataService {
   name: string
   url: string
   route?: string
+  auth?: {
+    username?: string
+    password?: string
+    bearerToken?: string
+  }
 }
 
 export interface ModuleOptions {
   mode?: 'sdk'
   basePath?: string
   destination?: string
+  auth?: {
+    username?: string
+    password?: string
+    bearerToken?: string
+  }
+  rejectUnauthorized?: boolean
   forwardAuthHeader?: boolean
   services?: SapODataService[]
   buildDir?: string
@@ -39,6 +51,7 @@ export default defineNuxtModule<ModuleOptions>({
     mode: 'sdk',
     basePath: '/api/sap-odata',
     forwardAuthHeader: true,
+    rejectUnauthorized: true,
     services: [],
     devtools: {
       enabled: true,
@@ -52,20 +65,29 @@ export default defineNuxtModule<ModuleOptions>({
     const mode = options.mode ?? 'sdk'
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
+    const rejectUnauthorized = options.rejectUnauthorized ?? true
 
     // 1. Unified Service Discovery & Merging
     const prefix = 'NUXT_ODATA_SERVICES_'
 
     // Start with services from nuxt.config.ts and apply overrides from env
-    const services = (options.services || []).map((s: any) => {
+    const services = (options.services || []).map((s: SapODataService) => {
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
       const envName = process.env[`${prefix}${envKey}_NAME`]
+      const envUser = process.env[`${prefix}${envKey}_AUTH_USERNAME`]
+      const envPass = process.env[`${prefix}${envKey}_AUTH_PASSWORD`]
+      const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
 
       return {
         ...s,
-        url: envUrl || s.url || s.edmx, // Env URL wins, then config url, then config edmx
-        name: envName || s.name, // Env Name wins, then config name (preserves casing)
+        url: envUrl || s.url,
+        name: envName || s.name,
+        auth: {
+          username: envUser || s.auth?.username,
+          password: envPass || s.auth?.password,
+          bearerToken: envToken || s.auth?.bearerToken,
+        },
       }
     })
 
@@ -88,15 +110,32 @@ export default defineNuxtModule<ModuleOptions>({
       const url = process.env[`${prefix}${key}_URL`]
       if (url) {
         const name = process.env[`${prefix}${key}_NAME`] || key
-        services.push({ name, url })
+        const username = process.env[`${prefix}${key}_AUTH_USERNAME`]
+        const password = process.env[`${prefix}${key}_AUTH_PASSWORD`]
+        const bearerToken = process.env[`${prefix}${key}_AUTH_BEARER_TOKEN`]
+
+        services.push({
+          name,
+          url,
+          auth: { username, password, bearerToken },
+        })
       }
     }
 
     const allServices = services
 
+    // Global auth overrides from env
+    const globalAuth = {
+      username: process.env.NUXT_ODATA_AUTH_USERNAME || options.auth?.username,
+      password: process.env.NUXT_ODATA_AUTH_PASSWORD || options.auth?.password,
+      bearerToken: process.env.NUXT_ODATA_AUTH_BEARER_TOKEN || options.auth?.bearerToken,
+    }
+
     nuxt.options.runtimeConfig.odata = {
       destination: options.destination ?? '',
+      auth: globalAuth,
       forwardAuthHeader,
+      rejectUnauthorized,
       services: allServices,
       buildDir: nuxt.options.buildDir,
       rootDir: nuxt.options.rootDir,
@@ -184,9 +223,30 @@ export default defineNuxtModule<ModuleOptions>({
           logger.info(`[nuxt-sap-odata] downloading metadata for ${svc.name} from ${metadataUrl}`)
 
           try {
-            const response = await fetch(metadataUrl)
+            const headers: Record<string, string> = {}
+            const auth = svc.auth || globalAuth
+            if (auth.bearerToken) {
+              headers.Authorization = `Bearer ${auth.bearerToken}`
+            }
+            else if (auth.username && auth.password) {
+              headers.Authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+            }
+
+            // In Node.js, we use an undici Agent if rejectUnauthorized is false
+            // This is cleaner than the global NODE_TLS_REJECT_UNAUTHORIZED hack
+            const fetchOptions: any = { headers }
+            if (!rejectUnauthorized) {
+              fetchOptions.dispatcher = new Agent({
+                connect: {
+                  rejectUnauthorized: false,
+                },
+              })
+            }
+
+            const response = await fetch(metadataUrl, fetchOptions)
+
             if (!response.ok)
-              throw new Error(`Failed to fetch metadata: ${response.statusText}`)
+              throw new Error(`Failed to fetch metadata: ${response.statusText} (${response.status})`)
             const xml = await response.text()
             fs.writeFileSync(tempFile, xml)
             inputPath = tempFile

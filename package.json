@@ -41,7 +41,8 @@
     "@vueuse/nuxt": "^14.2.1",
     "dagre": "^0.8.5",
     "fast-xml-parser": "^5.0.0",
-    "sirv": "^3.0.2"
+    "sirv": "^3.0.2",
+    "undici": "^7.22.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.4.3",
