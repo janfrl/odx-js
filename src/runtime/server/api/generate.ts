@@ -1,6 +1,6 @@
+import fs from 'node:fs'
 import { createError, defineEventHandler, getQuery, useRuntimeConfig } from '#imports'
 import { join, resolve } from 'pathe'
-import fs from 'node:fs'
 import { generateODataClient } from '../../../generate'
 
 export default defineEventHandler(async (event) => {
@@ -47,12 +47,12 @@ export default defineEventHandler(async (event) => {
       if (!response.ok) {
         throw new Error(`Failed to fetch metadata from ${metadataUrl}: ${response.statusText}`)
       }
-      
+
       const xml = await response.text()
       if (!xml || xml.length < 100) {
         throw new Error(`Received invalid or empty metadata from ${metadataUrl}`)
       }
-      
+
       fs.writeFileSync(tempFile, xml)
       inputPath = tempFile
     }
@@ -67,17 +67,17 @@ export default defineEventHandler(async (event) => {
 
     // eslint-disable-next-line no-console
     console.log(`[nuxt-sap-odata] Manual generation triggered for ${matched.name}. Input: ${inputPath}, Output: ${outDir}`)
-    
+
     await generateODataClient({
       input: inputPath,
       outputDir: outDir,
     })
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: `Generated ${matched.name} successfully`,
       service: matched.name,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
   }
   catch (err: any) {
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 500,
       statusMessage: `Generation failed: ${err.message}`,
-      data: { error: err.message }
+      data: { error: err.message },
     })
   }
 })

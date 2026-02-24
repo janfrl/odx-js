@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import {
   addImportsDir,
   addServerHandler,
@@ -6,7 +7,6 @@ import {
   useLogger,
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
-import fs from 'node:fs'
 import { setupDevToolsUI } from './devtools'
 import { generateODataClient } from './generate'
 
@@ -51,20 +51,20 @@ export default defineNuxtModule<ModuleOptions>({
     const mode = options.mode ?? 'sdk'
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
-    
+
     // 1. Unified Service Discovery & Merging
     const prefix = 'NUXT_ODATA_SERVICES_'
-    
+
     // Start with services from nuxt.config.ts and apply overrides from env
     const services = (options.services || []).map((s: any) => {
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
       const envName = process.env[`${prefix}${envKey}_NAME`]
-      
+
       return {
         ...s,
         url: envUrl || s.url || s.edmx, // Env URL wins, then config url, then config edmx
-        name: envName || s.name         // Env Name wins, then config name (preserves casing)
+        name: envName || s.name, // Env Name wins, then config name (preserves casing)
       }
     })
 
@@ -73,14 +73,16 @@ export default defineNuxtModule<ModuleOptions>({
     for (const key in process.env) {
       if (key.startsWith(prefix)) {
         const parts = key.slice(prefix.length).split('_')
-        if (parts.length > 0) envServiceKeys.add(parts[0]!)
+        if (parts.length > 0)
+          envServiceKeys.add(parts[0]!)
       }
     }
 
     // Add services that ONLY exist in environment variables
     for (const key of envServiceKeys) {
       const alreadyHandled = (options.services || []).some(s => s.name.toUpperCase() === key)
-      if (alreadyHandled) continue
+      if (alreadyHandled)
+        continue
 
       const url = process.env[`${prefix}${key}_URL`]
       if (url) {

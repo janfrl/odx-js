@@ -90,12 +90,13 @@ export function useSharedODataState() {
     const start = Date.now()
     try {
       const res = await fetch(`/__sap_odata__/generate?service=${name}`)
-      
+
       let data: any
       const text = await res.text()
       try {
         data = JSON.parse(text)
-      } catch (e) {
+      }
+      catch (e) {
         throw new Error(`Server returned invalid response: ${text.slice(0, 100)}...`)
       }
 

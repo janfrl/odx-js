@@ -95,40 +95,41 @@ export default defineEventHandler(async (event) => {
           })),
         }
       }),
-          associations: associations.map((assoc: any) => {
-            const ends = Array.isArray(assoc.End) ? assoc.End : [assoc.End]
-            const constraint = assoc.ReferentialConstraint
-            let link: any = null
-      
-            if (constraint) {
-              const principal = constraint.Principal
-              const dependent = constraint.Dependent
-              
-              const getPropName = (ref: any) => {
-                if (!ref) return null
-                const p = Array.isArray(ref) ? ref[0] : ref
-                return p.Name || p.name
-              }
+      associations: associations.map((assoc: any) => {
+        const ends = Array.isArray(assoc.End) ? assoc.End : [assoc.End]
+        const constraint = assoc.ReferentialConstraint
+        let link: any = null
 
-              link = {
-                principalRole: principal?.Role || principal?.role,
-                principalProperty: getPropName(principal?.PropertyRef),
-                dependentRole: dependent?.Role || dependent?.role,
-                dependentProperty: getPropName(dependent?.PropertyRef),
-              }
-            }
-      
-            return {
-              name: assoc.Name,
-              ends: ends.map((end: any) => ({
-                role: end.Role,
-                type: end.Type,
-                multiplicity: end.Multiplicity,
-              })),
-              constraint: link,
-            }
-          }),
-      
+        if (constraint) {
+          const principal = constraint.Principal
+          const dependent = constraint.Dependent
+
+          const getPropName = (ref: any) => {
+            if (!ref)
+              return null
+            const p = Array.isArray(ref) ? ref[0] : ref
+            return p.Name || p.name
+          }
+
+          link = {
+            principalRole: principal?.Role || principal?.role,
+            principalProperty: getPropName(principal?.PropertyRef),
+            dependentRole: dependent?.Role || dependent?.role,
+            dependentProperty: getPropName(dependent?.PropertyRef),
+          }
+        }
+
+        return {
+          name: assoc.Name,
+          ends: ends.map((end: any) => ({
+            role: end.Role,
+            type: end.Type,
+            multiplicity: end.Multiplicity,
+          })),
+          constraint: link,
+        }
+      }),
+
     }
 
     return result

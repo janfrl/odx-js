@@ -233,13 +233,14 @@ const currentEntitySchema = computed(() => {
 
 function isNavigationProperty(key: string) {
   return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
-    np.name.toLowerCase() === key.toLowerCase()
+    np.name.toLowerCase() === key.toLowerCase(),
   )
 }
 
 const previewColumns = computed(() => {
   const edmxEntity = currentEntitySchema.value
-  if (!edmxEntity) return []
+  if (!edmxEntity)
+    return []
 
   const edmxProps = edmxEntity.properties?.map((p: any) => p.name) || []
   const edmxNavProps = edmxEntity.navigationProperties?.map((np: any) => np.name) || []

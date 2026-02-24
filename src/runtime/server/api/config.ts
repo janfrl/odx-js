@@ -43,7 +43,7 @@ export default defineEventHandler(async () => {
       join(outDir, 'index.ts'),
       join(outDir, 'index.js'),
       join(outDir, subDirName, 'index.ts'),
-      join(outDir, subDirName, 'index.js')
+      join(outDir, subDirName, 'index.js'),
     ]
 
     let entities: string[] = []
@@ -51,7 +51,7 @@ export default defineEventHandler(async () => {
     let targetFile: string | null = null
 
     for (const p of possiblePaths) {
-      if (fs.existsSync(p)) { targetFile = p; break; }
+      if (fs.existsSync(p)) { targetFile = p; break }
     }
 
     if (targetFile) {
