@@ -1,4 +1,12 @@
 {
+  "files.associations": {
+    ".env*": "dotenv"
+  },
+  "github.copilot.enable": {
+    "*": true,
+    "dotenv": false
+  },
+
   // Disable the default formatter, use eslint instead
   "prettier.enable": false,
   "editor.formatOnSave": false,
