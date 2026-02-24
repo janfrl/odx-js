@@ -27,6 +27,32 @@ function extractEntitiesFromEdmx(edmxPath: string): string[] {
   }
 }
 
+function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
+  if (!fs.existsSync(edmxPath))
+    return null
+  try {
+    const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
+    
+    // Explicit attributes
+    if (content.includes('Version="4.0"')) return 'v4'
+    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"')) return 'v2'
+    
+    // Heuristics based on namespaces or structure
+    if (content.includes('http://schemas.microsoft.com/ado/2007/06/edmx')) {
+      // Adelphi/ADO namespaces usually indicate V2/V3 (SAP uses this for V2)
+      return 'v2'
+    }
+    if (content.includes('http://docs.oasis-open.org/odata/ns/edmx')) {
+      return 'v4'
+    }
+
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
   const buildDir = config.odata?.buildDir as string
@@ -57,6 +83,17 @@ export default defineEventHandler(async () => {
       }
     }
 
+    // Find the EDMX path
+    let edmxAbs = ''
+    if (svc.url.startsWith('http')) {
+      edmxAbs = join(buildDir, 'sap-odata', 'temp', `${svc.name}.edmx`)
+    }
+    else {
+      edmxAbs = resolve(rootDir, svc.url)
+    }
+
+    const version = detectODataVersion(edmxAbs)
+
     if (targetFile) {
       isGenerated = true
       try {
@@ -84,13 +121,6 @@ export default defineEventHandler(async () => {
 
     // Fallback to EDMX parsing if no entities found yet
     if (entities.length === 0) {
-      let edmxAbs = ''
-      if (svc.url.startsWith('http')) {
-        edmxAbs = join(buildDir, 'sap-odata', 'temp', `${svc.name}.edmx`)
-      }
-      else {
-        edmxAbs = resolve(rootDir, svc.url)
-      }
       entities = extractEntitiesFromEdmx(edmxAbs)
     }
 
@@ -98,6 +128,7 @@ export default defineEventHandler(async () => {
       ...svc,
       entities,
       isGenerated,
+      version,
     }
   }))
 

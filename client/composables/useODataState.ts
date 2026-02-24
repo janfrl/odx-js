@@ -5,6 +5,7 @@ export interface SapService {
   route?: string
   entities?: string[]
   isGenerated?: boolean
+  version?: 'v2' | 'v4' | null
 }
 
 export interface SapConfig {

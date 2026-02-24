@@ -66,11 +66,21 @@ async function runGenerate(name: string) {
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-bold truncate text-base text-zinc-900 dark:text-zinc-100 leading-tight">{{ svc.name }}</span>
-                <span
-                  class="w-2 h-2 rounded-full shrink-0"
-                  :style="{ backgroundColor: svc.isGenerated ? COLORS.green : COLORS.orange }"
-                  :class="svc.isGenerated ? 'shadow-[0_0_8px_rgba(0,220,130,0.3)]' : 'shadow-[0_0_8px_rgba(249,115,22,0.3)]'"
-                />
+                <div class="flex items-center gap-1.5">
+                  <NBadge
+                    v-if="svc.version"
+                    n="gray"
+                    variant="subtle"
+                    class="text-[8px] px-1 py-0 font-black uppercase tracking-tighter"
+                  >
+                    {{ svc.version }}
+                  </NBadge>
+                  <span
+                    class="w-2 h-2 rounded-full shrink-0"
+                    :style="{ backgroundColor: svc.isGenerated ? COLORS.green : COLORS.orange }"
+                    :class="svc.isGenerated ? 'shadow-[0_0_8px_rgba(0,220,130,0.3)]' : 'shadow-[0_0_8px_rgba(249,115,22,0.3)]'"
+                  />
+                </div>
               </div>
               <div class="text-[11px] font-mono truncate text-zinc-500 dark:text-zinc-400 opacity-80 group-hover:opacity-100 transition-opacity">
                 {{ config.basePath }}/{{ svc.route || svc.name.toLowerCase() }}
