@@ -51,7 +51,10 @@ export default defineEventHandler(async () => {
     let targetFile: string | null = null
 
     for (const p of possiblePaths) {
-      if (fs.existsSync(p)) { targetFile = p; break }
+      if (fs.existsSync(p)) {
+        targetFile = p
+        break
+      }
     }
 
     if (targetFile) {

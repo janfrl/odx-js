@@ -30,8 +30,6 @@ export default defineEventHandler(async (event) => {
     edmxPath = resolve(rootDir, svc.url)
   }
 
-  console.log(`[nuxt-sap-odata] Schema API: reading EDMX for ${serviceName} from ${edmxPath}`)
-
   if (!fs.existsSync(edmxPath)) {
     console.error(`[nuxt-sap-odata] Schema API: EDMX file not found at ${edmxPath}`)
     throw createError({ statusCode: 404, message: `EDMX file not found at ${edmxPath}` })

@@ -96,7 +96,7 @@ export function useSharedODataState() {
       try {
         data = JSON.parse(text)
       }
-      catch (e) {
+      catch {
         throw new Error(`Server returned invalid response: ${text.slice(0, 100)}...`)
       }
 

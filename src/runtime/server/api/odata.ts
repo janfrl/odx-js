@@ -100,7 +100,6 @@ function flattenOData(data: any): any {
 
   // 3. Handle Objects (Flatten properties)
   const flattened: any = {}
-  let hasActualData = false
 
   for (const key in data) {
     if (key === '__metadata' || key === '__deferred')
@@ -111,11 +110,6 @@ function flattenOData(data: any): any {
     // We keep the key even if the value is null (e.g. for non-expanded nav props)
     // This allows the UI to detect that the property exists.
     flattened[key] = value
-
-    // Primitive values or non-null objects count as "actual data"
-    if (value !== null && value !== undefined) {
-      hasActualData = true
-    }
   }
 
   // Return the object if it has any properties (even if all are null)
@@ -457,8 +451,14 @@ export default defineEventHandler(async (event) => {
     for (const dir of possibleDirs) {
       const ts = join(dir, 'index.ts')
       const js = join(dir, 'index.js')
-      if (fs.existsSync(ts)) { targetFile = ts; break }
-      if (fs.existsSync(js)) { targetFile = js; break }
+      if (fs.existsSync(ts)) {
+        targetFile = ts
+        break
+      }
+      if (fs.existsSync(js)) {
+        targetFile = js
+        break
+      }
     }
 
     // If it's a local service without a dedicated remote URL, we should prefer mock data
@@ -577,7 +577,7 @@ export default defineEventHandler(async (event) => {
                 const schemaKey = Object.keys(schema).find(key => key.toLowerCase() === k.toLowerCase())
                 const realKey = (schemaKey && schema[schemaKey]._fieldName) ? schema[schemaKey]._fieldName : k
 
-                const formattedVal = (typeof val === 'string' && isNaN(Number(val))) ? `'${val}'` : val
+                const formattedVal = (typeof val === 'string' && Number.isNaN(Number(val))) ? `'${val}'` : val
                 smartFilters.push(`${realKey} eq ${formattedVal}`)
               }
             }

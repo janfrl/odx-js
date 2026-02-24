@@ -49,6 +49,48 @@ async function selectEntity(entity: string) {
   queryInput.value = '?'
 }
 
+const currentEntitySchema = computed(() => {
+  const entityName = selectedEntity.value
+  if (!schema.value || !entityName)
+    return null
+
+  // Find the entity by set name or type name with robust plural handling (e.g. Categories -> Category)
+  return schema.value.entities?.find((e: any) =>
+    e.entitySet === entityName
+    || e.name === entityName
+    || entityName.toLowerCase().startsWith(e.name.toLowerCase())
+    || e.name.toLowerCase().startsWith(entityName.toLowerCase())
+    || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
+  ) || null
+})
+
+function isNavigationProperty(key: string) {
+  return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
+    np.name.toLowerCase() === key.toLowerCase(),
+  )
+}
+
+const previewColumns = computed(() => {
+  const edmxEntity = currentEntitySchema.value
+  if (!edmxEntity)
+    return []
+
+  const edmxProps = edmxEntity.properties?.map((p: any) => p.name) || []
+  const edmxNavProps = edmxEntity.navigationProperties?.map((np: any) => np.name) || []
+
+  // Final column list: properties followed by navigation properties
+  const combined = [...edmxProps, ...edmxNavProps]
+
+  // Filter out redundant technical properties based on ReferentialConstraints
+  // (e.g. Hide 'SupplierID' if it's the dependent property for the 'Supplier' navigation)
+  return combined.filter((col) => {
+    const isTechnicalFK = schema.value?.associations?.some((assoc: any) => {
+      return assoc.constraint?.dependentProperty === col
+    })
+    return !isTechnicalFK
+  })
+})
+
 async function fetchSchema() {
   if (!selectedService.value)
     return
@@ -152,7 +194,8 @@ async function deleteItem(row: Record<string, unknown>) {
   const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
   const id = idKey ? row[idKey] : null
 
-  if (!id || !confirm(`Delete item ${id}?`))
+  // eslint-disable-next-line no-alert
+  if (!id || !window.confirm(`Delete item ${id}?`))
     return
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
@@ -181,7 +224,8 @@ async function clearData() {
   if (!selectedService.value || !selectedEntity.value)
     return
 
-  if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`))
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`))
     return
 
   try {
@@ -215,48 +259,6 @@ function downloadJson() {
   a.click()
   URL.revokeObjectURL(url)
 }
-
-const currentEntitySchema = computed(() => {
-  const entityName = selectedEntity.value
-  if (!schema.value || !entityName)
-    return null
-
-  // Find the entity by set name or type name with robust plural handling (e.g. Categories -> Category)
-  return schema.value.entities?.find((e: any) =>
-    e.entitySet === entityName
-    || e.name === entityName
-    || entityName.toLowerCase().startsWith(e.name.toLowerCase())
-    || e.name.toLowerCase().startsWith(entityName.toLowerCase())
-    || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
-  ) || null
-})
-
-function isNavigationProperty(key: string) {
-  return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
-    np.name.toLowerCase() === key.toLowerCase(),
-  )
-}
-
-const previewColumns = computed(() => {
-  const edmxEntity = currentEntitySchema.value
-  if (!edmxEntity)
-    return []
-
-  const edmxProps = edmxEntity.properties?.map((p: any) => p.name) || []
-  const edmxNavProps = edmxEntity.navigationProperties?.map((np: any) => np.name) || []
-
-  // Final column list: properties followed by navigation properties
-  const combined = [...edmxProps, ...edmxNavProps]
-
-  // Filter out redundant technical properties based on ReferentialConstraints
-  // (e.g. Hide 'SupplierID' if it's the dependent property for the 'Supplier' navigation)
-  return combined.filter((col) => {
-    const isTechnicalFK = schema.value?.associations?.some((assoc: any) => {
-      return assoc.constraint?.dependentProperty === col
-    })
-    return !isTechnicalFK
-  })
-})
 
 watch(selectedService, (newSvc) => {
   if (newSvc && newSvc.entities && newSvc.entities.length > 0) {
