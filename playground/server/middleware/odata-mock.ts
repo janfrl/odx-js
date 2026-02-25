@@ -1,30 +1,43 @@
-import { fromNodeMiddleware, defineEventHandler } from 'h3'
-import pkg from '@sap-ux/fe-mockserver-core'
 import { resolve } from 'node:path'
+import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'
+import pkg from '@sap-ux/fe-mockserver-core'
 
 const FEMockserver = (pkg as any).default || pkg
 let mockHandler: any
 
 export default defineEventHandler(async (event) => {
-  // Only handle SAP OData paths
-  if (!event.path.startsWith('/sap/opu/odata/')) return
+  // Only intercept OData paths
+  if (!event.path.startsWith('/sap/opu/odata/'))
+    return
 
   if (!mockHandler) {
-    console.log('Lazy-initializing OData Mock Server in Middleware...')
-    const metadataPath = resolve(process.cwd(), 'playground/edmx/dummy.edmx')
-    const mockdataPath = resolve(process.cwd(), 'playground/server/mockdata/DummyService')
+    const config = useRuntimeConfig().odata
+    const services = config.services || []
+
+    // Filter for services that have a local URL (relative path to EDMX)
+    const mockServices = services
+      .filter((s: any) => s.url && !s.url.startsWith('http'))
+      .map((s: any) => {
+        console.log(`[MockServer] Registering dynamic service: ${s.name}`)
+        return {
+          urlPath: `/sap/opu/odata/sap/${s.name}`,
+          metadataPath: resolve(process.cwd(), 'playground', s.url),
+          mockdataPath: resolve(process.cwd(), 'playground/server/mockdata', s.name),
+        }
+      })
+
+    if (mockServices.length === 0) {
+      return
+    }
 
     const mockserver = new FEMockserver({
-      services: [{
-        urlPath: '/sap/opu/odata/sap/DummyService',
-        metadataPath,
-        mockdataPath,
-      }],
+      services: mockServices,
+      debug: true,
     })
 
     await mockserver.isReady
     mockHandler = fromNodeMiddleware(mockserver.getRouter())
-    console.log('OData Mock Server is ready (Middleware).')
+    console.log(`[MockServer] Initialized with ${mockServices.length} services.`)
   }
 
   return mockHandler(event)

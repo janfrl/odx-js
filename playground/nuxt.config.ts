@@ -35,6 +35,11 @@ export default defineNuxtConfig({
         url: 'edmx/dummy.edmx',
         route: 'dummy',
       },
+      {
+        name: 'SecondService',
+        url: 'edmx/second.edmx',
+        route: 'second',
+      },
     ],
   },
 })
