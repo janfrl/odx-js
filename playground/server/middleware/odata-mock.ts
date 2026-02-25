@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
     const mockserver = new FEMockserver({
       services: [{
-        urlPath: '/sap/opu/odata/sap/DUMMY_SRV',
+        urlPath: '/sap/opu/odata/sap/DummyService',
         metadataPath,
         mockdataPath,
       }],

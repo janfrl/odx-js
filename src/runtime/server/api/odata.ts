@@ -47,217 +47,130 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const serializeLogBody = (data: any) => {
-    if (!data)
-      return data
-    try {
-      return flattenOData(data)
-    }
-    catch {
-      return '[Non-serializable Data]'
-    }
+  const services = (config.odata?.services || []) as any[]
+  const matched = services.find(svc => (svc.route || svc.name.toLowerCase()) === serviceRoute)
+
+  if (!matched) {
+    throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
+  // Determine Target URL
+  const globalDest = (config.odata?.destination || '').replace(/\/$/, '')
+  let baseUrl = (matched.url && matched.url.startsWith('http')) ? matched.url.replace(/\/$/, '') : globalDest
+
+  // If no external URL is set, we default to the internal mock server
+  const isExternal = baseUrl.startsWith('http')
+  if (!isExternal) {
+    baseUrl = `/sap/opu/odata/sap/${matched.name}`
+  }
+
+  // Helper for logging
   const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>) => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
       method: event.method || 'GET',
       url: fullPath,
-      targetUrl,
+      targetUrl: targetUrl || baseUrl,
       service: serviceRoute,
       entitySet: entitySetName,
       status,
       duration: Date.now() - startTime,
-      requestBody: serializeLogBody(requestBody),
+      requestBody,
       requestHeaders,
-      responseBody: serializeLogBody(responseBody),
+      responseBody: flattenOData(responseBody),
     })
   }
 
-  const services = (config.odata?.services || []) as any[]
-  const matched = services.find(svc => (svc.route || svc.name.toLowerCase()) === serviceRoute)
-
-  if (!matched) {
-    logRequest(404)
-    throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
-  }
-
-  const handleMockDataRequest = async () => {
-    // Forward the request to the local mock server path
-    const mockPath = `/sap/opu/odata/sap/DUMMY_SRV/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
-    try {
-      const response = await $fetch(mockPath, {
-        method: event.method,
-        query: getQuery(event),
-        headers: {
-          accept: 'application/json',
-        },
-      })
-      return (response as any)?.d?.results || (response as any)?.d || response
-    }
-    catch (e: any) {
-      console.error('Mock request failed, falling back to empty:', e.message)
-      return []
-    }
-  }
-
   let capturedBody: any = null
-  let currentTargetUrl = 'unknown'
+  if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
+    capturedBody = await readBody(event).catch(() => null)
+  }
 
   try {
-    if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
-      capturedBody = await readBody(event).catch(() => null)
-    }
+    // 1. Try to use SAP Cloud SDK for External Destinations
+    if (isExternal) {
+      const possibleDirs = [
+        join(buildDir, 'sap-odata', 'generated', matched.name),
+        join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
+      ]
 
-    const possibleDirs = [
-      join(buildDir, 'sap-odata', 'generated', matched.name),
-      join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
-    ]
-
-    let targetFile: string | null = null
-    for (const dir of possibleDirs) {
-      if (fs.existsSync(join(dir, 'index.ts'))) {
-        targetFile = join(dir, 'index.ts')
-        break
+      let targetFile: string | null = null
+      for (const dir of possibleDirs) {
+        if (fs.existsSync(join(dir, 'index.ts'))) {
+          targetFile = join(dir, 'index.ts')
+          break
+        }
+        if (fs.existsSync(join(dir, 'index.js'))) {
+          targetFile = join(dir, 'index.js')
+          break
+        }
       }
-      if (fs.existsSync(join(dir, 'index.js'))) {
-        targetFile = join(dir, 'index.js')
-        break
+
+      if (targetFile) {
+        const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
+        const possibleNames = [`${matched.name}Api`, `${serviceRoute}Api`, matched.name, serviceRoute]
+        let apiFactory: any = null
+        for (const name of possibleNames) {
+          const found = Object.keys(sdk).find(k => k.toLowerCase() === name.toLowerCase())
+          if (found && typeof sdk[found] === 'function') {
+            apiFactory = sdk[found]
+            break
+          }
+        }
+        if (!apiFactory) apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+
+        if (apiFactory) {
+          const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
+          const allKeys = Object.keys(api).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(api)))
+          const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
+          const entityApi = actualKey ? api[actualKey] : null
+
+          if (entityApi) {
+            const destination: any = { 
+              url: baseUrl.split('/sap/opu/odata/')[0], 
+              isTrustingAllCertificates: config.odata?.rejectUnauthorized === false 
+            }
+            const auth = matched.auth || config.odata?.auth || {}
+            if (auth.bearerToken) destination.authTokens = [{ value: auth.bearerToken }]
+            else if (auth.username && auth.password) { destination.username = auth.username; destination.password = auth.password }
+
+            const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
+            const query = getQuery(event)
+
+            if (event.method === 'GET') {
+              const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
+              for (const k in query) { if (k.startsWith('$')) rb.addCustomQueryParameters({ [k]: String(query[k]) }) }
+              rb.addCustomHeaders(customHeaders)
+              const rawResponse = await rb.executeRaw(destination)
+              const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data
+              logRequest(200, res, capturedBody, await rb.url(destination).catch(() => baseUrl), customHeaders)
+              return flattenOData(res)
+            }
+            else if (event.method === 'POST') {
+              const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
+              logRequest(201, res, capturedBody, baseUrl, customHeaders)
+              return res
+            }
+          }
+        }
       }
     }
 
-    if (getQuery(event).mock === 'true' || !targetFile) {
-      const response = await handleMockDataRequest()
-      const customHeaders: Record<string, string> = matched ? { ...config.odata?.headers, ...matched.headers } : {}
-      logRequest(200, response, capturedBody, 'Internal Mock Server', customHeaders)
-      return response
-    }
+    // 2. Agnostic Fallback via $fetch (Internal Mock or Generic External)
+    const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    const response = await $fetch(requestUrl, {
+      method: event.method,
+      query: getQuery(event),
+      headers: { accept: 'application/json' },
+    })
 
-    const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
-
-    // Find API factory
-    const possibleNames = [`${matched.name}Api`, `${serviceRoute}Api`, matched.name, serviceRoute]
-    let apiFactory: any = null
-    for (const name of possibleNames) {
-      const found = Object.keys(sdk).find(k => k.toLowerCase() === name.toLowerCase())
-      if (found && typeof sdk[found] === 'function') {
-        apiFactory = sdk[found]
-        break
-      }
-    }
-    if (!apiFactory)
-      apiFactory = Object.values(sdk).find(v => typeof v === 'function')
-    if (!apiFactory)
-      throw new Error(`API Factory not found for ${matched.name}`)
-
-    let api: any
-    try {
-      api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
-    }
-    catch {
-      api = (apiFactory as any)()
-    }
-
-    // URL Logic
-    const globalDest = (config.odata?.destination || '').replace(/\/$/, '')
-    let baseUrl = (matched.url && matched.url.startsWith('http')) ? matched.url.replace(/\/$/, '') : globalDest
-
-    if (!baseUrl) {
-      const response = await handleMockDataRequest()
-      logRequest(200, response, capturedBody)
-      return response
-    }
-
-    // Auto-strip duplicate SAP paths
-    if (baseUrl.includes('/sap/opu/odata/')) {
-      baseUrl = baseUrl.split('/sap/opu/odata/')[0]!
-    }
-
-    currentTargetUrl = baseUrl
-
-    // Destination Object
-    const isTrustAll = config.odata?.rejectUnauthorized === false
-    const destination: any = {
-      url: baseUrl,
-      isTrustingAllCertificates: isTrustAll,
-    }
-
-    const auth = matched.auth || config.odata?.auth || {}
-    if (auth.bearerToken) {
-      destination.authTokens = [{ value: auth.bearerToken }]
-    }
-    else if (auth.username && auth.password) {
-      destination.username = auth.username
-      destination.password = auth.password
-    }
-
-    const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
-    const whitelist = ['x-sap-client', 'sap-language', 'accept-language']
-    for (const h of whitelist) {
-      const val = event.headers.get(h)
-      if (val)
-        customHeaders[h] = val
-    }
-
-    // Entity API lookup
-    const getAllKeys = (obj: any): string[] => {
-      let keys: string[] = []
-      let current = obj
-      while (current && current !== Object.prototype) {
-        keys = keys.concat(Object.getOwnPropertyNames(current))
-        current = Object.getPrototypeOf(current)
-      }
-      return [...new Set(keys)]
-    }
-    const allKeys = getAllKeys(api)
-    const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
-    const entityApi = actualKey ? api[actualKey] : null
-    if (!entityApi)
-      throw new Error(`EntitySet ${entitySetName} not found`)
-
-    const method = event.method
-    const query = getQuery(event)
-
-    if (method === 'GET') {
-      const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
-      const customParams: Record<string, string> = {}
-      for (const k in query) {
-        if (k.startsWith('$'))
-          customParams[k] = String(query[k])
-      }
-      if (Object.keys(customParams).length > 0)
-        rb.addCustomQueryParameters(customParams)
-
-      rb.addCustomHeaders(customHeaders)
-      currentTargetUrl = await rb.url(destination).catch(() => baseUrl)
-
-      const rawResponse = await rb.executeRaw(destination)
-      let res = rawResponse.data
-      if (res?.d)
-        res = res.d.results || res.d
-      else if (res?.value)
-        res = res.value
-
-      logRequest(200, res, capturedBody, currentTargetUrl, customHeaders)
-      return flattenOData(res)
-    }
-    else if (method === 'POST') {
-      const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
-      logRequest(201, res, capturedBody, currentTargetUrl, customHeaders)
-      return res
-    }
-
-    throw createError({ statusCode: 405, message: 'Method Not Allowed' })
+    const finalData = (response as any)?.d?.results || (response as any)?.d || response
+    logRequest(200, finalData, capturedBody, requestUrl)
+    return flattenOData(finalData)
   }
   catch (err: any) {
-    const response = await handleMockDataRequest()
-    const customHeaders: Record<string, string> = matched ? { ...config.odata?.headers, ...matched.headers } : {}
-    logRequest(err.response?.status || 500, {
-      error: err.message,
-      cause: err.cause?.message,
-      backendError: err.response?.data,
-    }, capturedBody, currentTargetUrl, customHeaders)
-    return response
+    logRequest(err.response?.status || 500, { error: err.message }, capturedBody, baseUrl)
+    throw err
   }
 })
