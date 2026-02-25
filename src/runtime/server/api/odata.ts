@@ -41,7 +41,6 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const basePath = config.public?.odata?.basePath || '/api/sap-odata'
   const buildDir = config.odata?.buildDir as string
-  const jiti = createJiti(import.meta.url)
 
   const fullPath = event.path || ''
   const pathOnly = fullPath.split('?')[0] || ''
@@ -60,7 +59,10 @@ export default defineEventHandler(async (event) => {
   }
 
   const services = (config.odata?.services || []) as any[]
-  const matched = services.find(svc => (svc.route || svc.name.toLowerCase()) === serviceRoute)
+  const matched = services.find(svc => 
+    svc.name.toLowerCase() === serviceRoute.toLowerCase() || 
+    (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase())
+  )
 
   if (!matched) {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
@@ -102,6 +104,7 @@ export default defineEventHandler(async (event) => {
   try {
     // 1. Try to use SAP Cloud SDK for External Destinations
     if (isExternal) {
+      const jiti = createJiti(import.meta.url)
       const possibleDirs = [
         join(buildDir, 'sap-odata', 'generated', matched.name),
         join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
@@ -182,8 +185,13 @@ export default defineEventHandler(async (event) => {
 
     // Make URL absolute for internal paths to improve log usability
     if (fullTargetUrl.startsWith('/')) {
-      const origin = getRequestURL(event).origin
-      fullTargetUrl = origin + fullTargetUrl
+      try {
+        const origin = getRequestURL(event).origin
+        fullTargetUrl = origin + fullTargetUrl
+      }
+      catch {
+        // Fallback
+      }
     }
 
     const response = await $fetch(requestUrl, {
@@ -200,8 +208,13 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
     let errorUrl = withQuery(baseUrl, query)
     if (errorUrl.startsWith('/')) {
-      const origin = getRequestURL(event).origin
-      errorUrl = origin + errorUrl
+      try {
+        const origin = getRequestURL(event).origin
+        errorUrl = origin + errorUrl
+      }
+      catch {
+        // Fallback
+      }
     }
     logRequest(err.response?.status || 500, { error: err.message }, capturedBody, errorUrl)
     throw err
