@@ -31,14 +31,14 @@ export default defineNuxtConfig({
   odata: {
     services: [
       {
-        name: 'DummyService',
-        url: 'edmx/dummy.edmx',
-        route: 'dummy',
+        name: 'V2Service',
+        url: 'edmx/v2.edmx',
+        route: 'v2',
       },
       {
-        name: 'SecondService',
-        url: 'edmx/second.edmx',
-        route: 'second',
+        name: 'V4Service',
+        url: 'edmx/v4.edmx',
+        route: 'v4',
       },
     ],
   },
