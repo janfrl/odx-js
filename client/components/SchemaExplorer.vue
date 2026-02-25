@@ -128,7 +128,8 @@ watch(layoutMode, () => {
 // Handle manual connections drawn by the user
 onConnect((params) => {
   const edgeId = `manual-${params.source}-${params.target}`
-  if (globalEdges.value.find(e => e.id === edgeId)) return
+  if (globalEdges.value.find(e => e.id === edgeId))
+    return
 
   const newEdge = {
     ...params,
@@ -137,7 +138,7 @@ onConnect((params) => {
     animated: true,
     style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5,5' },
     labelStyle: { fill: '#3b82f6', fontWeight: 700, fontSize: '10px' },
-    data: { isManual: true }
+    data: { isManual: true },
   }
   globalEdges.value = [...globalEdges.value, newEdge]
 })
@@ -147,11 +148,11 @@ onEdgeClick(({ event, edge }) => {
   if (edge.data?.isManual) {
     editingEdgeId.value = edge.id
     editingLabelValue.value = (edge.label as string) || ''
-    
+
     // Position the input near the mouse click
     editingLabelPos.value = {
       x: event.clientX,
-      y: event.clientY
+      y: event.clientY,
     }
 
     // Auto-focus the input in next tick
@@ -164,8 +165,8 @@ onEdgeClick(({ event, edge }) => {
 
 function saveEdgeLabel() {
   if (editingEdgeId.value) {
-    globalEdges.value = globalEdges.value.map(e => 
-      e.id === editingEdgeId.value ? { ...e, label: editingLabelValue.value } : e
+    globalEdges.value = globalEdges.value.map(e =>
+      e.id === editingEdgeId.value ? { ...e, label: editingLabelValue.value } : e,
     )
     cancelEdgeEdit()
   }
@@ -266,7 +267,7 @@ async function generateGraph(autoFit = false) {
 
   // Preserve existing manual edges
   const manualEdges = globalEdges.value.filter(e => e.data?.isManual)
-  
+
   // ...
 
   // 1. Create Nodes and Edges
@@ -306,7 +307,7 @@ async function generateGraph(autoFit = false) {
   })
 
   // Add preserved manual edges
-  manualEdges.forEach(me => {
+  manualEdges.forEach((me) => {
     if (!newEdges.find(e => e.id === me.id)) {
       newEdges.push(me)
     }
@@ -596,13 +597,13 @@ watch(selectedService, () => {
         <template v-if="editingEdgeId">
           <!-- Backdrop to catch clicks outside -->
           <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
-          
-          <div 
+
+          <div
             class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-base rounded-xl shadow-2xl"
-            :style="{ 
-              left: `${editingLabelPos.x}px`, 
+            :style="{
+              left: `${editingLabelPos.x}px`,
               top: `${editingLabelPos.y}px`,
-              transform: 'translate(-50%, -120%)'
+              transform: 'translate(-50%, -120%)',
             }"
           >
             <div class="flex items-center gap-2">
@@ -616,7 +617,7 @@ watch(selectedService, () => {
                 @keyup.esc="cancelEdgeEdit"
                 @keydown.ctrl.delete="deleteEdge"
               >
-              
+
               <NButton
                 icon="i-carbon-trash-can"
                 class="!bg-red-500/10 hover:!bg-red-500 text-red-500 hover:text-white !border-none h-[32px] w-[32px] !rounded-lg shrink-0"

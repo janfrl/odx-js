@@ -12,10 +12,10 @@ import { addODataLog } from '../utils/dev-logs'
 function flattenOData(data: any): any {
   if (!data || typeof data !== 'object')
     return data
-  
+
   // Handle OData V2 Count
   const count = data.__count || data['@odata.count'] || data.count
-  
+
   if (data.results && Array.isArray(data.results)) {
     const flattened = data.results.map((item: any) => flattenOData(item))
     if (count !== undefined) {
@@ -23,10 +23,10 @@ function flattenOData(data: any): any {
     }
     return flattened
   }
-  
+
   if (Array.isArray(data))
     return data.map(item => flattenOData(item))
-    
+
   const flattened: any = {}
   for (const key in data) {
     if (key === '__metadata' || key === '__deferred')
@@ -130,7 +130,8 @@ export default defineEventHandler(async (event) => {
             break
           }
         }
-        if (!apiFactory) apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+        if (!apiFactory)
+          apiFactory = Object.values(sdk).find(v => typeof v === 'function')
 
         if (apiFactory) {
           const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
@@ -139,12 +140,14 @@ export default defineEventHandler(async (event) => {
           const entityApi = actualKey ? api[actualKey] : null
 
           if (entityApi) {
-            const destination: any = { 
-              url: baseUrl.split('/sap/opu/odata/')[0], 
-              isTrustingAllCertificates: config.odata?.rejectUnauthorized === false 
+            const destination: any = {
+              url: baseUrl.split('/sap/opu/odata/')[0],
+              isTrustingAllCertificates: config.odata?.rejectUnauthorized === false,
             }
             const auth = matched.auth || config.odata?.auth || {}
-            if (auth.bearerToken) destination.authTokens = [{ value: auth.bearerToken }]
+            if (auth.bearerToken) {
+              destination.authTokens = [{ value: auth.bearerToken }]
+            }
             else if (auth.username && auth.password) { destination.username = auth.username; destination.password = auth.password }
 
             const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
@@ -152,7 +155,10 @@ export default defineEventHandler(async (event) => {
 
             if (event.method === 'GET') {
               const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
-              for (const k in query) { if (k.startsWith('$')) rb.addCustomQueryParameters({ [k]: String(query[k]) }) }
+              for (const k in query) {
+                if (k.startsWith('$'))
+                  rb.addCustomQueryParameters({ [k]: String(query[k]) })
+              }
               rb.addCustomHeaders(customHeaders)
               const rawResponse = await rb.executeRaw(destination)
               const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data

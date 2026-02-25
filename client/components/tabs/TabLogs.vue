@@ -105,7 +105,7 @@ async function runClear() {
                     </div>
 
                     <!-- Request Headers Section -->
-                    <div 
+                    <div
                       v-if="log.requestHeaders && Object.keys(log.requestHeaders).length > 0"
                       class="flex flex-col gap-2"
                     >
