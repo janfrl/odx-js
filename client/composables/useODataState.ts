@@ -62,8 +62,8 @@ const initializedServices = ref<Set<string>>(new Set())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 const globalViewMode = ref<'explorer' | 'schema'>('explorer')
 
-export function useSharedODataState() {
-  async function fetchConfig() {
+export function useSharedODataState(): any {
+  async function fetchConfig(): Promise<void> {
     try {
       const res = await fetch('/__sap_odata__/config')
       const data = (await res.json()) as SapConfig
@@ -78,7 +78,7 @@ export function useSharedODataState() {
     catch { /* ignore */ }
   }
 
-  async function refreshLogs() {
+  async function refreshLogs(): Promise<void> {
     try {
       const res = await fetch('/__sap_odata__/logs')
       if (res.ok) {
@@ -88,7 +88,7 @@ export function useSharedODataState() {
     catch { /* ignore */ }
   }
 
-  async function generateService(name: string) {
+  async function generateService(name: string): Promise<void> {
     generatingStatus.value[name] = true
     const start = Date.now()
     try {
@@ -126,7 +126,7 @@ export function useSharedODataState() {
     }
   }
 
-  async function clearLogs() {
+  async function clearLogs(): Promise<void> {
     try {
       await fetch('/__sap_odata__/logs', { method: 'DELETE' })
       logs.value = []
@@ -134,7 +134,7 @@ export function useSharedODataState() {
     catch { /* ignore */ }
   }
 
-  async function clearEntityMockData(service: string, entitySet: string) {
+  async function clearEntityMockData(service: string, entitySet: string): Promise<void> {
     try {
       await fetch(`/__sap_odata__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
     }

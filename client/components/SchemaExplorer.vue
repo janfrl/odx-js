@@ -22,7 +22,7 @@ const {
   lastSelectedServiceForGraph,
 } = useSharedODataState()
 
-const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut, getViewport, setCenter, addEdges, onConnect, onEdgesChange, onEdgeClick } = useVueFlow()
+const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut, getViewport, setCenter, onConnect, onEdgesChange, onEdgeClick } = useVueFlow()
 
 const containerRef = ref<HTMLElement | null>(null)
 const { width, height } = useElementSize(containerRef)
@@ -421,6 +421,7 @@ async function generateGraph(autoFit = false) {
 }
 
 function resetGraph() {
+  // eslint-disable-next-line no-alert
   if (window.confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
     globalEdges.value = globalEdges.value.filter(e => !e.data?.isManual)
     fetchSchema(true)

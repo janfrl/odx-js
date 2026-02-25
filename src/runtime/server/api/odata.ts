@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createError, defineEventHandler, getQuery, getRequestURL, readBody, useRuntimeConfig } from '#imports'
@@ -60,7 +61,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Helper for logging
-  const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>) => {
+  const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
@@ -132,8 +133,10 @@ export default defineEventHandler(async (event) => {
             if (auth.bearerToken) {
               destination.authTokens = [{ value: auth.bearerToken }]
             }
-            else if (auth.username && auth.password) { destination.username = auth.username; destination.password = auth.password }
-
+            else if (auth.username && auth.password) {
+              destination.username = auth.username
+              destination.password = auth.password
+            }
             const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
             const query = getQuery(event)
 

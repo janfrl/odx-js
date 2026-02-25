@@ -5,7 +5,7 @@ interface GenerateODataParams {
   outputDir: string
 }
 
-export async function generateODataClient({ input, outputDir }: GenerateODataParams) {
+export async function generateODataClient({ input, outputDir }: GenerateODataParams): Promise<void> {
   await generate({
     input,
     outputDir,

@@ -5,7 +5,7 @@ import { existsSync } from 'node:fs'
 export const DEVTOOLS_UI_ROUTE = '/__sap_odata__/client'
 export const DEVTOOLS_UI_LOCAL_PORT = 3300
 
-export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver) {
+export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
   const clientPath = resolver.resolve('./client')
   const isProductionBuild = existsSync(clientPath)
 

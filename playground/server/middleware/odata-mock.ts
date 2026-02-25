@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     const mockServices = services
       .filter((s: any) => s.url && !s.url.startsWith('http'))
       .map((s: any) => {
-        console.log(`[MockServer] Registering dynamic service: ${s.name}`)
+        console.warn(`[MockServer] Registering dynamic service: ${s.name}`)
         return {
           urlPath: `/sap/opu/odata/sap/${s.name}`,
           metadataPath: resolve(process.cwd(), 'playground', s.url),
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
     await mockserver.isReady
     mockHandler = fromNodeMiddleware(mockserver.getRouter())
-    console.log(`[MockServer] Initialized with ${mockServices.length} services.`)
+    console.warn(`[MockServer] Initialized with ${mockServices.length} services.`)
   }
 
   return mockHandler(event)

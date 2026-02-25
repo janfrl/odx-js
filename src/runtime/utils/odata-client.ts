@@ -1,7 +1,7 @@
 import { useRequestHeaders, useRuntimeConfig } from '#imports'
 import { ofetch } from 'ofetch'
 
-export function createODataClient() {
+export function createODataClient(): any {
   const config = useRuntimeConfig()
   const baseURL = config.public.odata?.basePath || '/api/sap-odata'
 

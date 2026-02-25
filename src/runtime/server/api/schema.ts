@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
           const principal = constraint.Principal
           const dependent = constraint.Dependent
 
-          const getPropName = (ref: any) => {
+          const getPropName = (ref: any): any => {
             if (!ref)
               return null
             const p = Array.isArray(ref) ? ref[0] : ref

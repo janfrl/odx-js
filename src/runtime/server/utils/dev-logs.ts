@@ -17,17 +17,17 @@ export interface ODataLog {
 const MAX_LOGS = 100
 const logs: ODataLog[] = []
 
-export function addODataLog(log: ODataLog) {
+export function addODataLog(log: ODataLog): void {
   logs.unshift(log)
   if (logs.length > MAX_LOGS) {
     logs.pop()
   }
 }
 
-export function getODataLogs() {
+export function getODataLogs(): ODataLog[] {
   return logs
 }
 
-export function clearODataLogs() {
+export function clearODataLogs(): void {
   logs.length = 0
 }
