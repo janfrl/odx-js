@@ -78,6 +78,16 @@ export default defineEventHandler(async (event) => {
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
+  // Prepare authentication and custom headers
+  const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
+  const auth = matched.auth || config.odata?.auth || {}
+  if (auth.bearerToken && !customHeaders.authorization) {
+    customHeaders.authorization = `Bearer ${auth.bearerToken}`
+  }
+  else if (auth.username && auth.password && !customHeaders.authorization) {
+    customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+  }
+
   // Helper for logging
   const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>) => {
     addODataLog({
@@ -197,7 +207,10 @@ export default defineEventHandler(async (event) => {
     const response = await $fetch(requestUrl, {
       method: event.method,
       query,
-      headers: { accept: 'application/json' },
+      headers: {
+        accept: 'application/json',
+        ...customHeaders,
+      },
     })
 
     const finalData = (response as any)?.d?.results || (response as any)?.d || response
