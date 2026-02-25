@@ -5,36 +5,7 @@ import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { addODataLog } from '../utils/dev-logs'
-
-/**
- * Recursive flattener for OData V2 'results' structures and removes metadata.
- */
-function flattenOData(data: any): any {
-  if (!data || typeof data !== 'object')
-    return data
-
-  // Handle OData V2 Count
-  const count = data.__count || data['@odata.count'] || data.count
-
-  if (data.results && Array.isArray(data.results)) {
-    const flattened = data.results.map((item: any) => flattenOData(item))
-    if (count !== undefined) {
-      (flattened as any).totalCount = Number(count)
-    }
-    return flattened
-  }
-
-  if (Array.isArray(data))
-    return data.map(item => flattenOData(item))
-
-  const flattened: any = {}
-  for (const key in data) {
-    if (key === '__metadata' || key === '__deferred')
-      continue
-    flattened[key] = flattenOData(data[key])
-  }
-  return flattened
-}
+import { flattenOData } from '../../utils/odata-utils'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()

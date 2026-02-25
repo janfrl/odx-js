@@ -1,6 +1,8 @@
 import type { FetchOptions } from 'ofetch'
 import { createODataClient } from './odata-client'
 
+export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
+
 /**
  * Low-level OData util.
  * Executes a single OData request.
