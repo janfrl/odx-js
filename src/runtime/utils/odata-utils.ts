@@ -32,7 +32,8 @@ export function flattenOData(data: any): any {
  * Sanitizes a base URL by removing redundant slashes and ensuring no trailing slash.
  */
 export function sanitizeBaseURL(url: string): string {
-  if (!url) return ''
+  if (!url)
+    return ''
   return url.replace(/([^:]\/)\/+/g, '$1').replace(/\/$/, '')
 }
 
@@ -42,7 +43,8 @@ export function sanitizeBaseURL(url: string): string {
 export function mergeHeaders(...headers: (HeadersInit | undefined)[]): Record<string, string> {
   const merged: Record<string, string> = {}
   for (const h of headers) {
-    if (!h) continue
+    if (!h)
+      continue
     if (h instanceof Headers) {
       h.forEach((value, key) => {
         merged[key.toLowerCase()] = value
@@ -71,7 +73,8 @@ export function mergeHeaders(...headers: (HeadersInit | undefined)[]): Record<st
 export function stringifyQuery(query: Record<string, any>): Record<string, string> {
   const result: Record<string, string> = {}
   for (const [key, value] of Object.entries(query)) {
-    if (value === undefined || value === null) continue
+    if (value === undefined || value === null)
+      continue
     result[key] = String(value)
   }
   return result

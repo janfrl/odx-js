@@ -4,8 +4,8 @@ import { createError, defineEventHandler, getQuery, getRequestURL, readBody, use
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
-import { addODataLog } from '../utils/dev-logs'
 import { flattenOData } from '../../utils/odata-utils'
+import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -30,9 +30,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const services = (config.odata?.services || []) as any[]
-  const matched = services.find(svc => 
-    svc.name.toLowerCase() === serviceRoute.toLowerCase() || 
-    (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase())
+  const matched = services.find(svc =>
+    svc.name.toLowerCase() === serviceRoute.toLowerCase()
+    || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
   )
 
   if (!matched) {

@@ -1,7 +1,7 @@
-import { defineEventHandler, fromNodeMiddleware } from 'h3'
-import pkg from '@sap-ux/fe-mockserver-core'
-import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import pkg from '@sap-ux/fe-mockserver-core'
+import { defineEventHandler, fromNodeMiddleware } from 'h3'
 
 const FEMockserver = (pkg as any).default || pkg
 let mockHandler: any

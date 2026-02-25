@@ -16,8 +16,8 @@ export default defineEventHandler((event) => {
   if (event.path.includes('/TestItems')) {
     let results = allItems
     if (query.$top) {
-      const top = parseInt(query.$top as string)
-      const skip = parseInt(query.$skip as string || '0')
+      const top = Number.parseInt(query.$top as string)
+      const skip = Number.parseInt(query.$skip as string || '0')
       results = allItems.slice(skip, skip + top)
     }
     return { d: { results } }
