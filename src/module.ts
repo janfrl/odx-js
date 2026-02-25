@@ -231,27 +231,8 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     addServerHandler({
-      route: '/__sap_odata__/mockdata',
-      handler: resolver.resolve('./runtime/server/api/mockdata'),
-    })
-
-    addServerHandler({
       route: '/__sap_odata__/schema',
       handler: resolver.resolve('./runtime/server/api/schema'),
-    })
-
-    // Register storage for mockdata
-    nuxt.hook('nitro:config', (nitroConfig) => {
-      const storageConfig = {
-        driver: 'fs',
-        base: resolve(nuxt.options.rootDir, '.data/mockdata'),
-      }
-
-      nitroConfig.storage = nitroConfig.storage || {}
-      nitroConfig.storage['odata:mockdata'] = storageConfig
-
-      nitroConfig.devStorage = nitroConfig.devStorage || {}
-      nitroConfig.devStorage['odata:mockdata'] = storageConfig
     })
 
     // DevTools integration

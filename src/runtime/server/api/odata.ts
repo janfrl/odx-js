@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { createError, defineEventHandler, getQuery, readBody, useRuntimeConfig, useStorage } from '#imports'
+import { createError, defineEventHandler, getQuery, readBody, useRuntimeConfig } from '#imports'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { addODataLog } from '../utils/dev-logs'
@@ -83,19 +83,23 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
-  const storage = useStorage('odata:mockdata')
   const handleMockDataRequest = async () => {
-    const method = event.method
-    const query = getQuery(event)
-    const mockDataKey = `${matched.name}:${entitySetName}.json`
-    const data = (await storage.getItem(mockDataKey)) as any[] || []
-    if (method === 'GET') {
-      const id = resourceId || (query.id ? String(query.id) : undefined)
-      if (id)
-        return data.find((item: any) => String(item.ID || item.id) === id)
-      return data
+    // Forward the request to the local mock server path
+    const mockPath = `/sap/opu/odata/sap/DUMMY_SRV/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    try {
+      const response = await $fetch(mockPath, {
+        method: event.method,
+        query: getQuery(event),
+        headers: {
+          accept: 'application/json',
+        },
+      })
+      return (response as any)?.d?.results || (response as any)?.d || response
     }
-    return data
+    catch (e: any) {
+      console.error('Mock request failed, falling back to empty:', e.message)
+      return []
+    }
   }
 
   let capturedBody: any = null
@@ -126,7 +130,7 @@ export default defineEventHandler(async (event) => {
     if (getQuery(event).mock === 'true' || !targetFile) {
       const response = await handleMockDataRequest()
       const customHeaders: Record<string, string> = matched ? { ...config.odata?.headers, ...matched.headers } : {}
-      logRequest(200, response, capturedBody, 'Internal Mock Storage', customHeaders)
+      logRequest(200, response, capturedBody, 'Internal Mock Server', customHeaders)
       return response
     }
 
