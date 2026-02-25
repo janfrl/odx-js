@@ -1,0 +1,18 @@
+[
+  {
+    "ID": "HT-1000",
+    "Name": "Notebook Basic 15",
+    "Price": 956.00,
+    "Currency": "EUR",
+    "SupplierID": "S1",
+    "CategoryID": "C1"
+  },
+  {
+    "ID": "HT-1001",
+    "Name": "Notebook Professional 17",
+    "Price": 1249.00,
+    "Currency": "EUR",
+    "SupplierID": "S1",
+    "CategoryID": "C1"
+  }
+]
