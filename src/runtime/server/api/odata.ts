@@ -1,8 +1,9 @@
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { createError, defineEventHandler, getQuery, readBody, useRuntimeConfig } from '#imports'
+import { createError, defineEventHandler, getQuery, getRequestURL, readBody, useRuntimeConfig } from '#imports'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
+import { withQuery } from 'ufo'
 import { addODataLog } from '../utils/dev-logs'
 
 /**
@@ -11,17 +12,28 @@ import { addODataLog } from '../utils/dev-logs'
 function flattenOData(data: any): any {
   if (!data || typeof data !== 'object')
     return data
-  if (data.results && Array.isArray(data.results))
-    return flattenOData(data.results)
+  
+  // Handle OData V2 Count
+  const count = data.__count || data['@odata.count'] || data.count
+  
+  if (data.results && Array.isArray(data.results)) {
+    const flattened = data.results.map((item: any) => flattenOData(item))
+    if (count !== undefined) {
+      (flattened as any).totalCount = Number(count)
+    }
+    return flattened
+  }
+  
   if (Array.isArray(data))
     return data.map(item => flattenOData(item))
+    
   const flattened: any = {}
   for (const key in data) {
     if (key === '__metadata' || key === '__deferred')
       continue
     flattened[key] = flattenOData(data[key])
   }
-  return Object.keys(flattened).length > 0 ? flattened : null
+  return flattened
 }
 
 export default defineEventHandler(async (event) => {
@@ -159,18 +171,33 @@ export default defineEventHandler(async (event) => {
 
     // 2. Agnostic Fallback via $fetch (Internal Mock or Generic External)
     const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    const query = getQuery(event)
+    let fullTargetUrl = withQuery(requestUrl, query)
+
+    // Make URL absolute for internal paths to improve log usability
+    if (fullTargetUrl.startsWith('/')) {
+      const origin = getRequestURL(event).origin
+      fullTargetUrl = origin + fullTargetUrl
+    }
+
     const response = await $fetch(requestUrl, {
       method: event.method,
-      query: getQuery(event),
+      query,
       headers: { accept: 'application/json' },
     })
 
     const finalData = (response as any)?.d?.results || (response as any)?.d || response
-    logRequest(200, finalData, capturedBody, requestUrl)
+    logRequest(200, finalData, capturedBody, fullTargetUrl)
     return flattenOData(finalData)
   }
   catch (err: any) {
-    logRequest(err.response?.status || 500, { error: err.message }, capturedBody, baseUrl)
+    const query = getQuery(event)
+    let errorUrl = withQuery(baseUrl, query)
+    if (errorUrl.startsWith('/')) {
+      const origin = getRequestURL(event).origin
+      errorUrl = origin + errorUrl
+    }
+    logRequest(err.response?.status || 500, { error: err.message }, capturedBody, errorUrl)
     throw err
   }
 })
