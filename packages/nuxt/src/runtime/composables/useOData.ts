@@ -1,14 +1,17 @@
 import { useFetch, useODataBasePath } from '#imports'
 import { $odata } from '@bc8-odx/core'
+import type { ODataService, ODataEntitySet, ODataServiceRegistry } from '@bc8-odx/core'
 
 type ODataQuery = Record<string, string | number | boolean | null | undefined>
 type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | ArrayBuffer | null
 
-export function useOData(service: string): any {
+export function useOData<T extends keyof ODataServiceRegistry | string>(
+  service: T,
+): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService {
   const basePath = useODataBasePath()
   const client = globalThis.$fetch
 
-  const createMethods = (entitySet?: string): any => {
+  const createMethods = (entitySet?: string): ODataEntitySet => {
     const path = entitySet ? `${service}/${entitySet}` : service
     const fullPath = `${basePath}/${path}`
 
@@ -38,6 +41,6 @@ export function useOData(service: string): any {
 
   return {
     ...createMethods(),
-    entities: (name: string): any => createMethods(name),
-  }
+    entities: (name: string): ODataEntitySet => createMethods(name),
+  } as any
 }

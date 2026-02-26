@@ -8,7 +8,7 @@ interface Product {
   Currency: string
 }
 
-const products = useOData('dummy').entities('Products')
+const products = useOData('V2Service').entities('Products')
 
 const { data, pending, error, refresh } = await products.list<Product>()
 

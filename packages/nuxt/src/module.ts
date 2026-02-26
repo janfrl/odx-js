@@ -301,11 +301,30 @@ export default defineNuxtModule<ModuleOptions>({
       }
 
       const indexDtsPath = join(outRoot, 'index.d.ts')
-      const indexDtsContent = allServices
-        .filter(svc => svc.url)
-        .map(svc => `/// <reference path="./${svc.name}/index.ts" />`)
-        .join('\n')
-      fs.writeFileSync(indexDtsPath, indexDtsContent)
+      const indexDtsLines = [
+        'import type { ODataServiceRegistry, ODataService, ODataEntitySet } from "@bc8-odx/core"',
+      ]
+
+      for (const svc of allServices) {
+        if (svc.url) {
+          indexDtsLines.push(`import * as ${svc.name}Namespace from "./${svc.name}"`)
+        }
+      }
+
+      indexDtsLines.push('\ndeclare module "@bc8-odx/core" {')
+      indexDtsLines.push('  interface ODataServiceRegistry {')
+      for (const svc of allServices) {
+        if (svc.url) {
+          indexDtsLines.push(`    ${svc.name}: ODataService & {`)
+          indexDtsLines.push(`      entities: (name: string) => ODataEntitySet`)
+          // We could try to map entity sets here if we knew them, but for now we at least register the service name
+          indexDtsLines.push(`    }`)
+        }
+      }
+      indexDtsLines.push('  }')
+      indexDtsLines.push('}')
+
+      fs.writeFileSync(indexDtsPath, indexDtsLines.join('\n'))
 
       references.push({ path: resolve(nuxt.options.buildDir, 'odx-types/index.d.ts') })
     })
