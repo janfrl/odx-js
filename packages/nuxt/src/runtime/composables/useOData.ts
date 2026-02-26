@@ -16,7 +16,7 @@ export function useOData<T extends keyof ODataServiceRegistry | (string & {})>(
   const client = globalThis.$fetch
 
   const createMethods = (entitySet?: string): ODataEntitySet => {
-    const path = entitySet ? `${service}/${entitySet}` : service
+    const path = entitySet ? `${service as string}/${entitySet}` : (service as string)
     const fullPath = `${basePath}/${path}`
 
     return {
@@ -36,9 +36,9 @@ export function useOData<T extends keyof ODataServiceRegistry | (string & {})>(
         return $odata<R>(client, itemPath, 'PATCH', { body })
       },
 
-      remove: <R = any>(key: string | number): Promise<R> => {
+      remove: (key: string | number): Promise<any> => {
         const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
-        return $odata<R>(client, itemPath, 'DELETE')
+        return $odata<any>(client, itemPath, 'DELETE')
       },
     }
   }
