@@ -16,6 +16,27 @@ async function addItem(): Promise<void> {
   })
   refresh()
 }
+
+/**
+ * Updates an existing product's name and price, then triggers a refresh.
+ * @param {string} id The ID of the product to update.
+ */
+async function updateItem(id: string): Promise<void> {
+  await products.update(id, {
+    Name: 'Updated Product (Edited)',
+    Price: '149.99',
+  })
+  refresh()
+}
+
+/**
+ * Removes a product and triggers a refresh of the list.
+ * @param {string} id The ID of the product to remove.
+ */
+async function deleteItem(id: string): Promise<void> {
+  await products.remove(id)
+  refresh()
+}
 </script>
 
 <template>
@@ -26,7 +47,7 @@ async function addItem(): Promise<void> {
       </h1>
       <p class="text-gray-500 mt-2 flex items-center gap-2">
         Testing EntitySet abstraction: <UBadge color="neutral" variant="solid">
-          dummy/Products
+          V2Service/Products
         </UBadge>
       </p>
     </header>
@@ -72,10 +93,16 @@ async function addItem(): Promise<void> {
                   ID: {{ product.ID || 'N/A' }}
                 </p>
               </div>
-              <div class="text-right">
-                <p class="font-semibold text-gray-900 dark:text-white">
-                  {{ product.Price }} {{ product.Currency }}
-                </p>
+              <div class="flex flex-col items-end gap-2">
+                <div class="text-right">
+                  <p class="font-semibold text-gray-900 dark:text-white">
+                    {{ product.Price }} {{ product.Currency }}
+                  </p>
+                </div>
+                <div v-if="product.ID" class="flex items-center gap-2">
+                  <UButton icon="i-heroicons-pencil" color="neutral" variant="ghost" size="xs" @click="updateItem(product.ID)" />
+                  <UButton icon="i-heroicons-trash" color="error" variant="ghost" size="xs" @click="deleteItem(product.ID)" />
+                </div>
               </div>
             </div>
           </li>
