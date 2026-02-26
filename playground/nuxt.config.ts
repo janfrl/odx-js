@@ -5,6 +5,7 @@ import { defineNuxtModule } from '@nuxt/kit'
 export default defineNuxtConfig({
   modules: [
     '@bc8-odx/nuxt',
+    '@nuxt/ui',
     defineNuxtModule({
       setup(_, nuxt) {
         if (!nuxt.options.dev)
