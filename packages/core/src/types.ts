@@ -29,6 +29,12 @@ export interface ODataAsyncData<T> {
 export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncData<T>>
 
 /**
+ * Possible types for OData entity keys.
+ * Supports single keys (string/number) and composite keys (object).
+ */
+export type ODataKey = string | number | Record<string, string | number>
+
+/**
  * Interface for a specific OData Entity Set.
  * T: The model type of the entity.
  */
@@ -39,8 +45,9 @@ export interface ODataEntitySet<T = any> {
   list: (query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<T[]>
   /**
    * Fetches a single entity by key.
+   * Key can be a single value or an object for composite keys.
    */
-  get: (key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<T>
+  get: (key: ODataKey, query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<T>
   /**
    * Creates a new entity.
    */
@@ -48,11 +55,11 @@ export interface ODataEntitySet<T = any> {
   /**
    * Updates an existing entity.
    */
-  update: (key: string | number, body: Partial<T>) => Promise<T>
+  update: (key: ODataKey, body: Partial<T>) => Promise<T>
   /**
    * Deletes an entity.
    */
-  remove: (key: string | number) => Promise<any>
+  remove: (key: ODataKey) => Promise<any>
 }
 
 /**
