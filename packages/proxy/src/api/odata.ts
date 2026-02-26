@@ -10,6 +10,7 @@ import { useRuntimeConfig } from 'nitropack/runtime'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { addODataLog } from '../utils/dev-logs'
+import { fetchWithCsrf } from '../utils/csrf'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
@@ -186,7 +187,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const response = await $fetch(requestUrl, {
+    const response = await fetchWithCsrf(requestUrl, {
       method: event.method as 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
       query,
       body: capturedBody,
