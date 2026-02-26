@@ -1,85 +1,100 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-/**
- * Playground page for testing OData services with Nuxt UI components.
- */
+import { useOData } from '#imports'
+
+interface Product {
+  ID?: string
+  Name: string
+  Price: number
+  Currency: string
+}
 
 const products = useOData('dummy').entities('Products')
-const { data, pending, error, refresh } = await products.list()
+
+const { data, pending, error, refresh } = await products.list<Product>()
 
 /**
- * Adds a new item to the dummy service.
+ * Creates a new dummy product and triggers a refresh of the list.
  */
-async function addItem() {
-  await products.create({ Name: 'New Product', Price: 99.99, Currency: 'EUR' })
+async function addItem(): Promise<void> {
+  await products.create<Product>({
+    Name: 'New Product',
+    Price: 99.99,
+    Currency: 'EUR',
+  })
   refresh()
 }
 </script>
 
 <template>
-  <UContainer class="py-10 space-y-8">
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold">
-          Nuxt SAP OData
-        </h1>
-        <p class="text-muted-foreground">
-          Testing EntitySet abstraction: <UKbd>dummy/Products</UKbd>
-        </p>
-      </div>
-
-      <div class="flex gap-2">
-        <UButton
-          color="primary"
-          icon="i-lucide-plus"
-          @click="addItem"
-        >
-          Create Product
-        </UButton>
-        <UButton
-          variant="outline"
-          icon="i-lucide-refresh-cw"
-          :loading="pending"
-          @click="refresh"
-        >
-          Refresh
-        </UButton>
-      </div>
+  <UContainer class="py-8">
+    <header class="border-b border-gray-200 dark:border-gray-800 pb-4 mb-8">
+      <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+        Nuxt ODX Playground
+      </h1>
+      <p class="text-gray-500 mt-2 flex items-center gap-2">
+        Testing EntitySet abstraction: <UBadge color="neutral" variant="solid">
+          dummy/Products
+        </UBadge>
+      </p>
     </header>
 
+    <div class="flex items-center gap-3 mb-8">
+      <UButton icon="i-heroicons-plus" color="primary" label="Create Product" @click="addItem" />
+      <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" label="Refresh" @click="refresh" />
+    </div>
+
+    <div v-if="pending" class="space-y-4">
+      <USkeleton class="h-12 w-full" />
+      <USkeleton class="h-64 w-full" />
+    </div>
+
     <UAlert
-      v-if="error"
+      v-else-if="error"
+      icon="i-heroicons-exclamation-triangle"
       color="error"
       variant="subtle"
       title="Error loading data"
       :description="String(error)"
-      icon="i-lucide-circle-alert"
     />
 
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h2 class="font-semibold">
-            Result from Proxy
-          </h2>
-          <UBadge
-            variant="subtle"
-            color="neutral"
-          >
-            GET
-          </UBadge>
-        </div>
-      </template>
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <UCard>
+        <template #header>
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">UI Representation</span>
+            <UBadge color="info" variant="subtle">
+              {{ data?.length || 0 }} Items
+            </UBadge>
+          </div>
+        </template>
 
-      <div v-if="pending" class="space-y-4">
-        <USkeleton class="h-4 w-[250px]" />
-        <USkeleton class="h-20 w-full" />
-      </div>
+        <ul class="divide-y divide-gray-100 dark:divide-gray-800 overflow-auto max-h-[500px] -m-4 sm:-m-6 px-4 sm:px-6">
+          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-medium text-gray-900 dark:text-white">
+                  {{ product.Name }}
+                </p>
+                <p class="text-xs text-gray-500 mt-1">
+                  ID: {{ product.ID || 'N/A' }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-gray-900 dark:text-white">
+                  {{ product.Price }} {{ product.Currency }}
+                </p>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </UCard>
 
-      <pre
-        v-else
-        class="text-xs overflow-auto max-h-[500px] p-4 bg-neutral-900 text-neutral-100 rounded-md"
-      >{{ data }}</pre>
-    </UCard>
+      <UCard class="bg-gray-900 dark:bg-gray-950 border-gray-800">
+        <template #header>
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
+        </template>
+        <pre class="text-xs text-emerald-400 overflow-auto max-h-[500px] font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
+      </UCard>
+    </div>
   </UContainer>
 </template>

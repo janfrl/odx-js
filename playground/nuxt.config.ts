@@ -8,8 +8,9 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     defineNuxtModule({
       setup(_, nuxt) {
-        if (!nuxt.options.dev)
+        if (!nuxt.options.dev) {
           return
+        }
 
         startSubprocess(
           {
@@ -27,6 +28,8 @@ export default defineNuxtConfig({
   ],
 
   devtools: { enabled: true },
+
+  css: ['~/app.css'],
 
   odata: {
     services: [
