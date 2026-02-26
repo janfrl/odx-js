@@ -181,6 +181,7 @@ export default defineEventHandler(async (event) => {
     const response = await $fetch(requestUrl, {
       method: event.method as 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
       query,
+      body: capturedBody,
       headers: {
         accept: 'application/json',
         ...customHeaders,
