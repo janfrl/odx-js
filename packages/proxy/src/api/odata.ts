@@ -174,13 +174,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    let requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
     const query = getQuery(event)
     let fullTargetUrl = withQuery(requestUrl, query)
 
-    if (fullTargetUrl.startsWith('/')) {
+    if (requestUrl.startsWith('/')) {
       try {
         const origin = getRequestURL(event).origin
+        requestUrl = origin + requestUrl
         fullTargetUrl = origin + fullTargetUrl
       }
       catch {
