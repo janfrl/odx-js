@@ -1,9 +1,9 @@
+import type { NitroRuntimeConfig } from './config'
 import fs from 'node:fs'
+import { XMLParser } from 'fast-xml-parser'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { useRuntimeConfig } from 'nitropack/runtime'
-import { XMLParser } from 'fast-xml-parser'
 import { resolve } from 'pathe'
-import type { NitroRuntimeConfig } from './config'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig

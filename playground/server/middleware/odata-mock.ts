@@ -1,8 +1,8 @@
+import type { SapODataService } from '@bc8-odx/core'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'
 import pkg from '@sap-ux/fe-mockserver-core'
-import type { SapODataService } from '@bc8-odx/core'
 
 /**
  * Interface for mock server service configuration.

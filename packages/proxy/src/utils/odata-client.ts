@@ -1,6 +1,6 @@
-import { ofetch } from 'ofetch'
-import { useRuntimeConfig, useRequestHeaders } from 'nitropack/runtime'
 import type { NitroRuntimeConfig } from '../api/config'
+import { useRequestHeaders, useRuntimeConfig } from 'nitropack/runtime'
+import { ofetch } from 'ofetch'
 
 export function createODataClient(): any {
   const config = useRuntimeConfig() as unknown as NitroRuntimeConfig

@@ -1,15 +1,15 @@
+import type { SapODataService } from '@bc8-odx/core'
+import type { NitroRuntimeConfig } from './config'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { createError, defineEventHandler, getQuery, getRequestURL, readBody } from 'h3'
-import { useRuntimeConfig } from 'nitropack/runtime'
 import { flattenOData } from '@bc8-odx/core'
+import { createError, defineEventHandler, getQuery, getRequestURL, readBody } from 'h3'
 import { createJiti } from 'jiti'
+import { useRuntimeConfig } from 'nitropack/runtime'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { addODataLog } from '../utils/dev-logs'
-import type { NitroRuntimeConfig } from './config'
-import type { SapODataService } from '@bc8-odx/core'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()

@@ -1,9 +1,9 @@
+import type { NitroRuntimeConfig } from './config'
 import fs from 'node:fs'
 import { generateODataClient } from '@bc8-odx/nuxt/generate'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
-import type { NitroRuntimeConfig } from './config'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
