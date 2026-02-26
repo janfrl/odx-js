@@ -5,6 +5,6 @@ import { execSync } from 'node:child_process'
  * Runs in 'models' mode to generate pure TypeScript interfaces.
  */
 export async function generateODataTypes(xmlFilePath: string, outputDir: string, _serviceName: string): Promise<void> {
-  const command = `npx odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --prettier`
+  const command = `npx odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --emit-mode ts --prettier`
   execSync(command, { stdio: 'inherit' })
 }

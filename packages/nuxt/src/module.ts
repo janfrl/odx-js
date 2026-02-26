@@ -10,6 +10,8 @@ import {
   useLogger,
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
+import { extractEntitiesFromEdmx } from '@bc8-odx/core/server'
+import type { EntityMapping } from '@bc8-odx/core/server'
 import { setupDevToolsUI } from './devtools'
 import { generateODataTypes } from './generate'
 
@@ -65,7 +67,6 @@ export default defineNuxtModule<ModuleOptions>({
     const resolver = createResolver(import.meta.url)
     const logger = useLogger('nuxt-sap-odata')
 
-    const mode = options.mode ?? 'sdk'
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
 
@@ -74,8 +75,9 @@ export default defineNuxtModule<ModuleOptions>({
     const prefix = 'NUXT_ODATA_SERVICES_'
 
     const parseEnvJson = (envValue: string | undefined): Record<string, string> => {
-      if (!envValue)
+      if (!envValue) {
         return {}
+      }
       try {
         return JSON.parse(envValue)
       }
@@ -124,15 +126,17 @@ export default defineNuxtModule<ModuleOptions>({
     for (const key in process.env) {
       if (key.startsWith(prefix)) {
         const parts = key.slice(prefix.length).split('_')
-        if (parts.length > 0)
+        if (parts.length > 0) {
           envServiceKeys.add(parts[0]!)
+        }
       }
     }
 
     for (const key of envServiceKeys) {
       const alreadyHandled = (options.services || []).some(s => s.name.toUpperCase() === key)
-      if (alreadyHandled)
+      if (alreadyHandled) {
         continue
+      }
 
       const url = process.env[`${prefix}${key}_URL`]
       if (url) {
@@ -195,7 +199,7 @@ export default defineNuxtModule<ModuleOptions>({
       },
     }
     nuxt.options.runtimeConfig.public.odata = {
-      mode,
+      mode: options.mode ?? 'sdk',
       basePath,
     }
 
@@ -232,11 +236,11 @@ export default defineNuxtModule<ModuleOptions>({
 
     const httpsGet = (url: string, headers: Record<string, string>): Promise<string> => {
       return new Promise((resolve, reject) => {
-        const options = {
+        const httpsOptions = {
           headers,
           rejectUnauthorized,
         }
-        https.get(url, options, (res) => {
+        https.get(url, httpsOptions, (res) => {
           if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
             return reject(new Error(`Status: ${res.statusCode}`))
           }
@@ -261,6 +265,9 @@ export default defineNuxtModule<ModuleOptions>({
       if (!fs.existsSync(outRoot)) {
         fs.mkdirSync(outRoot, { recursive: true })
       }
+
+      const serviceEntities: Record<string, EntityMapping[]> = {}
+      const serviceModelFiles: Record<string, string> = {}
 
       for (const svc of allServices) {
         if (!svc.url) {
@@ -296,30 +303,43 @@ export default defineNuxtModule<ModuleOptions>({
           inputPath = resolve(nuxt.options.rootDir, svc.url)
         }
 
+        serviceEntities[svc.name] = extractEntitiesFromEdmx(inputPath)
+
         const outDir = join(outRoot, svc.name)
         await generateODataTypes(inputPath, outDir, svc.name)
+
+        if (fs.existsSync(outDir)) {
+          const files = fs.readdirSync(outDir)
+          const modelFile = files.find(f => f.endsWith('Model.ts'))
+          if (modelFile) {
+            serviceModelFiles[svc.name] = modelFile.replace('.ts', '')
+          }
+        }
       }
 
       const indexDtsPath = join(outRoot, 'index.d.ts')
       const indexDtsLines = [
-        'import type { ODataServiceRegistry, ODataService, ODataEntitySet } from "@bc8-odx/core"',
+        'import type { ODataServiceRegistry, ODataService } from "@bc8-odx/core"',
       ]
 
-      for (const svc of allServices) {
-        if (svc.url) {
-          indexDtsLines.push(`import * as ${svc.name}Namespace from "./${svc.name}"`)
-        }
+      for (const [svcName, modelFile] of Object.entries(serviceModelFiles)) {
+        indexDtsLines.push(`import * as ${svcName}Models from "./${svcName}/${modelFile}"`)
       }
 
       indexDtsLines.push('\ndeclare module "@bc8-odx/core" {')
       indexDtsLines.push('  interface ODataServiceRegistry {')
-      for (const svc of allServices) {
-        if (svc.url) {
-          indexDtsLines.push(`    ${svc.name}: ODataService & {`)
-          indexDtsLines.push(`      entities: (name: string) => ODataEntitySet`)
-          // We could try to map entity sets here if we knew them, but for now we at least register the service name
-          indexDtsLines.push(`    }`)
-        }
+      for (const [svcName, entities] of Object.entries(serviceEntities)) {
+        const entityNames = entities.map(e => e.name)
+        const entityUnion = entityNames.length > 0
+          ? entityNames.map(e => `"${e}"`).join(' | ')
+          : 'string'
+
+        const hasModels = !!serviceModelFiles[svcName]
+        const modelMapping = hasModels
+          ? `{ ${entities.map(e => `"${e.name}": ${svcName}Models.${e.type}`).join(', ')} }`
+          : 'any'
+
+        indexDtsLines.push(`    ${svcName}: ODataService<${entityUnion}, ${modelMapping}>`)
       }
       indexDtsLines.push('  }')
       indexDtsLines.push('}')
@@ -329,7 +349,7 @@ export default defineNuxtModule<ModuleOptions>({
       references.push({ path: resolve(nuxt.options.buildDir, 'odx-types/index.d.ts') })
     })
 
-    if (mode !== 'sdk') {
+    if (options.mode !== 'sdk') {
       logger.warn('[nuxt-sap-odata] Only "sdk" mode is implemented right now.')
     }
   },

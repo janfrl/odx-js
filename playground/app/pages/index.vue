@@ -1,22 +1,15 @@
 <script setup lang="ts">
 import { useOData } from '#imports'
 
-interface Product {
-  ID?: string
-  Name: string
-  Price: number
-  Currency: string
-}
-
 const products = useOData('V2Service').entities('Products')
 
-const { data, pending, error, refresh } = await products.list<Product>()
+const { data, pending, error, refresh } = await products.list()
 
 /**
  * Creates a new dummy product and triggers a refresh of the list.
  */
 async function addItem(): Promise<void> {
-  await products.create<Product>({
+  await products.create({
     Name: 'New Product',
     Price: 99.99,
     Currency: 'EUR',

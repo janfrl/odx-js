@@ -5,7 +5,11 @@ import type { ODataService, ODataEntitySet, ODataServiceRegistry } from '@bc8-od
 type ODataQuery = Record<string, string | number | boolean | null | undefined>
 type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | ArrayBuffer | null
 
-export function useOData<T extends keyof ODataServiceRegistry | string>(
+/**
+ * Composable for interacting with OData services.
+ * Provides autocomplete for registered services and their entity sets.
+ */
+export function useOData<T extends keyof ODataServiceRegistry | (string & Record<never, never>)>(
   service: T,
 ): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService {
   const basePath = useODataBasePath()
@@ -16,31 +20,33 @@ export function useOData<T extends keyof ODataServiceRegistry | string>(
     const fullPath = `${basePath}/${path}`
 
     return {
-      list: <T = unknown>(query?: ODataQuery): any =>
-        useFetch<T[]>(fullPath, { query }),
+      list: <R = any>(query?: ODataQuery): any =>
+        useFetch<R[]>(fullPath, { query }),
 
-      get: <T = unknown>(key: string | number, query?: ODataQuery): any => {
+      get: <R = any>(key: string | number, query?: ODataQuery): any => {
         const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
-        return useFetch<T>(itemPath, { query })
+        return useFetch<R>(itemPath, { query })
       },
 
-      create: <T = unknown>(body: ODataBody): Promise<T> =>
-        $odata<T>(client, fullPath, 'POST', { body }),
+      create: <R = any>(body: ODataBody): Promise<R> =>
+        $odata<R>(client, fullPath, 'POST', { body }),
 
-      update: <T = unknown>(key: string | number, body: ODataBody): Promise<T> => {
+      update: <R = any>(key: string | number, body: ODataBody): Promise<R> => {
         const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
-        return $odata<T>(client, itemPath, 'PATCH', { body })
+        return $odata<R>(client, itemPath, 'PATCH', { body })
       },
 
-      remove: <T = unknown>(key: string | number): Promise<T> => {
+      remove: <R = any>(key: string | number): Promise<R> => {
         const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
-        return $odata<T>(client, itemPath, 'DELETE')
+        return $odata<R>(client, itemPath, 'DELETE')
       },
     }
   }
 
-  return {
+  const serviceMethods = {
     ...createMethods(),
     entities: (name: string): ODataEntitySet => createMethods(name),
-  } as any
+  }
+
+  return serviceMethods as any
 }

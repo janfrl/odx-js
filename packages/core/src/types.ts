@@ -11,15 +11,20 @@ export interface SapODataService {
 }
 
 export interface ODataEntitySet<T = any> {
-  list: (query?: Record<string, string | number | boolean | null | undefined>) => any
-  get: (key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => any
-  create: (body: any) => Promise<T>
-  update: (key: string | number, body: any) => Promise<T>
-  remove: (key: string | number) => Promise<T>
+  list: <R = T>(query?: Record<string, string | number | boolean | null | undefined>) => any
+  get: <R = T>(key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => any
+  create: <R = T>(body: any) => Promise<R>
+  update: <R = T>(key: string | number, body: any) => Promise<R>
+  remove: (key: string | number) => Promise<any>
 }
 
-export interface ODataService extends ODataEntitySet {
-  entities: (name: string) => ODataEntitySet
+/**
+ * Generic OData Service interface.
+ * E: Union of available entity set names.
+ * M: Mapping of entity set names to their model types.
+ */
+export interface ODataService<E extends string = string, M extends Record<string, any> = any> extends ODataEntitySet {
+  entities: <Name extends E>(name: Name) => ODataEntitySet<M extends Record<Name, any> ? M[Name] : any>
 }
 
 /**
