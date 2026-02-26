@@ -9,7 +9,7 @@ const toast = useToast()
 const previewLoading = ref(false)
 const showLoadingIndicator = ref(false)
 const previewError = ref<string | null>(null)
-const previewData = ref<Record<string, unknown>[]>([])
+const previewData = ref<Record<string, any>[]>([])
 const queryInput = ref('?')
 const schema = ref<any>(null)
 
@@ -40,8 +40,14 @@ const editor = ref<EditorState>({
 })
 
 /**
+ * Helper to safely type TanStack Table row data in the template.
+ */
+function getRowData(row: any): Record<string, any> {
+  return row.original as Record<string, any>
+}
+
+/**
  * Selects an entity and resets the query input.
- * @param entity The name of the entity to select.
  */
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
@@ -65,10 +71,9 @@ const currentEntitySchema = computed(() => {
 
 /**
  * Checks if a property is a navigation property.
- * @param key The property name.
  */
 function isNavigationProperty(key: string) {
-  return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
+  return (currentEntitySchema.value?.navigationProperties || []).some((np: any) =>
     np.name.toLowerCase() === key.toLowerCase(),
   )
 }
@@ -85,11 +90,29 @@ const previewColumns = computed(() => {
   const combined = [...edmxProps, ...edmxNavProps]
 
   return combined.filter((col) => {
-    const isTechnicalFK = schema.value?.associations?.some((assoc: any) => {
+    const isTechnicalFK = (schema.value?.associations || []).some((assoc: any) => {
       return assoc.constraint?.dependentProperty === col
     })
     return !isTechnicalFK
   })
+})
+
+/**
+ * Stable column definitions for Nuxt UI 4 / TanStack Table.
+ */
+const tableColumns = computed<any[]>(() => {
+  const cols = previewColumns.value || []
+  return [
+    { 
+      id: 'actions',
+      header: 'Actions',
+    },
+    ...cols.map(c => ({
+      id: c,
+      accessorKey: c,
+      header: c
+    }))
+  ]
 })
 
 /**
@@ -155,7 +178,7 @@ async function refreshEntityData() {
       throw new Error(statusMessage)
     }
     const data = await res.json()
-    previewData.value = (Array.isArray(data) ? data : (data.value || [data])) as Record<string, unknown>[]
+    previewData.value = (Array.isArray(data) ? data : (data.value || [data])) as Record<string, any>[]
   }
   catch (e: unknown) {
     previewError.value = (e as Error).message
@@ -167,16 +190,14 @@ async function refreshEntityData() {
 }
 
 /**
- * Opens the JSON editor for various modes.
- * @param mode The editor mode.
- * @param row The data row to edit or view.
+ * Opens the JSON editor.
  */
-function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<string, unknown> | null = null) {
+function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<string, any> | null = null) {
   let initialJson = ''
   if (mode === 'headers') {
-    const svcConfig = config.value.services?.find(s => s.name === selectedService.value?.name)
+    const svcConfig = config.value.services?.find((s: any) => s.name === selectedService.value?.name)
     const combinedHeaders = {
-      ...(svcConfig as any)?.headers,
+      ...((svcConfig as any)?.headers || {}),
       ...sessionHeaders.value,
     }
     initialJson = JSON.stringify(combinedHeaders, null, 2)
@@ -215,16 +236,16 @@ function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<
 
 /**
  * Deletes a single item.
- * @param row The row to delete.
  */
-async function deleteItem(row: Record<string, unknown>) {
+async function deleteItem(row: Record<string, any>) {
   if (!selectedService.value || !selectedEntity.value) {
     return
   }
   const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
   const id = idKey ? row[idKey] : null
 
-  if (!id || !window.confirm(`Delete item ${id}?`)) {
+  /* eslint-disable no-alert */
+  if (!id || !confirm(`Delete item ${id}?`)) {
     return
   }
   try {
@@ -249,14 +270,15 @@ async function deleteItem(row: Record<string, unknown>) {
 }
 
 /**
- * Clears all mock data for the entity.
+ * Clears all mock data.
  */
 async function clearData() {
   if (!selectedService.value || !selectedEntity.value) {
     return
   }
 
-  if (!window.confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`)) {
+  /* eslint-disable no-alert */
+  if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}?`)) {
     return
   }
 
@@ -279,7 +301,7 @@ async function clearData() {
 }
 
 /**
- * Downloads the current preview data as a JSON file.
+ * Downloads JSON data.
  */
 function downloadJson() {
   if (previewData.value.length === 0) {
@@ -318,7 +340,6 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col overflow-hidden bg-white dark:bg-black">
-    <!-- Entity Select -->
     <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-zinc-900/50">
       <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
         <UButton
@@ -334,12 +355,10 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Data View -->
     <div
       v-if="selectedEntity"
       class="flex-1 flex flex-col min-h-0 relative"
     >
-      <!-- Query Toolbar -->
       <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 shrink-0 bg-white dark:bg-zinc-900/20">
         <UInput
           v-model="queryInput"
@@ -362,7 +381,6 @@ onMounted(() => {
         />
       </div>
 
-      <!-- Action Bar -->
       <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0 bg-gray-50/30 dark:bg-zinc-950/30">
         <div class="flex items-center gap-4">
           <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
@@ -386,8 +404,7 @@ onMounted(() => {
         />
       </div>
 
-      <!-- Table Content -->
-      <div class="flex-1 overflow-auto custom-scrollbar relative bg-white dark:bg-black">
+      <div :key="selectedEntity" class="flex-1 overflow-auto custom-scrollbar relative bg-white dark:bg-black">
         <div
           v-if="showLoadingIndicator"
           class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[1px]"
@@ -407,36 +424,32 @@ onMounted(() => {
 
         <template v-else>
           <UTable
-            :columns="previewColumns.map(c => ({ key: c, label: c }))"
-            :rows="previewData"
+            v-if="tableColumns.length > 1 && !previewLoading"
+            :columns="tableColumns"
+            :data="previewData || []"
             class="min-w-max"
             :ui="{ thead: 'bg-gray-50/50 dark:bg-zinc-900/50', th: 'text-[10px] uppercase tracking-wider' }"
           >
-            <!-- Actions Column -->
-            <template #actions-header>
-              <div class="text-center w-24">Actions</div>
-            </template>
-            <template #actions-data="{ row }">
+            <template #actions-cell="{ row }">
               <div class="flex items-center justify-center gap-1">
-                <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="xs" @click="openEditor('view', row)" />
-                <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="xs" @click="openEditor('update', row)" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="deleteItem(row)" />
+                <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="xs" @click="openEditor('view', getRowData(row))" />
+                <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="xs" @click="openEditor('update', getRowData(row))" />
+                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="deleteItem(getRowData(row))" />
               </div>
             </template>
 
-            <!-- Custom Cell Rendering -->
-            <template v-for="key in previewColumns" :key="key" #[`${key}-data`]="{ row }">
-              <template v-if="Array.isArray(row[key])">
-                <UButton :label="`${(row[key] as any[]).length} Items`" variant="soft" color="primary" size="xs" @click.stop="openEditor('view', row[key] as any)" />
+            <template v-for="col in tableColumns.filter(c => c.id !== 'actions')" :key="col.id" #[`${col.id}-cell`]="{ row }">
+              <template v-if="Array.isArray(getRowData(row)[col.id])">
+                <UButton :label="`${getRowData(row)[col.id].length} Items`" variant="soft" color="primary" size="xs" @click.stop="openEditor('view', getRowData(row)[col.id])" />
               </template>
-              <template v-else-if="row[key] && typeof row[key] === 'object'">
-                <UButton label="Object" variant="soft" color="neutral" size="xs" @click.stop="openEditor('view', row[key] as any)" />
+              <template v-else-if="getRowData(row)[col.id] && typeof getRowData(row)[col.id] === 'object'">
+                <UButton label="Object" variant="soft" color="neutral" size="xs" @click.stop="openEditor('view', getRowData(row)[col.id])" />
               </template>
-              <template v-else-if="row[key] === null">
-                <span class="opacity-20 italic text-xs">{{ isNavigationProperty(key as string) ? 'not expanded' : '-' }}</span>
+              <template v-else-if="getRowData(row)[col.id] === null">
+                <span class="opacity-20 italic text-xs">{{ isNavigationProperty(col.id) ? 'not expanded' : '-' }}</span>
               </template>
               <template v-else>
-                <span class="font-mono text-xs text-neutral-700 dark:text-neutral-300">{{ row[key] }}</span>
+                <span class="font-mono text-xs text-neutral-700 dark:text-neutral-300">{{ getRowData(row)[col.id] }}</span>
               </template>
             </template>
           </UTable>
@@ -452,13 +465,12 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-else
       class="flex-1 flex flex-col items-center justify-center bg-gray-50/10 dark:bg-zinc-950/10"
     >
       <div class="text-center p-12 max-w-sm">
-        <UIcon name="i-heroicons-magnifying-glass-circle" class="w-12 h-12 text-neutral-400 mb-4" />
+        <UIcon name="i-heroicons-magnifying-glass-circle" class="text-neutral-400 w-12 h-12 mb-4" />
         <h3 class="text-xl font-bold mb-2 text-neutral-900 dark:text-neutral-100">Explore Your Data</h3>
         <p class="text-neutral-500 text-sm">Select an entity set from the list above to start browsing and managing your OData records.</p>
       </div>
