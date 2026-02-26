@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "main": "./src/index.ts",
-  "exports": {
-    ".": "./src/index.ts"
+  "dependencies": {
+    "ofetch": "^1.4.1"
   }
 }

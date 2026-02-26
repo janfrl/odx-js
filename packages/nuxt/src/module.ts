@@ -69,12 +69,10 @@ export default defineNuxtModule<ModuleOptions>({
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
 
-    // Check option and environment variable (Nuxt mapping fallback)
     const rejectUnauthorized = options.rejectUnauthorized !== false && process.env.NUXT_ODATA_REJECT_UNAUTHORIZED !== 'false'
 
     const prefix = 'NUXT_ODATA_SERVICES_'
 
-    // Helper to safely parse JSON from environment variables
     const parseEnvJson = (envValue: string | undefined): Record<string, string> => {
       if (!envValue)
         return {}
@@ -87,7 +85,6 @@ export default defineNuxtModule<ModuleOptions>({
       }
     }
 
-    // Start with services from nuxt.config.ts and apply overrides from env
     const services = (options.services || []).map((s: SapODataService) => {
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
@@ -96,7 +93,6 @@ export default defineNuxtModule<ModuleOptions>({
       const envPass = process.env[`${prefix}${envKey}_AUTH_PASSWORD`]
       const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
 
-      // Merge headers: Config < Env JSON < Env Individual
       const envHeadersJson = parseEnvJson(process.env[`${prefix}${envKey}_HEADERS`])
       const envHeadersIndividual: Record<string, string> = {}
       const headerPrefix = `${prefix}${envKey}_HEADERS_`
@@ -124,7 +120,6 @@ export default defineNuxtModule<ModuleOptions>({
       }
     })
 
-    // Find all unique service keys in process.env to discover new services
     const envServiceKeys = new Set<string>()
     for (const key in process.env) {
       if (key.startsWith(prefix)) {
@@ -134,7 +129,6 @@ export default defineNuxtModule<ModuleOptions>({
       }
     }
 
-    // Add services that ONLY exist in environment variables
     for (const key of envServiceKeys) {
       const alreadyHandled = (options.services || []).some(s => s.name.toUpperCase() === key)
       if (alreadyHandled)
@@ -168,14 +162,12 @@ export default defineNuxtModule<ModuleOptions>({
 
     const allServices = services
 
-    // Global auth overrides from env
     const globalAuth = {
       username: process.env.NUXT_ODATA_AUTH_USERNAME || options.auth?.username,
       password: process.env.NUXT_ODATA_AUTH_PASSWORD || options.auth?.password,
       bearerToken: process.env.NUXT_ODATA_AUTH_BEARER_TOKEN || options.auth?.bearerToken,
     }
 
-    // Global headers merging: Config < Env JSON < Env Individual
     const globalHeaders: Record<string, string> = { ...options.headers }
     const envGlobalHeadersJson = parseEnvJson(process.env.NUXT_ODATA_HEADERS)
     const globalHeaderPrefixIndividual = 'NUXT_ODATA_HEADERS_'
@@ -211,36 +203,33 @@ export default defineNuxtModule<ModuleOptions>({
 
     addServerHandler({
       route: `${basePath}/**`,
-      handler: resolver.resolve('./runtime/server/api/odata'),
+      handler: resolver.resolve('../../../proxy/src/api/odata'),
     })
 
-    // Register devtools API handlers
     addServerHandler({
       route: '/__sap_odata__/logs',
-      handler: resolver.resolve('./runtime/server/api/logs'),
+      handler: resolver.resolve('../../../proxy/src/api/logs'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/config',
-      handler: resolver.resolve('./runtime/server/api/config'),
+      handler: resolver.resolve('../../../proxy/src/api/config'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/generate',
-      handler: resolver.resolve('./runtime/server/api/generate'),
+      handler: resolver.resolve('../../../proxy/src/api/generate'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/schema',
-      handler: resolver.resolve('./runtime/server/api/schema'),
+      handler: resolver.resolve('../../../proxy/src/api/schema'),
     })
 
-    // DevTools integration
     if (options.devtools && nuxt.options.dev) {
       setupDevToolsUI(nuxt, resolver)
     }
 
-    // Helper for robust metadata downloading via Node https module
     const httpsGet = (url: string, headers: Record<string, string>): Promise<string> => {
       return new Promise((resolve, reject) => {
         const options = {
@@ -270,7 +259,6 @@ export default defineNuxtModule<ModuleOptions>({
 
         let inputPath = svc.url
 
-        // If URL is remote, we need to download the metadata first
         if (svc.url.startsWith('http')) {
           const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
           const tempDir = join(nuxt.options.buildDir, 'sap-odata', 'temp')
@@ -290,18 +278,16 @@ export default defineNuxtModule<ModuleOptions>({
               headers.Authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
             }
 
-            // Using robust httpsGet to ignore SSL errors if rejectUnauthorized is false
             const xml = await httpsGet(metadataUrl, headers)
             fs.writeFileSync(tempFile, xml)
             inputPath = tempFile
           }
           catch (err) {
             logger.error(`[nuxt-sap-odata] Could not download metadata for ${svc.name}:`, err)
-            continue // Skip generation for this service
+            continue
           }
         }
         else {
-          // Local path
           inputPath = resolve(nuxt.options.rootDir, svc.url)
         }
 

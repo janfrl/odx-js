@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { createError, defineEventHandler, getQuery, useRuntimeConfig } from '#imports'
 import { join, resolve } from 'pathe'
-import { generateODataClient } from '../../../generate'
+import { generateODataClient } from '@bc8-odx/nuxt/generate'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -27,7 +27,6 @@ export default defineEventHandler(async (event) => {
   let inputPath = matched.url
 
   try {
-    // If URL is remote, we need to download the metadata first (Sync with module.ts)
     if (matched.url.startsWith('http')) {
       const metadataUrl = matched.url.endsWith('/') ? `${matched.url}$metadata` : `${matched.url}/$metadata`
       const tempDir = join(buildDir, 'sap-odata', 'temp')
@@ -35,11 +34,9 @@ export default defineEventHandler(async (event) => {
         fs.mkdirSync(tempDir, { recursive: true })
 
       const tempFile = join(tempDir, `${matched.name}.edmx`)
-      // eslint-disable-next-line no-console
-      console.log(`[nuxt-sap-odata] Manual regen: downloading metadata for ${matched.name} from ${metadataUrl}`)
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000)
 
       const response = await fetch(metadataUrl, { signal: controller.signal })
       clearTimeout(timeoutId)
@@ -57,16 +54,12 @@ export default defineEventHandler(async (event) => {
       inputPath = tempFile
     }
     else {
-      // Local path
       inputPath = resolve(rootDir, matched.url)
     }
 
     if (!fs.existsSync(inputPath)) {
       throw new Error(`Input EDMX file not found at ${inputPath}`)
     }
-
-    // eslint-disable-next-line no-console
-    console.log(`[nuxt-sap-odata] Manual generation triggered for ${matched.name}. Input: ${inputPath}, Output: ${outDir}`)
 
     await generateODataClient({
       input: inputPath,
@@ -81,7 +74,6 @@ export default defineEventHandler(async (event) => {
     }
   }
   catch (err: any) {
-    console.error(`[nuxt-sap-odata] Manual generation failed for ${matched.name}:`, err.message)
     throw createError({
       statusCode: 500,
       statusMessage: `Generation failed: ${err.message}`,

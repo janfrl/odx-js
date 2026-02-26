@@ -51,7 +51,6 @@ export default defineEventHandler(async (event) => {
       throw new Error('Parsed XML resulted in empty object')
     }
 
-    // Navigate to Schema
     const edmx = jsonObj['edmx:Edmx'] || jsonObj.Edmx
     const dataServices = edmx?.['edmx:DataServices'] || edmx?.DataServices
     const schema = Array.isArray(dataServices?.Schema) ? dataServices.Schema[0] : dataServices?.Schema
@@ -73,7 +72,6 @@ export default defineEventHandler(async (event) => {
         const navProperties = Array.isArray(et.NavigationProperty) ? et.NavigationProperty : (et.NavigationProperty ? [et.NavigationProperty] : [])
         const key = et.Key?.PropertyRef ? (Array.isArray(et.Key.PropertyRef) ? et.Key.PropertyRef.map((k: any) => k.Name) : [et.Key.PropertyRef.Name]) : []
 
-        // Find which EntitySet uses this EntityType
         const entitySet = entitySets.find((es: any) => es.EntityType === `${schema.Namespace}.${et.Name}` || es.EntityType === et.Name)
 
         return {

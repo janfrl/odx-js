@@ -11,7 +11,6 @@ function extractEntitiesFromEdmx(edmxPath: string): string[] {
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8')
     const entitySets: string[] = []
-    // Match <EntitySet Name="EntitySetName" ... />
     const regex = /<EntitySet\s+Name="([^"]+)"/g
     let match = regex.exec(content)
     while (match !== null) {
@@ -33,15 +32,12 @@ function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
 
-    // Explicit attributes
     if (content.includes('Version="4.0"'))
       return 'v4'
     if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"'))
       return 'v2'
 
-    // Heuristics based on namespaces or structure
     if (content.includes('http://schemas.microsoft.com/ado/2007/06/edmx')) {
-      // Adelphi/ADO namespaces usually indicate V2/V3 (SAP uses this for V2)
       return 'v2'
     }
     if (content.includes('http://docs.oasis-open.org/odata/ns/edmx')) {
@@ -117,11 +113,9 @@ export default defineEventHandler(async () => {
         }
       }
       catch {
-        // Fallback to EDMX if SDK import fails
       }
     }
 
-    // Fallback to EDMX parsing if no entities found yet
     if (entities.length === 0) {
       entities = extractEntitiesFromEdmx(edmxAbs)
     }

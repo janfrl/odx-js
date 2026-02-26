@@ -2,7 +2,15 @@
   "name": "@bc8-odx/proxy",
   "version": "0.0.1",
   "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "dependencies": {
-    "@bc8-odx/core": "workspace:*"
+    "@bc8-odx/core": "workspace:*",
+    "@bc8-odx/nuxt": "workspace:*",
+    "ofetch": "^1.4.1",
+    "pathe": "^2.0.3",
+    "ufo": "^1.5.4"
   }
 }

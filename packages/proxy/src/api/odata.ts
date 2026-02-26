@@ -5,13 +5,13 @@ import { createError, defineEventHandler, getQuery, getRequestURL, readBody, use
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
-import { flattenOData } from '../../utils/odata-utils'
+import { flattenOData } from '@bc8-odx/core'
 import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = useRuntimeConfig()
-  const basePath = config.public?.odata?.basePath || '/api/sap-odata'
+  const basePath = (config.public?.odata?.basePath as string) || '/api/sap-odata'
   const buildDir = config.odata?.buildDir as string
 
   const fullPath = event.path || ''
@@ -40,17 +40,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
-  // Determine Target URL
   const globalDest = (config.odata?.destination || '').replace(/\/$/, '')
   let baseUrl = (matched.url && matched.url.startsWith('http')) ? matched.url.replace(/\/$/, '') : globalDest
 
-  // If no external URL is set, we default to the internal mock server
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
-  // Prepare authentication and custom headers
   const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
   const auth = matched.auth || config.odata?.auth || {}
   if (auth.bearerToken && !customHeaders.authorization) {
@@ -60,7 +57,6 @@ export default defineEventHandler(async (event) => {
     customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
   }
 
-  // Helper for logging
   const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
@@ -84,7 +80,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // 1. Try to use SAP Cloud SDK for External Destinations
     if (isExternal) {
       const jiti = createJiti(import.meta.url)
       const possibleDirs = [
@@ -162,12 +157,10 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // 2. Agnostic Fallback via $fetch (Internal Mock or Generic External)
     const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
     const query = getQuery(event)
     let fullTargetUrl = withQuery(requestUrl, query)
 
-    // Make URL absolute for internal paths to improve log usability
     if (fullTargetUrl.startsWith('/')) {
       try {
         const origin = getRequestURL(event).origin
