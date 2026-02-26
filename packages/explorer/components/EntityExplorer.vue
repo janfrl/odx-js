@@ -43,7 +43,7 @@ const editor = ref<EditorState>({
  * Helper to safely type TanStack Table row data in the template.
  */
 function getRowData(row: any): Record<string, any> {
-  return row.original as Record<string, any>
+  return row?.original || {}
 }
 
 /**
@@ -428,8 +428,9 @@ onMounted(() => {
             :columns="tableColumns"
             :data="previewData || []"
             class="min-w-max"
-            :ui="{ thead: 'bg-gray-50/50 dark:bg-zinc-900/50', th: 'text-[10px] uppercase tracking-wider' }"
+            :ui="{ thead: 'bg-gray-50/50 dark:bg-zinc-900/50', th: 'text-[10px] uppercase tracking-wider font-bold' }"
           >
+            <!-- Slot names in Nuxt UI 4: [id]-cell -->
             <template #actions-cell="{ row }">
               <div class="flex items-center justify-center gap-1">
                 <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="xs" @click="openEditor('view', getRowData(row))" />
@@ -439,17 +440,19 @@ onMounted(() => {
             </template>
 
             <template v-for="col in tableColumns.filter(c => c.id !== 'actions')" :key="col.id" #[`${col.id}-cell`]="{ row }">
-              <template v-if="Array.isArray(getRowData(row)[col.id])">
-                <UButton :label="`${getRowData(row)[col.id].length} Items`" variant="soft" color="primary" size="xs" @click.stop="openEditor('view', getRowData(row)[col.id])" />
-              </template>
-              <template v-else-if="getRowData(row)[col.id] && typeof getRowData(row)[col.id] === 'object'">
-                <UButton label="Object" variant="soft" color="neutral" size="xs" @click.stop="openEditor('view', getRowData(row)[col.id])" />
-              </template>
-              <template v-else-if="getRowData(row)[col.id] === null">
-                <span class="opacity-20 italic text-xs">{{ isNavigationProperty(col.id) ? 'not expanded' : '-' }}</span>
-              </template>
-              <template v-else>
-                <span class="font-mono text-xs text-neutral-700 dark:text-neutral-300">{{ getRowData(row)[col.id] }}</span>
+              <template v-if="getRowData(row)">
+                <template v-if="Array.isArray(getRowData(row)[col.id])">
+                  <UButton :label="`${getRowData(row)[col.id].length} Items`" variant="soft" color="primary" size="xs" @click.stop="openEditor('view', getRowData(row)[col.id])" />
+                </template>
+                <template v-else-if="getRowData(row)[col.id] && typeof getRowData(row)[col.id] === 'object'">
+                  <UButton label="Object" variant="soft" color="neutral" size="xs" @click.stop="openEditor('view', getRowData(row)[col.id])" />
+                </template>
+                <template v-else-if="getRowData(row)[col.id] === null">
+                  <span class="opacity-20 italic text-xs">{{ isNavigationProperty(col.id) ? 'not expanded' : '-' }}</span>
+                </template>
+                <template v-else>
+                  <span class="font-mono text-xs text-neutral-700 dark:text-neutral-300">{{ getRowData(row)[col.id] }}</span>
+                </template>
               </template>
             </template>
           </UTable>

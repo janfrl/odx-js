@@ -6,6 +6,11 @@ import SchemaExplorer from '../SchemaExplorer.vue'
 const { services, selectedService, config, generateService, generatingStatus, selectedEntity, globalViewMode } = useSharedODataState()
 const toast = useToast()
 
+const tabs = [
+  { label: 'Data', icon: 'i-heroicons-table-cells', value: 'explorer' },
+  { label: 'Schema', icon: 'i-heroicons-share', value: 'schema' },
+]
+
 /**
  * Regenerates the SDK for a given service.
  * @param name The name of the service to regenerate.
@@ -114,9 +119,9 @@ async function runGenerate(name: string) {
 
         <UTabs
           v-model="globalViewMode"
-          :items="[{ label: 'Explorer', id: 'explorer' }, { label: 'Schema', id: 'schema' }]"
+          :items="tabs"
+          size="sm"
           class="w-48"
-          @update:model-value="(val) => globalViewMode = val as any"
         />
       </div>
 
