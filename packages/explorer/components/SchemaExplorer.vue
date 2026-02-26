@@ -199,7 +199,6 @@ onViewportChange((viewport) => {
 })
 
 onPaneReady(() => {
-  console.log('[SchemaExplorer] Pane ready')
   const serviceName = selectedService.value?.name || ''
   if (!initializedServices.value.has(serviceName)) {
     fitView({ padding: 0.2 })
@@ -214,14 +213,12 @@ onPaneReady(() => {
 
 /**
  * Fetches the schema and updates the graph visualization.
- * @param forceAutoFit Whether to force a re-layout and re-fit.
  */
 async function fetchSchema(forceAutoFit = false) {
   if (!selectedService.value) {
     return
   }
 
-  console.log('[SchemaExplorer] Fetching schema for', selectedService.value.name)
   const isNewService = !initializedServices.value.has(selectedService.value.name)
 
   if (isNewService) {
@@ -235,7 +232,6 @@ async function fetchSchema(forceAutoFit = false) {
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
     schemaData.value = await res.json()
-    console.log('[SchemaExplorer] Schema data received:', schemaData.value)
 
     if (isNewService || forceAutoFit) {
       await generateGraph(forceAutoFit)
@@ -259,21 +255,17 @@ async function fetchSchema(forceAutoFit = false) {
 
 /**
  * Generates the nodes and edges for the graph based on the current schema data.
- * @param autoFit Whether to automatically fit the view after generation.
  */
 async function generateGraph(autoFit = false) {
   if (!schemaData.value) {
-    console.warn('[SchemaExplorer] No schema data to generate graph')
     return
   }
 
-  console.log('[SchemaExplorer] Generating graph, mode:', layoutMode.value)
   const newNodes: any[] = []
   const newEdges: any[] = []
   const manualEdges = globalEdges.value.filter(e => e.data?.isManual)
 
   if (!schemaData.value.entities) {
-    console.error('[SchemaExplorer] No entities in schema data')
     return
   }
 
@@ -411,7 +403,6 @@ async function generateGraph(autoFit = false) {
 
   globalNodes.value = [...newNodes]
   globalEdges.value = [...newEdges]
-  console.log('[SchemaExplorer] Graph generated with', globalNodes.value.length, 'nodes and', globalEdges.value.length, 'edges')
 
   if (autoFit) {
     setTimeout(() => {
@@ -423,7 +414,6 @@ async function generateGraph(autoFit = false) {
     }, 50)
   }
   else {
-    // If not auto-fitting, we still want to show the graph if we have nodes
     if (globalNodes.value.length > 0) {
       isReady.value = true
     }
@@ -432,7 +422,7 @@ async function generateGraph(autoFit = false) {
 }
 
 /**
- * Resets the graph visualization to its default state.
+ * Resets the graph visualization.
  */
 function resetGraph() {
   /* eslint-disable no-alert */
@@ -443,7 +433,7 @@ function resetGraph() {
 }
 
 /**
- * Copies the ER diagram code in Mermaid format to the clipboard.
+ * Copies Mermaid code.
  */
 function copyMermaid() {
   if (!schemaData.value) {
@@ -464,7 +454,7 @@ function copyMermaid() {
         const type1 = end1.type.split('.').pop()
         const type2 = end2.type.split('.').pop()
         const m1 = end1.multiplicity === '*' ? '}o' : '||'
-        const m2 = end1.multiplicity === '*' ? 'o{' : '||'
+        const m2 = end2.multiplicity === '*' ? 'o{' : '||'
         code += `  ${type1} ${m1}--${m2} ${type2} : "${assoc.name}"\n`
         addedAssocs.add(assoc.name)
       }
@@ -492,10 +482,10 @@ watch(selectedService, (newSvc) => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden px-6 relative h-full">
-    <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-zinc-950 rounded-t-xl overflow-hidden border-t border-x border-gray-200 dark:border-zinc-800 shadow-sm">
+  <div class="h-full flex flex-col overflow-hidden relative">
+    <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-zinc-950 overflow-hidden">
       <!-- Toolbar -->
-      <div class="py-2 px-4 flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 shrink-0 rounded-t-xl">
+      <div class="py-2 px-6 flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 shrink-0">
         <div class="flex items-center gap-3">
           <div class="flex bg-gray-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-200 dark:border-zinc-700 items-center">
             <UButton
@@ -550,7 +540,7 @@ watch(selectedService, (newSvc) => {
             title="Clear manual work"
             @click="resetGraph"
           />
-          <div class="w-px h-4 bg-gray-200 dark:bg-zinc-800 mx-1 opacity-50" />
+          <div class="w-px h-4 bg-gray-200 dark:border-zinc-800 mx-1 opacity-50" />
           <UButton
             label="Mermaid"
             icon="i-heroicons-clipboard-document"
