@@ -1,17 +1,17 @@
-import { generate } from '@sap-cloud-sdk/generator'
+import { execSync } from 'node:child_process'
 
-interface GenerateODataParams {
-  input: string
-  outputDir: string
+/**
+ * Generates OData types using odata2ts.
+ * Runs in 'models' mode to generate pure TypeScript interfaces.
+ */
+export async function generateODataTypes(xmlFilePath: string, outputDir: string, _serviceName: string): Promise<void> {
+  const command = `npx odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --prettier`
+  execSync(command, { stdio: 'inherit' })
 }
 
-export async function generateODataClient({ input, outputDir }: GenerateODataParams): Promise<void> {
-  await generate({
-    input,
-    outputDir,
-    overwrite: true,
-    clearOutputDir: true,
-    packageJson: true,
-    transpile: false,
-  })
+/**
+ * Compatibility wrapper for the proxy generation API.
+ */
+export async function generateODataClient({ input, outputDir }: { input: string, outputDir: string }): Promise<void> {
+  return generateODataTypes(input, outputDir, '')
 }

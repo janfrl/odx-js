@@ -11,7 +11,7 @@ import {
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
 import { setupDevToolsUI } from './devtools'
-import { generateODataClient } from './generate'
+import { generateODataTypes } from './generate'
 
 export interface SapODataService {
   name: string
@@ -247,13 +247,23 @@ export default defineNuxtModule<ModuleOptions>({
       })
     }
 
-    nuxt.hook('nitro:build:before', async () => {
-      if (!allServices.length)
+    nuxt.hook('prepare:types', async ({ references }) => {
+      if (!nuxt.options.dev || !allServices.length) {
         return
-      const outRoot = join(nuxt.options.buildDir, 'sap-odata', 'generated')
+      }
+
+      const tempDir = join(nuxt.options.buildDir, 'sap-odata', 'temp')
+      const outRoot = join(nuxt.options.buildDir, 'odx-types')
+
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true })
+      }
+      if (!fs.existsSync(outRoot)) {
+        fs.mkdirSync(outRoot, { recursive: true })
+      }
+
       for (const svc of allServices) {
         if (!svc.url) {
-          logger.warn(`[nuxt-sap-odata] Service ${svc.name} has no URL or EDMX source defined. Skipping.`)
           continue
         }
 
@@ -261,12 +271,7 @@ export default defineNuxtModule<ModuleOptions>({
 
         if (svc.url.startsWith('http')) {
           const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
-          const tempDir = join(nuxt.options.buildDir, 'sap-odata', 'temp')
-          if (!fs.existsSync(tempDir))
-            fs.mkdirSync(tempDir, { recursive: true })
-
           const tempFile = join(tempDir, `${svc.name}.edmx`)
-          logger.info(`[nuxt-sap-odata] downloading metadata for ${svc.name} from ${metadataUrl}`)
 
           try {
             const headers: Record<string, string> = {}
@@ -292,12 +297,17 @@ export default defineNuxtModule<ModuleOptions>({
         }
 
         const outDir = join(outRoot, svc.name)
-        logger.info('[nuxt-sap-odata] generating client for', svc.name)
-        await generateODataClient({
-          input: inputPath,
-          outputDir: outDir,
-        })
+        await generateODataTypes(inputPath, outDir, svc.name)
       }
+
+      const indexDtsPath = join(outRoot, 'index.d.ts')
+      const indexDtsContent = allServices
+        .filter(svc => svc.url)
+        .map(svc => `/// <reference path="./${svc.name}/index.ts" />`)
+        .join('\n')
+      fs.writeFileSync(indexDtsPath, indexDtsContent)
+
+      references.push({ path: resolve(nuxt.options.buildDir, 'odx-types/index.d.ts') })
     })
 
     if (mode !== 'sdk') {

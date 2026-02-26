@@ -10,5 +10,8 @@
   "dependencies": {
     "@bc8-odx/core": "workspace:*",
     "@bc8-odx/proxy": "workspace:*"
+  },
+  "devDependencies": {
+    "@odata2ts/odata2ts": "^0.40.1"
   }
 }
