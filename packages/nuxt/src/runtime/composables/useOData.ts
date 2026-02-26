@@ -28,12 +28,12 @@ export function useOData<T extends keyof ODataServiceRegistry | (string & {})>(
         return useFetch(itemPath, { query })
       },
 
-      create: <R = any>(body: ODataBody): Promise<R> =>
-        $odata<R>(client, fullPath, 'POST', { body }),
+      create: (body: ODataBody): Promise<any> =>
+        $odata<any>(client, fullPath, 'POST', { body }),
 
-      update: <R = any>(key: string | number, body: ODataBody): Promise<R> => {
+      update: (key: string | number, body: ODataBody): Promise<any> => {
         const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
-        return $odata<R>(client, itemPath, 'PATCH', { body })
+        return $odata<any>(client, itemPath, 'PATCH', { body })
       },
 
       remove: (key: string | number): Promise<any> => {
