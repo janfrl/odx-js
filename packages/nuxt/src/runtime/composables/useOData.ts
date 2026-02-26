@@ -9,7 +9,7 @@ type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | A
  * Composable for interacting with OData services.
  * Provides autocomplete for registered services and their entity sets.
  */
-export function useOData<T extends keyof ODataServiceRegistry | (string & Record<never, never>)>(
+export function useOData<T extends keyof ODataServiceRegistry | (string & {})>(
   service: T,
 ): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService {
   const basePath = useODataBasePath()

@@ -337,7 +337,7 @@ export default defineNuxtModule<ModuleOptions>({
         const hasModels = !!serviceModelFiles[svcName]
         const modelMapping = hasModels
           ? `{ ${entities.map(e => `"${e.name}": ${svcName}Models.${e.type}`).join(', ')} }`
-          : 'any'
+          : 'Record<string, any>'
 
         indexDtsLines.push(`    ${svcName}: ODataService<${entityUnion}, ${modelMapping}>`)
       }
@@ -346,7 +346,7 @@ export default defineNuxtModule<ModuleOptions>({
 
       fs.writeFileSync(indexDtsPath, indexDtsLines.join('\n'))
 
-      references.push({ path: resolve(nuxt.options.buildDir, 'odx-types/index.d.ts') })
+      references.push({ path: indexDtsPath })
     })
 
     if (options.mode !== 'sdk') {
