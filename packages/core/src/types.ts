@@ -73,6 +73,8 @@ export interface ODataService<E extends string = string, M extends Record<string
  */
 export interface ODataServiceRegistry {}
 
+export type RegisteredServiceNames = keyof ODataServiceRegistry | (string & {})
+
 export interface ModuleOptions {
   mode?: 'sdk'
   basePath?: string

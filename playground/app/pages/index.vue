@@ -10,8 +10,8 @@ const { data, pending, error, refresh } = await products.list()
  */
 async function addItem(): Promise<void> {
   await products.create({
-    Namse: 'New Product',
-    Price: 99.99,
+    Name: 'New Product',
+    Price: '99.99',
     Currency: 'EUR',
   })
   refresh()
