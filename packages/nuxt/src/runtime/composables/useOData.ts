@@ -1,13 +1,12 @@
 import { useFetch, useODataBasePath } from '#imports'
 import { $odata } from '@bc8-odx/core'
-import { createODataClient } from '@bc8-odx/proxy'
 
 type ODataQuery = Record<string, string | number | boolean | null | undefined>
 type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | ArrayBuffer | null
 
 export function useOData(service: string): any {
   const basePath = useODataBasePath()
-  const client = createODataClient()
+  const client = globalThis.$fetch
 
   const createMethods = (entitySet?: string): any => {
     const path = entitySet ? `${service}/${entitySet}` : service
@@ -23,15 +22,17 @@ export function useOData(service: string): any {
       },
 
       create: <T = unknown>(body: ODataBody): Promise<T> =>
-        $odata<T>(client, service, 'POST', { body, entitySet }),
+        $odata<T>(client, fullPath, 'POST', { body }),
 
-      update: <T = unknown>(key: string | number, body: ODataBody): Promise<T> =>
-        $odata<T>(client, `${service}/${entitySet}(${typeof key === 'string' ? `'${key}'` : key})`, 'PATCH', {
-          body,
-        }),
+      update: <T = unknown>(key: string | number, body: ODataBody): Promise<T> => {
+        const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
+        return $odata<T>(client, itemPath, 'PATCH', { body })
+      },
 
-      remove: <T = unknown>(key: string | number): Promise<T> =>
-        $odata<T>(client, `${service}/${entitySet}(${typeof key === 'string' ? `'${key}'` : key})`, 'DELETE'),
+      remove: <T = unknown>(key: string | number): Promise<T> => {
+        const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
+        return $odata<T>(client, itemPath, 'DELETE')
+      },
     }
   }
 
