@@ -12,12 +12,13 @@ export interface SapODataService {
 
 /**
  * Minimal interface mimicking Nuxt's AsyncData for type inference.
+ * It uses a structure compatible with Vue Refs.
  */
 export interface ODataAsyncData<T> {
-  data: { value: T | null }
-  pending: { value: boolean }
-  error: { value: any | null }
-  status: { value: 'idle' | 'pending' | 'success' | 'error' }
+  data: any // Ref<T | null>
+  pending: any // Ref<boolean>
+  error: any // Ref<any | null>
+  status: any // Ref<'idle' | 'pending' | 'success' | 'error'>
   refresh: (opts?: any) => Promise<void>
   execute: (opts?: any) => Promise<void>
   clear: () => void

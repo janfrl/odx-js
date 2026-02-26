@@ -77,13 +77,13 @@ async function deleteItem(id: string): Promise<void> {
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">UI Representation</span>
             <UBadge color="info" variant="subtle">
-              {{ data.value?.length || 0 }} Items
+              {{ data?.length || 0 }} Items
             </UBadge>
           </div>
         </template>
 
         <ul class="divide-y divide-gray-100 dark:divide-gray-800 overflow-auto max-h-125 -m-4 sm:-m-6 px-4 sm:px-6">
-          <li v-for="(product, index) in data.value" :key="product.ID || index" class="py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div class="flex justify-between items-start">
               <div>
                 <p class="font-medium text-gray-900 dark:text-white">
