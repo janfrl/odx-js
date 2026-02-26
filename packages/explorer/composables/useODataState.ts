@@ -1,9 +1,14 @@
 import { computed, ref } from 'vue'
 
+export interface EntityMapping {
+  name: string
+  type: string
+}
+
 export interface SapService {
   name: string
   route?: string
-  entities?: string[]
+  entities?: EntityMapping[]
   isGenerated?: boolean
   version?: 'v2' | 'v4' | null
 }

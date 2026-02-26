@@ -322,12 +322,12 @@ onMounted(() => {
       <div class="flex gap-4 overflow-x-auto custom-scrollbar pb-px pr-4">
         <button
           v-for="entity in (selectedService?.entities || [])"
-          :key="entity"
+          :key="entity.name"
           class="text-[11px] font-bold font-mono px-1 py-2 border-b-2 transition-all bg-transparent cursor-pointer relative whitespace-nowrap"
-          :class="selectedEntity === entity ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-900 dark:hover:text-white'"
-          @click="selectEntity(entity)"
+          :class="selectedEntity === entity.name ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-900 dark:hover:text-white'"
+          @click="selectEntity(entity.name)"
         >
-          {{ entity }}
+          {{ entity.name }}
         </button>
       </div>
     </div>
