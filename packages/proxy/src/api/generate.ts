@@ -1,9 +1,9 @@
-import type { NitroRuntimeConfig } from './config'
 import fs from 'node:fs'
-import { generateODataClient } from '@bc8-odx/nuxt/generate'
+import { generateODataTypes } from '@bc8-odx/nuxt/generate'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
+import type { NitroRuntimeConfig } from './config'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
@@ -64,10 +64,7 @@ export default defineEventHandler(async (event) => {
       throw new Error(`Input EDMX file not found at ${inputPath}`)
     }
 
-    await generateODataClient({
-      input: inputPath,
-      outputDir: outDir,
-    })
+    await generateODataTypes(inputPath, outDir, matched.name)
 
     return {
       success: true,

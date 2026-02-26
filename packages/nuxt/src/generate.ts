@@ -8,10 +8,3 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
   const command = `npx odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --prettier`
   execSync(command, { stdio: 'inherit' })
 }
-
-/**
- * Compatibility wrapper for the proxy generation API.
- */
-export async function generateODataClient({ input, outputDir }: { input: string, outputDir: string }): Promise<void> {
-  return generateODataTypes(input, outputDir, '')
-}
