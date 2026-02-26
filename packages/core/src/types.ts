@@ -23,23 +23,28 @@ export interface ODataAsyncData<T> {
   clear: () => void
 }
 
+/**
+ * Combined type that is both the data object and a promise resolving to it.
+ */
+export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncData<T>>
+
 export interface ODataEntitySet<T = any> {
   /**
    * Fetches a list of entities.
    */
-  list: <R = T>(query?: Record<string, string | number | boolean | null | undefined>) => Promise<ODataAsyncData<R[]>> & ODataAsyncData<R[]>
+  list: <R = T>(query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<R[]>
   /**
    * Fetches a single entity by key.
    */
-  get: <R = T>(key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => Promise<ODataAsyncData<R>> & ODataAsyncData<R>
+  get: <R = T>(key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<R>
   /**
    * Creates a new entity.
    */
-  create: <R = T>(body: any) => Promise<R>
+  create: <R = T>(body: Partial<R>) => Promise<R>
   /**
    * Updates an existing entity.
    */
-  update: <R = T>(key: string | number, body: any) => Promise<R>
+  update: <R = T>(key: string | number, body: Partial<R>) => Promise<R>
   /**
    * Deletes an entity.
    */
