@@ -131,8 +131,8 @@ onConnect((params) => {
     id: edgeId,
     label: '',
     animated: true,
-    style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5,5' },
-    labelStyle: { fill: '#3b82f6', fontWeight: 700, fontSize: '10px' },
+    style: { stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5,5' },
+    labelStyle: { fill: '#10b981', fontWeight: 700, fontSize: '10px' },
     data: { isManual: true },
   }
   globalEdges.value = [...globalEdges.value, newEdge]
@@ -199,6 +199,7 @@ onViewportChange((viewport) => {
 })
 
 onPaneReady(() => {
+  console.log('[SchemaExplorer] Pane ready')
   const serviceName = selectedService.value?.name || ''
   if (!initializedServices.value.has(serviceName)) {
     fitView({ padding: 0.2 })
@@ -220,6 +221,7 @@ async function fetchSchema(forceAutoFit = false) {
     return
   }
 
+  console.log('[SchemaExplorer] Fetching schema for', selectedService.value.name)
   const isNewService = !initializedServices.value.has(selectedService.value.name)
 
   if (isNewService) {
@@ -233,9 +235,10 @@ async function fetchSchema(forceAutoFit = false) {
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
     schemaData.value = await res.json()
+    console.log('[SchemaExplorer] Schema data received:', schemaData.value)
 
     if (isNewService || forceAutoFit) {
-      generateGraph(forceAutoFit)
+      await generateGraph(forceAutoFit)
     }
     else {
       await nextTick()
@@ -249,7 +252,7 @@ async function fetchSchema(forceAutoFit = false) {
     lastSelectedServiceForGraph.value = selectedService.value.name
   }
   catch (e) {
-    console.error('Failed to fetch schema', e)
+    console.error('[SchemaExplorer] Failed to fetch schema', e)
     loading.value = false
   }
 }
@@ -260,12 +263,19 @@ async function fetchSchema(forceAutoFit = false) {
  */
 async function generateGraph(autoFit = false) {
   if (!schemaData.value) {
+    console.warn('[SchemaExplorer] No schema data to generate graph')
     return
   }
 
+  console.log('[SchemaExplorer] Generating graph, mode:', layoutMode.value)
   const newNodes: any[] = []
   const newEdges: any[] = []
   const manualEdges = globalEdges.value.filter(e => e.data?.isManual)
+
+  if (!schemaData.value.entities) {
+    console.error('[SchemaExplorer] No entities in schema data')
+    return
+  }
 
   schemaData.value.entities.forEach((entity: any) => {
     newNodes.push({
@@ -275,8 +285,8 @@ async function generateGraph(autoFit = false) {
       position: { x: 0, y: 0 },
     })
 
-    entity.navigationProperties.forEach((nav: any) => {
-      const assoc = schemaData.value.associations.find((a: any) =>
+    entity.navigationProperties?.forEach((nav: any) => {
+      const assoc = schemaData.value.associations?.find((a: any) =>
         a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship,
       )
 
@@ -309,34 +319,39 @@ async function generateGraph(autoFit = false) {
   })
 
   if (layoutMode.value === 'elk') {
-    const elkGraph = {
-      id: 'root',
-      layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': 'RIGHT',
-        'elk.spacing.nodeNode': '100',
-        'elk.layered.spacing.nodeNodeBetweenLayers': '150',
-        'elk.padding': '[top=50,left=50,bottom=50,right=50]',
-      },
-      children: newNodes.map(n => ({
-        id: n.id,
-        width: 250,
-        height: 60 + (n.data.entity.properties.length * 22),
-      })),
-      edges: newEdges.map(e => ({
-        id: e.id,
-        sources: [e.source],
-        targets: [e.target],
-      })),
-    }
-
-    const layoutedGraph = await elk.layout(elkGraph)
-    newNodes.forEach((node) => {
-      const elkNode = layoutedGraph.children?.find(c => c.id === node.id)
-      if (elkNode) {
-        node.position = { x: elkNode.x || 0, y: elkNode.y || 0 }
+    try {
+      const elkGraph = {
+        id: 'root',
+        layoutOptions: {
+          'elk.algorithm': 'layered',
+          'elk.direction': 'RIGHT',
+          'elk.spacing.nodeNode': '100',
+          'elk.layered.spacing.nodeNodeBetweenLayers': '150',
+          'elk.padding': '[top=50,left=50,bottom=50,right=50]',
+        },
+        children: newNodes.map(n => ({
+          id: n.id,
+          width: 250,
+          height: 60 + (n.data.entity.properties.length * 22),
+        })),
+        edges: newEdges.map(e => ({
+          id: e.id,
+          sources: [e.source],
+          targets: [e.target],
+        })),
       }
-    })
+
+      const layoutedGraph = await elk.layout(elkGraph)
+      newNodes.forEach((node) => {
+        const elkNode = layoutedGraph.children?.find(c => c.id === node.id)
+        if (elkNode) {
+          node.position = { x: elkNode.x || 0, y: elkNode.y || 0 }
+        }
+      })
+    }
+    catch (e) {
+      console.error('[SchemaExplorer] ELK layout failed', e)
+    }
   }
   else {
     const connectedNodeIds = new Set<string>()
@@ -396,6 +411,7 @@ async function generateGraph(autoFit = false) {
 
   globalNodes.value = [...newNodes]
   globalEdges.value = [...newEdges]
+  console.log('[SchemaExplorer] Graph generated with', globalNodes.value.length, 'nodes and', globalEdges.value.length, 'edges')
 
   if (autoFit) {
     setTimeout(() => {
@@ -407,6 +423,10 @@ async function generateGraph(autoFit = false) {
     }, 50)
   }
   else {
+    // If not auto-fitting, we still want to show the graph if we have nodes
+    if (globalNodes.value.length > 0) {
+      isReady.value = true
+    }
     loading.value = false
   }
 }
@@ -415,7 +435,8 @@ async function generateGraph(autoFit = false) {
  * Resets the graph visualization to its default state.
  */
 function resetGraph() {
-  if (window.confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
+  /* eslint-disable no-alert */
+  if (confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
     globalEdges.value = globalEdges.value.filter(e => !e.data?.isManual)
     fetchSchema(true)
   }
@@ -443,7 +464,7 @@ function copyMermaid() {
         const type1 = end1.type.split('.').pop()
         const type2 = end2.type.split('.').pop()
         const m1 = end1.multiplicity === '*' ? '}o' : '||'
-        const m2 = end2.multiplicity === '*' ? 'o{' : '||'
+        const m2 = end1.multiplicity === '*' ? 'o{' : '||'
         code += `  ${type1} ${m1}--${m2} ${type2} : "${assoc.name}"\n`
         addedAssocs.add(assoc.name)
       }
@@ -463,25 +484,26 @@ onMounted(() => {
   }
 })
 
-watch(selectedService, () => {
-  if (selectedService.value) {
+watch(selectedService, (newSvc) => {
+  if (newSvc) {
     fetchSchema()
   }
 })
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden px-6 relative">
-    <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#0a0a0a] rounded-t-xl overflow-hidden border-t border-x border-gray-200 dark:border-gray-800 shadow-sm">
-      <div class="py-2 px-4 flex items-center justify-between bg-gray-50 dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 shrink-0 rounded-t-xl">
+  <div class="flex-1 flex flex-col overflow-hidden px-6 relative h-full">
+    <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-zinc-950 rounded-t-xl overflow-hidden border-t border-x border-gray-200 dark:border-zinc-800 shadow-sm">
+      <!-- Toolbar -->
+      <div class="py-2 px-4 flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 shrink-0 rounded-t-xl">
         <div class="flex items-center gap-3">
-          <div class="flex bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg border border-gray-200 dark:border-gray-700 items-center">
+          <div class="flex bg-gray-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-200 dark:border-zinc-700 items-center">
             <UButton
               label="ELK"
               :variant="layoutMode === 'elk' ? 'solid' : 'ghost'"
               :color="layoutMode === 'elk' ? 'primary' : 'neutral'"
               size="xs"
-              class="text-[9px] uppercase font-black tracking-widest"
+              class="text-[9px] uppercase font-black tracking-widest px-3"
               @click="layoutMode = 'elk'"
             />
             <UButton
@@ -489,7 +511,7 @@ watch(selectedService, () => {
               :variant="layoutMode === 'hierarchical' ? 'solid' : 'ghost'"
               :color="layoutMode === 'hierarchical' ? 'primary' : 'neutral'"
               size="xs"
-              class="text-[9px] uppercase font-black tracking-widest"
+              class="text-[9px] uppercase font-black tracking-widest px-3"
               @click="layoutMode = 'hierarchical'"
             />
             <UButton
@@ -497,12 +519,12 @@ watch(selectedService, () => {
               :variant="layoutMode === 'compact' ? 'solid' : 'ghost'"
               :color="layoutMode === 'compact' ? 'primary' : 'neutral'"
               size="xs"
-              class="text-[9px] uppercase font-black tracking-widest"
+              class="text-[9px] uppercase font-black tracking-widest px-3"
               @click="layoutMode = 'compact'"
             />
           </div>
 
-          <div v-if="loading" class="animate-pulse text-[10px] text-primary-500 font-bold uppercase tracking-tight ml-4">
+          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight ml-4">
             Refining...
           </div>
         </div>
@@ -528,7 +550,7 @@ watch(selectedService, () => {
             title="Clear manual work"
             @click="resetGraph"
           />
-          <div class="w-px h-4 bg-gray-200 dark:bg-gray-800 mx-1 opacity-50" />
+          <div class="w-px h-4 bg-gray-200 dark:bg-zinc-800 mx-1 opacity-50" />
           <UButton
             label="Mermaid"
             icon="i-heroicons-clipboard-document"
@@ -541,23 +563,25 @@ watch(selectedService, () => {
         </div>
       </div>
 
+      <!-- Graph Container -->
       <div
         ref="containerRef"
-        class="flex-1 relative overflow-hidden bg-white dark:bg-[#050505] transition-opacity duration-300"
-        :style="{ opacity: isReady ? 1 : 0 }"
+        class="flex-1 relative overflow-hidden bg-white dark:bg-zinc-950 transition-opacity duration-500"
+        :class="{ 'opacity-0': !isReady, 'opacity-100': isReady }"
       >
         <VueFlow
           v-model:nodes="globalNodes"
           v-model:edges="globalEdges"
           :node-types="nodeTypes"
-          class="dark"
           :min-zoom="0.05"
           :max-zoom="4"
+          class="h-full w-full"
         >
           <Background pattern-color="#333" :gap="20" />
 
+          <!-- Custom Controls -->
           <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-            <div class="flex flex-col bg-gray-900/80 backdrop-blur-md border border-gray-800 rounded-lg shadow-xl overflow-hidden text-white">
+            <div class="flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden">
               <UButton
                 icon="i-heroicons-plus"
                 color="neutral"
@@ -566,7 +590,7 @@ watch(selectedService, () => {
                 title="Zoom In (+)"
                 @click="zoomIn"
               />
-              <div class="h-px bg-gray-800 mx-2" />
+              <div class="h-px bg-gray-200 dark:bg-zinc-800 mx-2" />
               <UButton
                 icon="i-heroicons-minus"
                 color="neutral"
@@ -576,7 +600,7 @@ watch(selectedService, () => {
                 @click="zoomOut"
               />
             </div>
-            <div class="flex flex-col bg-gray-900/80 backdrop-blur-md border border-gray-800 rounded-lg shadow-xl overflow-hidden text-white">
+            <div class="flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden">
               <UButton
                 icon="i-heroicons-arrows-pointing-in"
                 color="neutral"
@@ -585,7 +609,7 @@ watch(selectedService, () => {
                 title="Fit to Screen (R)"
                 @click="fitToScreen"
               />
-              <div class="h-px bg-gray-800 mx-2" />
+              <div class="h-px bg-gray-200 dark:bg-zinc-800 mx-2" />
               <UButton
                 :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
                 color="neutral"
@@ -598,11 +622,12 @@ watch(selectedService, () => {
           </div>
         </VueFlow>
 
+        <!-- Edge Editing Popup -->
         <template v-if="editingEdgeId">
           <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
 
           <div
-            class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl"
+            class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-2xl"
             :style="{
               left: `${editingLabelPos.x}px`,
               top: `${editingLabelPos.y}px`,
@@ -660,6 +685,11 @@ watch(selectedService, () => {
   font-weight: bold;
 }
 
-.dark .vue-flow__edge-textbg { fill: #050505; }
+.dark .vue-flow__edge-textbg { fill: #09090b; }
 .vue-flow__controls { display: none; }
+
+/* Ensure VueFlow takes full height */
+.vue-flow {
+  background-color: transparent !important;
+}
 </style>
