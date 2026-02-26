@@ -1,7 +1,9 @@
+import type { EntityMapping } from '@bc8-odx/core/server'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import https from 'node:https'
 import process from 'node:process'
+import { extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import {
   addImportsDir,
   addServerHandler,
@@ -10,8 +12,6 @@ import {
   useLogger,
 } from '@nuxt/kit'
 import { join, resolve } from 'pathe'
-import { extractEntitiesFromEdmx } from '@bc8-odx/core/server'
-import type { EntityMapping } from '@bc8-odx/core/server'
 import { setupDevToolsUI } from './devtools'
 import { generateODataTypes } from './generate'
 

@@ -3,11 +3,11 @@
   "type": "module",
   "version": "0.0.1",
   "private": true,
-  "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
     "./server": "./src/server.ts"
   },
+  "main": "./src/index.ts",
   "dependencies": {
     "ofetch": "^1.4.1"
   }

@@ -1,12 +1,12 @@
+import type { SapODataService } from '@bc8-odx/core'
 import fs from 'node:fs'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
+import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { defineEventHandler } from 'h3'
-import { useRuntimeConfig } from 'nitropack/runtime'
 import { createJiti } from 'jiti'
+import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
-import type { SapODataService } from '@bc8-odx/core'
-import { extractEntitiesFromEdmx, detectODataVersion } from '@bc8-odx/core/server'
 
 /**
  * Interface for the Nitro runtime configuration.

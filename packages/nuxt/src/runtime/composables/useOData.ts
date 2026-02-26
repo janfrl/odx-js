@@ -1,6 +1,6 @@
+import type { ODataEntitySet, ODataKey, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
 import { useFetch, useODataBasePath } from '#imports'
 import { $odata } from '@bc8-odx/core'
-import type { ODataService, ODataEntitySet, ODataServiceRegistry, RegisteredServiceNames, ODataKey } from '@bc8-odx/core'
 
 type ODataQuery = Record<string, string | number | boolean | null | undefined>
 type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | ArrayBuffer | null
