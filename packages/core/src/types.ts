@@ -12,13 +12,14 @@ export interface SapODataService {
 
 /**
  * Minimal interface mimicking Nuxt's AsyncData for type inference.
- * It uses a structure compatible with Vue Refs.
+ * It uses a structure compatible with Vue Refs for the script block,
+ * while allowing the template to see the unwrapped type.
  */
 export interface ODataAsyncData<T> {
-  data: any // Ref<T | null>
-  pending: any // Ref<boolean>
-  error: any // Ref<any | null>
-  status: any // Ref<'idle' | 'pending' | 'success' | 'error'>
+  data: { value: T | null } | T | any
+  pending: { value: boolean } | boolean | any
+  error: { value: any | null } | any
+  status: { value: 'idle' | 'pending' | 'success' | 'error' } | any
   refresh: (opts?: any) => Promise<void>
   execute: (opts?: any) => Promise<void>
   clear: () => void
