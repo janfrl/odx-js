@@ -80,6 +80,14 @@ export default defineEventHandler(async (event) => {
   let capturedBody: unknown = null
   if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
     capturedBody = await readBody(event).catch(() => null)
+    if (typeof capturedBody === 'string') {
+      try {
+        capturedBody = JSON.parse(capturedBody)
+      }
+      catch {
+        // Not JSON
+      }
+    }
   }
 
   try {
@@ -183,7 +191,8 @@ export default defineEventHandler(async (event) => {
       query,
       body: capturedBody,
       headers: {
-        accept: 'application/json',
+        'content-type': 'application/json',
+        'accept': 'application/json',
         ...customHeaders,
       },
     })
