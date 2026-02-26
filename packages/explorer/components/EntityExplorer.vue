@@ -317,9 +317,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden">
+  <div class="h-full flex flex-col overflow-hidden bg-white dark:bg-black">
     <!-- Entity Select -->
-    <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+    <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-zinc-900/50">
       <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
         <UButton
           v-for="entity in (selectedService?.entities || [])"
@@ -340,12 +340,13 @@ onMounted(() => {
       class="flex-1 flex flex-col min-h-0 relative"
     >
       <!-- Query Toolbar -->
-      <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 shrink-0 bg-white dark:bg-black">
+      <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 shrink-0 bg-white dark:bg-zinc-900/20">
         <UInput
           v-model="queryInput"
           placeholder="?id=... or ?$filter=..."
           icon="i-heroicons-magnifying-glass"
           class="flex-1 font-mono text-xs"
+          size="sm"
           @keyup.enter="refreshEntityData"
         >
           <template #trailing>
@@ -356,12 +357,13 @@ onMounted(() => {
           label="Execute"
           icon="i-heroicons-play"
           color="primary"
+          size="sm"
           @click="refreshEntityData"
         />
       </div>
 
       <!-- Action Bar -->
-      <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0 bg-gray-50/30 dark:bg-gray-950/30">
+      <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0 bg-gray-50/30 dark:bg-zinc-950/30">
         <div class="flex items-center gap-4">
           <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
             {{ previewData.length }} Results
@@ -398,9 +400,9 @@ onMounted(() => {
           class="p-16 flex flex-col items-center justify-center text-center"
         >
           <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-12 h-12 mb-4" />
-          <h3 class="text-lg font-bold mb-2">Request Failed</h3>
+          <h3 class="text-lg font-bold mb-2 text-neutral-900 dark:text-neutral-100">Request Failed</h3>
           <p class="text-sm text-neutral-500 font-mono mb-6 max-w-lg">{{ previewError }}</p>
-          <UButton label="Retry" color="neutral" @click="refreshEntityData" />
+          <UButton label="Retry" color="neutral" variant="soft" @click="refreshEntityData" />
         </div>
 
         <template v-else>
@@ -408,6 +410,7 @@ onMounted(() => {
             :columns="previewColumns.map(c => ({ key: c, label: c }))"
             :rows="previewData"
             class="min-w-max"
+            :ui="{ thead: 'bg-gray-50/50 dark:bg-zinc-900/50', th: 'text-[10px] uppercase tracking-wider' }"
           >
             <!-- Actions Column -->
             <template #actions-header>
@@ -433,14 +436,14 @@ onMounted(() => {
                 <span class="opacity-20 italic text-xs">{{ isNavigationProperty(key as string) ? 'not expanded' : '-' }}</span>
               </template>
               <template v-else>
-                <span class="font-mono text-xs">{{ row[key] }}</span>
+                <span class="font-mono text-xs text-neutral-700 dark:text-neutral-300">{{ row[key] }}</span>
               </template>
             </template>
           </UTable>
 
           <div
             v-if="previewData.length === 0 && !previewLoading"
-            class="p-20 flex flex-col items-center justify-center opacity-40 italic"
+            class="p-20 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
           >
             <UIcon name="i-heroicons-magnifying-glass" class="w-8 h-8 mb-2" />
             <p>No records match your query</p>
@@ -452,11 +455,11 @@ onMounted(() => {
     <!-- Empty State -->
     <div
       v-else
-      class="flex-1 flex flex-col items-center justify-center bg-gray-50/30 dark:bg-gray-950/30"
+      class="flex-1 flex flex-col items-center justify-center bg-gray-50/10 dark:bg-zinc-950/10"
     >
       <div class="text-center p-12 max-w-sm">
         <UIcon name="i-heroicons-magnifying-glass-circle" class="w-12 h-12 text-neutral-400 mb-4" />
-        <h3 class="text-xl font-bold mb-2">Explore Your Data</h3>
+        <h3 class="text-xl font-bold mb-2 text-neutral-900 dark:text-neutral-100">Explore Your Data</h3>
         <p class="text-neutral-500 text-sm">Select an entity set from the list above to start browsing and managing your OData records.</p>
       </div>
     </div>

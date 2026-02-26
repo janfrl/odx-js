@@ -23,7 +23,7 @@ const stats = computed(() => [
         />
       </div>
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">
+        <h1 class="text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           SAP OData Integration
         </h1>
         <p class="text-neutral-500 dark:text-neutral-400">
@@ -41,14 +41,19 @@ const stats = computed(() => [
       >
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold uppercase tracking-wider text-neutral-500">{{ stat.label }}</span>
+            <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-500">{{ stat.label }}</span>
             <UIcon
               :name="stat.icon"
               class="w-4 h-4 text-neutral-400"
             />
           </div>
           <div
-            :class="`text-lg font-bold text-${stat.color}-500`"
+            class="text-xl font-bold"
+            :class="{
+              'text-success-500 dark:text-success-400': stat.color === 'success',
+              'text-primary-500 dark:text-primary-400': stat.color === 'primary',
+              'text-neutral-900 dark:text-neutral-100': stat.color === 'neutral',
+            }"
           >
             {{ stat.value }}
           </div>
@@ -64,17 +69,18 @@ const stats = computed(() => [
         </h3>
         <UCard>
           <ul class="divide-y divide-gray-200 dark:divide-gray-800">
-            <li class="py-4 flex justify-between items-center">
-              <span class="text-sm font-medium">Authentication Forwarding</span>
+            <li class="py-4 flex justify-between items-center px-2">
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Authentication Forwarding</span>
               <UBadge
                 :color="config.forwardAuthHeader ? 'success' : 'warning'"
                 variant="subtle"
+                size="sm"
               >
                 {{ config.forwardAuthHeader ? 'Enabled' : 'Disabled' }}
               </UBadge>
             </li>
-            <li class="py-4 flex justify-between items-center">
-              <span class="text-sm font-medium">Build Directory</span>
+            <li class="py-4 flex justify-between items-center px-2">
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Build Directory</span>
               <UKbd size="sm">.nuxt/sap-odata/generated</UKbd>
             </li>
           </ul>
@@ -87,13 +93,13 @@ const stats = computed(() => [
         </h3>
         <UCard>
           <ul class="divide-y divide-gray-200 dark:divide-gray-800">
-            <li class="py-4 flex justify-between items-center">
-              <span class="text-sm font-medium">Module Version</span>
-              <span class="text-xs font-mono opacity-60">v1.0.0</span>
+            <li class="py-4 flex justify-between items-center px-2">
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Module Version</span>
+              <span class="text-xs font-mono text-neutral-500">v1.0.0</span>
             </li>
-            <li class="py-4 flex justify-between items-center">
-              <span class="text-sm font-medium">Node.js Runtime</span>
-              <span class="text-xs font-mono opacity-60">{{ config.versions?.node || 'unknown' }}</span>
+            <li class="py-4 flex justify-between items-center px-2">
+              <span class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Node.js Runtime</span>
+              <span class="text-xs font-mono text-neutral-500">{{ config.versions?.node || 'unknown' }}</span>
             </li>
           </ul>
         </UCard>
