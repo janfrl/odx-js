@@ -20,12 +20,12 @@ export function useOData<T extends keyof ODataServiceRegistry | (string & {})>(
     const fullPath = `${basePath}/${path}`
 
     return {
-      list: <R = any>(query?: ODataQuery): any =>
-        useFetch<R[]>(fullPath, { query }),
+      list: (query?: ODataQuery): any =>
+        useFetch(fullPath, { query }),
 
-      get: <R = any>(key: string | number, query?: ODataQuery): any => {
+      get: (key: string | number, query?: ODataQuery): any => {
         const itemPath = `${fullPath}(${typeof key === 'string' ? `'${key}'` : key})`
-        return useFetch<R>(itemPath, { query })
+        return useFetch(itemPath, { query })
       },
 
       create: <R = any>(body: ODataBody): Promise<R> =>

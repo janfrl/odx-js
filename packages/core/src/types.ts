@@ -12,9 +12,8 @@ export interface SapODataService {
 
 /**
  * Minimal interface mimicking Nuxt's AsyncData for type inference.
- * It is also a Promise resolving to itself, enabling 'await' usage.
  */
-export type ODataAsyncData<T> = {
+export interface ODataAsyncData<T> {
   data: { value: T | null }
   pending: { value: boolean }
   error: { value: any | null }
@@ -22,17 +21,17 @@ export type ODataAsyncData<T> = {
   refresh: (opts?: any) => Promise<void>
   execute: (opts?: any) => Promise<void>
   clear: () => void
-} & Promise<ODataAsyncData<T>>
+}
 
 export interface ODataEntitySet<T = any> {
   /**
    * Fetches a list of entities.
    */
-  list: <R = T>(query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncData<R[]>
+  list: <R = T>(query?: Record<string, string | number | boolean | null | undefined>) => Promise<ODataAsyncData<R[]>> & ODataAsyncData<R[]>
   /**
    * Fetches a single entity by key.
    */
-  get: <R = T>(key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncData<R>
+  get: <R = T>(key: string | number, query?: Record<string, string | number | boolean | null | undefined>) => Promise<ODataAsyncData<R>> & ODataAsyncData<R>
   /**
    * Creates a new entity.
    */
