@@ -1,5 +1,7 @@
 {
-  "name": "nuxt-sap-odata-client",
+  "name": "@bc8-odx/explorer",
+  "version": "0.0.1",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@vue-flow/background": "^1.3.1",
