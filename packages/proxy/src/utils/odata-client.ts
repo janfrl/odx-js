@@ -1,23 +1,9 @@
 import { ofetch } from 'ofetch'
-
-export interface ODataClientConfig {
-  public: {
-    odata?: {
-      basePath?: string
-    }
-  }
-  odata?: {
-    forwardAuthHeader?: boolean
-  }
-}
-
-declare global {
-  function useRuntimeConfig(): ODataClientConfig
-  function useRequestHeaders(include?: string[]): Record<string, string>
-}
+import { useRuntimeConfig, useRequestHeaders } from 'nitropack/runtime'
+import type { NitroRuntimeConfig } from '../api/config'
 
 export function createODataClient(): any {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig() as unknown as NitroRuntimeConfig
   const baseURL = config.public.odata?.basePath || '/api/sap-odata'
 
   return ofetch.create({

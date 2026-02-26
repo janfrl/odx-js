@@ -154,7 +154,11 @@ importers:
         specifier: ^1.5.4
         version: 1.6.3
 
-  playground: {}
+  playground:
+    devDependencies:
+      '@bc8-odx/nuxt':
+        specifier: workspace:*
+        version: link:../packages/nuxt
 
 packages:
 

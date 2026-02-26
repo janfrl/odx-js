@@ -25,10 +25,9 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
       if (config.server) {
         config.server.proxy ||= {}
         config.server.proxy[DEVTOOLS_UI_ROUTE] = {
-          target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}`,
+          target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}`,
           changeOrigin: true,
           followRedirects: true,
-          rewrite: path => path.replace(DEVTOOLS_UI_ROUTE, ''),
         }
       }
     })

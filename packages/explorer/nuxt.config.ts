@@ -18,10 +18,18 @@ export default defineNuxtConfig({
       hmr: {
         clientPort: +(process.env.PORT || 3300),
       },
+      fs: {
+        allow: [
+          '../../',
+        ],
+      },
     },
     optimizeDeps: {
       include: [
         'dagre',
+      ],
+      exclude: [
+        '@nuxt/devtools-kit/iframe-client',
       ],
     },
   },

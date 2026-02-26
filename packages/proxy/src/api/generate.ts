@@ -1,15 +1,12 @@
 import fs from 'node:fs'
 import { generateODataClient } from '@bc8-odx/nuxt/generate'
 import { createError, defineEventHandler, getQuery } from 'h3'
+import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
 import type { NitroRuntimeConfig } from './config'
 
-declare global {
-  function useRuntimeConfig(): NitroRuntimeConfig
-}
-
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
 
@@ -35,8 +32,9 @@ export default defineEventHandler(async (event) => {
     if (matched.url.startsWith('http')) {
       const metadataUrl = matched.url.endsWith('/') ? `${matched.url}$metadata` : `${matched.url}/$metadata`
       const tempDir = join(buildDir, 'sap-odata', 'temp')
-      if (!fs.existsSync(tempDir))
+      if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true })
+      }
 
       const tempFile = join(tempDir, `${matched.name}.edmx`)
 

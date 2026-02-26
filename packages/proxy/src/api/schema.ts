@@ -1,15 +1,12 @@
 import fs from 'node:fs'
 import { createError, defineEventHandler, getQuery } from 'h3'
+import { useRuntimeConfig } from 'nitropack/runtime'
 import { XMLParser } from 'fast-xml-parser'
 import { resolve } from 'pathe'
 import type { NitroRuntimeConfig } from './config'
 
-declare global {
-  function useRuntimeConfig(): NitroRuntimeConfig
-}
-
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
 
@@ -106,8 +103,9 @@ export default defineEventHandler(async (event) => {
           const dependent = constraint.Dependent
 
           const getPropName = (ref: any): any => {
-            if (!ref)
+            if (!ref) {
               return null
+            }
             const p = Array.isArray(ref) ? ref[0] : ref
             return p.Name || p.name
           }

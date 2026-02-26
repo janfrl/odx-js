@@ -2,23 +2,32 @@ import { resolve } from 'node:path'
 import process from 'node:process'
 import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'
 import pkg from '@sap-ux/fe-mockserver-core'
+import type { SapODataService } from '@bc8-odx/core'
+
+/**
+ * Interface for mock server service configuration.
+ */
+interface MockServiceConfig {
+  urlPath: string
+  metadataPath: string
+  mockdataPath: string
+}
 
 const FEMockserver = (pkg as any).default || pkg
 let mockHandler: any
 
 export default defineEventHandler(async (event) => {
-  // Only intercept OData paths
-  if (!event.path.startsWith('/sap/opu/odata/'))
+  if (!event.path.startsWith('/sap/opu/odata/')) {
     return
+  }
 
   if (!mockHandler) {
     const config = useRuntimeConfig().odata
-    const services = config.services || []
+    const services: SapODataService[] = config.services || []
 
-    // Filter for services that have a local URL (relative path to EDMX)
-    const mockServices = services
-      .filter((s: any) => s.url && !s.url.startsWith('http'))
-      .map((s: any) => {
+    const mockServices: MockServiceConfig[] = services
+      .filter((s: SapODataService) => s.url && !s.url.startsWith('http'))
+      .map((s: SapODataService) => {
         console.warn(`[MockServer] Registering dynamic service: ${s.name}`)
         return {
           urlPath: `/sap/opu/odata/sap/${s.name}`,

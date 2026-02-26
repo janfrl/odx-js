@@ -1,11 +1,15 @@
+import type { SapODataService } from '@bc8-odx/core'
 import fs from 'node:fs'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { defineEventHandler } from 'h3'
 import { createJiti } from 'jiti'
+import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
-import type { SapODataService } from '@bc8-odx/core'
 
+/**
+ * Interface for the Nitro runtime configuration.
+ */
 export interface NitroRuntimeConfig {
   odata?: {
     services?: SapODataService[]
@@ -29,21 +33,24 @@ export interface NitroRuntimeConfig {
   }
 }
 
-declare global {
-  function useRuntimeConfig(): NitroRuntimeConfig
-}
-
+/**
+ * Extracts entity set names from an EDMX file.
+ * @param edmxPath - Path to the EDMX file.
+ * @returns An array of entity set names.
+ */
 function extractEntitiesFromEdmx(edmxPath: string): string[] {
-  if (!fs.existsSync(edmxPath))
+  if (!fs.existsSync(edmxPath)) {
     return []
+  }
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8')
     const entitySets: string[] = []
     const regex = /<EntitySet\s+Name="([^"]+)"/g
     let match = regex.exec(content)
     while (match !== null) {
-      if (match[1])
+      if (match[1]) {
         entitySets.push(match[1])
+      }
       match = regex.exec(content)
     }
     return entitySets
@@ -54,16 +61,24 @@ function extractEntitiesFromEdmx(edmxPath: string): string[] {
   }
 }
 
+/**
+ * Detects the OData version from an EDMX file.
+ * @param edmxPath - Path to the EDMX file.
+ * @returns 'v2', 'v4', or null if not detected.
+ */
 function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
-  if (!fs.existsSync(edmxPath))
+  if (!fs.existsSync(edmxPath)) {
     return null
+  }
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
 
-    if (content.includes('Version="4.0"'))
+    if (content.includes('Version="4.0"')) {
       return 'v4'
-    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"'))
+    }
+    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"')) {
       return 'v2'
+    }
 
     if (content.includes('http://schemas.microsoft.com/ado/2007/06/edmx')) {
       return 'v2'
@@ -79,8 +94,8 @@ function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
   }
 }
 
-export default defineEventHandler(async () => {
-  const config = useRuntimeConfig()
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
   const buildDir = config.odata?.buildDir ?? ''
   const rootDir = config.odata?.rootDir ?? ''
   const services = config.odata?.services ?? []

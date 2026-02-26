@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createError, defineEventHandler, getQuery, getRequestURL, readBody } from 'h3'
+import { useRuntimeConfig } from 'nitropack/runtime'
 import { flattenOData } from '@bc8-odx/core'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
@@ -10,13 +11,9 @@ import { addODataLog } from '../utils/dev-logs'
 import type { NitroRuntimeConfig } from './config'
 import type { SapODataService } from '@bc8-odx/core'
 
-declare global {
-  function useRuntimeConfig(): NitroRuntimeConfig
-}
-
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-  const config = useRuntimeConfig()
+  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
   const basePath = config.public.odata?.basePath || '/api/sap-odata'
   const buildDir = config.odata?.buildDir ?? ''
 
@@ -116,8 +113,9 @@ export default defineEventHandler(async (event) => {
             break
           }
         }
-        if (!apiFactory)
+        if (!apiFactory) {
           apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+        }
 
         if (apiFactory) {
           const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
@@ -147,8 +145,9 @@ export default defineEventHandler(async (event) => {
             if (event.method === 'GET') {
               const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
               for (const k in query) {
-                if (k.startsWith('$'))
+                if (k.startsWith('$')) {
                   rb.addCustomQueryParameters({ [k]: String(query[k]) })
+                }
               }
               rb.addCustomHeaders(customHeaders)
               const rawResponse = await rb.executeRaw(destination)
