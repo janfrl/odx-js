@@ -9,7 +9,6 @@ import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 import SchemaNode from './SchemaNode.vue'
 
-// Styles
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 
@@ -23,6 +22,7 @@ const {
 } = useSharedODataState()
 
 const { fitView, onViewportChange, setViewport, onPaneReady, zoomIn, zoomOut, getViewport, setCenter, onConnect, onEdgesChange, onEdgeClick } = useVueFlow()
+const toast = useToast()
 
 const containerRef = ref<HTMLElement | null>(null)
 const { width, height } = useElementSize(containerRef)
@@ -33,25 +33,26 @@ const isFullscreen = ref(false)
 const schemaData = ref<any>(null)
 const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
 
-// Label Editing State
 const editingEdgeId = ref<string | null>(null)
 const editingLabelValue = ref('')
 const editingLabelPos = ref({ x: 0, y: 0 })
 
 const elk = new ELK()
 
-// State to remember the view before resize (width, height, x, y, zoom)
 let preTransitionState: { x: number, y: number, zoom: number } | null = null
 
+/**
+ * Toggles the fullscreen mode for the graph container.
+ */
 async function toggleFullscreen() {
-  if (!containerRef.value)
+  if (!containerRef.value) {
     return
+  }
 
   const view = getViewport()
   const w = containerRef.value.clientWidth
   const h = containerRef.value.clientHeight
 
-  // Capture current center in project coordinates
   preTransitionState = {
     x: (-view.x + (w / 2)) / view.zoom,
     y: (-view.y + (h / 2)) / view.zoom,
@@ -66,57 +67,51 @@ async function toggleFullscreen() {
   }
 }
 
+/**
+ * Fits the graph view to the available container size.
+ */
 function fitToScreen() {
   fitView({ padding: 0.2, duration: 400 })
 }
 
-// Handle Keyboard Shortcuts
 useEventListener('keydown', (e) => {
   const isInput = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
-  if (isInput)
+  if (isInput) {
     return
+  }
 
-  // Toggle Fullscreen with 'f' key
   if (e.key === 'f' || e.key === 'F') {
     toggleFullscreen()
   }
-  // Fit View with 'r' key
   if (e.key === 'r' || e.key === 'R') {
     fitToScreen()
   }
-  // Zoom In with '+' or '=' key
   if (e.key === '+' || e.key === '=') {
     zoomIn()
   }
-  // Zoom Out with '-' key
   if (e.key === '-') {
     zoomOut()
   }
 })
 
-// Watch for container size changes to adjust the view instantly
 watch([width, height], () => {
   if (preTransitionState) {
-    // requestAnimationFrame ensures we wait for the browser to paint the new size
     requestAnimationFrame(() => {
-      if (!preTransitionState)
+      if (!preTransitionState) {
         return
-
-      // Restore the focal point instantly
+      }
       setCenter(preTransitionState.x, preTransitionState.y, { zoom: preTransitionState.zoom })
       preTransitionState = null
     })
   }
 })
 
-// Update fullscreen state
 onMounted(() => {
   document.addEventListener('fullscreenchange', () => {
     isFullscreen.value = !!document.fullscreenElement
   })
 })
 
-// Define custom node types
 const nodeTypes: NodeTypesObject = {
   schema: markRaw(SchemaNode),
 }
@@ -125,16 +120,16 @@ watch(layoutMode, () => {
   generateGraph(true)
 })
 
-// Handle manual connections drawn by the user
 onConnect((params) => {
   const edgeId = `manual-${params.source}-${params.target}`
-  if (globalEdges.value.find(e => e.id === edgeId))
+  if (globalEdges.value.find(e => e.id === edgeId)) {
     return
+  }
 
   const newEdge = {
     ...params,
     id: edgeId,
-    label: '', // Start empty
+    label: '',
     animated: true,
     style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5,5' },
     labelStyle: { fill: '#3b82f6', fontWeight: 700, fontSize: '10px' },
@@ -143,19 +138,15 @@ onConnect((params) => {
   globalEdges.value = [...globalEdges.value, newEdge]
 })
 
-// Handle manual label editing on click
 onEdgeClick(({ event, edge }) => {
   if (edge.data?.isManual) {
     editingEdgeId.value = edge.id
     editingLabelValue.value = (edge.label as string) || ''
-
-    // Position the input near the mouse click
     editingLabelPos.value = {
       x: event.clientX,
       y: event.clientY,
     }
 
-    // Auto-focus the input in next tick
     nextTick(() => {
       const el = document.getElementById('edge-label-input')
       el?.focus()
@@ -163,6 +154,9 @@ onEdgeClick(({ event, edge }) => {
   }
 })
 
+/**
+ * Saves the current label for the editing edge.
+ */
 function saveEdgeLabel() {
   if (editingEdgeId.value) {
     globalEdges.value = globalEdges.value.map(e =>
@@ -172,11 +166,17 @@ function saveEdgeLabel() {
   }
 }
 
+/**
+ * Cancels the edge label editing process.
+ */
 function cancelEdgeEdit() {
   editingEdgeId.value = null
   editingLabelValue.value = ''
 }
 
+/**
+ * Deletes the currently selected edge.
+ */
 function deleteEdge() {
   if (editingEdgeId.value) {
     globalEdges.value = globalEdges.value.filter(e => e.id !== editingEdgeId.value)
@@ -184,7 +184,6 @@ function deleteEdge() {
   }
 }
 
-// Handle edge deletions or other changes
 onEdgesChange((changes) => {
   changes.forEach((change) => {
     if (change.type === 'remove') {
@@ -193,45 +192,42 @@ onEdgesChange((changes) => {
   })
 })
 
-// Save viewport changes to global state immediately
 onViewportChange((viewport) => {
   if (isReady.value) {
     globalViewport.value = { ...viewport }
   }
 })
 
-// Ensure fitView works correctly on the first render or restoration
 onPaneReady(() => {
   const serviceName = selectedService.value?.name || ''
   if (!initializedServices.value.has(serviceName)) {
-    // Instant fit for the very first time to avoid "sliding" animation on entry
     fitView({ padding: 0.2 })
     initializedServices.value.add(serviceName)
-    // Slightly longer delay to ensure the browser has painted the correctly positioned nodes
     setTimeout(() => isReady.value = true, 100)
   }
   else {
-    // Restore exact viewport from global state
     setViewport(globalViewport.value)
     setTimeout(() => isReady.value = true, 100)
   }
 })
 
+/**
+ * Fetches the schema and updates the graph visualization.
+ * @param forceAutoFit Whether to force a re-layout and re-fit.
+ */
 async function fetchSchema(forceAutoFit = false) {
-  if (!selectedService.value)
+  if (!selectedService.value) {
     return
+  }
 
   const isNewService = !initializedServices.value.has(selectedService.value.name)
 
-  // ONLY hide the graph for a brand new service entry to hide the "top-left" jump.
-  // For manual "Auto Layout" clicks, keep it visible for fast feedback.
   if (isNewService) {
     loading.value = true
     isReady.value = false
   }
   else if (forceAutoFit) {
     loading.value = true
-    // isReady remains true here
   }
 
   try {
@@ -258,19 +254,19 @@ async function fetchSchema(forceAutoFit = false) {
   }
 }
 
+/**
+ * Generates the nodes and edges for the graph based on the current schema data.
+ * @param autoFit Whether to automatically fit the view after generation.
+ */
 async function generateGraph(autoFit = false) {
-  if (!schemaData.value)
+  if (!schemaData.value) {
     return
+  }
 
   const newNodes: any[] = []
   const newEdges: any[] = []
-
-  // Preserve existing manual edges
   const manualEdges = globalEdges.value.filter(e => e.data?.isManual)
 
-  // ...
-
-  // 1. Create Nodes and Edges
   schemaData.value.entities.forEach((entity: any) => {
     newNodes.push({
       id: entity.name,
@@ -306,14 +302,12 @@ async function generateGraph(autoFit = false) {
     })
   })
 
-  // Add preserved manual edges
   manualEdges.forEach((me) => {
     if (!newEdges.find(e => e.id === me.id)) {
       newEdges.push(me)
     }
   })
 
-  // 2. Decide Layout Strategy
   if (layoutMode.value === 'elk') {
     const elkGraph = {
       id: 'root',
@@ -354,7 +348,6 @@ async function generateGraph(autoFit = false) {
     const connectedNodes = newNodes.filter(n => connectedNodeIds.has(n.id))
     const isolatedNodes = newNodes.filter(n => !connectedNodeIds.has(n.id))
 
-    // 3. Layout Connected Nodes via Dagre
     const g = new dagre.graphlib.Graph()
     g.setGraph({ rankdir: 'LR', nodesep: 100, ranksep: 200 })
     g.setDefaultEdgeLabel(() => ({}))
@@ -373,7 +366,6 @@ async function generateGraph(autoFit = false) {
     newEdges.forEach(edge => g.setEdge(edge.source, edge.target))
     dagre.layout(g)
 
-    // Apply positions from Dagre
     let maxX = 0
     let maxY = 0
 
@@ -386,7 +378,6 @@ async function generateGraph(autoFit = false) {
       }
     })
 
-    // 4. Layout Isolated Nodes in a Grid (if Compact Mode)
     if (layoutMode.value === 'compact' && isolatedNodes.length > 0) {
       const cols = Math.ceil(Math.sqrt(isolatedNodes.length))
       const startX = 0
@@ -420,17 +411,23 @@ async function generateGraph(autoFit = false) {
   }
 }
 
+/**
+ * Resets the graph visualization to its default state.
+ */
 function resetGraph() {
-  // eslint-disable-next-line no-alert
   if (window.confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
     globalEdges.value = globalEdges.value.filter(e => !e.data?.isManual)
     fetchSchema(true)
   }
 }
 
+/**
+ * Copies the ER diagram code in Mermaid format to the clipboard.
+ */
 function copyMermaid() {
-  if (!schemaData.value)
+  if (!schemaData.value) {
     return
+  }
   let code = 'erDiagram\n'
   schemaData.value.entities.forEach((entity: any) => {
     const props = entity.properties.map((p: any) => `    ${p.type.split('.').pop()} ${p.name} ${p.isKey ? 'PK' : ''}`).join('\n')
@@ -453,11 +450,10 @@ function copyMermaid() {
     })
   })
   navigator.clipboard.writeText(code)
-  devtoolsUiShowNotification({
-    message: 'Mermaid diagram code copied to clipboard!',
-    icon: 'i-carbon-copy',
-    position: 'bottom-right',
-    classes: 'text-base border-base',
+  toast.add({
+    title: 'Mermaid diagram code copied to clipboard!',
+    icon: 'i-heroicons-clipboard-document-check',
+    color: 'success',
   })
 }
 
@@ -475,72 +471,79 @@ watch(selectedService, () => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden px-6 text-base relative">
-    <div class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm text-base">
-      <!-- Action Toolbar: Balanced style like Data view -->
-      <div class="py-2 px-4 flex items-center justify-between bg-surface border-b border-base shrink-0 rounded-t-xl text-base">
-        <div class="flex items-center gap-3 text-base">
-          <div class="flex bg-zinc-500/10 p-0.5 rounded-lg border border-base items-center">
-            <button
-              class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
-              :class="layoutMode === 'elk' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+  <div class="flex-1 flex flex-col overflow-hidden px-6 relative">
+    <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#0a0a0a] rounded-t-xl overflow-hidden border-t border-x border-gray-200 dark:border-gray-800 shadow-sm">
+      <div class="py-2 px-4 flex items-center justify-between bg-gray-50 dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 shrink-0 rounded-t-xl">
+        <div class="flex items-center gap-3">
+          <div class="flex bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg border border-gray-200 dark:border-gray-700 items-center">
+            <UButton
+              label="ELK"
+              :variant="layoutMode === 'elk' ? 'solid' : 'ghost'"
+              :color="layoutMode === 'elk' ? 'primary' : 'neutral'"
+              size="xs"
+              class="text-[9px] uppercase font-black tracking-widest"
               @click="layoutMode = 'elk'"
-            >
-              ELK
-            </button>
-            <button
-              class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
-              :class="layoutMode === 'hierarchical' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+            />
+            <UButton
+              label="Dagre (Tree)"
+              :variant="layoutMode === 'hierarchical' ? 'solid' : 'ghost'"
+              :color="layoutMode === 'hierarchical' ? 'primary' : 'neutral'"
+              size="xs"
+              class="text-[9px] uppercase font-black tracking-widest"
               @click="layoutMode = 'hierarchical'"
-            >
-              Dagre (Tree)
-            </button>
-            <button
-              class="px-3 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border-none text-base"
-              :class="layoutMode === 'compact' ? 'bg-white dark:bg-zinc-800 text-primary shadow-sm' : 'bg-transparent text-muted hover:text-base'"
+            />
+            <UButton
+              label="Dagre (Grid)"
+              :variant="layoutMode === 'compact' ? 'solid' : 'ghost'"
+              :color="layoutMode === 'compact' ? 'primary' : 'neutral'"
+              size="xs"
+              class="text-[9px] uppercase font-black tracking-widest"
               @click="layoutMode = 'compact'"
-            >
-              Dagre (Grid)
-            </button>
+            />
           </div>
 
-          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight ml-4">
+          <div v-if="loading" class="animate-pulse text-[10px] text-primary-500 font-bold uppercase tracking-tight ml-4">
             Refining...
           </div>
         </div>
 
-        <div class="flex items-center gap-2 text-base">
-          <NButton
-            class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
-            icon="i-carbon-renew"
+        <div class="flex items-center gap-2">
+          <UButton
+            label="Auto Layout"
+            icon="i-heroicons-arrow-path"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            class="text-[10px] uppercase font-bold"
             title="Recalculate positions"
             @click="fetchSchema(true)"
-          >
-            Auto Layout
-          </NButton>
-          <NButton
-            class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-red-500 transition-colors text-[10px] uppercase font-bold"
-            icon="i-carbon-reset"
+          />
+          <UButton
+            label="Reset"
+            icon="i-heroicons-arrow-path-rounded-square"
+            color="error"
+            variant="ghost"
+            size="xs"
+            class="text-[10px] uppercase font-bold"
             title="Clear manual work"
             @click="resetGraph"
-          >
-            Reset
-          </NButton>
-          <div class="w-px h-4 bg-base mx-1 opacity-50" />
-          <button
-            class="px-4 py-1.5 text-[9px] uppercase font-black tracking-widest rounded-md transition-all cursor-pointer border border-base bg-zinc-500/10 text-muted hover:bg-zinc-500/20 hover:text-base flex items-center gap-1.5 shadow-sm"
+          />
+          <div class="w-px h-4 bg-gray-200 dark:bg-gray-800 mx-1 opacity-50" />
+          <UButton
+            label="Mermaid"
+            icon="i-heroicons-clipboard-document"
+            color="neutral"
+            variant="subtle"
+            size="xs"
+            class="text-[9px] uppercase font-black tracking-widest"
             @click="copyMermaid"
-          >
-            <div class="i-carbon-copy w-3 h-3" />
-            Mermaid
-          </button>
+          />
         </div>
       </div>
 
-      <!-- Graph Area -->
       <div
         ref="containerRef"
-        class="flex-1 relative overflow-hidden bg-white dark:bg-[#050505] transition-opacity duration-300 text-base"
+        class="flex-1 relative overflow-hidden bg-white dark:bg-[#050505] transition-opacity duration-300"
         :style="{ opacity: isReady ? 1 : 0 }"
       >
         <VueFlow
@@ -554,53 +557,52 @@ watch(selectedService, () => {
           <Background pattern-color="#333" :gap="20" />
 
           <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-            <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
+            <div class="flex flex-col bg-gray-900/80 backdrop-blur-md border border-gray-800 rounded-lg shadow-xl overflow-hidden text-white">
+              <UButton
+                icon="i-heroicons-plus"
+                color="neutral"
+                variant="ghost"
+                class="w-10 h-10 flex items-center justify-center rounded-none"
                 title="Zoom In (+)"
                 @click="zoomIn"
-              >
-                <div class="i-carbon-add w-4 h-4" />
-              </button>
-              <div class="h-px bg-zinc-800 mx-2" />
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-b-lg"
+              />
+              <div class="h-px bg-gray-800 mx-2" />
+              <UButton
+                icon="i-heroicons-minus"
+                color="neutral"
+                variant="ghost"
+                class="w-10 h-10 flex items-center justify-center rounded-none"
                 title="Zoom Out (-)"
                 @click="zoomOut"
-              >
-                <div class="i-carbon-subtract w-4 h-4" />
-              </button>
+              />
             </div>
-            <div class="flex flex-col bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg shadow-xl">
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-t-lg"
+            <div class="flex flex-col bg-gray-900/80 backdrop-blur-md border border-gray-800 rounded-lg shadow-xl overflow-hidden text-white">
+              <UButton
+                icon="i-heroicons-arrows-pointing-in"
+                color="neutral"
+                variant="ghost"
+                class="w-10 h-10 flex items-center justify-center rounded-none"
                 title="Fit to Screen (R)"
                 @click="fitToScreen"
-              >
-                <div class="i-carbon-center-to-fit w-5 h-5" />
-              </button>
-              <div class="h-px bg-zinc-800 mx-2" />
-              <button
-                class="w-10 h-10 text-zinc-400 hover:text-primary hover:bg-zinc-800 transition-all cursor-pointer border-none bg-transparent flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-white/50 z-10 rounded-b-lg"
+              />
+              <div class="h-px bg-gray-800 mx-2" />
+              <UButton
+                :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
+                color="neutral"
+                variant="ghost"
+                class="w-10 h-10 flex items-center justify-center rounded-none"
                 :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
                 @click="toggleFullscreen"
-              >
-                <div
-                  class="w-5 h-5"
-                  :class="isFullscreen ? 'i-carbon-minimize' : 'i-carbon-maximize'"
-                />
-              </button>
+              />
             </div>
           </div>
         </VueFlow>
 
-        <!-- Floating Edge Label Editor -->
         <template v-if="editingEdgeId">
-          <!-- Backdrop to catch clicks outside -->
           <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
 
           <div
-            class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-base rounded-xl shadow-2xl"
+            class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-2xl"
             :style="{
               left: `${editingLabelPos.x}px`,
               top: `${editingLabelPos.y}px`,
@@ -608,20 +610,25 @@ watch(selectedService, () => {
             }"
           >
             <div class="flex items-center gap-2">
-              <input
+              <UInput
                 id="edge-label-input"
                 v-model="editingLabelValue"
-                type="text"
                 placeholder="Label... (Enter to save)"
-                class="bg-base border border-base rounded-lg px-3 py-1.5 text-[12px] font-bold outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/10 w-48 transition-all"
+                size="sm"
+                color="neutral"
+                variant="outline"
+                class="w-48 font-bold"
                 @keyup.enter="saveEdgeLabel"
                 @keyup.esc="cancelEdgeEdit"
                 @keydown.ctrl.delete="deleteEdge"
-              >
+              />
 
-              <NButton
-                icon="i-carbon-trash-can"
-                class="!bg-red-500/10 hover:!bg-red-500 text-red-500 hover:text-white !border-none h-[32px] w-[32px] !rounded-lg shrink-0"
+              <UButton
+                icon="i-heroicons-trash"
+                color="error"
+                variant="subtle"
+                size="sm"
+                class="shrink-0"
                 title="Delete connection (Ctrl + Del)"
                 @click="deleteEdge"
               />
@@ -634,7 +641,6 @@ watch(selectedService, () => {
 </template>
 
 <style>
-/* VueFlow custom overrides to match Nuxt DevTools */
 .vue-flow__edge-path {
   stroke-dasharray: 5;
   stroke-dashoffset: 10;

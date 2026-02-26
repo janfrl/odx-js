@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useSharedODataState } from '../composables/useODataState'
 
 const { selectedService, selectedEntity, config, clearEntityMockData, sessionHeaders } = useSharedODataState()
+const toast = useToast()
 
 const previewLoading = ref(false)
 const showLoadingIndicator = ref(false)
@@ -14,10 +15,10 @@ const schema = ref<any>(null)
 
 let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Delay loading indicator to avoid flickering on fast requests
 watch(previewLoading, (isLoading) => {
-  if (loadingTimeout)
+  if (loadingTimeout) {
     clearTimeout(loadingTimeout)
+  }
 
   if (isLoading) {
     loadingTimeout = setTimeout(() => {
@@ -38,12 +39,10 @@ const editor = ref<EditorState>({
   original: null,
 })
 
-const ICONS = {
-  view: 'M16 8c-6.6 0-12 8-12 8s5.4 8 12 8 12-8 12-8-5.4-8-12-8zm0 13c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.7 0-3 1.3-3 3s1.3 3 3 3 3-1.3 3-3-1.3-3-3-3z',
-  edit: 'M26 4.5l-2.5-2.5c-0.7-0.7-1.8-0.7-2.5 0L4 19.1V24h4.9l17.1-17c0.7-0.7 0.7-1.8 0-2.5zM7.9 22H6v-1.9l13.1-13.1 1.9 1.9L7.9 22zM22.4 9.4l-1.9-1.9 1.6-1.6 1.9 1.9-1.6 1.6z',
-  trash: 'M12 12h2v12h-2z M18 12h2v12h-2z M4 6v2h2v20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h2V6zm4 22V8h16v20z M10 2h12v2H10z',
-}
-
+/**
+ * Selects an entity and resets the query input.
+ * @param entity The name of the entity to select.
+ */
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
   queryInput.value = '?'
@@ -51,10 +50,10 @@ async function selectEntity(entity: string) {
 
 const currentEntitySchema = computed(() => {
   const entityName = selectedEntity.value
-  if (!schema.value || !entityName)
+  if (!schema.value || !entityName) {
     return null
+  }
 
-  // Find the entity by set name or type name with robust plural handling (e.g. Categories -> Category)
   return schema.value.entities?.find((e: any) =>
     e.entitySet === entityName
     || e.name === entityName
@@ -64,6 +63,10 @@ const currentEntitySchema = computed(() => {
   ) || null
 })
 
+/**
+ * Checks if a property is a navigation property.
+ * @param key The property name.
+ */
 function isNavigationProperty(key: string) {
   return currentEntitySchema.value?.navigationProperties?.some((np: any) =>
     np.name.toLowerCase() === key.toLowerCase(),
@@ -72,17 +75,15 @@ function isNavigationProperty(key: string) {
 
 const previewColumns = computed(() => {
   const edmxEntity = currentEntitySchema.value
-  if (!edmxEntity)
+  if (!edmxEntity) {
     return []
+  }
 
   const edmxProps = edmxEntity.properties?.map((p: any) => p.name) || []
   const edmxNavProps = edmxEntity.navigationProperties?.map((np: any) => np.name) || []
 
-  // Final column list: properties followed by navigation properties
   const combined = [...edmxProps, ...edmxNavProps]
 
-  // Filter out redundant technical properties based on ReferentialConstraints
-  // (e.g. Hide 'SupplierID' if it's the dependent property for the 'Supplier' navigation)
   return combined.filter((col) => {
     const isTechnicalFK = schema.value?.associations?.some((assoc: any) => {
       return assoc.constraint?.dependentProperty === col
@@ -91,9 +92,13 @@ const previewColumns = computed(() => {
   })
 })
 
+/**
+ * Fetches the OData schema for the selected service.
+ */
 async function fetchSchema() {
-  if (!selectedService.value)
+  if (!selectedService.value) {
     return
+  }
   try {
     const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
     if (!res.ok) {
@@ -111,16 +116,18 @@ async function fetchSchema() {
   }
 }
 
+/**
+ * Refreshes the data for the selected entity.
+ */
 async function refreshEntityData() {
-  if (!selectedService.value || !selectedEntity.value)
+  if (!selectedService.value || !selectedEntity.value) {
     return
+  }
   previewLoading.value = true
   previewError.value = null
-  // We no longer clear previewData here to keep the old table visible until new data arrives
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
 
-    // Construct URL with raw query input
     let urlPath = `${config.value.basePath}/${route}/${selectedEntity.value}`
     if (queryInput.value && queryInput.value !== '?') {
       const q = queryInput.value.startsWith('?') ? queryInput.value : `?${queryInput.value}`
@@ -141,8 +148,9 @@ async function refreshEntityData() {
         statusMessage = errData.message || errData.statusMessage || (errData.data && errData.data.statusMessage) || statusMessage
       }
       catch {
-        if (errorText && errorText.length < 100)
+        if (errorText && errorText.length < 100) {
           statusMessage = errorText
+        }
       }
       throw new Error(statusMessage)
     }
@@ -158,10 +166,14 @@ async function refreshEntityData() {
   }
 }
 
+/**
+ * Opens the JSON editor for various modes.
+ * @param mode The editor mode.
+ * @param row The data row to edit or view.
+ */
 function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<string, unknown> | null = null) {
   let initialJson = ''
   if (mode === 'headers') {
-    // Find service-specific headers from config if available
     const svcConfig = config.value.services?.find(s => s.name === selectedService.value?.name)
     const combinedHeaders = {
       ...(svcConfig as any)?.headers,
@@ -173,7 +185,6 @@ function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<
     initialJson = JSON.stringify(row, null, 2)
   }
   else if (mode === 'create' && currentEntitySchema.value) {
-    // Generate template from schema
     const template: Record<string, any> = {}
     currentEntitySchema.value.properties?.forEach((p: any) => {
       if (p.type.includes('Int') || p.type.includes('Decimal') || p.type.includes('Double')) {
@@ -202,69 +213,78 @@ function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: Record<
   }
 }
 
+/**
+ * Deletes a single item.
+ * @param row The row to delete.
+ */
 async function deleteItem(row: Record<string, unknown>) {
-  if (!selectedService.value || !selectedEntity.value)
+  if (!selectedService.value || !selectedEntity.value) {
     return
+  }
   const idKey = Object.keys(row).find(k => k.toLowerCase() === 'id')
   const id = idKey ? row[idKey] : null
 
-  // eslint-disable-next-line no-alert
-  if (!id || !window.confirm(`Delete item ${id}?`))
+  if (!id || !window.confirm(`Delete item ${id}?`)) {
     return
+  }
   try {
     const route = selectedService.value.route || selectedService.value.name.toLowerCase()
     const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
     if (res.ok) {
-      devtoolsUiShowNotification({
-        message: `Item ${id} deleted successfully`,
-        icon: 'i-carbon-checkmark-outline',
-        position: 'bottom-right',
-        classes: 'text-base border-base',
+      toast.add({
+        title: `Item ${id} deleted successfully`,
+        icon: 'i-heroicons-check-circle',
+        color: 'success',
       })
       await refreshEntityData()
     }
   }
   catch (e: unknown) {
-    devtoolsUiShowNotification({
-      message: (e as Error).message,
-      icon: 'i-carbon-error',
-      position: 'bottom-right',
-      classes: 'text-base border-base',
+    toast.add({
+      title: (e as Error).message,
+      icon: 'i-heroicons-x-circle',
+      color: 'error',
     })
   }
 }
 
+/**
+ * Clears all mock data for the entity.
+ */
 async function clearData() {
-  if (!selectedService.value || !selectedEntity.value)
+  if (!selectedService.value || !selectedEntity.value) {
     return
+  }
 
-  // eslint-disable-next-line no-alert
-  if (!window.confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`))
+  if (!window.confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}? This cannot be undone.`)) {
     return
+  }
 
   try {
     await clearEntityMockData(selectedService.value.name, selectedEntity.value)
-    devtoolsUiShowNotification({
-      message: `All mock data for ${selectedEntity.value} cleared`,
-      icon: 'i-carbon-trash-can',
-      position: 'bottom-right',
-      classes: 'text-base border-base',
+    toast.add({
+      title: `All mock data for ${selectedEntity.value} cleared`,
+      icon: 'i-heroicons-trash',
+      color: 'success',
     })
     await refreshEntityData()
   }
   catch (e: unknown) {
-    devtoolsUiShowNotification({
-      message: (e as Error).message,
-      icon: 'i-carbon-error',
-      position: 'bottom-right',
-      classes: 'text-base border-base',
+    toast.add({
+      title: (e as Error).message,
+      icon: 'i-heroicons-x-circle',
+      color: 'error',
     })
   }
 }
 
+/**
+ * Downloads the current preview data as a JSON file.
+ */
 function downloadJson() {
-  if (previewData.value.length === 0)
+  if (previewData.value.length === 0) {
     return
+  }
   const blob = new Blob([JSON.stringify(previewData.value, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -275,7 +295,6 @@ function downloadJson() {
 }
 
 watch(selectedService, (newSvc) => {
-  // Reset entity selection when service changes to prevent auto-selecting the first one
   selectedEntity.value = null
   schema.value = null
 
@@ -285,8 +304,9 @@ watch(selectedService, (newSvc) => {
 }, { immediate: true })
 
 watch(selectedEntity, (newEntity) => {
-  if (newEntity)
+  if (newEntity) {
     refreshEntityData()
+  }
 }, { immediate: true })
 
 onMounted(() => {
@@ -297,15 +317,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden px-6 text-base">
-    <!-- Row 1: Tabs -->
-    <div class="flex items-center border-b border-base mb-4 shrink-0 pr-1 text-base">
+  <div class="flex-1 flex flex-col overflow-hidden px-6">
+    <div class="flex items-center border-b border-gray-200 dark:border-gray-800 mb-4 shrink-0 pr-1">
       <div class="flex gap-4 overflow-x-auto custom-scrollbar pb-px pr-4">
         <button
           v-for="entity in (selectedService?.entities || [])"
           :key="entity"
           class="text-[11px] font-bold font-mono px-1 py-2 border-b-2 transition-all bg-transparent cursor-pointer relative whitespace-nowrap"
-          :class="selectedEntity === entity ? 'text-primary border-primary' : 'text-muted border-transparent hover:text-base'"
+          :class="selectedEntity === entity ? 'text-primary border-primary' : 'text-gray-500 border-transparent hover:text-gray-900 dark:hover:text-white'"
           @click="selectEntity(entity)"
         >
           {{ entity }}
@@ -313,195 +332,195 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Main Container -->
     <div
       v-if="selectedEntity"
-      class="flex-1 flex flex-col min-h-0 bg-content rounded-t-xl overflow-hidden border-t border-x border-base shadow-sm text-base"
+      class="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#0a0a0a] rounded-t-xl overflow-hidden border-t border-x border-gray-200 dark:border-gray-800 shadow-sm"
     >
-      <!-- Row 2: Raw Request Toolbar -->
-      <div class="p-3 pr-4 flex items-end gap-4 bg-surface shrink-0 font-sans border-b border-base text-base">
-        <div class="flex flex-col gap-1 flex-1 text-base">
-          <label class="text-[9px] uppercase font-bold text-zinc-600 dark:text-zinc-400 tracking-widest ml-1 opacity-70 mb-1 text-base">
+      <div class="p-3 pr-4 flex items-end gap-4 bg-gray-50 dark:bg-[#0a0a0a] shrink-0 font-sans border-b border-gray-200 dark:border-gray-800">
+        <div class="flex flex-col gap-1 flex-1">
+          <label class="text-[9px] uppercase font-bold text-gray-600 dark:text-gray-400 tracking-widest ml-1 opacity-70 mb-1">
             OData Request Query
           </label>
-          <div class="relative flex items-center text-base">
-            <input
-              v-model="queryInput"
-              type="text"
-              placeholder="?id=... or ?$filter=..."
-              class="h-8 bg-base border border-base rounded px-3 text-[11px] font-mono outline-none focus:border-primary/50 text-base w-full transition-all"
-              @keyup.enter="refreshEntityData"
-            >
-          </div>
+          <UInput
+            v-model="queryInput"
+            placeholder="?id=... or ?$filter=..."
+            size="sm"
+            color="neutral"
+            variant="outline"
+            class="font-mono text-[11px]"
+            @keyup.enter="refreshEntityData"
+          />
         </div>
-        <div class="flex items-center text-base">
-          <NButton
-            class="px-4 h-[32px] transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"
-            icon="i-carbon-play"
-            @click="refreshEntityData"
-          >
-            Run
-          </NButton>
-        </div>
+        <UButton
+          label="Run"
+          icon="i-heroicons-play"
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          class="uppercase text-[10px] font-bold"
+          @click="refreshEntityData"
+        />
       </div>
 
-      <!-- Row 3: Action Toolbar -->
-      <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-surface border-b border-base shrink-0 text-base">
-        <div class="flex items-center gap-2 text-base">
+      <div class="py-2 pl-4 pr-4 flex items-center justify-between bg-gray-50 dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 shrink-0">
+        <div class="flex items-center gap-2">
           <span
             v-if="previewData.length > 0"
-            class="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest text-base"
+            class="text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-widest"
           >
             Items ({{ previewData.length }})
           </span>
-          <div class="flex items-center gap-1 ml-2 text-base">
-            <NButton
-              class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
-              icon="i-carbon-settings-adjust"
+          <div class="flex items-center gap-1 ml-2">
+            <UButton
+              label="Headers"
+              icon="i-heroicons-adjustments-horizontal"
+              color="neutral"
+              variant="ghost"
+              size="xs"
+              class="text-[10px] uppercase font-bold"
               @click="openEditor('headers')"
-            >
-              Headers
-            </NButton>
+            />
             <template v-if="previewData.length > 0">
-              <NButton
-                class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-primary transition-colors text-[10px] uppercase font-bold"
-                icon="i-carbon-download"
+              <UButton
+                label="JSON"
+                icon="i-heroicons-arrow-down-tray"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                class="text-[10px] uppercase font-bold"
                 @click="downloadJson"
-              >
-                JSON
-              </NButton>
-              <NButton
-                class="px-2 h-6 !bg-transparent !border-none !shadow-none text-muted hover:text-red-500 transition-colors text-[10px] uppercase font-bold"
-                icon="i-carbon-trash-can"
+              />
+              <UButton
+                label="Clear"
+                icon="i-heroicons-trash"
+                color="error"
+                variant="ghost"
+                size="xs"
+                class="text-[10px] uppercase font-bold"
                 @click="clearData"
-              >
-                Clear
-              </NButton>
+              />
             </template>
           </div>
         </div>
-        <NButton
-          class="px-3 h-7 transition-all text-zinc-700 dark:text-zinc-200 hover:text-zinc-900 dark:hover:text-white bg-zinc-500/10 ring-1 ring-inset ring-zinc-500/25 hover:bg-zinc-500/20 active:bg-zinc-500/25 border-none shadow-none font-bold uppercase text-[10px]"
-          icon="i-carbon-add"
+        <UButton
+          label="Create Item"
+          icon="i-heroicons-plus"
+          color="neutral"
+          variant="subtle"
+          size="sm"
+          class="uppercase text-[10px] font-bold"
           @click="openEditor('create')"
-        >
-          Create Item
-        </NButton>
+        />
       </div>
 
-      <!-- Table Area -->
-      <div class="flex-1 overflow-auto custom-scrollbar bg-content text-base relative">
-        <!-- Persistent loading overlay for long requests -->
+      <div class="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-[#050505] relative">
         <div
           v-if="showLoadingIndicator"
           class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-[#0c0c0d]/50 backdrop-blur-[1px]"
         >
-          <NLoading class="opacity-50" />
+          <UIcon name="i-heroicons-arrow-path" class="animate-spin w-8 h-8 text-primary" />
         </div>
 
         <div
           v-if="previewError"
-          class="p-16 flex flex-col items-center justify-center text-center text-base"
+          class="p-16 flex flex-col items-center justify-center text-center"
         >
-          <div class="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center mb-6 text-base">
-            <div class="i-carbon-warning-filled text-red-500 w-7 h-7 text-base" />
+          <div class="w-14 h-14 rounded-full bg-error-500/10 flex items-center justify-center mb-6">
+            <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-7 h-7" />
           </div>
-          <h3 class="text-xs font-bold text-red-500/80 uppercase tracking-widest mb-3 text-base">
+          <h3 class="text-xs font-bold text-error-500 uppercase tracking-widest mb-3">
             OData Request Failed
           </h3>
-          <p class="text-[12px] text-zinc-500 dark:text-zinc-400 font-mono mb-6 max-w-lg leading-relaxed text-base">
+          <p class="text-[12px] text-gray-500 dark:text-gray-400 font-mono mb-6 max-w-lg leading-relaxed">
             {{ previewError }}
           </p>
-          <button
-            class="text-[10px] font-bold uppercase tracking-wider hover:underline underline-offset-4 decoration-zinc-500/30 hover:decoration-primary text-muted hover:text-primary transition-all bg-transparent border-none cursor-pointer text-base"
+          <UButton
+            label="Retry Request"
+            color="neutral"
+            variant="link"
+            size="sm"
+            class="text-[10px] font-bold uppercase tracking-wider underline underline-offset-4"
             @click="refreshEntityData"
-          >
-            Retry Request
-          </button>
+          />
         </div>
 
         <template v-else>
           <table
-            class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max text-base"
+            class="w-full text-left text-[11px] border-separate border-spacing-0 min-w-max"
             :class="{ 'opacity-50 pointer-events-none transition-opacity duration-300': previewLoading && !showLoadingIndicator }"
           >
-            <thead class="sticky top-0 z-10 text-base">
-              <tr class="text-zinc-800 dark:text-zinc-200 text-[9px] font-black tracking-wide text-base">
-                <th class="px-4 py-3 w-28 text-center border-r border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
+            <thead class="sticky top-0 z-10">
+              <tr class="text-gray-800 dark:text-gray-200 text-[9px] font-black tracking-wide">
+                <th class="px-4 py-3 w-28 text-center border-r border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm font-bold uppercase text-[9px]">
                   Actions
                 </th>
                 <th
                   v-for="key in previewColumns"
                   :key="key"
-                  class="px-4 py-3 border-b border-base bg-zinc-100/80 dark:bg-zinc-900/80 backdrop-blur-sm font-bold normal-case text-[10px] opacity-80"
+                  class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm font-bold normal-case text-[10px] opacity-80"
                 >
                   {{ key }}
                 </th>
               </tr>
             </thead>
-            <tbody v-if="previewData.length > 0" class="divide-y border-base dark:divide-zinc-800/50 font-mono text-[11px]">
+            <tbody v-if="previewData.length > 0" class="divide-y border-gray-200 dark:border-gray-800 font-mono text-[11px]">
               <tr
                 v-for="(row, idx) in previewData"
                 :key="idx"
-                class="hover:bg-primary/10 transition-colors"
+                class="hover:bg-primary-500/10 transition-colors"
               >
-                <td class="p-0 border-r border-base align-middle">
+                <td class="p-0 border-r border-gray-200 dark:border-gray-800 align-middle">
                   <div class="flex items-center justify-center gap-2">
-                    <button
-                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                    <UButton
+                      icon="i-heroicons-eye"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
                       title="View"
                       @click="openEditor('view', row)"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        viewBox="0 0 32 32"
-                        fill="currentColor"
-                      ><path :d="ICONS.view" /></svg>
-                    </button>
-                    <button
-                      class="p-1.5 text-muted hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                    />
+                    <UButton
+                      icon="i-heroicons-pencil"
+                      color="neutral"
+                      variant="ghost"
+                      size="xs"
                       title="Edit"
                       @click="openEditor('update', row)"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        viewBox="0 0 32 32"
-                        fill="currentColor"
-                      ><path :d="ICONS.edit" /></svg>
-                    </button>
-                    <button
-                      class="p-1.5 text-muted hover:text-red-500 transition-colors bg-transparent border-none cursor-pointer"
+                    />
+                    <UButton
+                      icon="i-heroicons-trash"
+                      color="error"
+                      variant="ghost"
+                      size="xs"
                       title="Delete"
                       @click="deleteItem(row)"
-                    >
-                      <svg
-                        class="w-4 h-4"
-                        viewBox="0 0 32 32"
-                        fill="currentColor"
-                      ><path :d="ICONS.trash" /></svg>
-                    </button>
+                    />
                   </div>
                 </td>
                 <td
                   v-for="key in previewColumns"
                   :key="key"
-                  class="px-4 py-2.5 truncate max-w-[300px] opacity-90"
+                  class="px-4 py-2.5 truncate max-w-[300px] opacity-90 text-gray-900 dark:text-gray-100"
                 >
                   <template v-if="Array.isArray(row[key])">
-                    <button
-                      class="text-[10px] bg-primary/10 text-primary border border-primary/20 rounded px-1.5 py-0.5 font-bold hover:bg-primary/20 transition-colors cursor-pointer"
+                    <UButton
+                      :label="`${(row[key] as any[]).length} Items`"
+                      color="primary"
+                      variant="subtle"
+                      size="xs"
+                      class="text-[10px] font-bold"
                       @click.stop="openEditor('view', row[key] as any)"
-                    >
-                      {{ (row[key] as any[]).length }} Items
-                    </button>
+                    />
                   </template>
                   <template v-else-if="row[key] && typeof row[key] === 'object'">
-                    <button
-                      class="text-[10px] bg-zinc-500/10 text-zinc-500 border border-zinc-500/20 rounded px-1.5 py-0.5 font-bold hover:bg-zinc-500/20 transition-colors cursor-pointer"
+                    <UButton
+                      label="Object"
+                      color="neutral"
+                      variant="subtle"
+                      size="xs"
+                      class="text-[10px] font-bold"
                       @click.stop="openEditor('view', row[key] as any)"
-                    >
-                      Object
-                    </button>
+                    />
                   </template>
                   <template v-else-if="row[key] === null">
                     <template v-if="isNavigationProperty(key as string)">
@@ -523,31 +542,29 @@ onMounted(() => {
             v-if="previewData.length === 0 && !previewLoading"
             class="p-20 flex flex-col items-center justify-center text-center opacity-40 italic space-y-2"
           >
-            <div class="i-carbon-search w-8 h-8" />
+            <UIcon name="i-heroicons-magnifying-glass" class="w-8 h-8" />
             <p class="text-xs">
               No items found for this query
             </p>
           </div>
-          <!-- Initial load spinner -->
           <div v-else-if="previewLoading && showLoadingIndicator" class="p-20 flex justify-center opacity-30">
-            <NLoading />
+            <UIcon name="i-heroicons-arrow-path" class="animate-spin w-8 h-8" />
           </div>
         </template>
       </div>
     </div>
 
-    <!-- Placeholder when no entity is selected -->
     <div
       v-else
-      class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-zinc-500/5 rounded-t-xl border-t border-x border-base border-dashed"
+      class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-gray-500/5 rounded-t-xl border-t border-x border-gray-200 dark:border-gray-800 border-dashed"
     >
-      <div class="w-16 h-16 rounded-2xl bg-base border border-base flex items-center justify-center mb-6 shadow-sm">
-        <div class="i-carbon-ibm-cloud-direct-link-2-dedicated text-zinc-400 w-8 h-8" />
+      <div class="w-16 h-16 rounded-2xl bg-white dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-800 flex items-center justify-center mb-6 shadow-sm">
+        <UIcon name="i-heroicons-magnifying-glass-circle" class="text-gray-400 w-8 h-8" />
       </div>
       <h3 class="text-sm font-bold uppercase tracking-widest mb-2">
         Select an Entity
       </h3>
-      <p class="text-[12px] text-muted max-w-[280px] leading-relaxed text-base">
+      <p class="text-[12px] text-gray-500 max-w-[280px] leading-relaxed">
         Choose one of the available entity sets above to explore, edit, or create OData records.
       </p>
     </div>

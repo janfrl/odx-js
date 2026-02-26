@@ -11,5 +11,8 @@
     "dagre": "^0.8.5",
     "elkjs": "^0.9.3",
     "unocss": "^66.0.0"
+  },
+  "devDependencies": {
+    "@nuxt/ui": "^4.5.0"
   }
 }

@@ -13,38 +13,36 @@ defineProps<NodeProps<EntityData>>()
 </script>
 
 <template>
-  <div class="schema-node border border-base rounded-lg bg-content shadow-xl overflow-hidden min-w-[180px]">
-    <!-- Header: Matches Data Table Header color -->
-    <div class="px-3 py-2 bg-zinc-100 dark:bg-zinc-900 border-b border-base flex items-center gap-2">
-      <div class="i-carbon-table text-primary w-3.5 h-3.5" />
-      <span class="text-[11px] font-black tracking-wider text-base">{{ data.entity.name }}</span>
+  <div class="schema-node border border-gray-200 dark:border-gray-800 rounded-lg bg-white dark:bg-gray-900 shadow-xl overflow-hidden min-w-[180px]">
+    <div class="px-3 py-2 bg-gray-50 dark:bg-[#0a0a0a] border-b border-gray-200 dark:border-gray-800 flex items-center gap-2">
+      <UIcon name="i-heroicons-table-cells" class="text-primary-500 w-3.5 h-3.5" />
+      <span class="text-[11px] font-black tracking-wider text-gray-900 dark:text-gray-100">{{ data.entity.name }}</span>
     </div>
 
-    <!-- Properties -->
     <div class="py-1">
       <div
         v-for="prop in data.entity.properties"
         :key="prop.name"
-        class="px-3 py-1 flex items-center justify-between gap-4 hover:bg-primary/5 group transition-colors"
+        class="px-3 py-1 flex items-center justify-between gap-4 hover:bg-primary-500/5 group transition-colors"
       >
-        <div class="flex items-center gap-1.5 overflow-hidden">
-          <div
+        <div class="flex items-center gap-1.5 overflow-hidden text-gray-900 dark:text-gray-100">
+          <UIcon
             v-if="prop.isKey"
-            class="i-carbon-key text-amber-500 w-2.5 h-2.5 shrink-0"
+            name="i-heroicons-key"
+            class="text-amber-500 w-2.5 h-2.5 shrink-0"
             title="Primary Key"
           />
           <div v-else class="w-2.5 h-2.5 shrink-0" />
-          <span class="text-[10px] font-mono truncate text-base opacity-90">{{ prop.name }}</span>
+          <span class="text-[10px] font-mono truncate opacity-90">{{ prop.name }}</span>
         </div>
-        <span class="text-[9px] font-mono text-muted group-hover:text-primary transition-colors italic">
+        <span class="text-[9px] font-mono text-gray-500 group-hover:text-primary-500 transition-colors italic">
           {{ prop.type.split('.').pop() }}
         </span>
       </div>
     </div>
 
-    <!-- Handles for connections -->
-    <Handle type="target" :position="Position.Left" class="!bg-primary !w-2 !h-2" />
-    <Handle type="source" :position="Position.Right" class="!bg-primary !w-2 !h-2" />
+    <Handle type="target" :position="Position.Left" class="!bg-primary-500 !w-2 !h-2" />
+    <Handle type="source" :position="Position.Right" class="!bg-primary-500 !w-2 !h-2" />
   </div>
 </template>
 

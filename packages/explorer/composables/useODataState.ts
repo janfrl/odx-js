@@ -54,7 +54,6 @@ const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
 
-// Persistence for Schema Graph
 const globalNodes = ref<any[]>([])
 const globalEdges = ref<any[]>([])
 const globalViewport = ref<{ x: number, y: number, zoom: number }>({ x: 0, y: 0, zoom: 1 })
@@ -75,7 +74,8 @@ export function useSharedODataState(): any {
         }
       }
     }
-    catch { /* ignore */ }
+    catch {
+    }
   }
 
   async function refreshLogs(): Promise<void> {
@@ -85,7 +85,8 @@ export function useSharedODataState(): any {
         logs.value = (await res.json()) as ODataLog[]
       }
     }
-    catch { /* ignore */ }
+    catch {
+    }
   }
 
   async function generateService(name: string): Promise<void> {
@@ -107,7 +108,6 @@ export function useSharedODataState(): any {
         throw new Error(data.statusMessage || data.message || `Generation failed with status ${res.status}`)
       }
 
-      // Ensure at least 800ms of loading state for UX
       const elapsed = Date.now() - start
       if (elapsed < 800) {
         await new Promise(resolve => setTimeout(resolve, 800 - elapsed))
@@ -119,7 +119,6 @@ export function useSharedODataState(): any {
     }
     catch (err: any) {
       console.error('[nuxt-sap-odata] Generate failed:', err)
-      // You might want to show a notification here
     }
     finally {
       generatingStatus.value[name] = false
@@ -131,14 +130,16 @@ export function useSharedODataState(): any {
       await fetch('/__sap_odata__/logs', { method: 'DELETE' })
       logs.value = []
     }
-    catch { /* ignore */ }
+    catch {
+    }
   }
 
   async function clearEntityMockData(service: string, entitySet: string): Promise<void> {
     try {
       await fetch(`/__sap_odata__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
     }
-    catch { /* ignore */ }
+    catch {
+    }
   }
 
   const services = computed(() => config.value.services || [])
