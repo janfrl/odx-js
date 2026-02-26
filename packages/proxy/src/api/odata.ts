@@ -2,10 +2,10 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { createError, defineEventHandler, getQuery, getRequestURL, readBody, useRuntimeConfig } from '#imports'
+import { flattenOData } from '@bc8-odx/core'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
-import { flattenOData } from '@bc8-odx/core'
 import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {

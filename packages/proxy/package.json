@@ -1,11 +1,11 @@
 {
   "name": "@bc8-odx/proxy",
-  "version": "0.0.1",
   "type": "module",
-  "main": "./src/index.ts",
+  "version": "0.0.1",
   "exports": {
     ".": "./src/index.ts"
   },
+  "main": "./src/index.ts",
   "dependencies": {
     "@bc8-odx/core": "workspace:*",
     "@bc8-odx/nuxt": "workspace:*",

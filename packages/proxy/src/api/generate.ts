@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { createError, defineEventHandler, getQuery, useRuntimeConfig } from '#imports'
-import { join, resolve } from 'pathe'
 import { generateODataClient } from '@bc8-odx/nuxt/generate'
+import { join, resolve } from 'pathe'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
