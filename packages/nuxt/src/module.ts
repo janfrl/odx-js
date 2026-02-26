@@ -203,27 +203,27 @@ export default defineNuxtModule<ModuleOptions>({
 
     addServerHandler({
       route: `${basePath}/**`,
-      handler: resolver.resolve('../../../proxy/src/api/odata'),
+      handler: resolver.resolve('../../proxy/src/api/odata'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/logs',
-      handler: resolver.resolve('../../../proxy/src/api/logs'),
+      handler: resolver.resolve('../../proxy/src/api/logs'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/config',
-      handler: resolver.resolve('../../../proxy/src/api/config'),
+      handler: resolver.resolve('../../proxy/src/api/config'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/generate',
-      handler: resolver.resolve('../../../proxy/src/api/generate'),
+      handler: resolver.resolve('../../proxy/src/api/generate'),
     })
 
     addServerHandler({
       route: '/__sap_odata__/schema',
-      handler: resolver.resolve('../../../proxy/src/api/schema'),
+      handler: resolver.resolve('../../proxy/src/api/schema'),
     })
 
     if (options.devtools && nuxt.options.dev) {
