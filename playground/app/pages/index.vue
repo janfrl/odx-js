@@ -56,13 +56,13 @@ async function addItem(): Promise<void> {
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">UI Representation</span>
             <UBadge color="info" variant="subtle">
-              {{ data?.length || 0 }} Items
+              {{ data.value?.length || 0 }} Items
             </UBadge>
           </div>
         </template>
 
-        <ul class="divide-y divide-gray-100 dark:divide-gray-800 overflow-auto max-h-[500px] -m-4 sm:-m-6 px-4 sm:px-6">
-          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+        <ul class="divide-y divide-gray-100 dark:divide-gray-800 overflow-auto max-h-125 -m-4 sm:-m-6 px-4 sm:px-6">
+          <li v-for="(product, index) in data.value" :key="product.ID || index" class="py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
             <div class="flex justify-between items-start">
               <div>
                 <p class="font-medium text-gray-900 dark:text-white">
@@ -86,7 +86,7 @@ async function addItem(): Promise<void> {
         <template #header>
           <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
         </template>
-        <pre class="text-xs text-emerald-400 overflow-auto max-h-[500px] font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
+        <pre class="text-xs text-emerald-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
       </UCard>
     </div>
   </UContainer>
