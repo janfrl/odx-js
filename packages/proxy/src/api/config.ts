@@ -1,9 +1,37 @@
 import fs from 'node:fs'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { defineEventHandler, useRuntimeConfig } from '#imports'
+import { defineEventHandler } from 'h3'
 import { createJiti } from 'jiti'
 import { join, resolve } from 'pathe'
+import type { SapODataService } from '@bc8-odx/core'
+
+export interface NitroRuntimeConfig {
+  odata?: {
+    services?: SapODataService[]
+    buildDir?: string
+    rootDir?: string
+    destination?: string
+    headers?: Record<string, string>
+    forwardAuthHeader?: boolean
+    rejectUnauthorized?: boolean
+    auth?: {
+      username?: string
+      password?: string
+      bearerToken?: string
+    }
+  }
+  public: {
+    odata?: {
+      basePath?: string
+      mode?: string
+    }
+  }
+}
+
+declare global {
+  function useRuntimeConfig(): NitroRuntimeConfig
+}
 
 function extractEntitiesFromEdmx(edmxPath: string): string[] {
   if (!fs.existsSync(edmxPath))
@@ -53,9 +81,9 @@ function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
 
 export default defineEventHandler(async () => {
   const config = useRuntimeConfig()
-  const buildDir = config.odata?.buildDir as string
-  const rootDir = config.odata?.rootDir as string
-  const services = (config.odata?.services || []) as Array<{ name: string, route?: string, url: string, headers?: Record<string, string> }>
+  const buildDir = config.odata?.buildDir ?? ''
+  const rootDir = config.odata?.rootDir ?? ''
+  const services = config.odata?.services ?? []
 
   const jiti = createJiti(import.meta.url)
 
@@ -81,7 +109,6 @@ export default defineEventHandler(async () => {
       }
     }
 
-    // Find the EDMX path
     let edmxAbs = ''
     if (svc.url.startsWith('http')) {
       edmxAbs = join(buildDir, 'sap-odata', 'temp', `${svc.name}.edmx`)
@@ -95,9 +122,9 @@ export default defineEventHandler(async () => {
     if (targetFile) {
       isGenerated = true
       try {
-        const sdk = targetFile.endsWith('.ts')
+        const sdk = (targetFile.endsWith('.ts')
           ? await jiti.import(targetFile)
-          : await import(pathToFileURL(targetFile).href)
+          : await import(pathToFileURL(targetFile).href)) as Record<string, any>
 
         const apiFactoryName = `${svc.name}Api`
         const apiFactory = sdk[apiFactoryName]

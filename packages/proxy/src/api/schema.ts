@@ -1,26 +1,31 @@
 import fs from 'node:fs'
-import { createError, defineEventHandler, getQuery, useRuntimeConfig } from '#imports'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { XMLParser } from 'fast-xml-parser'
 import { resolve } from 'pathe'
+import type { NitroRuntimeConfig } from './config'
+
+declare global {
+  function useRuntimeConfig(): NitroRuntimeConfig
+}
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const query = getQuery(event)
-  const serviceName = query.service as string
+  const serviceName = (query.service as string) ?? ''
 
   if (!serviceName) {
     throw createError({ statusCode: 400, message: 'Missing service query parameter' })
   }
 
-  const services = (config.odata?.services || []) as Array<{ name: string, url: string }>
+  const services = config.odata?.services ?? []
   const svc = services.find(s => s.name === serviceName)
 
   if (!svc) {
     throw createError({ statusCode: 404, message: `Service "${serviceName}" not found` })
   }
 
-  const rootDir = config.odata?.rootDir as string
-  const buildDir = config.odata?.buildDir as string
+  const rootDir = config.odata?.rootDir ?? ''
+  const buildDir = config.odata?.buildDir ?? ''
 
   let edmxPath = ''
   if (svc.url.startsWith('http')) {
@@ -45,7 +50,7 @@ export default defineEventHandler(async (event) => {
       ignoreAttributes: false,
       attributeNamePrefix: '',
     })
-    const jsonObj = parser.parse(xmlData)
+    const jsonObj = parser.parse(xmlData) as Record<string, any>
 
     if (!jsonObj) {
       throw new Error('Parsed XML resulted in empty object')
@@ -130,7 +135,8 @@ export default defineEventHandler(async (event) => {
 
     return result
   }
-  catch (e: any) {
-    throw createError({ statusCode: 500, message: `Failed to parse EDMX: ${e.message}` })
+  catch (e: unknown) {
+    const error = e as Error
+    throw createError({ statusCode: 500, message: `Failed to parse EDMX: ${error.message}` })
   }
 })

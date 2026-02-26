@@ -4,8 +4,7 @@ import { defineNuxtModule } from '@nuxt/kit'
 
 export default defineNuxtConfig({
   modules: [
-    '../src/module',
-    // Subprocess to start the devtools client server
+    '../packages/nuxt/src/module',
     defineNuxtModule({
       setup(_, nuxt) {
         if (!nuxt.options.dev)
@@ -15,7 +14,7 @@ export default defineNuxtConfig({
           {
             command: 'npx',
             args: ['nuxi', 'dev', '--port', '3300'],
-            cwd: resolve(__dirname, '../client'),
+            cwd: resolve(__dirname, '../packages/explorer'),
           },
           {
             id: 'sap-odata:client',

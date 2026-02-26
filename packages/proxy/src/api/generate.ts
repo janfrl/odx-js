@@ -1,26 +1,31 @@
 import fs from 'node:fs'
-import { createError, defineEventHandler, getQuery, useRuntimeConfig } from '#imports'
 import { generateODataClient } from '@bc8-odx/nuxt/generate'
+import { createError, defineEventHandler, getQuery } from 'h3'
 import { join, resolve } from 'pathe'
+import type { NitroRuntimeConfig } from './config'
+
+declare global {
+  function useRuntimeConfig(): NitroRuntimeConfig
+}
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const query = getQuery(event)
-  const serviceName = query.service as string
+  const serviceName = (query.service as string) ?? ''
 
   if (!serviceName) {
     throw createError({ statusCode: 400, statusMessage: 'Missing service name' })
   }
 
-  const services = (config.odata?.services || []) as Array<{ name: string, url: string }>
+  const services = config.odata?.services ?? []
   const matched = services.find(s => s.name === serviceName)
 
   if (!matched) {
     throw createError({ statusCode: 404, statusMessage: `Service ${serviceName} not found` })
   }
 
-  const buildDir = config.odata?.buildDir as string
-  const rootDir = config.odata?.rootDir as string
+  const buildDir = config.odata?.buildDir ?? ''
+  const rootDir = config.odata?.rootDir ?? ''
   const outRoot = join(buildDir, 'sap-odata', 'generated')
   const outDir = join(outRoot, matched.name)
 
@@ -73,11 +78,12 @@ export default defineEventHandler(async (event) => {
       timestamp: Date.now(),
     }
   }
-  catch (err: any) {
+  catch (err: unknown) {
+    const error = err as Error
     throw createError({
       statusCode: 500,
-      statusMessage: `Generation failed: ${err.message}`,
-      data: { error: err.message },
+      statusMessage: `Generation failed: ${error.message}`,
+      data: { error: error.message },
     })
   }
 })

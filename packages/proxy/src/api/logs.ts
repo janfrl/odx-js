@@ -1,4 +1,4 @@
-import { defineEventHandler } from '#imports'
+import { defineEventHandler } from 'h3'
 import { clearODataLogs, getODataLogs } from '../utils/dev-logs'
 
 export default defineEventHandler((event) => {

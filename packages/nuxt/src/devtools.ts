@@ -34,7 +34,7 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
     })
   }
 
-  nuxt.hook('devtools:customTabs', (tabs) => {
+  (nuxt as any).hook('devtools:customTabs', (tabs: any[]) => {
     tabs.push({
       name: 'sap-odata',
       title: 'SAP OData',

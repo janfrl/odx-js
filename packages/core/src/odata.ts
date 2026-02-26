@@ -7,7 +7,7 @@ export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './o
  * Executes a single OData request using the provided client.
  */
 export async function $odata<T = unknown>(
-  client: any,
+  client: { <R>(path: string, options?: any): Promise<R> },
   service: string,
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
   options: FetchOptions<'json'> & { entitySet?: string } = {},

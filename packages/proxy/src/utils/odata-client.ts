@@ -1,5 +1,20 @@
-import { useRequestHeaders, useRuntimeConfig } from '#imports'
 import { ofetch } from 'ofetch'
+
+export interface ODataClientConfig {
+  public: {
+    odata?: {
+      basePath?: string
+    }
+  }
+  odata?: {
+    forwardAuthHeader?: boolean
+  }
+}
+
+declare global {
+  function useRuntimeConfig(): ODataClientConfig
+  function useRequestHeaders(include?: string[]): Record<string, string>
+}
 
 export function createODataClient(): any {
   const config = useRuntimeConfig()
@@ -15,7 +30,7 @@ export function createODataClient(): any {
           if (!(options.headers instanceof Headers)) {
             options.headers = new Headers(options.headers as HeadersInit)
           }
-          options.headers?.append('authorization', auth)
+          options.headers.append('authorization', auth)
         }
       }
     },

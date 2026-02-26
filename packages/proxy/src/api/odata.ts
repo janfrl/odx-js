@@ -1,18 +1,24 @@
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { createError, defineEventHandler, getQuery, getRequestURL, readBody, useRuntimeConfig } from '#imports'
+import { createError, defineEventHandler, getQuery, getRequestURL, readBody } from 'h3'
 import { flattenOData } from '@bc8-odx/core'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { addODataLog } from '../utils/dev-logs'
+import type { NitroRuntimeConfig } from './config'
+import type { SapODataService } from '@bc8-odx/core'
+
+declare global {
+  function useRuntimeConfig(): NitroRuntimeConfig
+}
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = useRuntimeConfig()
-  const basePath = (config.public?.odata?.basePath as string) || '/api/sap-odata'
-  const buildDir = config.odata?.buildDir as string
+  const basePath = config.public.odata?.basePath || '/api/sap-odata'
+  const buildDir = config.odata?.buildDir ?? ''
 
   const fullPath = event.path || ''
   const pathOnly = fullPath.split('?')[0] || ''
@@ -30,7 +36,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const services = (config.odata?.services || []) as any[]
+  const services: SapODataService[] = config.odata?.services ?? []
   const matched = services.find(svc =>
     svc.name.toLowerCase() === serviceRoute.toLowerCase()
     || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
@@ -57,7 +63,7 @@ export default defineEventHandler(async (event) => {
     customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
   }
 
-  const logRequest = (status: number, responseBody?: any, requestBody?: any, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
+  const logRequest = (status: number, responseBody?: unknown, requestBody?: unknown, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
@@ -74,7 +80,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  let capturedBody: any = null
+  let capturedBody: unknown = null
   if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
     capturedBody = await readBody(event).catch(() => null)
   }
@@ -100,7 +106,7 @@ export default defineEventHandler(async (event) => {
       }
 
       if (targetFile) {
-        const sdk = targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)
+        const sdk = (targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)) as Record<string, any>
         const possibleNames = [`${matched.name}Api`, `${serviceRoute}Api`, matched.name, serviceRoute]
         let apiFactory: any = null
         for (const name of possibleNames) {
@@ -120,9 +126,12 @@ export default defineEventHandler(async (event) => {
           const entityApi = actualKey ? api[actualKey] : null
 
           if (entityApi) {
-            const destination: any = {
+            const destination = {
               url: baseUrl.split('/sap/opu/odata/')[0],
               isTrustingAllCertificates: config.odata?.rejectUnauthorized === false,
+              username: '',
+              password: '',
+              authTokens: [] as { value: string }[],
             }
             const auth = matched.auth || config.odata?.auth || {}
             if (auth.bearerToken) {
@@ -167,12 +176,11 @@ export default defineEventHandler(async (event) => {
         fullTargetUrl = origin + fullTargetUrl
       }
       catch {
-        // Fallback
       }
     }
 
     const response = await $fetch(requestUrl, {
-      method: event.method,
+      method: event.method as 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
       query,
       headers: {
         accept: 'application/json',
@@ -180,11 +188,13 @@ export default defineEventHandler(async (event) => {
       },
     })
 
-    const finalData = (response as any)?.d?.results || (response as any)?.d || response
+    const data = response as Record<string, any>
+    const finalData = data?.d?.results || data?.d || data
     logRequest(200, finalData, capturedBody, fullTargetUrl)
     return flattenOData(finalData)
   }
-  catch (err: any) {
+  catch (err: unknown) {
+    const error = err as { response?: { status?: number }, message: string }
     const query = getQuery(event)
     let errorUrl = withQuery(baseUrl, query)
     if (errorUrl.startsWith('/')) {
@@ -193,10 +203,9 @@ export default defineEventHandler(async (event) => {
         errorUrl = origin + errorUrl
       }
       catch {
-        // Fallback
       }
     }
-    logRequest(err.response?.status || 500, { error: err.message }, capturedBody, errorUrl)
+    logRequest(error.response?.status || 500, { error: error.message }, capturedBody, errorUrl)
     throw err
   }
 })
