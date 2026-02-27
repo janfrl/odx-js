@@ -265,7 +265,6 @@ async function clearData() {
     return
   }
 
-  /* eslint-disable no-alert */
   if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}?`)) {
     return
   }
@@ -325,19 +324,21 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex flex-col overflow-hidden font-sans bg-white dark:bg-black text-xs">
-    <!-- Entity Navigation Menu -->
-    <div class="px-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/50 dark:bg-zinc-900 shrink-0">
-      <UNavigationMenu
-        :items="navigationItems"
-        class="w-full"
-      />
-    </div>
-
     <!-- Main Wrapper -->
-    <div
-      class="flex-1 flex flex-col min-h-0 relative pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0"
-    >
-      <!-- Empty State Unit (Refactored to match old favorite design) -->
+    <div class="flex-1 flex flex-col min-h-0 relative px-4 pb-0 sm:px-6 sm:pb-0">
+      <!-- Entity Navigation Menu (variant link, highlighted, no box) -->
+      <div class="shrink-0 mb-2">
+        <UNavigationMenu
+          :items="navigationItems"
+          variant="link"
+          :highlight="true"
+          class="w-full"
+        />
+        <!-- Separator directly under entities -->
+        <USeparator class="mb-4" />
+      </div>
+
+      <!-- Empty State Unit -->
       <div
         v-if="!selectedEntity"
         class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-zinc-500/5 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-t-2xl transition-all"
@@ -348,7 +349,7 @@ onMounted(() => {
         <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
           Select an Entity
         </h3>
-        <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-[280px] leading-relaxed">
+        <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
           Choose one of the available entity sets above to explore, edit, or create OData records.
         </p>
       </div>

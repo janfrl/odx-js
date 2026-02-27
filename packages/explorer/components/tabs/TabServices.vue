@@ -76,9 +76,9 @@ async function runGenerate(name: string) {
                 <span :class="svc.isGenerated ? 'text-success-500' : 'text-warning-500'">
                   {{ svc.isGenerated ? 'Completed' : 'Pending' }}
                 </span>
-                <div 
-                  class="w-1.5 h-1.5 rounded-full" 
-                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'" 
+                <div
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'"
                 />
               </div>
             </div>
@@ -91,7 +91,7 @@ async function runGenerate(name: string) {
       v-else
       class="h-full flex flex-col overflow-hidden"
     >
-      <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 shrink-0 bg-gray-50/50 dark:bg-zinc-950/50">
+      <div class="p-6 flex items-center gap-4 shrink-0">
         <UButton
           icon="i-heroicons-chevron-left"
           color="neutral"
@@ -112,7 +112,7 @@ async function runGenerate(name: string) {
               @click="runGenerate(selectedService.name)"
             />
           </div>
-          <div class="text-xs font-mono text-neutral-500">
+          <div class="text-xs font-mono text-muted">
             {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
           </div>
         </div>
