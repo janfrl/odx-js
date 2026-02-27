@@ -47,15 +47,40 @@ const {
 }
 
 .vue-flow__edge-label {
-  background: #10b981;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-weight: 600;
+  background: white;
+  color: #525252;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 11px;
+  border: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.dark .vue-flow__edge-label {
+  background: #171717;
+  color: #a3a3a3;
+  border-color: #404040;
+}
+
+.vue-flow__edge-textbg {
+  fill: white;
+  fill-opacity: 1;
+}
+
+.dark .vue-flow__edge-textbg {
+  fill: #171717;
+}
+
+.vue-flow__edge-text {
+  fill: #525252;
+  font-weight: 500;
   font-size: 11px;
 }
 
-.dark .vue-flow__edge-textbg { fill: #111827; }
+.dark .vue-flow__edge-text {
+  fill: #a3a3a3;
+}
 .vue-flow__controls { display: none; }
 
 .vue-flow {

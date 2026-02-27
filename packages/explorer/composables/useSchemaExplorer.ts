@@ -121,8 +121,8 @@ export function useSchemaExplorer(): any {
         id: edgeId,
         label: '',
         animated: true,
-        style: { stroke: '#10b981', strokeWidth: 2, strokeDasharray: '5,5' },
-        labelStyle: { fill: '#10b981', fontWeight: 700, fontSize: '10px' },
+        style: { stroke: '#737373', strokeWidth: 1.5, strokeDasharray: '5,5' },
+        labelStyle: { fontWeight: 500, fontSize: '11px' },
         data: { isManual: true },
       }
       globalEdges.value = [...globalEdges.value, newEdge]
@@ -270,12 +270,11 @@ export function useSchemaExplorer(): any {
                 id: edgeId,
                 source: entity.name,
                 target: targetEntityName,
-                label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
-                animated: true,
-                labelStyle: { fill: '#10b981', fontWeight: 700, fontSize: '10px' },
-                style: { stroke: '#10b981', strokeWidth: 2 },
-              })
-            }
+                                                                        label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
+                                                                        animated: true,
+                                                                        labelStyle: { fontWeight: 500, fontSize: '11px' },
+                                                                        style: { stroke: '#a3a3a3', strokeWidth: 1.5 },
+                                                                      })            }
           }
         }
       })
