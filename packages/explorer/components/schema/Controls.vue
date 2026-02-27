@@ -16,40 +16,40 @@ const {
 
 <template>
   <div class="absolute bottom-6 right-6 z-50 flex flex-col gap-3">
-    <div class="flex flex-col bg-white/75 dark:bg-neutral-900/75 backdrop-blur shadow-sm ring-1 ring-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden text-neutral-900 dark:text-white">
+    <div class="flex flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm border border-neutral-200/50 dark:border-neutral-800/50 rounded-lg overflow-hidden">
       <UButton
         icon="i-heroicons-plus"
         color="neutral"
         variant="ghost"
-        class="w-10 h-10 flex items-center justify-center rounded-none"
+        class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
         title="Zoom In (+)"
         @click="zoomIn()"
       />
-      <div class="h-px bg-neutral-200 dark:bg-neutral-800" />
+      <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
       <UButton
         icon="i-heroicons-minus"
         color="neutral"
         variant="ghost"
-        class="w-10 h-10 flex items-center justify-center rounded-none"
+        class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
         title="Zoom Out (-)"
         @click="zoomOut()"
       />
     </div>
-    <div class="flex flex-col bg-white/75 dark:bg-neutral-900/75 backdrop-blur shadow-sm ring-1 ring-neutral-200 dark:border-neutral-800 rounded-xl overflow-hidden text-neutral-900 dark:text-white">
+    <div class="flex flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm border border-neutral-200/50 dark:border-neutral-800/50 rounded-lg overflow-hidden">
       <UButton
         icon="i-heroicons-arrows-pointing-in"
         color="neutral"
         variant="ghost"
-        class="w-10 h-10 flex items-center justify-center rounded-none"
+        class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
         title="Fit to Screen (R)"
         @click="fitToScreen"
       />
-      <div class="h-px bg-neutral-200 dark:bg-neutral-800" />
+      <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
       <UButton
         :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
         color="neutral"
         variant="ghost"
-        class="w-10 h-10 flex items-center justify-center rounded-none"
+        class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
         :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
         @click="toggleFullscreen"
       />
