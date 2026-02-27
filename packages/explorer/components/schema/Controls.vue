@@ -33,15 +33,6 @@ const {
       />
       <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
       <UButton
-        icon="i-heroicons-arrow-path-rounded-square"
-        color="error"
-        variant="ghost"
-        class="w-9 h-9 flex items-center justify-center rounded-none opacity-50 hover:opacity-100 transition-opacity"
-        title="Reset Graph"
-        @click="resetGraph"
-      />
-      <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
-      <UButton
         icon="i-heroicons-clipboard-document"
         color="neutral"
         variant="ghost"

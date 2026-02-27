@@ -17,7 +17,6 @@ useSchemaExplorer()
       >
         <SchemaGraph>
           <SchemaControls />
-          <SchemaEdgeEditor />
           <SchemaHotkeys />
         </SchemaGraph>
       </div>

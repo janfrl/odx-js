@@ -1,6 +1,5 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
-import { useEventListener } from '@vueuse/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
 import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
@@ -10,10 +9,6 @@ const loading = ref(false)
 const isReady = ref(false)
 const isFullscreen = ref(false)
 const schemaData = ref<any>(null)
-
-const editingEdgeId = ref<string | null>(null)
-const editingLabelValue = ref('')
-const editingLabelPos = ref({ x: 0, y: 0 })
 
 const containerRef = ref<HTMLElement | null>(null)
 
@@ -38,9 +33,7 @@ export function useSchemaExplorer(): any {
     zoomOut,
     getViewport,
     setCenter,
-    onConnect,
     onEdgesChange,
-    onEdgeClick,
   } = useVueFlow()
 
   const toast = useToast()
@@ -82,44 +75,6 @@ export function useSchemaExplorer(): any {
     watch(selectedService, (newSvc) => {
       if (newSvc) {
         fetchSchema()
-      }
-    })
-
-    onConnect((params) => {
-      const edgeId = `manual-${params.source}-${params.target}`
-      if (globalEdges.value.find((e: any) => e.id === edgeId)) {
-        return
-      }
-
-      const newEdge = {
-        ...params,
-        id: edgeId,
-        label: '',
-        animated: true,
-        style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8, strokeDasharray: '5,5' },
-        labelStyle: { fontWeight: 500, fontSize: '11px' },
-        data: { isManual: true },
-      }
-      globalEdges.value = [...globalEdges.value, newEdge]
-    })
-
-    onEdgeClick(({ event, edge }: any) => {
-      if (edge.data?.isManual) {
-        editingEdgeId.value = edge.id
-        editingLabelValue.value = (edge.label as string) || ''
-
-        const clientX = 'clientX' in event ? (event as MouseEvent).clientX : 0
-        const clientY = 'clientY' in event ? (event as MouseEvent).clientY : 0
-
-        editingLabelPos.value = {
-          x: clientX,
-          y: clientY,
-        }
-
-        nextTick(() => {
-          const el = document.getElementById('edge-label-input')
-          el?.focus()
-        })
       }
     })
 
@@ -215,7 +170,6 @@ export function useSchemaExplorer(): any {
 
     const newNodes: any[] = []
     const newEdges: any[] = []
-    const manualEdges = globalEdges.value.filter((e: any) => e.data?.isManual)
 
     if (!schemaData.value.entities) {
       return
@@ -245,20 +199,15 @@ export function useSchemaExplorer(): any {
                 id: edgeId,
                 source: entity.name,
                 target: targetEntityName,
-                                                                                                    label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
-                                                                                                    animated: true,
-                                                                                                    labelStyle: { fontWeight: 500, fontSize: '11px' },
-                                                                                                    style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8 },
-                                                                                                  })            }
+                label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
+                animated: true,
+                labelStyle: { fontWeight: 500, fontSize: '11px' },
+                style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8 },
+              })
+            }
           }
         }
       })
-    })
-
-    manualEdges.forEach((me: any) => {
-      if (!newEdges.find((e: any) => e.id === me.id)) {
-        newEdges.push(me)
-      }
     })
 
     try {
@@ -316,11 +265,7 @@ export function useSchemaExplorer(): any {
   }
 
   function resetGraph(): void {
-    /* eslint-disable-next-line no-alert */
-    if (confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
-      globalEdges.value = globalEdges.value.filter((e: any) => !e.data?.isManual)
-      fetchSchema(true)
-    }
+    fetchSchema(true)
   }
 
   function copyMermaid(): void {
@@ -356,27 +301,6 @@ export function useSchemaExplorer(): any {
     })
   }
 
-  function saveEdgeLabel(): void {
-    if (editingEdgeId.value) {
-      globalEdges.value = globalEdges.value.map((e: any) =>
-        e.id === editingEdgeId.value ? { ...e, label: editingLabelValue.value } : e,
-      )
-      cancelEdgeEdit()
-    }
-  }
-
-  function cancelEdgeEdit(): void {
-    editingEdgeId.value = null
-    editingLabelValue.value = ''
-  }
-
-  function deleteEdge(): void {
-    if (editingEdgeId.value) {
-      globalEdges.value = globalEdges.value.filter((e: any) => e.id !== editingEdgeId.value)
-      cancelEdgeEdit()
-    }
-  }
-
   return {
     selectedService,
     globalNodes,
@@ -385,9 +309,6 @@ export function useSchemaExplorer(): any {
     loading,
     isReady,
     isFullscreen,
-    editingEdgeId,
-    editingLabelValue,
-    editingLabelPos,
     nodeTypes,
     fetchSchema,
     generateGraph,
@@ -395,8 +316,5 @@ export function useSchemaExplorer(): any {
     copyMermaid,
     toggleFullscreen,
     fitToScreen,
-    saveEdgeLabel,
-    cancelEdgeEdit,
-    deleteEdge,
   }
 }

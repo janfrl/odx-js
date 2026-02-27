@@ -25,6 +25,8 @@ const {
         :node-types="nodeTypes"
         :min-zoom="0.05"
         :max-zoom="4"
+        :connectable="false"
+        :delete-key="null"
         class="h-full w-full"
       >
         <Background pattern-color="#525252" :gap="20" />
