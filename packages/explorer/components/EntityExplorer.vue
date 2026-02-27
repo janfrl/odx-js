@@ -327,15 +327,14 @@ onMounted(() => {
     <!-- Main Wrapper -->
     <div class="flex-1 flex flex-col min-h-0 relative px-4 pb-0 sm:px-6 sm:pb-0">
       <!-- Entity Navigation Menu (Scrollable) -->
-      <div class="shrink-0 mb-2 overflow-x-auto custom-scrollbar pb-1">
+      <div class="shrink-0 overflow-x-auto custom-scrollbar mb-4">
         <UNavigationMenu
           :items="navigationItems"
           variant="link"
           :highlight="true"
-          class="min-w-max"
+          class="min-w-max data-[orientation=horizontal]:border-b border-default data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-48"
         />
         <!-- Separator directly under entities -->
-        <USeparator />
       </div>
 
       <!-- Empty State Unit -->
