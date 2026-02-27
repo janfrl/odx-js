@@ -11,7 +11,7 @@ const { selectedEntity, editor, refreshEntityData } = useEntityExplorer()
 <template>
   <div class="h-full flex flex-col overflow-hidden font-sans text-xs">
     <!-- Main Wrapper -->
-    <div class="flex-1 flex flex-col min-h-0 relative px-4 pb-0 sm:px-6 sm:pb-0">
+    <div class="flex-1 flex flex-col min-h-0 relative px-6 pb-0">
       <EntityNavigation />
 
       <!-- Empty State Unit -->
@@ -20,7 +20,7 @@ const { selectedEntity, editor, refreshEntityData } = useEntityExplorer()
       <!-- Unified Content Block -->
       <div
         v-else
-        class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-neutral-200/70 dark:ring-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all"
+        class="flex-1 flex flex-col min-h-0 overflow-hidden border-t border-x border-neutral-200/70 dark:border-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all"
       >
         <EntityToolbar />
         <EntityTable />
