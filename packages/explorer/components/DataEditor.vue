@@ -135,8 +135,7 @@ function close() {
               variant="none"
               class="h-full font-mono text-sm w-full"
               :ui="{
-                base: 'h-full w-full resize-none border-0 focus:ring-0 bg-transparent text-neutral-800 dark:text-neutral-200',
-                padding: 'p-4',
+                base: 'h-full w-full resize-none border-0 focus:ring-0 bg-transparent text-neutral-800 dark:text-neutral-200 p-4',
               }"
               placeholder="{ ... }"
             />
