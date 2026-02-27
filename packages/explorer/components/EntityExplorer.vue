@@ -9,7 +9,7 @@ const { selectedEntity, editor, refreshEntityData } = useEntityExplorer()
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden font-sans bg-white dark:bg-black text-xs">
+  <div class="h-full flex flex-col overflow-hidden font-sans text-xs">
     <!-- Main Wrapper -->
     <div class="flex-1 flex flex-col min-h-0 relative px-4 pb-0 sm:px-6 sm:pb-0">
       <EntityNavigation />
