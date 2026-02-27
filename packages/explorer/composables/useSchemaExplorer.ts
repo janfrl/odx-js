@@ -17,6 +17,8 @@ const editingEdgeId = ref<string | null>(null)
 const editingLabelValue = ref('')
 const editingLabelPos = ref({ x: 0, y: 0 })
 
+const containerRef = ref<HTMLElement | null>(null)
+
 let initialized = false
 
 export function useSchemaExplorer(): any {
@@ -44,7 +46,6 @@ export function useSchemaExplorer(): any {
   } = useVueFlow()
 
   const toast = useToast()
-  const containerRef = ref<HTMLElement | null>(null)
 
   const elk = new ELK()
 
@@ -76,26 +77,6 @@ export function useSchemaExplorer(): any {
     initialized = true
 
     // Global Listeners & Watchers (Singleton side-effects)
-    useEventListener('keydown', (e: KeyboardEvent) => {
-      const isInput = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
-      if (isInput) {
-        return
-      }
-
-      if (e.key === 'f' || e.key === 'F') {
-        toggleFullscreen()
-      }
-      if (e.key === 'r' || e.key === 'R') {
-        fitToScreen()
-      }
-      if (e.key === '+' || e.key === '=') {
-        zoomIn()
-      }
-      if (e.key === '-') {
-        zoomOut()
-      }
-    })
-
     window.addEventListener('fullscreenchange', () => {
       isFullscreen.value = !!document.fullscreenElement
     })

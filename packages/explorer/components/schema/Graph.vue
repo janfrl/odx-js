@@ -16,7 +16,7 @@ const {
   <div class="flex-1 relative bg-transparent h-full">
     <div
       ref="containerRef"
-      class="absolute inset-0 transition-opacity duration-500"
+      class="absolute inset-0 transition-opacity duration-500 bg-white dark:bg-neutral-900/50"
       :class="{ 'opacity-0': !isReady, 'opacity-100': isReady }"
     >
       <VueFlow
