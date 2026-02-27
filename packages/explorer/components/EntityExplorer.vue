@@ -331,7 +331,7 @@ onMounted(() => {
         <UNavigationMenu
           :items="navigationItems"
           variant="link"
-          :highlight="true"
+          highlight
           class="min-w-max data-[orientation=horizontal]:border-b border-default data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-48"
         />
         <!-- Separator directly under entities -->
@@ -422,16 +422,25 @@ onMounted(() => {
 
           <div
             v-if="previewError"
-            class="p-20 flex flex-col items-center justify-center text-center"
+            class="flex-1 flex flex-col items-center justify-center text-center p-12"
           >
-            <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-16 h-16 mb-6 opacity-50" />
-            <h3 class="text-xl font-bold mb-3 text-neutral-900 dark:text-neutral-100 uppercase tracking-widest">
+            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+              <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-8 h-8" />
+            </div>
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
               Request Failed
             </h3>
-            <p class="text-sm text-neutral-500 font-mono mb-8 max-w-lg leading-relaxed">
+            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-lg leading-relaxed mb-8 font-mono">
               {{ previewError }}
             </p>
-            <UButton label="Retry Request" color="neutral" variant="soft" size="lg" class="px-8 font-bold" @click="refreshEntityData" />
+            <UButton
+              label="Retry Request"
+              color="neutral"
+              variant="soft"
+              size="md"
+              class="px-8 font-bold"
+              @click="refreshEntityData"
+            />
           </div>
 
           <div v-else class="flex-1 overflow-auto custom-scrollbar h-full">
