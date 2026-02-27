@@ -324,24 +324,38 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden font-sans bg-white dark:bg-black">
+  <div class="h-full flex flex-col overflow-hidden font-sans bg-white dark:bg-black text-xs">
     <!-- Entity Navigation Menu -->
     <div class="px-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/50 dark:bg-zinc-900 shrink-0">
       <UNavigationMenu
         :items="navigationItems"
-        :highlight="true"
-        variant="link"
         class="w-full"
       />
     </div>
 
     <!-- Main Wrapper -->
     <div
-      v-if="selectedEntity"
       class="flex-1 flex flex-col min-h-0 relative pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0"
     >
-      <!-- Unified Block -->
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all">
+      <!-- Empty State Unit -->
+      <div
+        v-if="!selectedEntity"
+        class="flex-1 flex flex-col min-h-0 overflow-hidden border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-t-2xl bg-white dark:bg-zinc-900/50 transition-all items-center justify-center text-center p-12"
+      >
+        <UIcon name="i-heroicons-magnifying-glass-circle" class="text-neutral-400 w-16 h-16 mb-6 opacity-50" />
+        <h3 class="text-2xl font-bold mb-3 text-neutral-900 dark:text-neutral-100 uppercase tracking-widest">
+          Explore Your Data
+        </h3>
+        <p class="text-neutral-500 text-base leading-relaxed max-w-sm">
+          Select an entity set from the list above to start browsing and managing your OData records.
+        </p>
+      </div>
+
+      <!-- Unified Content Block -->
+      <div
+        v-else
+        class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all"
+      >
         <!-- Toolbars -->
         <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
           <!-- Query Area -->
@@ -350,7 +364,7 @@ onMounted(() => {
               v-model="queryInput"
               placeholder="?id=... or ?$filter=..."
               icon="i-heroicons-magnifying-glass"
-              class="flex-1 font-mono text-sm"
+              class="flex-1 font-mono"
               size="md"
               @keyup.enter="refreshEntityData"
             >
@@ -376,10 +390,10 @@ onMounted(() => {
               </span>
               <USeparator orientation="vertical" class="h-4" />
               <div class="flex items-center gap-2">
-                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" @click="openEditor('headers')" />
+                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" class="font-bold" @click="openEditor('headers')" />
                 <template v-if="previewData.length > 0">
-                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" @click="downloadJson" />
-                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="clearData" />
+                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" class="font-bold" @click="downloadJson" />
+                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" class="font-bold" @click="clearData" />
                 </template>
               </div>
             </div>
@@ -409,7 +423,7 @@ onMounted(() => {
             class="p-20 flex flex-col items-center justify-center text-center"
           >
             <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-16 h-16 mb-6 opacity-50" />
-            <h3 class="text-xl font-bold mb-3 text-neutral-900 dark:text-neutral-100">
+            <h3 class="text-xl font-bold mb-3 text-neutral-900 dark:text-neutral-100 uppercase tracking-widest">
               Request Failed
             </h3>
             <p class="text-sm text-neutral-500 font-mono mb-8 max-w-lg leading-relaxed">
@@ -462,27 +476,12 @@ onMounted(() => {
               class="p-32 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
             >
               <UIcon name="i-heroicons-magnifying-glass" class="w-12 h-12 mb-4 opacity-20" />
-              <p class="text-base tracking-wide">
+              <p class="text-base tracking-wide uppercase tracking-[0.2em]">
                 No records match your query
               </p>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div
-      v-else
-      class="flex-1 flex flex-col items-center justify-center bg-transparent"
-    >
-      <div class="text-center p-12 max-w-sm">
-        <UIcon name="i-heroicons-magnifying-glass-circle" class="text-neutral-400 w-16 h-16 mb-6 opacity-50" />
-        <h3 class="text-2xl font-bold mb-3 text-neutral-900 dark:text-neutral-100">
-          Explore Your Data
-        </h3>
-        <p class="text-neutral-500 text-base leading-relaxed">
-          Select an entity set from the list above to start browsing and managing your OData records.
-        </p>
       </div>
     </div>
 
