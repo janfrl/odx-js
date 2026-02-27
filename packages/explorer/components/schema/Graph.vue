@@ -16,7 +16,7 @@ const {
   <div class="flex-1 relative bg-transparent h-full">
     <div
       ref="containerRef"
-      class="absolute inset-0 transition-opacity duration-500 bg-white dark:bg-neutral-900/50"
+      class="absolute inset-0 transition-opacity duration-500 bg-neutral-50 dark:bg-neutral-950"
       :class="{ 'opacity-0': !isReady, 'opacity-100': isReady }"
     >
       <VueFlow
@@ -27,7 +27,7 @@ const {
         :max-zoom="4"
         class="h-full w-full"
       >
-        <Background pattern-color="#888" :gap="20" />
+        <Background pattern-color="#525252" :gap="20" />
         <slot />
       </VueFlow>
     </div>

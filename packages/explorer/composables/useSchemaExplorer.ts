@@ -1,7 +1,6 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import { useEventListener } from '@vueuse/core'
-import * as dagre from 'dagre'
 import ELK from 'elkjs/lib/elk.bundled.js'
 import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
@@ -11,7 +10,6 @@ const loading = ref(false)
 const isReady = ref(false)
 const isFullscreen = ref(false)
 const schemaData = ref<any>(null)
-const layoutMode = ref<'hierarchical' | 'compact' | 'elk'>('elk')
 
 const editingEdgeId = ref<string | null>(null)
 const editingLabelValue = ref('')
@@ -87,10 +85,6 @@ export function useSchemaExplorer(): any {
       }
     })
 
-    watch(layoutMode, () => {
-      generateGraph(true)
-    })
-
     onConnect((params) => {
       const edgeId = `manual-${params.source}-${params.target}`
       if (globalEdges.value.find((e: any) => e.id === edgeId)) {
@@ -102,7 +96,7 @@ export function useSchemaExplorer(): any {
         id: edgeId,
         label: '',
         animated: true,
-        style: { stroke: '#737373', strokeWidth: 1.5, strokeDasharray: '5,5' },
+        style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8, strokeDasharray: '5,5' },
         labelStyle: { fontWeight: 500, fontSize: '11px' },
         data: { isManual: true },
       }
@@ -251,11 +245,11 @@ export function useSchemaExplorer(): any {
                 id: edgeId,
                 source: entity.name,
                 target: targetEntityName,
-                                                                        label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
-                                                                        animated: true,
-                                                                        labelStyle: { fontWeight: 500, fontSize: '11px' },
-                                                                        style: { stroke: '#a3a3a3', strokeWidth: 1.5 },
-                                                                      })            }
+                                                                                                    label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
+                                                                                                    animated: true,
+                                                                                                    labelStyle: { fontWeight: 500, fontSize: '11px' },
+                                                                                                    style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8 },
+                                                                                                  })            }
           }
         }
       })
@@ -267,95 +261,38 @@ export function useSchemaExplorer(): any {
       }
     })
 
-    if (layoutMode.value === 'elk') {
-      try {
-        const elkGraph = {
-          id: 'root',
-          layoutOptions: {
-            'elk.algorithm': 'layered',
-            'elk.direction': 'RIGHT',
-            'elk.spacing.nodeNode': '100',
-            'elk.layered.spacing.nodeNodeBetweenLayers': '150',
-            'elk.padding': '[top=50,left=50,bottom=50,right=50]',
-          },
-          children: newNodes.map(n => ({
-            id: n.id,
-            width: 250,
-            height: 60 + (n.data.entity.properties.length * 22),
-          })),
-          edges: newEdges.map(e => ({
-            id: e.id,
-            sources: [e.source],
-            targets: [e.target],
-          })),
-        }
+    try {
+      const elkGraph = {
+        id: 'root',
+        layoutOptions: {
+          'elk.algorithm': 'layered',
+          'elk.direction': 'RIGHT',
+          'elk.spacing.nodeNode': '100',
+          'elk.layered.spacing.nodeNodeBetweenLayers': '150',
+          'elk.padding': '[top=50,left=50,bottom=50,right=50]',
+        },
+        children: newNodes.map(n => ({
+          id: n.id,
+          width: 250,
+          height: 60 + (n.data.entity.properties.length * 22),
+        })),
+        edges: newEdges.map(e => ({
+          id: e.id,
+          sources: [e.source],
+          targets: [e.target],
+        })),
+      }
 
-        const layoutedGraph = await elk.layout(elkGraph)
-        newNodes.forEach((node) => {
-          const elkNode = layoutedGraph.children?.find((c: any) => c.id === node.id)
-          if (elkNode) {
-            node.position = { x: elkNode.x || 0, y: elkNode.y || 0 }
-          }
-        })
-      }
-      catch (e) {
-        console.error('[SchemaExplorer] ELK layout failed', e)
-      }
+      const layoutedGraph = await elk.layout(elkGraph)
+      newNodes.forEach((node) => {
+        const elkNode = layoutedGraph.children?.find((c: any) => c.id === node.id)
+        if (elkNode) {
+          node.position = { x: elkNode.x || 0, y: elkNode.y || 0 }
+        }
+      })
     }
-    else {
-      const connectedNodeIds = new Set<string>()
-      newEdges.forEach((e) => {
-        connectedNodeIds.add(e.source)
-        connectedNodeIds.add(e.target)
-      })
-
-      const connectedNodes = newNodes.filter((n: any) => connectedNodeIds.has(n.id))
-      const isolatedNodes = newNodes.filter((n: any) => !connectedNodeIds.has(n.id))
-
-      const g = new dagre.graphlib.Graph()
-      g.setGraph({ rankdir: 'LR', nodesep: 100, ranksep: 200 })
-      g.setDefaultEdgeLabel(() => ({}))
-
-      connectedNodes.forEach((node: any) => {
-        const propCount = node.data.entity.properties.length
-        g.setNode(node.id, { width: 250, height: 60 + (propCount * 22) })
-      })
-
-      if (layoutMode.value === 'hierarchical') {
-        isolatedNodes.forEach((node: any) => {
-          g.setNode(node.id, { width: 250, height: 60 + (node.data.entity.properties.length * 22) })
-        })
-      }
-
-      newEdges.forEach((edge: any) => g.setEdge(edge.source, edge.target))
-      dagre.layout(g)
-
-      let maxX = 0
-      let maxY = 0
-
-      newNodes.forEach((node: any) => {
-        const dNode = g.node(node.id)
-        if (dNode) {
-          node.position = { x: dNode.x - 125, y: dNode.y - 50 }
-          maxX = Math.max(maxX, node.position.x + 250)
-          maxY = Math.max(maxY, node.position.y + 100)
-        }
-      })
-
-      if (layoutMode.value === 'compact' && isolatedNodes.length > 0) {
-        const cols = Math.ceil(Math.sqrt(isolatedNodes.length))
-        const startX = 0
-        const startY = maxY + 200
-
-        isolatedNodes.forEach((node: any, idx: number) => {
-          const col = idx % cols
-          const row = Math.floor(idx / cols)
-          node.position = {
-            x: startX + (col * 350),
-            y: startY + (row * 400),
-          }
-        })
-      }
+    catch (e) {
+      console.error('[SchemaExplorer] ELK layout failed', e)
     }
 
     globalNodes.value = [...newNodes]
@@ -448,7 +385,6 @@ export function useSchemaExplorer(): any {
     loading,
     isReady,
     isFullscreen,
-    layoutMode,
     editingEdgeId,
     editingLabelValue,
     editingLabelPos,
