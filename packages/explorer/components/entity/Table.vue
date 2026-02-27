@@ -81,14 +81,14 @@ function getRowData(row: any): Record<string, any> {
         class="min-w-max h-full"
         :ui="{
           thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
-          th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200/50 dark:border-neutral-800/50 py-4 px-6',
+          th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
         }"
       >
         <template #actions-cell="{ row }">
           <div class="flex items-center justify-center gap-2 w-30 shrink-0 sticky left-0 z-10">
-            <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="sm" @click="openEditor('view', getRowData(row))" />
-            <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="sm" @click="openEditor('update', getRowData(row))" />
-            <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="deleteItem(getRowData(row).ID || getRowData(row).Id)" />
+            <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('view', getRowData(row))" />
+            <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('update', getRowData(row))" />
+            <UButton icon="i-heroicons-trash" variant="ghost" color="neutral" size="sm" class="hover:text-error-500 hover:bg-error-500/10 transition-colors" @click="deleteItem(getRowData(row).ID || getRowData(row).Id)" />
           </div>
         </template>
 

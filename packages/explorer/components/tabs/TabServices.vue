@@ -121,6 +121,7 @@ async function runGenerate(name: string) {
           :items="tabs"
           size="sm"
           class="w-48"
+          :ui="{ list: 'bg-neutral-100 dark:bg-neutral-900', indicator: 'bg-white dark:bg-neutral-700 shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600', trigger: 'text-neutral-500 dark:text-neutral-400 font-semibold transition-colors data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white' }"
         />
       </div>
 
