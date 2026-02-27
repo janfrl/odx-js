@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useEntityExplorer } from '../composables/useEntityExplorer'
-import EntityNavigation from './entity/Navigation.vue'
 import EntityEmptyState from './entity/EmptyState.vue'
-import EntityToolbar from './entity/Toolbar.vue'
+import EntityNavigation from './entity/Navigation.vue'
 import EntityTable from './entity/Table.vue'
+import EntityToolbar from './entity/Toolbar.vue'
 
 const { selectedEntity, editor, refreshEntityData } = useEntityExplorer()
 </script>
