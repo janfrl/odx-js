@@ -88,6 +88,7 @@ function close() {
     v-model:open="editor.show"
     :title="editor.mode === 'headers' ? 'Session Headers' : `${editor.mode} Item`"
     :description="editor.mode !== 'headers' ? selectedEntity ?? '' : ''"
+    :ui="{ content: 'rounded-l-2xl' }"
   >
     <template #body>
       <div class="flex-1 flex flex-col gap-4 overflow-hidden">

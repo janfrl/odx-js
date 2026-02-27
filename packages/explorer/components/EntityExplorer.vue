@@ -329,6 +329,8 @@ onMounted(() => {
     <div class="px-4 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/50 dark:bg-zinc-900 shrink-0">
       <UNavigationMenu
         :items="navigationItems"
+        :highlight="true"
+        variant="link"
         class="w-full"
       />
     </div>
@@ -374,10 +376,10 @@ onMounted(() => {
               </span>
               <USeparator orientation="vertical" class="h-4" />
               <div class="flex items-center gap-2">
-                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" class="font-bold" @click="openEditor('headers')" />
+                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" @click="openEditor('headers')" />
                 <template v-if="previewData.length > 0">
-                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" class="font-bold" @click="downloadJson" />
-                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" class="font-bold" @click="clearData" />
+                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" @click="downloadJson" />
+                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="clearData" />
                 </template>
               </div>
             </div>

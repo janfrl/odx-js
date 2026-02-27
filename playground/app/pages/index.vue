@@ -113,7 +113,7 @@ async function deleteItem(id: string): Promise<void> {
         <template #header>
           <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
         </template>
-        <pre class="text-xs text-emerald-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
+        <pre class="text-xs text-primary-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
       </UCard>
     </div>
   </UContainer>

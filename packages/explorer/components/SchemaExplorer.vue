@@ -456,54 +456,54 @@ watch(selectedService, (newSvc) => {
 
 <template>
   <div class="h-full flex flex-col overflow-hidden relative bg-white dark:bg-black">
-    <!-- Main Wrapper (Zero bottom padding) -->
+    <!-- Main Wrapper -->
     <div class="pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0 flex-1 flex flex-col min-h-0">
       <!-- Unified Unit -->
       <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all">
         <!-- Toolbar Block -->
         <div class="shrink-0 flex flex-col bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
-          <div class="py-2 px-6 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-200/70 dark:border-gray-800/70 shrink-0 rounded-t-[inherit]">
-            <div class="flex items-center gap-3">
-              <div class="flex bg-gray-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-200/50 dark:border-zinc-700 items-center">
+          <div class="py-4 px-8 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-200/70 dark:border-gray-800/70 shrink-0 rounded-t-[inherit]">
+            <div class="flex items-center gap-6">
+              <div class="flex bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl border border-gray-200/50 dark:border-zinc-700 items-center">
                 <UButton
                   label="ELK"
                   :variant="layoutMode === 'elk' ? 'solid' : 'ghost'"
                   :color="layoutMode === 'elk' ? 'primary' : 'neutral'"
-                  size="xs"
-                  class="text-[9px] uppercase font-black tracking-widest px-3"
+                  size="sm"
+                  class="text-[10px] uppercase font-black tracking-widest px-4"
                   @click="layoutMode = 'elk'"
                 />
                 <UButton
                   label="Dagre (Tree)"
                   :variant="layoutMode === 'hierarchical' ? 'solid' : 'ghost'"
                   :color="layoutMode === 'hierarchical' ? 'primary' : 'neutral'"
-                  size="xs"
-                  class="text-[9px] uppercase font-black tracking-widest px-3"
+                  size="sm"
+                  class="text-[10px] uppercase font-black tracking-widest px-4"
                   @click="layoutMode = 'hierarchical'"
                 />
                 <UButton
                   label="Dagre (Grid)"
                   :variant="layoutMode === 'compact' ? 'solid' : 'ghost'"
                   :color="layoutMode === 'compact' ? 'primary' : 'neutral'"
-                  size="xs"
-                  class="text-[9px] uppercase font-black tracking-widest px-3"
+                  size="sm"
+                  class="text-[10px] uppercase font-black tracking-widest px-4"
                   @click="layoutMode = 'compact'"
                 />
               </div>
 
-              <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight ml-4">
-                Refining...
+              <div v-if="loading" class="animate-pulse text-[11px] text-primary font-bold uppercase tracking-widest ml-4">
+                Refining Schema...
               </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
               <UButton
                 label="Auto Layout"
                 icon="i-heroicons-arrow-path"
                 color="neutral"
                 variant="ghost"
-                size="xs"
-                class="text-[10px] uppercase font-bold"
+                size="md"
+                class="text-[11px] uppercase font-bold"
                 title="Recalculate positions"
                 @click="fetchSchema(true)"
               />
@@ -512,19 +512,19 @@ watch(selectedService, (newSvc) => {
                 icon="i-heroicons-arrow-path-rounded-square"
                 color="error"
                 variant="ghost"
-                size="xs"
-                class="text-[10px] uppercase font-bold"
+                size="md"
+                class="text-[11px] uppercase font-bold"
                 title="Clear manual work"
                 @click="resetGraph"
               />
-              <div class="w-px h-4 bg-gray-200/50 dark:bg-zinc-800 mx-1 opacity-50" />
+              <div class="w-px h-6 bg-gray-200/50 dark:bg-zinc-800 mx-2 opacity-50" />
               <UButton
                 label="Mermaid"
                 icon="i-heroicons-clipboard-document"
                 color="neutral"
                 variant="subtle"
-                size="xs"
-                class="text-[9px] uppercase font-black tracking-widest"
+                size="md"
+                class="text-[10px] uppercase font-black tracking-widest px-4"
                 @click="copyMermaid"
               />
             </div>
@@ -532,7 +532,7 @@ watch(selectedService, (newSvc) => {
         </div>
 
         <!-- Canvas Block -->
-        <div class="flex-1 relative bg-transparent">
+        <div class="flex-1 relative bg-transparent h-full">
           <div
             ref="containerRef"
             class="absolute inset-0 transition-opacity duration-500"
@@ -548,41 +548,41 @@ watch(selectedService, (newSvc) => {
             >
               <Background pattern-color="#333" :gap="20" />
 
-              <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden text-neutral-900 dark:text-white">
+              <div class="absolute bottom-6 right-6 z-50 flex flex-col gap-3">
+                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden text-neutral-900 dark:text-white">
                   <UButton
                     icon="i-heroicons-plus"
                     color="neutral"
                     variant="ghost"
-                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    class="w-12 h-12 flex items-center justify-center rounded-none"
                     title="Zoom In (+)"
                     @click="zoomIn"
                   />
-                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-2" />
+                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-3" />
                   <UButton
                     icon="i-heroicons-minus"
                     color="neutral"
                     variant="ghost"
-                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    class="w-12 h-12 flex items-center justify-center rounded-none"
                     title="Zoom Out (-)"
                     @click="zoomOut"
                   />
                 </div>
-                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden text-neutral-900 dark:text-white">
+                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden text-neutral-900 dark:text-white">
                   <UButton
                     icon="i-heroicons-arrows-pointing-in"
                     color="neutral"
                     variant="ghost"
-                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    class="w-12 h-12 flex items-center justify-center rounded-none"
                     title="Fit to Screen (R)"
                     @click="fitToScreen"
                   />
-                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-2" />
+                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-3" />
                   <UButton
                     :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
                     color="neutral"
                     variant="ghost"
-                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    class="w-12 h-12 flex items-center justify-center rounded-none"
                     :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
                     @click="toggleFullscreen"
                   />
@@ -594,22 +594,22 @@ watch(selectedService, (newSvc) => {
               <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
 
               <div
-                class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-gray-200/50 dark:border-gray-800 rounded-xl shadow-2xl"
+                class="fixed z-[100] flex flex-col gap-4 p-3 bg-white dark:bg-zinc-900 border border-gray-200/50 dark:border-gray-800 rounded-2xl shadow-2xl"
                 :style="{
                   left: `${editingLabelPos.x}px`,
                   top: `${editingLabelPos.y}px`,
                   transform: 'translate(-50%, -120%)',
                 }"
               >
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
                   <UInput
                     id="edge-label-input"
                     v-model="editingLabelValue"
                     placeholder="Label... (Enter to save)"
-                    size="sm"
+                    size="md"
                     color="neutral"
                     variant="outline"
-                    class="w-48 font-bold"
+                    class="w-56 font-bold"
                     @keyup.enter="saveEdgeLabel"
                     @keyup.esc="cancelEdgeEdit"
                     @keydown.ctrl.delete="deleteEdge"
@@ -619,7 +619,7 @@ watch(selectedService, (newSvc) => {
                     icon="i-heroicons-trash"
                     color="error"
                     variant="subtle"
-                    size="sm"
+                    size="md"
                     class="shrink-0"
                     title="Delete connection (Ctrl + Del)"
                     @click="deleteEdge"
@@ -649,9 +649,10 @@ watch(selectedService, (newSvc) => {
 .vue-flow__edge-label {
   background: #10b981;
   color: white;
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 11px;
 }
 
 .dark .vue-flow__edge-textbg { fill: #09090b; }
