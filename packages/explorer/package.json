@@ -10,6 +10,7 @@
     "@vue-flow/core": "^1.41.0",
     "dagre": "^0.8.5",
     "elkjs": "^0.9.3",
+    "shiki": "^4.0.0",
     "unocss": "^66.0.0"
   },
   "devDependencies": {
