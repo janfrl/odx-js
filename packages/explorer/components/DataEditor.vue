@@ -165,12 +165,12 @@ function close() {
             <UIcon :name="modeConfig.icon" class="w-5 h-5" />
           </div>
           <div class="flex flex-col">
-            <span class="font-bold text-base text-neutral-900 dark:text-white leading-tight">
+            <h2 class="font-bold text-base text-neutral-900 dark:text-white leading-tight">
               {{ modeConfig.title }}
-            </span>
-            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+            </h2>
+            <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400">
               {{ editor.mode === 'headers' ? 'Session Configuration' : selectedEntity }}
-            </span>
+            </p>
           </div>
         </div>
         <UButton

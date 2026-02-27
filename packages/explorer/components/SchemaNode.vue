@@ -41,8 +41,8 @@ defineProps<NodeProps<EntityData>>()
       </div>
     </div>
 
-    <Handle type="target" :position="Position.Left" class="!bg-primary-500 !w-2 !h-2" />
-    <Handle type="source" :position="Position.Right" class="!bg-primary-500 !w-2 !h-2" />
+    <Handle type="target" :position="Position.Left" class="bg-primary-500! w-2! h-2!" />
+    <Handle type="source" :position="Position.Right" class="bg-primary-500! w-2! h-2!" />
   </div>
 </template>
 

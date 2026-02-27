@@ -65,10 +65,18 @@ async function runClear() {
           <table class="w-full text-left text-xs min-w-max border-collapse">
             <thead class="sticky top-0 z-10 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
               <tr>
-                <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400 w-24">Status</th>
-                <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400 w-24">Method</th>
-                <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400">Resource</th>
-                <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400 text-right w-32">Duration</th>
+                <th class="px-8 py-4 font-black uppercase tracking-widest text-[10px] text-neutral-400 w-24">
+                  Status
+                </th>
+                <th class="px-8 py-4 font-black uppercase tracking-widest text-[10px] text-neutral-400 w-24">
+                  Method
+                </th>
+                <th class="px-8 py-4 font-black uppercase tracking-widest text-[10px] text-neutral-400">
+                  Resource
+                </th>
+                <th class="px-8 py-4 font-black uppercase tracking-widest text-[10px] text-neutral-400 text-right w-32">
+                  Duration
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-neutral-100 dark:divide-neutral-900 font-mono text-neutral-700 dark:text-neutral-300">
@@ -86,7 +94,7 @@ async function runClear() {
                       :color="(log.status || 0) < 400 ? 'success' : 'error'"
                       variant="soft"
                       size="md"
-                      class="font-black min-w-[48px] justify-center"
+                      class="font-black min-w-12 justify-center"
                     >
                       {{ log.status || '???' }}
                     </UBadge>
@@ -173,7 +181,9 @@ async function runClear() {
                 <td colspan="4" class="px-8 py-48 text-center text-neutral-400 italic">
                   <div class="flex flex-col items-center gap-4">
                     <UIcon name="i-heroicons-no-symbol" class="w-16 h-16 opacity-10 mb-4" />
-                    <p class="text-lg tracking-wide font-medium">No network activity recorded yet.</p>
+                    <p class="text-lg tracking-wide font-medium">
+                      No network activity recorded yet.
+                    </p>
                   </div>
                 </td>
               </tr>

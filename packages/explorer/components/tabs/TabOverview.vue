@@ -90,7 +90,9 @@ const stats = computed(() => [
             </li>
             <li class="p-5 flex justify-between items-center hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50 transition-colors">
               <span class="text-sm font-bold text-neutral-600 dark:text-neutral-400">Build Directory</span>
-              <UKbd size="sm" class="font-mono text-[10px] opacity-70">.nuxt/sap-odata/generated</UKbd>
+              <UKbd size="sm" class="font-mono text-[10px] opacity-70">
+                .nuxt/sap-odata/generated
+              </UKbd>
             </li>
             <li class="p-5 flex justify-between items-center hover:bg-neutral-50/50 dark:hover:bg-neutral-900/50 transition-colors">
               <span class="text-sm font-bold text-neutral-600 dark:text-neutral-400">Target Framework</span>

@@ -25,7 +25,7 @@ async function runGenerate(name: string) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-transparent">
+  <div class="h-full flex flex-col">
     <div
       v-if="!selectedService"
       class="p-8 space-y-8 overflow-y-auto custom-scrollbar"
@@ -75,9 +75,9 @@ async function runGenerate(name: string) {
                 <span :class="svc.isGenerated ? 'text-success-500' : 'text-warning-500'">
                   {{ svc.isGenerated ? 'Completed' : 'Pending' }}
                 </span>
-                <div 
-                  class="w-1.5 h-1.5 rounded-full" 
-                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'" 
+                <div
+                  class="w-1.5 h-1.5 rounded-full"
+                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'"
                 />
               </div>
             </div>
