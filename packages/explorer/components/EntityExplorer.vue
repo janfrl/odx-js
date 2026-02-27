@@ -326,16 +326,16 @@ onMounted(() => {
   <div class="h-full flex flex-col overflow-hidden font-sans bg-white dark:bg-black text-xs">
     <!-- Main Wrapper -->
     <div class="flex-1 flex flex-col min-h-0 relative px-4 pb-0 sm:px-6 sm:pb-0">
-      <!-- Entity Navigation Menu (variant link, highlighted, no box) -->
-      <div class="shrink-0 mb-2">
+      <!-- Entity Navigation Menu (Scrollable) -->
+      <div class="shrink-0 mb-2 overflow-x-auto custom-scrollbar pb-1">
         <UNavigationMenu
           :items="navigationItems"
           variant="link"
           :highlight="true"
-          class="w-full"
+          class="min-w-max"
         />
         <!-- Separator directly under entities -->
-        <USeparator class="mb-4" />
+        <USeparator />
       </div>
 
       <!-- Empty State Unit -->
@@ -360,7 +360,7 @@ onMounted(() => {
         class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-neutral-200/70 dark:ring-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all"
       >
         <!-- Toolbars -->
-        <div class="flex flex-col shrink-0 bg-white dark:bg-neutral-950 rounded-t-[inherit] overflow-hidden">
+        <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
           <!-- Query Area -->
           <div class="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center gap-4 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md rounded-t-[inherit]">
             <UInput
@@ -393,10 +393,10 @@ onMounted(() => {
               </span>
               <USeparator orientation="vertical" class="h-4" />
               <div class="flex items-center gap-2">
-                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" class="font-bold" @click="openEditor('headers')" />
+                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" @click="openEditor('headers')" />
                 <template v-if="previewData.length > 0">
-                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" class="font-bold" @click="downloadJson" />
-                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" class="font-bold" @click="clearData" />
+                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" @click="downloadJson" />
+                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="clearData" />
                 </template>
               </div>
             </div>
