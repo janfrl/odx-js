@@ -14,7 +14,7 @@ defineProps<NodeProps<EntityData>>()
 
 <template>
   <div class="schema-node border border-neutral-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-900 shadow-xl overflow-hidden min-w-45">
-    <div class="px-3 py-2 bg-neutral-50 dark:bg-[#0a0a0a] border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-2">
+    <div class="px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-2">
       <UIcon name="i-heroicons-table-cells" class="text-primary-500 w-3.5 h-3.5" />
       <span class="text-[11px] font-black tracking-wider text-neutral-900 dark:text-neutral-100">{{ data.entity.name }}</span>
     </div>

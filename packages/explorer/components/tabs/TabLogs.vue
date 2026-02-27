@@ -30,11 +30,11 @@ async function runClear() {
 </script>
 
 <template>
-  <div class="h-full flex flex-col min-h-0 bg-white dark:bg-black">
+  <div class="h-full flex flex-col min-h-0 bg-transparent">
     <div class="pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0 flex-1 flex flex-col min-h-0">
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all">
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-neutral-200/70 dark:ring-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all">
         <!-- Toolbar -->
-        <div class="px-8 py-4 border-b border-gray-200/70 dark:border-gray-800/70 flex justify-between items-center shrink-0 bg-gray-50/50 dark:bg-zinc-950 rounded-t-[inherit]">
+        <div class="px-8 py-4 border-b border-neutral-200/70 dark:border-neutral-800/70 flex justify-between items-center shrink-0 bg-neutral-50/50 dark:bg-neutral-950 rounded-t-[inherit]">
           <div class="flex items-center gap-4">
             <h1 class="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">
               Traffic Monitor
@@ -63,7 +63,7 @@ async function runClear() {
         <!-- Log Table -->
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <table class="w-full text-left text-xs min-w-max border-collapse">
-            <thead class="sticky top-0 z-10 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+            <thead class="sticky top-0 z-10 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
               <tr>
                 <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400 w-24">Status</th>
                 <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400 w-24">Method</th>
@@ -71,7 +71,7 @@ async function runClear() {
                 <th class="px-8 py-4 font-black uppercase tracking-[0.1em] text-[10px] text-neutral-400 text-right w-32">Duration</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-gray-900 font-mono text-neutral-700 dark:text-neutral-300">
+            <tbody class="divide-y divide-neutral-100 dark:divide-neutral-900 font-mono text-neutral-700 dark:text-neutral-300">
               <template
                 v-for="log in logs"
                 :key="log.id"
@@ -92,7 +92,7 @@ async function runClear() {
                     </UBadge>
                   </td>
                   <td class="px-8 py-5">
-                    <span class="px-3 py-1 rounded-lg bg-neutral-100 dark:bg-zinc-800 text-[11px] font-black uppercase tracking-widest opacity-70">
+                    <span class="px-3 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-[11px] font-black uppercase tracking-widest opacity-70">
                       {{ log.method }}
                     </span>
                   </td>
@@ -110,7 +110,7 @@ async function runClear() {
                 <tr v-if="expandedLog === log.id">
                   <td
                     colspan="4"
-                    class="bg-gray-50/30 dark:bg-zinc-950/30 p-0 border-y border-gray-100 dark:border-zinc-900"
+                    class="bg-neutral-50/30 dark:bg-neutral-950/30 p-0 border-y border-neutral-100 dark:border-neutral-900"
                   >
                     <div class="p-10 flex flex-col gap-12 max-w-6xl mx-auto text-neutral-900 dark:text-neutral-100">
                       <div class="space-y-4">
@@ -118,7 +118,7 @@ async function runClear() {
                           <UIcon name="i-heroicons-link" class="w-4 h-4" />
                           Backend Target
                         </div>
-                        <div class="p-6 bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-zinc-800 font-mono text-[12px] break-all select-all text-neutral-600 dark:text-neutral-400 leading-relaxed shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                        <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 font-mono text-[12px] break-all select-all text-neutral-600 dark:text-neutral-400 leading-relaxed shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                           {{ log.targetUrl || 'Internal Mock' }}
                         </div>
                       </div>
@@ -128,8 +128,8 @@ async function runClear() {
                           <UIcon name="i-heroicons-adjustments-horizontal" class="w-4 h-4" />
                           Request Headers
                         </div>
-                        <div class="p-6 bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-zinc-800 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-3 text-[12px] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
-                          <div v-for="(val, key) in log.requestHeaders" :key="key" class="flex justify-between border-b border-gray-100 dark:border-zinc-900 pb-2 group/header">
+                        <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-3 text-[12px] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                          <div v-for="(val, key) in log.requestHeaders" :key="key" class="flex justify-between border-b border-neutral-100 dark:border-neutral-900 pb-2 group/header">
                             <span class="text-primary-500 font-bold opacity-80 group-hover/header:opacity-100 transition-opacity">{{ key }}</span>
                             <span class="text-neutral-500 truncate ml-6 font-medium" :title="val">{{ val }}</span>
                           </div>
@@ -142,7 +142,7 @@ async function runClear() {
                             <UIcon name="i-heroicons-arrow-up-on-square" class="w-4 h-4" />
                             Payload
                           </div>
-                          <div class="p-6 bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-zinc-800 h-80 overflow-auto custom-scrollbar shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                          <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 h-80 overflow-auto custom-scrollbar shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                             <pre v-if="log.requestBody" class="text-[12px] leading-relaxed text-neutral-600 dark:text-neutral-400 font-mono">{{ JSON.stringify(log.requestBody, null, 2) }}</pre>
                             <div v-else class="h-full flex flex-col items-center justify-center opacity-20 italic text-sm">
                               <UIcon name="i-heroicons-document-minus" class="w-10 h-10 mb-3" />
@@ -155,7 +155,7 @@ async function runClear() {
                             <UIcon name="i-heroicons-arrow-down-on-square" class="w-4 h-4" />
                             Response
                           </div>
-                          <div class="p-6 bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-zinc-800 h-80 overflow-auto custom-scrollbar shadow-sm ring-1 ring-black/5 dark:ring-white/5">
+                          <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 h-80 overflow-auto custom-scrollbar shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                             <pre v-if="log.responseBody" class="text-[12px] leading-relaxed text-neutral-600 dark:text-neutral-400 font-mono">{{ JSON.stringify(log.responseBody, null, 2) }}</pre>
                             <div v-else class="h-full flex flex-col items-center justify-center opacity-20 italic text-sm">
                               <UIcon name="i-heroicons-document-minus" class="w-10 h-10 mb-3" />

@@ -41,11 +41,11 @@ async function deleteItem(id: string): Promise<void> {
 
 <template>
   <UContainer class="py-8">
-    <header class="border-b border-gray-200 dark:border-gray-800 pb-4 mb-8">
-      <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+    <header class="border-b border-neutral-200 dark:border-neutral-800 pb-4 mb-8">
+      <h1 class="text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight">
         Nuxt ODX Playground
       </h1>
-      <p class="text-gray-500 mt-2 flex items-center gap-2">
+      <p class="text-neutral-500 mt-2 flex items-center gap-2">
         Testing EntitySet abstraction: <UBadge color="neutral" variant="solid">
           V2Service/Products
         </UBadge>
@@ -75,27 +75,27 @@ async function deleteItem(id: string): Promise<void> {
       <UCard>
         <template #header>
           <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">UI Representation</span>
+            <span class="text-xs font-bold text-neutral-500 uppercase tracking-wider">UI Representation</span>
             <UBadge color="info" variant="subtle">
               {{ data?.length || 0 }} Items
             </UBadge>
           </div>
         </template>
 
-        <ul class="divide-y divide-gray-100 dark:divide-gray-800 overflow-auto max-h-125 -m-4 sm:-m-6 px-4 sm:px-6">
-          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+        <ul class="divide-y divide-neutral-100 dark:divide-neutral-800 overflow-auto max-h-125 -m-4 sm:-m-6 px-4 sm:px-6">
+          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
             <div class="flex justify-between items-start">
               <div>
-                <p class="font-medium text-gray-900 dark:text-white">
+                <p class="font-medium text-neutral-900 dark:text-white">
                   {{ product.Name }}
                 </p>
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="text-xs text-neutral-500 mt-1">
                   ID: {{ product.ID || 'N/A' }}
                 </p>
               </div>
               <div class="flex flex-col items-end gap-2">
                 <div class="text-right">
-                  <p class="font-semibold text-gray-900 dark:text-white">
+                  <p class="font-semibold text-neutral-900 dark:text-white">
                     {{ product.Price }} {{ product.Currency }}
                   </p>
                 </div>
@@ -109,9 +109,9 @@ async function deleteItem(id: string): Promise<void> {
         </ul>
       </UCard>
 
-      <UCard class="bg-gray-900 dark:bg-gray-950 border-gray-800">
+      <UCard class="bg-neutral-900 dark:bg-neutral-950 border-neutral-800">
         <template #header>
-          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
+          <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
         </template>
         <pre class="text-xs text-primary-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
       </UCard>

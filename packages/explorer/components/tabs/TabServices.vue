@@ -13,7 +13,6 @@ const tabs = [
 
 /**
  * Regenerates the SDK for a given service.
- * @param name The name of the service to regenerate.
  */
 async function runGenerate(name: string) {
   await generateService(name)
@@ -26,7 +25,7 @@ async function runGenerate(name: string) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-white dark:bg-black">
+  <div class="h-full flex flex-col bg-transparent">
     <div
       v-if="!selectedService"
       class="p-8 space-y-8 overflow-y-auto custom-scrollbar"
@@ -44,7 +43,7 @@ async function runGenerate(name: string) {
           @click="selectedService = svc"
         >
           <div class="flex items-start gap-4">
-            <div class="p-3 rounded-xl bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-neutral-400 group-hover:text-primary-500 transition-colors">
+            <div class="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-400 group-hover:text-primary-500 transition-colors">
               <UIcon
                 name="i-heroicons-circle-stack"
                 class="w-6 h-6"
@@ -76,9 +75,9 @@ async function runGenerate(name: string) {
                 <span :class="svc.isGenerated ? 'text-success-500' : 'text-warning-500'">
                   {{ svc.isGenerated ? 'Completed' : 'Pending' }}
                 </span>
-                <div
-                  class="w-1.5 h-1.5 rounded-full"
-                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'"
+                <div 
+                  class="w-1.5 h-1.5 rounded-full" 
+                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'" 
                 />
               </div>
             </div>

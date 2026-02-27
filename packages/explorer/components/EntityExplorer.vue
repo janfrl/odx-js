@@ -110,7 +110,7 @@ const tableColumns = computed<any[]>(() => {
       size: 140,
       minSize: 140,
       maxSize: 140,
-      class: 'sticky left-0 bg-gray-50 dark:bg-zinc-900 z-20 shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]',
+      class: 'sticky left-0 bg-neutral-50 dark:bg-neutral-900 z-20 shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]',
     },
     ...cols.map(c => ({
       id: c,
@@ -341,10 +341,10 @@ onMounted(() => {
       <!-- Empty State Unit -->
       <div
         v-if="!selectedEntity"
-        class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-zinc-500/5 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-t-2xl transition-all"
+        class="flex-1 flex flex-col items-center justify-center text-center p-12 bg-neutral-500/5 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-t-2xl transition-all"
       >
-        <div class="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-gray-800 flex items-center justify-center mb-6 shadow-sm">
-          <UIcon name="i-heroicons-circle-stack" class="text-zinc-400 w-8 h-8" />
+        <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+          <UIcon name="i-heroicons-circle-stack" class="text-neutral-400 w-8 h-8" />
         </div>
         <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
           Select an Entity
@@ -357,12 +357,12 @@ onMounted(() => {
       <!-- Unified Content Block -->
       <div
         v-else
-        class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all"
+        class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-neutral-200/70 dark:ring-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all"
       >
         <!-- Toolbars -->
-        <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
+        <div class="flex flex-col shrink-0 bg-white dark:bg-neutral-950 rounded-t-[inherit] overflow-hidden">
           <!-- Query Area -->
-          <div class="p-4 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center gap-4 bg-white/80 dark:bg-zinc-900/40 backdrop-blur-md rounded-t-[inherit]">
+          <div class="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center gap-4 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md rounded-t-[inherit]">
             <UInput
               v-model="queryInput"
               placeholder="?id=... or ?$filter=..."
@@ -386,7 +386,7 @@ onMounted(() => {
           </div>
 
           <!-- Actions Area -->
-          <div class="px-6 py-2 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-900/20">
+          <div class="px-6 py-2 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/20">
             <div class="flex items-center gap-4">
               <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
                 {{ previewData.length }} Results
@@ -442,8 +442,8 @@ onMounted(() => {
               :data="previewData || []"
               class="min-w-max h-full"
               :ui="{
-                thead: 'bg-gray-50/80 dark:bg-zinc-900/80 sticky top-0 z-30 backdrop-blur-sm',
-                th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-gray-200/50 dark:border-gray-800/50 py-4 px-6',
+                thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
+                th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200/50 dark:border-neutral-800/50 py-4 px-6',
               }"
             >
               <template #actions-cell="{ row }">

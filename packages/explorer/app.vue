@@ -21,9 +21,9 @@ onMounted(() => {
 
 <template>
   <UApp>
-    <div class="h-screen flex overflow-hidden font-sans bg-gray-50/50 dark:bg-[#09090b]">
+    <div class="h-screen flex overflow-hidden font-sans bg-neutral-50 dark:bg-neutral-950">
       <!-- Sidebar -->
-      <aside class="w-16 border-r border-gray-200/70 dark:border-gray-800/70 flex flex-col items-center p-3 gap-4 bg-white dark:bg-zinc-900/50 shrink-0">
+      <aside class="w-16 border-r border-neutral-200/70 dark:border-neutral-800/70 flex flex-col items-center p-3 gap-4 bg-white dark:bg-neutral-900/50 shrink-0">
         <UTooltip
           v-for="item in items"
           :key="item.id"
@@ -44,7 +44,7 @@ onMounted(() => {
       <!-- Main Container -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <!-- Header -->
-        <header class="h-14 border-b border-gray-200/70 dark:border-gray-800/70 flex items-center justify-between px-6 shrink-0 bg-white/80 dark:bg-zinc-900/40 backdrop-blur-md">
+        <header class="h-14 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between px-6 shrink-0 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md">
           <div class="flex items-center gap-2">
             <UIcon name="i-heroicons-cube-transparent" class="w-5 h-5 text-primary" />
             <h1 class="text-sm font-bold uppercase tracking-widest text-neutral-900 dark:text-neutral-100">
@@ -58,7 +58,6 @@ onMounted(() => {
         </header>
 
         <main class="flex-1 overflow-hidden relative">
-          <!-- Remove overflow-y-auto here so children can manage their own full-height scroll -->
           <div class="h-full flex flex-col overflow-hidden">
             <TabsTabOverview v-show="activeTab === 'overview'" class="overflow-y-auto custom-scrollbar" />
             <TabsTabServices v-show="activeTab === 'services'" />
@@ -89,11 +88,11 @@ html, body, #__nuxt {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--ui-gray-200);
+  background: var(--ui-neutral-200);
   border-radius: 10px;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--ui-gray-800);
+  background: var(--ui-neutral-800);
 }
 </style>
