@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NodeProps } from '@vue-flow/core'
+import { Handle, Position } from '@vue-flow/core'
 import { computed } from 'vue'
 
 interface EntityData {
@@ -76,6 +77,10 @@ const entityIcon = computed(() => {
         </span>
       </div>
     </div>
+
+    <!-- Hidden Handles for connection anchors -->
+    <Handle type="target" :position="Position.Left" class="opacity-0! pointer-events-none!" />
+    <Handle type="source" :position="Position.Right" class="opacity-0! pointer-events-none!" />
   </div>
 </template>
 
