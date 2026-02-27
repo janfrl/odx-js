@@ -68,7 +68,7 @@ function fitToScreen() {
   fitView({ padding: 0.2, duration: 400 })
 }
 
-useEventListener('keydown', (e) => {
+useEventListener('keydown', (e: KeyboardEvent) => {
   const isInput = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
   if (isInput) {
     return
@@ -116,7 +116,7 @@ watch(layoutMode, () => {
 
 onConnect((params) => {
   const edgeId = `manual-${params.source}-${params.target}`
-  if (globalEdges.value.find(e => e.id === edgeId)) {
+  if (globalEdges.value.find((e: any) => e.id === edgeId)) {
     return
   }
 
@@ -132,13 +132,18 @@ onConnect((params) => {
   globalEdges.value = [...globalEdges.value, newEdge]
 })
 
-onEdgeClick(({ event, edge }) => {
+onEdgeClick(({ event, edge }: any) => {
   if (edge.data?.isManual) {
     editingEdgeId.value = edge.id
     editingLabelValue.value = (edge.label as string) || ''
+
+    // Safely cast to MouseEvent or fallback to 0 if it's a TouchEvent
+    const clientX = 'clientX' in event ? (event as MouseEvent).clientX : 0
+    const clientY = 'clientY' in event ? (event as MouseEvent).clientY : 0
+
     editingLabelPos.value = {
-      x: event.clientX,
-      y: event.clientY,
+      x: clientX,
+      y: clientY,
     }
 
     nextTick(() => {
@@ -150,7 +155,7 @@ onEdgeClick(({ event, edge }) => {
 
 function saveEdgeLabel() {
   if (editingEdgeId.value) {
-    globalEdges.value = globalEdges.value.map(e =>
+    globalEdges.value = globalEdges.value.map((e: any) =>
       e.id === editingEdgeId.value ? { ...e, label: editingLabelValue.value } : e,
     )
     cancelEdgeEdit()
@@ -164,15 +169,15 @@ function cancelEdgeEdit() {
 
 function deleteEdge() {
   if (editingEdgeId.value) {
-    globalEdges.value = globalEdges.value.filter(e => e.id !== editingEdgeId.value)
+    globalEdges.value = globalEdges.value.filter((e: any) => e.id !== editingEdgeId.value)
     cancelEdgeEdit()
   }
 }
 
-onEdgesChange((changes) => {
-  changes.forEach((change) => {
+onEdgesChange((changes: any[]) => {
+  changes.forEach((change: any) => {
     if (change.type === 'remove') {
-      globalEdges.value = globalEdges.value.filter(e => e.id !== change.id)
+      globalEdges.value = globalEdges.value.filter((e: any) => e.id !== change.id)
     }
   })
 })
@@ -242,7 +247,7 @@ async function generateGraph(autoFit = false) {
 
   const newNodes: any[] = []
   const newEdges: any[] = []
-  const manualEdges = globalEdges.value.filter(e => e.data?.isManual)
+  const manualEdges = globalEdges.value.filter((e: any) => e.data?.isManual)
 
   if (!schemaData.value.entities) {
     return
@@ -267,7 +272,7 @@ async function generateGraph(autoFit = false) {
 
         if (targetEntityName && targetEntityName !== entity.name) {
           const edgeId = [entity.name, targetEntityName, assoc.name].sort().join('-')
-          if (!newEdges.find(e => e.id === edgeId)) {
+          if (!newEdges.find((e: any) => e.id === edgeId)) {
             newEdges.push({
               id: edgeId,
               source: entity.name,
@@ -283,8 +288,8 @@ async function generateGraph(autoFit = false) {
     })
   })
 
-  manualEdges.forEach((me) => {
-    if (!newEdges.find(e => e.id === me.id)) {
+  manualEdges.forEach((me: any) => {
+    if (!newEdges.find((e: any) => e.id === me.id)) {
       newEdges.push(me)
     }
   })
@@ -314,7 +319,7 @@ async function generateGraph(autoFit = false) {
 
       const layoutedGraph = await elk.layout(elkGraph)
       newNodes.forEach((node) => {
-        const elkNode = layoutedGraph.children?.find(c => c.id === node.id)
+        const elkNode = layoutedGraph.children?.find((c: any) => c.id === node.id)
         if (elkNode) {
           node.position = { x: elkNode.x || 0, y: elkNode.y || 0 }
         }
@@ -331,31 +336,31 @@ async function generateGraph(autoFit = false) {
       connectedNodeIds.add(e.target)
     })
 
-    const connectedNodes = newNodes.filter(n => connectedNodeIds.has(n.id))
-    const isolatedNodes = newNodes.filter(n => !connectedNodeIds.has(n.id))
+    const connectedNodes = newNodes.filter((n: any) => connectedNodeIds.has(n.id))
+    const isolatedNodes = newNodes.filter((n: any) => !connectedNodeIds.has(n.id))
 
     const g = new dagre.graphlib.Graph()
     g.setGraph({ rankdir: 'LR', nodesep: 100, ranksep: 200 })
     g.setDefaultEdgeLabel(() => ({}))
 
-    connectedNodes.forEach((node) => {
+    connectedNodes.forEach((node: any) => {
       const propCount = node.data.entity.properties.length
       g.setNode(node.id, { width: 250, height: 60 + (propCount * 22) })
     })
 
     if (layoutMode.value === 'hierarchical') {
-      isolatedNodes.forEach((node) => {
+      isolatedNodes.forEach((node: any) => {
         g.setNode(node.id, { width: 250, height: 60 + (node.data.entity.properties.length * 22) })
       })
     }
 
-    newEdges.forEach(edge => g.setEdge(edge.source, edge.target))
+    newEdges.forEach((edge: any) => g.setEdge(edge.source, edge.target))
     dagre.layout(g)
 
     let maxX = 0
     let maxY = 0
 
-    newNodes.forEach((node) => {
+    newNodes.forEach((node: any) => {
       const dNode = g.node(node.id)
       if (dNode) {
         node.position = { x: dNode.x - 125, y: dNode.y - 50 }
@@ -369,7 +374,7 @@ async function generateGraph(autoFit = false) {
       const startX = 0
       const startY = maxY + 200
 
-      isolatedNodes.forEach((node, idx) => {
+      isolatedNodes.forEach((node: any, idx: number) => {
         const col = idx % cols
         const row = Math.floor(idx / cols)
         node.position = {
@@ -401,9 +406,9 @@ async function generateGraph(autoFit = false) {
 }
 
 function resetGraph() {
-  /* eslint-disable no-alert */
+  /* eslint-disable-next-line no-alert */
   if (confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
-    globalEdges.value = globalEdges.value.filter(e => !e.data?.isManual)
+    globalEdges.value = globalEdges.value.filter((e: any) => !e.data?.isManual)
     fetchSchema(true)
   }
 }
@@ -455,55 +460,52 @@ watch(selectedService, (newSvc) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden relative bg-white dark:bg-black">
-    <!-- Main Wrapper -->
-    <div class="pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0 flex-1 flex flex-col min-h-0">
-      <!-- Unified Unit -->
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all">
-        <!-- Toolbar Block -->
-        <div class="shrink-0 flex flex-col bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
-          <div class="py-4 px-8 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-200/70 dark:border-gray-800/70 shrink-0 rounded-t-[inherit]">
+  <div class="h-full flex flex-col overflow-hidden relative bg-neutral-50 dark:bg-neutral-950 font-sans">
+    <div class="pt-4 px-4 pb-0 sm:pt-6 sm:px-6 flex-1 flex flex-col min-h-0">
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-neutral-200 dark:ring-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900 shadow-sm transition-all">
+        <div class="shrink-0 flex flex-col bg-white dark:bg-neutral-900 rounded-t-[inherit] overflow-hidden">
+          <div class="py-4 px-6 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 shrink-0">
             <div class="flex items-center gap-6">
-              <div class="flex bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl border border-gray-200/50 dark:border-zinc-700 items-center">
+              <div class="flex bg-neutral-100 dark:bg-neutral-800 p-1 rounded-lg border border-neutral-200 dark:border-neutral-700 items-center">
                 <UButton
                   label="ELK"
                   :variant="layoutMode === 'elk' ? 'solid' : 'ghost'"
                   :color="layoutMode === 'elk' ? 'primary' : 'neutral'"
-                  size="sm"
-                  class="text-[10px] uppercase font-black tracking-widest px-4"
+                  size="xs"
+                  class="font-semibold px-3"
                   @click="layoutMode = 'elk'"
                 />
                 <UButton
                   label="Dagre (Tree)"
                   :variant="layoutMode === 'hierarchical' ? 'solid' : 'ghost'"
                   :color="layoutMode === 'hierarchical' ? 'primary' : 'neutral'"
-                  size="sm"
-                  class="text-[10px] uppercase font-black tracking-widest px-4"
+                  size="xs"
+                  class="font-semibold px-3"
                   @click="layoutMode = 'hierarchical'"
                 />
                 <UButton
                   label="Dagre (Grid)"
                   :variant="layoutMode === 'compact' ? 'solid' : 'ghost'"
                   :color="layoutMode === 'compact' ? 'primary' : 'neutral'"
-                  size="sm"
-                  class="text-[10px] uppercase font-black tracking-widest px-4"
+                  size="xs"
+                  class="font-semibold px-3"
                   @click="layoutMode = 'compact'"
                 />
               </div>
 
-              <div v-if="loading" class="animate-pulse text-[11px] text-primary font-bold uppercase tracking-widest ml-4">
+              <div v-if="loading" class="animate-pulse text-xs text-neutral-500 font-semibold uppercase tracking-wider ml-4">
                 Refining Schema...
               </div>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
               <UButton
                 label="Auto Layout"
                 icon="i-heroicons-arrow-path"
-                color="neutral"
-                variant="ghost"
-                size="md"
-                class="text-[11px] uppercase font-bold"
+                color="primary"
+                variant="soft"
+                size="sm"
+                class="font-semibold"
                 title="Recalculate positions"
                 @click="fetchSchema(true)"
               />
@@ -512,26 +514,25 @@ watch(selectedService, (newSvc) => {
                 icon="i-heroicons-arrow-path-rounded-square"
                 color="error"
                 variant="ghost"
-                size="md"
-                class="text-[11px] uppercase font-bold"
+                size="sm"
+                class="font-semibold"
                 title="Clear manual work"
                 @click="resetGraph"
               />
-              <div class="w-px h-6 bg-gray-200/50 dark:bg-zinc-800 mx-2 opacity-50" />
+              <div class="w-px h-5 bg-neutral-200 dark:bg-neutral-800 mx-2" />
               <UButton
                 label="Mermaid"
                 icon="i-heroicons-clipboard-document"
                 color="neutral"
-                variant="subtle"
-                size="md"
-                class="text-[10px] uppercase font-black tracking-widest px-4"
+                variant="ghost"
+                size="sm"
+                class="font-semibold"
                 @click="copyMermaid"
               />
             </div>
           </div>
         </div>
 
-        <!-- Canvas Block -->
         <div class="flex-1 relative bg-transparent h-full">
           <div
             ref="containerRef"
@@ -546,43 +547,43 @@ watch(selectedService, (newSvc) => {
               :max-zoom="4"
               class="h-full w-full"
             >
-              <Background pattern-color="#333" :gap="20" />
+              <Background pattern-color="#888" :gap="20" />
 
               <div class="absolute bottom-6 right-6 z-50 flex flex-col gap-3">
-                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden text-neutral-900 dark:text-white">
+                <div class="flex flex-col bg-white/75 dark:bg-neutral-900/75 backdrop-blur shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-800 rounded-xl overflow-hidden text-neutral-900 dark:text-white">
                   <UButton
                     icon="i-heroicons-plus"
                     color="neutral"
                     variant="ghost"
-                    class="w-12 h-12 flex items-center justify-center rounded-none"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
                     title="Zoom In (+)"
-                    @click="zoomIn"
+                    @click="zoomIn()"
                   />
-                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-3" />
+                  <div class="h-px bg-neutral-200 dark:bg-neutral-800" />
                   <UButton
                     icon="i-heroicons-minus"
                     color="neutral"
                     variant="ghost"
-                    class="w-12 h-12 flex items-center justify-center rounded-none"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
                     title="Zoom Out (-)"
-                    @click="zoomOut"
+                    @click="zoomOut()"
                   />
                 </div>
-                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden text-neutral-900 dark:text-white">
+                <div class="flex flex-col bg-white/75 dark:bg-neutral-900/75 backdrop-blur shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-800 rounded-xl overflow-hidden text-neutral-900 dark:text-white">
                   <UButton
                     icon="i-heroicons-arrows-pointing-in"
                     color="neutral"
                     variant="ghost"
-                    class="w-12 h-12 flex items-center justify-center rounded-none"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
                     title="Fit to Screen (R)"
                     @click="fitToScreen"
                   />
-                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-3" />
+                  <div class="h-px bg-neutral-200 dark:bg-neutral-800" />
                   <UButton
                     :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
                     color="neutral"
                     variant="ghost"
-                    class="w-12 h-12 flex items-center justify-center rounded-none"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
                     :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
                     @click="toggleFullscreen"
                   />
@@ -591,35 +592,33 @@ watch(selectedService, (newSvc) => {
             </VueFlow>
 
             <template v-if="editingEdgeId">
-              <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
-
+              <div class="fixed inset-0 z-90" @click="cancelEdgeEdit" />
               <div
-                class="fixed z-[100] flex flex-col gap-4 p-3 bg-white dark:bg-zinc-900 border border-gray-200/50 dark:border-gray-800 rounded-2xl shadow-2xl"
+                class="fixed z-100 flex flex-col gap-4 p-3 bg-white dark:bg-neutral-900 ring-1 ring-neutral-200 dark:ring-neutral-800 rounded-xl shadow-xl"
                 :style="{
                   left: `${editingLabelPos.x}px`,
                   top: `${editingLabelPos.y}px`,
                   transform: 'translate(-50%, -120%)',
                 }"
               >
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2">
                   <UInput
                     id="edge-label-input"
                     v-model="editingLabelValue"
                     placeholder="Label... (Enter to save)"
-                    size="md"
+                    size="sm"
                     color="neutral"
                     variant="outline"
-                    class="w-56 font-bold"
+                    class="w-48 font-medium"
                     @keyup.enter="saveEdgeLabel"
                     @keyup.esc="cancelEdgeEdit"
                     @keydown.ctrl.delete="deleteEdge"
                   />
-
                   <UButton
                     icon="i-heroicons-trash"
                     color="error"
-                    variant="subtle"
-                    size="md"
+                    variant="soft"
+                    size="sm"
                     class="shrink-0"
                     title="Delete connection (Ctrl + Del)"
                     @click="deleteEdge"
@@ -651,11 +650,11 @@ watch(selectedService, (newSvc) => {
   color: white;
   padding: 4px 8px;
   border-radius: 6px;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 11px;
 }
 
-.dark .vue-flow__edge-textbg { fill: #09090b; }
+.dark .vue-flow__edge-textbg { fill: #111827; }
 .vue-flow__controls { display: none; }
 
 .vue-flow {
