@@ -41,9 +41,6 @@ const elk = new ELK()
 
 let preTransitionState: { x: number, y: number, zoom: number } | null = null
 
-/**
- * Toggles the fullscreen mode for the graph container.
- */
 async function toggleFullscreen() {
   if (!containerRef.value) {
     return
@@ -67,9 +64,6 @@ async function toggleFullscreen() {
   }
 }
 
-/**
- * Fits the graph view to the available container size.
- */
 function fitToScreen() {
   fitView({ padding: 0.2, duration: 400 })
 }
@@ -154,9 +148,6 @@ onEdgeClick(({ event, edge }) => {
   }
 })
 
-/**
- * Saves the current label for the editing edge.
- */
 function saveEdgeLabel() {
   if (editingEdgeId.value) {
     globalEdges.value = globalEdges.value.map(e =>
@@ -166,17 +157,11 @@ function saveEdgeLabel() {
   }
 }
 
-/**
- * Cancels the edge label editing process.
- */
 function cancelEdgeEdit() {
   editingEdgeId.value = null
   editingLabelValue.value = ''
 }
 
-/**
- * Deletes the currently selected edge.
- */
 function deleteEdge() {
   if (editingEdgeId.value) {
     globalEdges.value = globalEdges.value.filter(e => e.id !== editingEdgeId.value)
@@ -211,9 +196,6 @@ onPaneReady(() => {
   }
 })
 
-/**
- * Fetches the schema and updates the graph visualization.
- */
 async function fetchSchema(forceAutoFit = false) {
   if (!selectedService.value) {
     return
@@ -253,9 +235,6 @@ async function fetchSchema(forceAutoFit = false) {
   }
 }
 
-/**
- * Generates the nodes and edges for the graph based on the current schema data.
- */
 async function generateGraph(autoFit = false) {
   if (!schemaData.value) {
     return
@@ -421,9 +400,6 @@ async function generateGraph(autoFit = false) {
   }
 }
 
-/**
- * Resets the graph visualization.
- */
 function resetGraph() {
   /* eslint-disable no-alert */
   if (confirm('Reset graph? This will remove all manual connections and restore default layout.')) {
@@ -432,9 +408,6 @@ function resetGraph() {
   }
 }
 
-/**
- * Copies Mermaid code.
- */
 function copyMermaid() {
   if (!schemaData.value) {
     return
@@ -454,7 +427,7 @@ function copyMermaid() {
         const type1 = end1.type.split('.').pop()
         const type2 = end2.type.split('.').pop()
         const m1 = end1.multiplicity === '*' ? '}o' : '||'
-        const m2 = end2.multiplicity === '*' ? 'o{' : '||'
+        const m2 = end1.multiplicity === '*' ? 'o{' : '||'
         code += `  ${type1} ${m1}--${m2} ${type2} : "${assoc.name}"\n`
         addedAssocs.add(assoc.name)
       }
@@ -482,174 +455,180 @@ watch(selectedService, (newSvc) => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden relative">
-    <div class="flex-1 flex flex-col min-h-0 bg-white dark:bg-zinc-950 overflow-hidden">
-      <!-- Toolbar -->
-      <div class="py-2 px-6 flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 shrink-0">
-        <div class="flex items-center gap-3">
-          <div class="flex bg-gray-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-200 dark:border-zinc-700 items-center">
-            <UButton
-              label="ELK"
-              :variant="layoutMode === 'elk' ? 'solid' : 'ghost'"
-              :color="layoutMode === 'elk' ? 'primary' : 'neutral'"
-              size="xs"
-              class="text-[9px] uppercase font-black tracking-widest px-3"
-              @click="layoutMode = 'elk'"
-            />
-            <UButton
-              label="Dagre (Tree)"
-              :variant="layoutMode === 'hierarchical' ? 'solid' : 'ghost'"
-              :color="layoutMode === 'hierarchical' ? 'primary' : 'neutral'"
-              size="xs"
-              class="text-[9px] uppercase font-black tracking-widest px-3"
-              @click="layoutMode = 'hierarchical'"
-            />
-            <UButton
-              label="Dagre (Grid)"
-              :variant="layoutMode === 'compact' ? 'solid' : 'ghost'"
-              :color="layoutMode === 'compact' ? 'primary' : 'neutral'"
-              size="xs"
-              class="text-[9px] uppercase font-black tracking-widest px-3"
-              @click="layoutMode = 'compact'"
-            />
-          </div>
+  <div class="h-full flex flex-col overflow-hidden relative bg-white dark:bg-black">
+    <!-- Main Wrapper (Zero bottom padding) -->
+    <div class="pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0 flex-1 flex flex-col min-h-0">
+      <!-- Unified Unit -->
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all">
+        <!-- Toolbar Block -->
+        <div class="shrink-0 flex flex-col bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
+          <div class="py-2 px-6 flex items-center justify-between bg-white dark:bg-zinc-900 border-b border-gray-200/70 dark:border-gray-800/70 shrink-0 rounded-t-[inherit]">
+            <div class="flex items-center gap-3">
+              <div class="flex bg-gray-100 dark:bg-zinc-800 p-0.5 rounded-lg border border-gray-200/50 dark:border-zinc-700 items-center">
+                <UButton
+                  label="ELK"
+                  :variant="layoutMode === 'elk' ? 'solid' : 'ghost'"
+                  :color="layoutMode === 'elk' ? 'primary' : 'neutral'"
+                  size="xs"
+                  class="text-[9px] uppercase font-black tracking-widest px-3"
+                  @click="layoutMode = 'elk'"
+                />
+                <UButton
+                  label="Dagre (Tree)"
+                  :variant="layoutMode === 'hierarchical' ? 'solid' : 'ghost'"
+                  :color="layoutMode === 'hierarchical' ? 'primary' : 'neutral'"
+                  size="xs"
+                  class="text-[9px] uppercase font-black tracking-widest px-3"
+                  @click="layoutMode = 'hierarchical'"
+                />
+                <UButton
+                  label="Dagre (Grid)"
+                  :variant="layoutMode === 'compact' ? 'solid' : 'ghost'"
+                  :color="layoutMode === 'compact' ? 'primary' : 'neutral'"
+                  size="xs"
+                  class="text-[9px] uppercase font-black tracking-widest px-3"
+                  @click="layoutMode = 'compact'"
+                />
+              </div>
 
-          <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight ml-4">
-            Refining...
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <UButton
-            label="Auto Layout"
-            icon="i-heroicons-arrow-path"
-            color="neutral"
-            variant="ghost"
-            size="xs"
-            class="text-[10px] uppercase font-bold"
-            title="Recalculate positions"
-            @click="fetchSchema(true)"
-          />
-          <UButton
-            label="Reset"
-            icon="i-heroicons-arrow-path-rounded-square"
-            color="error"
-            variant="ghost"
-            size="xs"
-            class="text-[10px] uppercase font-bold"
-            title="Clear manual work"
-            @click="resetGraph"
-          />
-          <div class="w-px h-4 bg-gray-200 dark:border-zinc-800 mx-1 opacity-50" />
-          <UButton
-            label="Mermaid"
-            icon="i-heroicons-clipboard-document"
-            color="neutral"
-            variant="subtle"
-            size="xs"
-            class="text-[9px] uppercase font-black tracking-widest"
-            @click="copyMermaid"
-          />
-        </div>
-      </div>
-
-      <!-- Graph Container -->
-      <div
-        ref="containerRef"
-        class="flex-1 relative overflow-hidden bg-white dark:bg-zinc-950 transition-opacity duration-500"
-        :class="{ 'opacity-0': !isReady, 'opacity-100': isReady }"
-      >
-        <VueFlow
-          v-model:nodes="globalNodes"
-          v-model:edges="globalEdges"
-          :node-types="nodeTypes"
-          :min-zoom="0.05"
-          :max-zoom="4"
-          class="h-full w-full"
-        >
-          <Background pattern-color="#333" :gap="20" />
-
-          <!-- Custom Controls -->
-          <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
-            <div class="flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden">
-              <UButton
-                icon="i-heroicons-plus"
-                color="neutral"
-                variant="ghost"
-                class="w-10 h-10 flex items-center justify-center rounded-none"
-                title="Zoom In (+)"
-                @click="zoomIn"
-              />
-              <div class="h-px bg-gray-200 dark:bg-zinc-800 mx-2" />
-              <UButton
-                icon="i-heroicons-minus"
-                color="neutral"
-                variant="ghost"
-                class="w-10 h-10 flex items-center justify-center rounded-none"
-                title="Zoom Out (-)"
-                @click="zoomOut"
-              />
+              <div v-if="loading" class="animate-pulse text-[10px] text-primary font-bold uppercase tracking-tight ml-4">
+                Refining...
+              </div>
             </div>
-            <div class="flex flex-col bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden">
-              <UButton
-                icon="i-heroicons-arrows-pointing-in"
-                color="neutral"
-                variant="ghost"
-                class="w-10 h-10 flex items-center justify-center rounded-none"
-                title="Fit to Screen (R)"
-                @click="fitToScreen"
-              />
-              <div class="h-px bg-gray-200 dark:bg-zinc-800 mx-2" />
-              <UButton
-                :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
-                color="neutral"
-                variant="ghost"
-                class="w-10 h-10 flex items-center justify-center rounded-none"
-                :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
-                @click="toggleFullscreen"
-              />
-            </div>
-          </div>
-        </VueFlow>
 
-        <!-- Edge Editing Popup -->
-        <template v-if="editingEdgeId">
-          <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
-
-          <div
-            class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl shadow-2xl"
-            :style="{
-              left: `${editingLabelPos.x}px`,
-              top: `${editingLabelPos.y}px`,
-              transform: 'translate(-50%, -120%)',
-            }"
-          >
             <div class="flex items-center gap-2">
-              <UInput
-                id="edge-label-input"
-                v-model="editingLabelValue"
-                placeholder="Label... (Enter to save)"
-                size="sm"
-                color="neutral"
-                variant="outline"
-                class="w-48 font-bold"
-                @keyup.enter="saveEdgeLabel"
-                @keyup.esc="cancelEdgeEdit"
-                @keydown.ctrl.delete="deleteEdge"
-              />
-
               <UButton
-                icon="i-heroicons-trash"
+                label="Auto Layout"
+                icon="i-heroicons-arrow-path"
+                color="neutral"
+                variant="ghost"
+                size="xs"
+                class="text-[10px] uppercase font-bold"
+                title="Recalculate positions"
+                @click="fetchSchema(true)"
+              />
+              <UButton
+                label="Reset"
+                icon="i-heroicons-arrow-path-rounded-square"
                 color="error"
+                variant="ghost"
+                size="xs"
+                class="text-[10px] uppercase font-bold"
+                title="Clear manual work"
+                @click="resetGraph"
+              />
+              <div class="w-px h-4 bg-gray-200/50 dark:bg-zinc-800 mx-1 opacity-50" />
+              <UButton
+                label="Mermaid"
+                icon="i-heroicons-clipboard-document"
+                color="neutral"
                 variant="subtle"
-                size="sm"
-                class="shrink-0"
-                title="Delete connection (Ctrl + Del)"
-                @click="deleteEdge"
+                size="xs"
+                class="text-[9px] uppercase font-black tracking-widest"
+                @click="copyMermaid"
               />
             </div>
           </div>
-        </template>
+        </div>
+
+        <!-- Canvas Block -->
+        <div class="flex-1 relative bg-transparent">
+          <div
+            ref="containerRef"
+            class="absolute inset-0 transition-opacity duration-500"
+            :class="{ 'opacity-0': !isReady, 'opacity-100': isReady }"
+          >
+            <VueFlow
+              v-model:nodes="globalNodes"
+              v-model:edges="globalEdges"
+              :node-types="nodeTypes"
+              :min-zoom="0.05"
+              :max-zoom="4"
+              class="h-full w-full"
+            >
+              <Background pattern-color="#333" :gap="20" />
+
+              <div class="absolute bottom-4 right-4 z-50 flex flex-col gap-2">
+                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden text-neutral-900 dark:text-white">
+                  <UButton
+                    icon="i-heroicons-plus"
+                    color="neutral"
+                    variant="ghost"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    title="Zoom In (+)"
+                    @click="zoomIn"
+                  />
+                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-2" />
+                  <UButton
+                    icon="i-heroicons-minus"
+                    color="neutral"
+                    variant="ghost"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    title="Zoom Out (-)"
+                    @click="zoomOut"
+                  />
+                </div>
+                <div class="flex flex-col bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-gray-200/50 dark:border-zinc-800 rounded-lg shadow-xl overflow-hidden text-neutral-900 dark:text-white">
+                  <UButton
+                    icon="i-heroicons-arrows-pointing-in"
+                    color="neutral"
+                    variant="ghost"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    title="Fit to Screen (R)"
+                    @click="fitToScreen"
+                  />
+                  <div class="h-px bg-gray-200/50 dark:bg-zinc-800 mx-2" />
+                  <UButton
+                    :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
+                    color="neutral"
+                    variant="ghost"
+                    class="w-10 h-10 flex items-center justify-center rounded-none"
+                    :title="isFullscreen ? 'Exit Fullscreen (F)' : 'Fullscreen (F)'"
+                    @click="toggleFullscreen"
+                  />
+                </div>
+              </div>
+            </VueFlow>
+
+            <template v-if="editingEdgeId">
+              <div class="fixed inset-0 z-[90]" @click="cancelEdgeEdit" />
+
+              <div
+                class="fixed z-[100] flex flex-col gap-3 p-2 bg-white dark:bg-zinc-900 border border-gray-200/50 dark:border-gray-800 rounded-xl shadow-2xl"
+                :style="{
+                  left: `${editingLabelPos.x}px`,
+                  top: `${editingLabelPos.y}px`,
+                  transform: 'translate(-50%, -120%)',
+                }"
+              >
+                <div class="flex items-center gap-2">
+                  <UInput
+                    id="edge-label-input"
+                    v-model="editingLabelValue"
+                    placeholder="Label... (Enter to save)"
+                    size="sm"
+                    color="neutral"
+                    variant="outline"
+                    class="w-48 font-bold"
+                    @keyup.enter="saveEdgeLabel"
+                    @keyup.esc="cancelEdgeEdit"
+                    @keydown.ctrl.delete="deleteEdge"
+                  />
+
+                  <UButton
+                    icon="i-heroicons-trash"
+                    color="error"
+                    variant="subtle"
+                    size="sm"
+                    class="shrink-0"
+                    title="Delete connection (Ctrl + Del)"
+                    @click="deleteEdge"
+                  />
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -678,7 +657,6 @@ watch(selectedService, (newSvc) => {
 .dark .vue-flow__edge-textbg { fill: #09090b; }
 .vue-flow__controls { display: none; }
 
-/* Ensure VueFlow takes full height */
 .vue-flow {
   background-color: transparent !important;
 }

@@ -39,16 +39,10 @@ const editor = ref<EditorState>({
   original: null,
 })
 
-/**
- * Helper to safely type TanStack Table row data in the template.
- */
 function getRowData(row: any): Record<string, any> {
   return row?.original || {}
 }
 
-/**
- * Selects an entity and resets the query input.
- */
 async function selectEntity(entity: string) {
   selectedEntity.value = entity
   queryInput.value = '?'
@@ -69,9 +63,6 @@ const currentEntitySchema = computed(() => {
   ) || null
 })
 
-/**
- * Checks if a property is a navigation property.
- */
 function isNavigationProperty(key: string) {
   return (currentEntitySchema.value?.navigationProperties || []).some((np: any) =>
     np.name.toLowerCase() === key.toLowerCase(),
@@ -97,10 +88,6 @@ const previewColumns = computed(() => {
   })
 })
 
-/**
- * Stable column definitions for Nuxt UI 4 / TanStack Table.
- * Fixes the width of the actions column using TanStack Table's sizing API and sticky positioning.
- */
 const tableColumns = computed<any[]>(() => {
   const cols = previewColumns.value || []
   return [
@@ -120,9 +107,6 @@ const tableColumns = computed<any[]>(() => {
   ]
 })
 
-/**
- * Fetches the OData schema for the selected service.
- */
 async function fetchSchema() {
   if (!selectedService.value) {
     return
@@ -144,9 +128,6 @@ async function fetchSchema() {
   }
 }
 
-/**
- * Refreshes the data for the selected entity.
- */
 async function refreshEntityData() {
   if (!selectedService.value || !selectedEntity.value) {
     return
@@ -194,9 +175,6 @@ async function refreshEntityData() {
   }
 }
 
-/**
- * Opens the JSON editor.
- */
 function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: any = null) {
   let initialJson = ''
   if (mode === 'headers') {
@@ -239,9 +217,6 @@ function openEditor(mode: 'view' | 'create' | 'update' | 'headers', row: any = n
   }
 }
 
-/**
- * Deletes a single item.
- */
 async function deleteItem(id: any) {
   if (!selectedService.value || !selectedEntity.value || !id) {
     return
@@ -272,9 +247,6 @@ async function deleteItem(id: any) {
   }
 }
 
-/**
- * Clears all mock data.
- */
 async function clearData() {
   if (!selectedService.value || !selectedEntity.value) {
     return
@@ -303,9 +275,6 @@ async function clearData() {
   }
 }
 
-/**
- * Downloads JSON data.
- */
 function downloadJson() {
   if (previewData.value.length === 0) {
     return
@@ -342,9 +311,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col overflow-hidden bg-white dark:bg-black font-sans text-xs">
-    <!-- Entity Select -->
-    <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-zinc-900/50 shrink-0">
+  <div class="h-full flex flex-col overflow-hidden font-sans text-xs bg-white dark:bg-black">
+    <!-- Entity Nav -->
+    <div class="px-6 py-2 border-b border-gray-200/70 dark:border-gray-800/70 bg-white/50 dark:bg-zinc-900/50 shrink-0">
       <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-1">
         <UButton
           v-for="entity in (selectedService?.entities || [])"
@@ -359,135 +328,136 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Data View -->
+    <!-- Main Wrapper (Zero bottom padding) -->
     <div
       v-if="selectedEntity"
-      class="flex-1 flex flex-col min-h-0 relative"
+      class="flex-1 flex flex-col min-h-0 relative pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0"
     >
-      <!-- Query Toolbar -->
-      <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-4 shrink-0 bg-white dark:bg-zinc-900/20">
-        <UInput
-          v-model="queryInput"
-          placeholder="?id=... or ?$filter=..."
-          icon="i-heroicons-magnifying-glass"
-          class="flex-1 font-mono text-xs"
-          size="sm"
-          @keyup.enter="refreshEntityData"
-        >
-          <template #trailing>
-            <UKbd>Enter</UKbd>
-          </template>
-        </UInput>
-        <UButton
-          label="Execute"
-          icon="i-heroicons-play"
-          color="primary"
-          size="sm"
-          @click="refreshEntityData"
-        />
-      </div>
+      <!-- Unified Block -->
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-gray-200/70 dark:ring-gray-800/70 rounded-t-2xl bg-white dark:bg-zinc-900/50 shadow-2xl transition-all">
+        <!-- Toolbars -->
+        <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
+          <div class="p-4 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center gap-4 bg-white/80 dark:bg-zinc-900/40 backdrop-blur-md rounded-t-[inherit]">
+            <UInput
+              v-model="queryInput"
+              placeholder="?id=... or ?$filter=..."
+              icon="i-heroicons-magnifying-glass"
+              class="flex-1 font-mono text-xs"
+              size="sm"
+              @keyup.enter="refreshEntityData"
+            >
+              <template #trailing>
+                <UKbd>Enter</UKbd>
+              </template>
+            </UInput>
+            <UButton
+              label="Execute"
+              icon="i-heroicons-play"
+              color="primary"
+              size="sm"
+              @click="refreshEntityData"
+            />
+          </div>
 
-      <!-- Action Bar -->
-      <div class="px-6 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shrink-0 bg-gray-50/30 dark:bg-zinc-950/30">
-        <div class="flex items-center gap-4">
-          <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-            {{ previewData.length }} Results
-          </span>
-          <div class="flex items-center gap-1">
-            <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="xs" @click="openEditor('headers')" />
-            <template v-if="previewData.length > 0">
-              <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="xs" @click="downloadJson" />
-              <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="clearData" />
-            </template>
+          <div class="px-6 py-2 border-b border-gray-200/50 dark:border-gray-800/50 flex items-center justify-between bg-gray-50/50 dark:bg-zinc-900/20">
+            <div class="flex items-center gap-4">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                {{ previewData.length }} Results
+              </span>
+              <div class="flex items-center gap-1">
+                <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="xs" @click="openEditor('headers')" />
+                <template v-if="previewData.length > 0">
+                  <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="xs" @click="downloadJson" />
+                  <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="clearData" />
+                </template>
+              </div>
+            </div>
+            <UButton
+              label="New Record"
+              icon="i-heroicons-plus"
+              variant="outline"
+              color="neutral"
+              size="xs"
+              @click="openEditor('create')"
+            />
           </div>
         </div>
-        <UButton
-          label="New Record"
-          icon="i-heroicons-plus"
-          variant="outline"
-          color="neutral"
-          size="xs"
-          @click="openEditor('create')"
-        />
-      </div>
 
-      <!-- Table Content -->
-      <div :key="selectedEntity" class="flex-1 overflow-auto custom-scrollbar relative bg-white dark:bg-black">
-        <div
-          v-if="showLoadingIndicator"
-          class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[1px]"
-        >
-          <UIcon name="i-heroicons-arrow-path" class="animate-spin w-8 h-8 text-primary" />
-        </div>
-
-        <div
-          v-if="previewError"
-          class="p-16 flex flex-col items-center justify-center text-center"
-        >
-          <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-12 h-12 mb-4" />
-          <h3 class="text-lg font-bold mb-2 text-neutral-900 dark:text-neutral-100">
-            Request Failed
-          </h3>
-          <p class="text-sm text-neutral-500 font-mono mb-6 max-w-lg">
-            {{ previewError }}
-          </p>
-          <UButton label="Retry" color="neutral" variant="soft" @click="refreshEntityData" />
-        </div>
-
-        <template v-else>
-          <UTable
-            v-if="tableColumns.length > 1 && !previewLoading"
-            :columns="tableColumns"
-            :data="previewData || []"
-            class="min-w-max"
-            :ui="{ 
-              thead: 'bg-gray-50/50 dark:bg-zinc-900/50', 
-              th: 'text-[10px] uppercase tracking-wider font-bold text-neutral-500 border-b border-gray-200 dark:border-gray-800' 
-            }"
+        <!-- Table View (Edge-to-Edge and Bottom-Touch) -->
+        <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden">
+          <div
+            v-if="showLoadingIndicator"
+            class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[1px]"
           >
-            <!-- Slot for Actions -->
-            <template #actions-cell="{ row }">
-              <div class="flex items-center justify-center gap-1 w-[100px] shrink-0 sticky left-0 z-10">
-                <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="xs" @click="openEditor('view', getRowData(row))" />
-                <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="xs" @click="openEditor('update', getRowData(row))" />
-                <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="deleteItem(getRowData(row).ID || getRowData(row).Id)" />
-              </div>
-            </template>
-
-            <!-- Dynamic Slots for Data Columns -->
-            <template v-for="col in tableColumns.filter(c => c.id !== 'actions')" :key="col.id" #[`${col.id}-cell`]="{ getValue, row }">
-              <template v-if="getRowData(row)">
-                <template v-if="Array.isArray(getValue())">
-                  <UButton :label="`${getValue().length} Items`" variant="soft" color="primary" size="xs" @click.stop="openEditor('view', getValue())" />
-                </template>
-                <template v-else-if="getValue() && typeof getValue() === 'object'">
-                  <UButton label="Object" variant="soft" color="neutral" size="xs" @click.stop="openEditor('view', getValue())" />
-                </template>
-                <template v-else-if="getValue() === null">
-                  <span class="opacity-20 italic">{{ isNavigationProperty(col.id) ? 'not expanded' : '-' }}</span>
-                </template>
-                <template v-else>
-                  <span class="font-mono text-neutral-700 dark:text-neutral-300">{{ getValue() }}</span>
-                </template>
-              </template>
-            </template>
-          </UTable>
+            <UIcon name="i-heroicons-arrow-path" class="animate-spin w-8 h-8 text-primary" />
+          </div>
 
           <div
-            v-if="previewData.length === 0 && !previewLoading"
-            class="p-20 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
+            v-if="previewError"
+            class="p-16 flex flex-col items-center justify-center text-center"
           >
-            <UIcon name="i-heroicons-magnifying-glass" class="w-8 h-8 mb-2" />
-            <p>No records match your query</p>
+            <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-12 h-12 mb-4" />
+            <h3 class="text-lg font-bold mb-2 text-neutral-900 dark:text-neutral-100">
+              Request Failed
+            </h3>
+            <p class="text-sm text-neutral-500 font-mono mb-6 max-w-lg">
+              {{ previewError }}
+            </p>
+            <UButton label="Retry" color="neutral" variant="soft" @click="refreshEntityData" />
           </div>
-        </template>
+
+          <div v-else class="flex-1 overflow-auto custom-scrollbar h-full">
+            <UTable
+              v-if="tableColumns.length > 1 && !previewLoading"
+              :columns="tableColumns"
+              :data="previewData || []"
+              class="min-w-max h-full"
+              :ui="{ 
+                thead: 'bg-gray-50/80 dark:bg-zinc-900/80 sticky top-0 z-30 backdrop-blur-sm', 
+                th: 'text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200/50 dark:border-gray-800/50 py-3' 
+              }"
+            >
+              <template #actions-cell="{ row }">
+                <div class="flex items-center justify-center gap-1 w-[100px] shrink-0 sticky left-0 z-10">
+                  <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="xs" @click="openEditor('view', getRowData(row))" />
+                  <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="xs" @click="openEditor('update', getRowData(row))" />
+                  <UButton icon="i-heroicons-trash" variant="ghost" color="error" size="xs" @click="deleteItem(getRowData(row).ID || getRowData(row).Id)" />
+                </div>
+              </template>
+
+              <template v-for="col in tableColumns.filter(c => c.id !== 'actions')" :key="col.id" #[`${col.id}-cell`]="{ getValue, row }">
+                <template v-if="getRowData(row)">
+                  <template v-if="Array.isArray(getValue())">
+                    <UButton :label="`${getValue().length} Items`" variant="soft" color="primary" size="xs" @click.stop="openEditor('view', getValue())" />
+                  </template>
+                  <template v-else-if="getValue() && typeof getValue() === 'object'">
+                    <UButton label="Object" variant="soft" color="neutral" size="xs" @click.stop="openEditor('view', getValue())" />
+                  </template>
+                  <template v-else-if="getValue() === null">
+                    <span class="opacity-20 italic">{{ isNavigationProperty(col.id) ? 'not expanded' : '-' }}</span>
+                  </template>
+                  <template v-else>
+                    <span class="font-mono text-neutral-700 dark:text-neutral-300">{{ getValue() }}</span>
+                  </template>
+                </template>
+              </template>
+            </UTable>
+
+            <div
+              v-if="previewData.length === 0 && !previewLoading"
+              class="p-20 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
+            >
+              <UIcon name="i-heroicons-magnifying-glass" class="w-8 h-8 mb-2" />
+              <p>No records match your query</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-else
-      class="flex-1 flex flex-col items-center justify-center bg-gray-50/10 dark:bg-zinc-950/10"
+      class="flex-1 flex flex-col items-center justify-center bg-transparent"
     >
       <div class="text-center p-12 max-w-sm">
         <UIcon name="i-heroicons-magnifying-glass-circle" class="text-neutral-400 w-12 h-12 mb-4" />
