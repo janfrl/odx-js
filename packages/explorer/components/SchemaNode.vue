@@ -44,21 +44,21 @@ const entityIcon = computed(() => {
 </script>
 
 <template>
-  <div class="schema-node border border-neutral-200/80 dark:border-neutral-800/80 rounded-lg bg-white dark:bg-neutral-900 shadow-sm hover:shadow-md hover:border-neutral-300 dark:hover:border-neutral-700 hover:ring-1 hover:ring-neutral-200 dark:hover:ring-neutral-800 overflow-hidden min-w-48 transition-all duration-200">
-    <!-- Header -->
-    <div class="px-3.5 py-2.5 bg-neutral-50/50 dark:bg-neutral-900/50 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-2.5">
+  <div class="schema-node border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 shadow-xl ring-1 ring-neutral-200 dark:ring-neutral-700 overflow-hidden min-w-48 transition-all duration-200">
+    <!-- Header (Solid Zone) -->
+    <div class="px-3.5 py-2.5 bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-2.5">
       <UIcon :name="entityIcon" class="text-neutral-500 dark:text-neutral-400 w-4 h-4" />
       <span class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
         {{ data.entity.name }}
       </span>
     </div>
 
-    <!-- Properties -->
-    <div class="py-1.5">
+    <!-- Body (Solid Zone) -->
+    <div class="py-1.5 bg-white dark:bg-neutral-900">
       <div
         v-for="prop in data.entity.properties"
         :key="prop.name"
-        class="px-3.5 py-1 flex items-center justify-between gap-4 hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 group transition-colors"
+        class="px-3.5 py-1 flex items-center justify-between gap-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 group transition-colors"
       >
         <div class="flex items-center gap-2 overflow-hidden">
           <UIcon

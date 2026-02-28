@@ -21,7 +21,7 @@ const {
   <div class="absolute inset-0 pointer-events-none z-50">
     <!-- Top Right: Export Actions -->
     <div class="absolute top-6 right-6 pointer-events-auto">
-      <div class="flex flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm border border-neutral-200/50 dark:border-neutral-800/50 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
           icon="i-heroicons-clipboard-document"
           color="neutral"
@@ -36,7 +36,7 @@ const {
     <!-- Bottom Right: View & Layout Controls -->
     <div class="absolute bottom-6 right-6 pointer-events-auto flex flex-col gap-3">
       <!-- Layout Calculation -->
-      <div class="flex flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm border border-neutral-200/50 dark:border-neutral-800/50 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
           icon="i-heroicons-arrow-path"
           color="neutral"
@@ -49,7 +49,7 @@ const {
       </div>
 
       <!-- Navigation -->
-      <div class="flex flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm border border-neutral-200/50 dark:border-neutral-800/50 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
           icon="i-heroicons-plus"
           color="neutral"
@@ -70,7 +70,7 @@ const {
       </div>
 
       <!-- View Modes -->
-      <div class="flex flex-col bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm border border-neutral-200/50 dark:border-neutral-800/50 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
           icon="i-heroicons-arrows-pointing-in"
           color="neutral"
