@@ -114,12 +114,12 @@ function getRowData(row: any): Record<string, any> {
 
       <!-- Empty Data State -->
       <div
-        v-if="previewData.length === 0 && !previewLoading"
+        v-if="(previewData.length === 0 || tableColumns.length <= 1) && !previewLoading"
         class="p-32 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
       >
-        <UIcon name="i-lucide-search" class="w-12 h-12 mb-4 opacity-20" />
+        <UIcon name="i-lucide-search-x" class="w-12 h-12 mb-4 opacity-20" />
         <p class="text-base uppercase tracking-[0.2em]">
-          No records match your query
+          {{ tableColumns.length <= 1 ? 'No schema or data fields found' : 'No records match your query' }}
         </p>
       </div>
     </div>

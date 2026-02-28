@@ -123,7 +123,17 @@ export function useEntityExplorer(): any {
         throw new Error(statusMessage)
       }
       const data = await res.json()
-      previewData.value = (Array.isArray(data) ? data : (data.value || [data])) as Record<string, any>[]
+      // Handle both wrapped { d: { results: [...] } } (already partially flattened by proxy)
+      // and unwrapped [...] results.
+      if (Array.isArray(data)) {
+        previewData.value = data
+      }
+      else if (data && typeof data === 'object') {
+        previewData.value = data.value || data.results || [data]
+      }
+      else {
+        previewData.value = []
+      }
     }
     catch (e: unknown) {
       previewError.value = (e as Error).message
@@ -140,10 +150,17 @@ export function useEntityExplorer(): any {
       return null
     }
 
+    // 1. Exact match by entitySet or name
+    const exact = schema.value.entities?.find((e: any) =>
+      e.entitySet === entityName || e.name === entityName,
+    )
+    if (exact) {
+      return exact
+    }
+
+    // 2. Fuzzy match as fallback
     return schema.value.entities?.find((e: any) =>
-      e.entitySet === entityName
-      || e.name === entityName
-      || entityName.toLowerCase().startsWith(e.name.toLowerCase())
+      entityName.toLowerCase().startsWith(e.name.toLowerCase())
       || e.name.toLowerCase().startsWith(entityName.toLowerCase())
       || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
     ) || null
@@ -151,7 +168,12 @@ export function useEntityExplorer(): any {
 
   const previewColumns = computed(() => {
     const edmxEntity = currentEntitySchema.value
+
     if (!edmxEntity) {
+      // Fallback: Use keys from first data item if available
+      if (previewData.value.length > 0) {
+        return Object.keys(previewData.value[0] || {}).filter(k => k !== '__metadata')
+      }
       return []
     }
 
