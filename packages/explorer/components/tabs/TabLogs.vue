@@ -36,7 +36,7 @@ const columns = [
         class: 'px-6 py-4 cursor-pointer flex items-center h-full w-full',
       }, [
         h(UBadge, {
-          color: (row.original.status || 0) < 400 ? 'success' : 'error',
+          color: Number(row.original.status || 0) < 400 ? 'success' : 'error',
           variant: 'soft',
           size: 'md',
           class: 'font-black min-w-12 justify-center',
@@ -91,6 +91,7 @@ const columns = [
 ]
 
 async function runClear() {
+  // eslint-disable-next-line no-alert
   if (confirm('Are you sure you want to clear all traffic logs?')) {
     await clearLogs()
     toast.add({
@@ -153,7 +154,7 @@ async function runClear() {
                       <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 opacity-70" /> Request URL
                     </h3>
                     <div class="text-[12px] font-mono text-neutral-600 dark:text-neutral-300 break-all bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex items-center gap-3">
-                      <span class="font-black" :class="(row.original.status || 0) < 400 ? 'text-green-500' : 'text-red-500'">{{ row.original.method }}</span>
+                      <span class="font-black" :class="Number(row.original.status || 0) < 400 ? 'text-green-500' : 'text-red-500'">{{ row.original.method }}</span>
                       <span>{{ row.original.targetUrl || 'Internal Mock' }}</span>
                     </div>
                   </div>
@@ -172,9 +173,9 @@ async function runClear() {
                           </div>
                         </div>
 
-                        <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-[26rem] custom-scrollbar text-neutral-600 dark:text-neutral-300">{{ JSON.stringify(row.original.requestBody, null, 2) }}</pre>
+                        <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300">{{ JSON.stringify(row.original.requestBody, null, 2) }}</pre>
 
-                        <div v-else class="flex-1 min-h-[8rem] flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
+                        <div v-else class="flex-1 min-h-32 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
                           <UIcon name="i-lucide-file-x-2" class="w-8 h-8 mb-3 text-neutral-400 dark:text-neutral-600 opacity-50" />
                           <span class="text-[12px] font-medium text-neutral-500 dark:text-neutral-400">No request body</span>
                           <span class="text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">This request was sent without a payload.</span>
@@ -188,9 +189,9 @@ async function runClear() {
                       </h3>
 
                       <div class="flex flex-col gap-3 flex-1">
-                        <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-[26rem] custom-scrollbar text-neutral-600 dark:text-neutral-300">{{ JSON.stringify(row.original.responseBody, null, 2) }}</pre>
+                        <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300">{{ JSON.stringify(row.original.responseBody, null, 2) }}</pre>
 
-                        <div v-else class="flex-1 min-h-[8rem] flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
+                        <div v-else class="flex-1 min-h-32 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
                           <UIcon name="i-lucide-file-x-2" class="w-8 h-8 mb-3 text-neutral-400 dark:text-neutral-600 opacity-50" />
                           <span class="text-[12px] font-medium text-neutral-500 dark:text-neutral-400">No response body</span>
                           <span class="text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">The server returned an empty response.</span>
