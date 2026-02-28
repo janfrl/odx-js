@@ -51,6 +51,12 @@ export default defineNuxtConfig({
         route: 'northwind',
         icon: 'i-lucide-globe',
       },
+      {
+        name: 'NorthwindDirect',
+        url: 'https://services.odata.org/V2/Northwind/Northwind.svc',
+        strategy: 'direct',
+        icon: 'i-lucide-zap',
+      },
     ],
   },
 })
