@@ -78,6 +78,15 @@ html, body, #__nuxt {
   overflow: hidden;
 }
 
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-color-neutral-200) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: var(--ui-color-neutral-800) transparent;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -88,11 +97,11 @@ html, body, #__nuxt {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--ui-neutral-200);
+  background: var(--ui-color-neutral-200);
   border-radius: 10px;
 }
 
 .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--ui-neutral-800);
+  background: var(--ui-color-neutral-800);
 }
 </style>
