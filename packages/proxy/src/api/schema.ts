@@ -82,25 +82,25 @@ export default defineEventHandler(async (event) => {
           properties: properties.map((p: any) => ({
             name: p.Name,
             type: p.Type,
-            nullable: p.Nullable !== 'false',
+            nullable: (p.Nullable || p.nullable) !== 'false',
             isKey: key.includes(p.Name),
           })),
           navigationProperties: navProperties.map((np: any) => ({
             name: np.Name,
-            relationship: np.Relationship,
-            fromRole: np.FromRole,
-            toRole: np.ToRole,
+            relationship: np.Relationship || np.relationship,
+            fromRole: np.FromRole || np.fromRole,
+            toRole: np.ToRole || np.toRole,
           })),
         }
       }),
       associations: associations.map((assoc: any) => {
         const ends = Array.isArray(assoc.End) ? assoc.End : [assoc.End]
-        const constraint = assoc.ReferentialConstraint
+        const constraint = assoc.ReferentialConstraint || assoc.referentialConstraint
         let link: any = null
 
         if (constraint) {
-          const principal = constraint.Principal
-          const dependent = constraint.Dependent
+          const principal = constraint.Principal || constraint.principal
+          const dependent = constraint.Dependent || constraint.dependent
 
           const getPropName = (ref: any): any => {
             if (!ref) {
@@ -112,18 +112,18 @@ export default defineEventHandler(async (event) => {
 
           link = {
             principalRole: principal?.Role || principal?.role,
-            principalProperty: getPropName(principal?.PropertyRef),
+            principalProperty: getPropName(principal?.PropertyRef || principal?.propertyRef),
             dependentRole: dependent?.Role || dependent?.role,
-            dependentProperty: getPropName(dependent?.PropertyRef),
+            dependentProperty: getPropName(dependent?.PropertyRef || dependent?.propertyRef),
           }
         }
 
         return {
-          name: assoc.Name,
+          name: assoc.Name || assoc.name,
           ends: ends.map((end: any) => ({
-            role: end.Role,
-            type: end.Type,
-            multiplicity: end.Multiplicity,
+            role: end.Role || end.role,
+            type: end.Type || end.type,
+            multiplicity: end.Multiplicity || end.multiplicity,
           })),
           constraint: link,
         }

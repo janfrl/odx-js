@@ -12,9 +12,8 @@ const {
   toggleFullscreen,
   fitToScreen,
   fetchSchema,
-  resetGraph,
   copyMermaid,
-  loading
+  loading,
 } = useSchemaExplorer()
 </script>
 

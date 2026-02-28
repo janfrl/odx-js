@@ -29,8 +29,6 @@ export function useSchemaExplorer(): any {
     onViewportChange,
     setViewport,
     onPaneReady,
-    zoomIn,
-    zoomOut,
     getViewport,
     setCenter,
     onEdgesChange,
@@ -195,11 +193,23 @@ export function useSchemaExplorer(): any {
           if (targetEntityName && targetEntityName !== entity.name) {
             const edgeId = [entity.name, targetEntityName, assoc.name].sort().join('-')
             if (!newEdges.find((e: any) => e.id === edgeId)) {
+              // Determine overall association multiplicity
+              const isMany1 = (assoc.ends[0]?.multiplicity || '').toLowerCase().includes('*')
+              const isMany2 = (assoc.ends[1]?.multiplicity || '').toLowerCase().includes('*')
+
+              let label = '1:1'
+              if (isMany1 && isMany2) {
+                label = 'N:M'
+              }
+              else if (isMany1 || isMany2) {
+                label = '1:N'
+              }
+
               newEdges.push({
                 id: edgeId,
                 source: entity.name,
                 target: targetEntityName,
-                label: targetEnd.multiplicity === '*' ? '1:N' : '1:1',
+                label,
                 animated: true,
                 labelStyle: { fontWeight: 500, fontSize: '11px' },
                 style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8 },
@@ -286,8 +296,8 @@ export function useSchemaExplorer(): any {
           const end2 = assoc.ends[1]
           const type1 = end1.type.split('.').pop()
           const type2 = end2.type.split('.').pop()
-          const m1 = end1.multiplicity === '*' ? '}o' : '||'
-          const m2 = end1.multiplicity === '*' ? 'o{' : '||'
+          const m1 = (end1.multiplicity || '').includes('*') ? '}o' : '||'
+          const m2 = (end2.multiplicity || '').includes('*') ? 'o{' : '||'
           code += `  ${type1} ${m1}--${m2} ${type2} : "${assoc.name}"\\n`
           addedAssocs.add(assoc.name)
         }

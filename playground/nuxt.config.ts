@@ -43,6 +43,11 @@ export default defineNuxtConfig({
         url: 'edmx/v4.edmx',
         route: 'v4',
       },
+      {
+        name: 'Northwind',
+        url: 'https://services.odata.org/V2/Northwind/Northwind.svc',
+        route: 'northwind',
+      },
     ],
   },
 })
