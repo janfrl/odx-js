@@ -1,25 +1,19 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { markRaw, nextTick, onMounted, ref, watch } from 'vue'
+import { markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
 import { useSharedODataState } from './useODataState'
 
-const loading = ref(false)
-const isReady = ref(false)
-const isFullscreen = ref(false)
-const schemaData = ref<any>(null)
+// Per-service cache for graph data and viewport
+const serviceGraphCache = ref<Record<string, { nodes: any[], edges: any[], viewport?: any }>>({})
 
 const containerRef = ref<HTMLElement | null>(null)
 
 export function useSchemaExplorer(): any {
   const {
     selectedService,
-    globalNodes,
-    globalEdges,
-    globalViewport,
     globalViewMode,
-    initializedServices,
     schemaFocusedServices,
     lastSelectedServiceForGraph,
   } = useSharedODataState()
@@ -32,57 +26,98 @@ export function useSchemaExplorer(): any {
     getViewport,
     setCenter,
     onEdgesChange,
+    nodes,
+    edges,
   } = useVueFlow()
 
   const toast = useToast()
-
   const elk = new ELK()
+
+  const loading = ref(false)
+  const isReady = ref(false)
+  const isFullscreen = ref(false)
+  const schemaData = ref<any>(null)
 
   const nodeTypes: NodeTypesObject = {
     schema: markRaw(SchemaNode),
   }
 
+  function onFullscreenChange() {
+    isFullscreen.value = !!document.fullscreenElement
+  }
+
   function performInitialFocus() {
     const serviceName = selectedService.value?.name
     if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema' && isReady.value) {
-      fitView({ padding: 0.2 })
-      schemaFocusedServices.value.add(serviceName)
+      try {
+        fitView({ padding: 0.2 })
+        schemaFocusedServices.value.add(serviceName)
+      }
+      catch (e) {
+        console.warn('[SchemaExplorer] fitView deferred: ', e)
+      }
     }
   }
 
   // Lifecycle & Watchers
   onMounted(() => {
+    window.addEventListener('fullscreenchange', onFullscreenChange)
+
     if (selectedService.value) {
-      fetchSchema()
+      const cache = serviceGraphCache.value[selectedService.value.name]
+      if (cache) {
+        nodes.value = [...cache.nodes]
+        edges.value = [...cache.edges]
+        isReady.value = true
+        loading.value = false
+      }
+      else {
+        fetchSchema()
+      }
     }
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('fullscreenchange', onFullscreenChange)
   })
 
   onPaneReady(() => {
     const serviceName = selectedService.value?.name || ''
-    if (!initializedServices.value.has(serviceName)) {
-      initializedServices.value.add(serviceName)
-      // Wait for nodes to be present before focusing
-      setTimeout(() => {
-        isReady.value = true
-        if (globalNodes.value.length > 0) {
-          performInitialFocus()
-        }
-      }, 150)
+    const cache = serviceGraphCache.value[serviceName]
+
+    if (cache?.viewport) {
+      setViewport(cache.viewport)
+      setTimeout(() => isReady.value = true, 50)
     }
     else {
-      setViewport(globalViewport.value)
-      setTimeout(() => isReady.value = true, 100)
+      setTimeout(() => {
+        isReady.value = true
+        performInitialFocus()
+      }, 150)
     }
   })
 
-  // Per-instance watchers
+  // Watch for service changes
   watch(selectedService, async (newSvc) => {
-    if (newSvc) {
-      isReady.value = false
-      schemaData.value = null
-      globalNodes.value = []
-      globalEdges.value = []
-      await fetchSchema()
+    if (newSvc && newSvc.name !== lastSelectedServiceForGraph.value) {
+      const cache = serviceGraphCache.value[newSvc.name]
+      if (cache) {
+        nodes.value = [...cache.nodes]
+        edges.value = [...cache.edges]
+        if (cache.viewport) {
+          setViewport(cache.viewport)
+        }
+        isReady.value = true
+        loading.value = false
+      }
+      else {
+        isReady.value = false
+        schemaData.value = null
+        nodes.value = []
+        edges.value = []
+        await fetchSchema()
+      }
+      lastSelectedServiceForGraph.value = newSvc.name
     }
   })
 
@@ -97,16 +132,23 @@ export function useSchemaExplorer(): any {
   })
 
   onEdgesChange((changes: any[]) => {
-    changes.forEach((change: any) => {
-      if (change.type === 'remove') {
-        globalEdges.value = globalEdges.value.filter((e: any) => e.id !== change.id)
-      }
-    })
+    const serviceName = selectedService.value?.name
+    if (serviceName && serviceGraphCache.value[serviceName]) {
+      changes.forEach((change: any) => {
+        if (change.type === 'remove') {
+          serviceGraphCache.value[serviceName].edges = serviceGraphCache.value[serviceName].edges.filter((e: any) => e.id !== change.id)
+        }
+      })
+    }
   })
 
   onViewportChange((viewport) => {
-    if (isReady.value) {
-      globalViewport.value = { ...viewport }
+    if (isReady.value && selectedService.value) {
+      const serviceName = selectedService.value.name
+      if (!serviceGraphCache.value[serviceName]) {
+        serviceGraphCache.value[serviceName] = { nodes: [...nodes.value], edges: [...edges.value] }
+      }
+      serviceGraphCache.value[serviceName].viewport = { ...viewport }
     }
   })
 
@@ -146,35 +188,13 @@ export function useSchemaExplorer(): any {
       return
     }
 
-    const isNewService = !initializedServices.value.has(selectedService.value.name)
-
-    if (isNewService) {
-      loading.value = true
-      isReady.value = false
-      globalNodes.value = []
-      globalEdges.value = []
-    }
-    else if (forceAutoFit) {
-      loading.value = true
-    }
+    const serviceName = selectedService.value.name
+    loading.value = true
 
     try {
-      const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
-      schemaData.value = await res.json()
-
-      if (isNewService || forceAutoFit) {
-        await generateGraph(forceAutoFit || isNewService)
-      }
-      else {
-        await nextTick()
-        setViewport(globalViewport.value)
-        setTimeout(() => {
-          isReady.value = true
-          loading.value = false
-        }, 100)
-      }
-
-      lastSelectedServiceForGraph.value = selectedService.value.name
+      const res = await fetch(`/__sap_odata__/schema?service=${serviceName}`)
+      schemaData.value = (await res.json())
+      await generateGraph(forceAutoFit || !serviceGraphCache.value[serviceName])
     }
     catch (e) {
       console.error('[SchemaExplorer] Failed to fetch schema', e)
@@ -183,7 +203,7 @@ export function useSchemaExplorer(): any {
   }
 
   async function generateGraph(autoFit = false): Promise<void> {
-    if (!schemaData.value) {
+    if (!schemaData.value || !selectedService.value) {
       return
     }
 
@@ -275,20 +295,31 @@ export function useSchemaExplorer(): any {
       console.error('[SchemaExplorer] ELK layout failed', e)
     }
 
-    globalNodes.value = [...newNodes]
-    globalEdges.value = [...newEdges]
+    nodes.value = [...newNodes]
+    edges.value = [...newEdges]
+
+    // Update cache
+    serviceGraphCache.value[selectedService.value.name] = {
+      nodes: [...newNodes],
+      edges: [...newEdges],
+    }
 
     if (autoFit) {
       setTimeout(() => {
-        fitView({ padding: 0.2, duration: 800 })
+        try {
+          fitView({ padding: 0.2 })
+        }
+        catch (e) {
+          console.warn('[SchemaExplorer] fitView failed in generateGraph: ', e)
+        }
         setTimeout(() => {
           isReady.value = true
           loading.value = false
-        }, 800)
-      }, 50)
+        }, 50)
+      }, 100)
     }
     else {
-      if (globalNodes.value.length > 0) {
+      if (nodes.value.length > 0) {
         isReady.value = true
       }
       loading.value = false
@@ -335,8 +366,6 @@ export function useSchemaExplorer(): any {
 
   return {
     selectedService,
-    globalNodes,
-    globalEdges,
     containerRef,
     loading,
     isReady,

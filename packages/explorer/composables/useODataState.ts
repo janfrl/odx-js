@@ -60,9 +60,6 @@ const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
 
-const globalNodes = ref<any[]>([])
-const globalEdges = ref<any[]>([])
-const globalViewport = ref<{ x: number, y: number, zoom: number }>({ x: 0, y: 0, zoom: 1 })
 const initializedServices = ref<Set<string>>(new Set())
 const schemaFocusedServices = ref<Set<string>>(new Set())
 const lastSelectedServiceForGraph = ref<string | null>(null)
@@ -162,9 +159,6 @@ export function useSharedODataState(): any {
     selectedEntity,
     generatingStatus,
     sessionHeaders,
-    globalNodes,
-    globalEdges,
-    globalViewport,
     globalViewMode,
     initializedServices,
     schemaFocusedServices,
