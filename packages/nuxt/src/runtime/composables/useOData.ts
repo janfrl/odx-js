@@ -12,7 +12,7 @@ type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | A
 export function useOData<T extends RegisteredServiceNames>(
   service: T,
 ): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService {
-  const basePath = useODataBasePath()
+  const basePath = useODataBasePath(service as string)
   const client = globalThis.$fetch
 
   /**
@@ -28,8 +28,16 @@ export function useOData<T extends RegisteredServiceNames>(
   }
 
   const createMethods = (entitySet?: string): ODataEntitySet => {
-    const path = entitySet ? `${service as string}/${entitySet}` : (service as string)
-    const fullPath = `${basePath}/${path}`
+    const isDirect = basePath.startsWith('http')
+
+    let fullPath = ''
+    if (isDirect) {
+      fullPath = entitySet ? `${basePath}/${entitySet}` : basePath
+    }
+    else {
+      const path = entitySet ? `${service as string}/${entitySet}` : (service as string)
+      fullPath = `${basePath}/${path}`
+    }
 
     return {
       list: (query?: ODataQuery): any =>

@@ -83,6 +83,14 @@ async function runGenerate(name: string) {
               >
                 {{ svc.version }}
               </UBadge>
+              <UBadge
+                color="neutral"
+                variant="subtle"
+                size="sm"
+                class="text-[10px] uppercase font-bold px-1.5 py-0.5"
+              >
+                {{ svc.strategy || 'proxied' }}
+              </UBadge>
             </div>
           </template>
 

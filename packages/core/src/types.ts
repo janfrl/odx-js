@@ -2,6 +2,8 @@ export interface SapODataService {
   name: string
   url: string
   route?: string
+  icon?: string
+  strategy?: 'proxied' | 'direct'
   auth?: {
     username?: string
     password?: string

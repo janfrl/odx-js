@@ -20,6 +20,7 @@ export interface SapODataService {
   url: string
   route?: string
   icon?: string
+  strategy?: 'proxied' | 'direct'
   auth?: {
     username?: string
     password?: string
@@ -93,6 +94,7 @@ export default defineNuxtModule<ModuleOptions>({
       const envUrl = process.env[`${prefix}${envKey}_URL`]
       const envName = process.env[`${prefix}${envKey}_NAME`]
       const envIcon = process.env[`${prefix}${envKey}_ICON`]
+      const envStrategy = process.env[`${prefix}${envKey}_STRATEGY`] as 'proxied' | 'direct' | undefined
       const envUser = process.env[`${prefix}${envKey}_AUTH_USERNAME`]
       const envPass = process.env[`${prefix}${envKey}_AUTH_PASSWORD`]
       const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
@@ -112,6 +114,7 @@ export default defineNuxtModule<ModuleOptions>({
         url: envUrl || s.url,
         name: envName || s.name,
         icon: envIcon || s.icon,
+        strategy: envStrategy || s.strategy || 'proxied',
         auth: {
           username: envUser || s.auth?.username,
           password: envPass || s.auth?.password,
@@ -145,13 +148,14 @@ export default defineNuxtModule<ModuleOptions>({
       if (url) {
         const name = process.env[`${prefix}${key}_NAME`] || key
         const icon = process.env[`${prefix}${key}_ICON`]
+        const strategy = process.env[`${prefix}${key}_STRATEGY`] as 'proxied' | 'direct' | undefined
         const username = process.env[`${prefix}${key}_AUTH_USERNAME`]
         const password = process.env[`${prefix}${key}_AUTH_PASSWORD`]
         const bearerToken = process.env[`${prefix}${key}_AUTH_BEARER_TOKEN`]
 
         const envHeadersJson = parseEnvJson(process.env[`${prefix}${key}_HEADERS`])
         const envHeadersIndividual: Record<string, string> = {}
-        const headerPrefix = `${prefix}${key}_HEADERS_`
+        const headerPrefix = `${prefix}${envKey}_HEADERS_`
         for (const k in process.env) {
           if (k.startsWith(headerPrefix)) {
             const headerName = k.slice(headerPrefix.length).replace(/_/g, '-')
@@ -163,6 +167,7 @@ export default defineNuxtModule<ModuleOptions>({
           name,
           url,
           icon,
+          strategy: strategy || 'proxied',
           auth: { username, password, bearerToken },
           headers: { ...envHeadersJson, ...envHeadersIndividual },
         })
@@ -206,6 +211,12 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.runtimeConfig.public.odata = {
       mode: options.mode ?? 'sdk',
       basePath,
+      services: allServices.map(s => ({
+        name: s.name,
+        strategy: s.strategy || 'proxied',
+        url: s.url,
+        route: s.route,
+      })),
     }
 
     addImportsDir(resolver.resolve('./runtime/composables'))

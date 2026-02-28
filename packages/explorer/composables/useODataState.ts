@@ -11,6 +11,7 @@ export interface SapService {
   entities?: EntityMapping[]
   isGenerated?: boolean
   version?: 'v2' | 'v4' | null
+  strategy?: 'proxied' | 'direct'
 }
 
 export interface SapConfig {
