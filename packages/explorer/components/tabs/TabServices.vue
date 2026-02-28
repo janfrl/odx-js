@@ -32,7 +32,7 @@ async function runGenerate(name: string) {
         description="Select a registered service to explore its entities, metadata, and generated SDK."
       />
 
-      <div class="flex-1 overflow-y-auto custom-scrollbar px-6 lg:px-8">
+      <div class="flex-1 overflow-y-auto custom-scrollbar px-6 lg:px-8 pt-2 pb-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto w-full">
           <UPageCard
             v-for="svc in services"
