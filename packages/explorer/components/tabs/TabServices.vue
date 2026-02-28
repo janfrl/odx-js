@@ -43,61 +43,33 @@ async function runGenerate(name: string) {
         <UPageCard
           v-for="svc in services"
           :key="svc.name"
+          :title="svc.name"
+          :description="`${config.basePath}/${svc.route || svc.name.toLowerCase()}`"
+          :icon="svc.icon || 'i-lucide-database'"
           variant="subtle"
           to="#"
-          class="cursor-pointer group"
-          :icon="svc.icon || 'i-lucide-database'"
           @click.prevent="selectedService = svc"
         >
-          <div class="absolute top-6 right-6 flex items-center gap-2">
-            <span
-              class="text-[10px] font-bold uppercase tracking-widest"
-              :class="svc.isGenerated ? 'text-success-600 dark:text-success-500' : 'text-neutral-500 dark:text-neutral-400'"
-            >
-              {{ svc.isGenerated ? 'Generated' : 'Pending' }}
-            </span>
-            <div
-              class="w-1.5 h-1.5 rounded-full"
-              :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-neutral-400 dark:bg-neutral-600'"
-            />
-          </div>
-
-          <template #icon>
-            <UIcon
-              :name="svc.icon || 'i-lucide-database'"
-              class="w-7 h-7 mb-4 transition-transform group-hover:scale-110 text-neutral-400 dark:text-neutral-500 group-hover:text-primary-500 dark:group-hover:text-primary-400"
-            />
-          </template>
-
-          <template #title>
+          <template #footer>
             <div class="flex items-center gap-2">
-              <span class="text-xl font-bold text-neutral-900 dark:text-white tracking-tight truncate">
-                {{ svc.name }}
-              </span>
               <UBadge
                 v-if="svc.version"
                 color="neutral"
                 variant="soft"
                 size="sm"
-                class="text-[10px] font-mono px-1.5 py-0.5"
               >
                 {{ svc.version }}
               </UBadge>
+
               <UBadge
                 color="neutral"
-                variant="subtle"
+                variant="soft"
                 size="sm"
-                class="text-[10px] uppercase font-bold px-1.5 py-0.5"
+                class="uppercase tracking-widest text-[10px]"
               >
                 {{ svc.strategy || 'proxied' }}
               </UBadge>
             </div>
-          </template>
-
-          <template #description>
-            <span class="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate block mt-1">
-              {{ config.basePath }}/{{ svc.route || svc.name.toLowerCase() }}
-            </span>
           </template>
         </UPageCard>
       </div>
@@ -138,7 +110,6 @@ async function runGenerate(name: string) {
           :items="tabs"
           size="sm"
           class="w-48"
-          :ui="{ list: 'bg-neutral-100 dark:bg-neutral-900', indicator: 'bg-white dark:bg-neutral-700 shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600', trigger: 'text-neutral-500 dark:text-neutral-400 font-semibold transition-colors data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white' }"
         />
       </div>
 
