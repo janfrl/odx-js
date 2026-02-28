@@ -43,7 +43,7 @@ const {
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
           :loading="loading"
-          title="Auto Layout"
+          title="Auto Layout (Shift+R)"
           @click="fetchSchema(true)"
         />
       </div>
