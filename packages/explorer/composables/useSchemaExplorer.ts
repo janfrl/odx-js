@@ -47,7 +47,7 @@ export function useSchemaExplorer(): any {
   function performInitialFocus() {
     const serviceName = selectedService.value?.name
     if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema' && isReady.value) {
-      fitView({ padding: 0.2, duration: 800 })
+      fitView({ padding: 0.2 })
       schemaFocusedServices.value.add(serviceName)
     }
   }
