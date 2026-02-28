@@ -129,9 +129,9 @@ async function runClear() {
       />
     </TabHeader>
 
-    <div class="flex-1 flex flex-col min-h-0 relative px-6 lg:px-8 pt-2 pb-0 max-w-7xl mx-auto w-full">
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden isolate border-t border-x border-neutral-200 dark:border-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-sm transition-all">
-        <div class="flex-1 overflow-auto custom-scrollbar relative">
+    <div class="flex-1 flex flex-col min-h-0 relative px-6 pt-2 pb-0">
+      <div class="flex-1 flex flex-col min-h-0 isolate border-t border-x border-neutral-200 dark:border-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-sm">
+        <div class="flex-1 overflow-auto custom-scrollbar relative rounded-t-2xl" style="mask-image: radial-gradient(white, black); -webkit-mask-image: -webkit-radial-gradient(white, black);">
           <UTable
             :columns="columns"
             :data="logs"
