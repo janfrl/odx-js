@@ -20,7 +20,9 @@ export function useSchemaExplorer(): any {
     globalNodes,
     globalEdges,
     globalViewport,
+    globalViewMode,
     initializedServices,
+    schemaFocusedServices,
     lastSelectedServiceForGraph,
   } = useSharedODataState()
 
@@ -42,6 +44,14 @@ export function useSchemaExplorer(): any {
     schema: markRaw(SchemaNode),
   }
 
+  function performInitialFocus() {
+    const serviceName = selectedService.value?.name
+    if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema' && isReady.value) {
+      fitView({ padding: 0.2, duration: 800 })
+      schemaFocusedServices.value.add(serviceName)
+    }
+  }
+
   // Lifecycle & Watchers that need to run per-instance
   onMounted(() => {
     if (selectedService.value) {
@@ -52,9 +62,12 @@ export function useSchemaExplorer(): any {
   onPaneReady(() => {
     const serviceName = selectedService.value?.name || ''
     if (!initializedServices.value.has(serviceName)) {
-      fitView({ padding: 0.2 })
       initializedServices.value.add(serviceName)
-      setTimeout(() => isReady.value = true, 100)
+      // We don't fitView here anymore, we wait for the tab switch or initial load to be ready
+      setTimeout(() => {
+        isReady.value = true
+        performInitialFocus()
+      }, 100)
     }
     else {
       setViewport(globalViewport.value)
@@ -73,6 +86,14 @@ export function useSchemaExplorer(): any {
     watch(selectedService, (newSvc) => {
       if (newSvc) {
         fetchSchema()
+      }
+    })
+
+    watch(globalViewMode, (newMode) => {
+      if (newMode === 'schema') {
+        nextTick(() => {
+          performInitialFocus()
+        })
       }
     })
 

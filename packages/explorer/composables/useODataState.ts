@@ -64,6 +64,7 @@ const globalNodes = ref<any[]>([])
 const globalEdges = ref<any[]>([])
 const globalViewport = ref<{ x: number, y: number, zoom: number }>({ x: 0, y: 0, zoom: 1 })
 const initializedServices = ref<Set<string>>(new Set())
+const schemaFocusedServices = ref<Set<string>>(new Set())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 const globalViewMode = ref<'explorer' | 'schema'>('explorer')
 
@@ -120,6 +121,8 @@ export function useSharedODataState(): any {
       }
 
       if (data.success) {
+        initializedServices.value.delete(name)
+        schemaFocusedServices.value.delete(name)
         await fetchConfig()
       }
     }
@@ -164,6 +167,7 @@ export function useSharedODataState(): any {
     globalViewport,
     globalViewMode,
     initializedServices,
+    schemaFocusedServices,
     lastSelectedServiceForGraph,
     fetchConfig,
     refreshLogs,
