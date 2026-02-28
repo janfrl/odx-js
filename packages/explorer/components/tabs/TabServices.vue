@@ -28,61 +28,70 @@ async function runGenerate(name: string) {
   <div class="h-full flex flex-col">
     <div
       v-if="!selectedService"
-      class="p-8 space-y-8 overflow-y-auto custom-scrollbar"
+      class="p-6 lg:p-10 space-y-8 overflow-y-auto custom-scrollbar"
     >
-      <h2 class="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400">
-        Registered OData Services
-      </h2>
+      <header class="flex flex-col gap-1.5">
+        <h1 class="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+          OData Services
+        </h1>
+        <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          Select a registered service to explore its entities, metadata, and generated SDK.
+        </p>
+      </header>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <UCard
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <UPageCard
           v-for="svc in services"
           :key="svc.name"
-          class="cursor-pointer transition-all hover:ring-2 hover:ring-primary-500/50 group"
-          :ui="{ body: 'p-6' }"
-          @click="selectedService = svc"
+          variant="subtle"
+          to="#"
+          class="cursor-pointer group"
+          :icon="svc.icon || 'i-lucide-database'"
+          @click.prevent="selectedService = svc"
         >
-          <div class="flex items-start gap-4">
-            <div class="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-400 group-hover:text-primary-500 transition-colors">
-              <UIcon
-                name="i-lucide-database"
-                class="w-6 h-6"
-              />
-            </div>
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-bold truncate text-neutral-900 dark:text-neutral-100">{{ svc.name }}</span>
-                <UBadge
-                  v-if="svc.version"
-                  color="neutral"
-                  variant="subtle"
-                  size="sm"
-                  class="text-[10px] font-mono"
-                >
-                  {{ svc.version }}
-                </UBadge>
-              </div>
-              <div class="text-xs text-neutral-500 font-mono truncate">
-                {{ config.basePath }}/{{ svc.route || svc.name.toLowerCase() }}
-              </div>
-            </div>
+          <div class="absolute top-6 right-6 flex items-center gap-2">
+            <span
+              class="text-[10px] font-bold uppercase tracking-widest"
+              :class="svc.isGenerated ? 'text-success-600 dark:text-success-500' : 'text-neutral-500 dark:text-neutral-400'"
+            >
+              {{ svc.isGenerated ? 'Generated' : 'Pending' }}
+            </span>
+            <div
+              class="w-1.5 h-1.5 rounded-full"
+              :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-neutral-400 dark:bg-neutral-600'"
+            />
           </div>
 
-          <template #footer>
-            <div class="flex justify-between items-center text-[10px] uppercase font-bold tracking-widest">
-              <span class="text-neutral-400">Generation</span>
-              <div class="flex items-center gap-2">
-                <span :class="svc.isGenerated ? 'text-success-500' : 'text-warning-500'">
-                  {{ svc.isGenerated ? 'Completed' : 'Pending' }}
-                </span>
-                <div
-                  class="w-1.5 h-1.5 rounded-full"
-                  :class="svc.isGenerated ? 'bg-success-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-warning-500'"
-                />
-              </div>
+          <template #icon>
+            <UIcon
+              :name="svc.icon || 'i-lucide-database'"
+              class="w-7 h-7 mb-4 transition-transform group-hover:scale-110 text-neutral-400 dark:text-neutral-500 group-hover:text-primary-500 dark:group-hover:text-primary-400"
+            />
+          </template>
+
+          <template #title>
+            <div class="flex items-center gap-2">
+              <span class="text-xl font-bold text-neutral-900 dark:text-white tracking-tight truncate">
+                {{ svc.name }}
+              </span>
+              <UBadge
+                v-if="svc.version"
+                color="neutral"
+                variant="soft"
+                size="sm"
+                class="text-[10px] font-mono px-1.5 py-0.5"
+              >
+                {{ svc.version }}
+              </UBadge>
             </div>
           </template>
-        </UCard>
+
+          <template #description>
+            <span class="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate block mt-1">
+              {{ config.basePath }}/{{ svc.route || svc.name.toLowerCase() }}
+            </span>
+          </template>
+        </UPageCard>
       </div>
     </div>
 
@@ -111,7 +120,7 @@ async function runGenerate(name: string) {
               @click="runGenerate(selectedService.name)"
             />
           </div>
-          <div class="text-xs font-mono text-muted">
+          <div class="text-xs font-mono text-neutral-500 dark:text-neutral-400">
             {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
           </div>
         </div>
