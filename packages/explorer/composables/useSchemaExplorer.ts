@@ -28,6 +28,8 @@ export function useSchemaExplorer(): any {
     onEdgesChange,
     nodes,
     edges,
+    setNodes,
+    setEdges,
   } = useVueFlow()
 
   const toast = useToast()
@@ -49,14 +51,39 @@ export function useSchemaExplorer(): any {
   function performInitialFocus() {
     const serviceName = selectedService.value?.name
     if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema' && isReady.value) {
-      try {
-        fitView({ padding: 0.2 })
-        schemaFocusedServices.value.add(serviceName)
-      }
-      catch (e) {
-        console.warn('[SchemaExplorer] fitView deferred: ', e)
-      }
+      setTimeout(() => {
+        try {
+          fitView({ padding: 0.2 })
+          schemaFocusedServices.value.add(serviceName)
+        }
+        catch (e) {
+          console.warn('[SchemaExplorer] fitView deferred: ', e)
+        }
+      }, 50)
     }
+  }
+
+  async function restoreServiceState(serviceName: string) {
+    const cache = serviceGraphCache.value[serviceName]
+    if (cache) {
+      isReady.value = false
+      // Set nodes first, then edges to prevent "source undefined" errors
+      setNodes([...cache.nodes])
+      await nextTick()
+      setEdges([...cache.edges])
+      
+      if (cache.viewport) {
+        await nextTick()
+        setViewport(cache.viewport)
+      }
+      
+      setTimeout(() => {
+        isReady.value = true
+        loading.value = false
+      }, 50)
+      return true
+    }
+    return false
   }
 
   // Lifecycle & Watchers
@@ -64,16 +91,11 @@ export function useSchemaExplorer(): any {
     window.addEventListener('fullscreenchange', onFullscreenChange)
 
     if (selectedService.value) {
-      const cache = serviceGraphCache.value[selectedService.value.name]
-      if (cache) {
-        nodes.value = [...cache.nodes]
-        edges.value = [...cache.edges]
-        isReady.value = true
-        loading.value = false
-      }
-      else {
-        fetchSchema()
-      }
+      restoreServiceState(selectedService.value.name).then((restored) => {
+        if (!restored) {
+          fetchSchema()
+        }
+      })
     }
   })
 
@@ -100,21 +122,12 @@ export function useSchemaExplorer(): any {
   // Watch for service changes
   watch(selectedService, async (newSvc) => {
     if (newSvc && newSvc.name !== lastSelectedServiceForGraph.value) {
-      const cache = serviceGraphCache.value[newSvc.name]
-      if (cache) {
-        nodes.value = [...cache.nodes]
-        edges.value = [...cache.edges]
-        if (cache.viewport) {
-          setViewport(cache.viewport)
-        }
-        isReady.value = true
-        loading.value = false
-      }
-      else {
+      const restored = await restoreServiceState(newSvc.name)
+      if (!restored) {
         isReady.value = false
         schemaData.value = null
-        nodes.value = []
-        edges.value = []
+        setNodes([])
+        setEdges([])
         await fetchSchema()
       }
       lastSelectedServiceForGraph.value = newSvc.name
@@ -295,8 +308,10 @@ export function useSchemaExplorer(): any {
       console.error('[SchemaExplorer] ELK layout failed', e)
     }
 
-    nodes.value = [...newNodes]
-    edges.value = [...newEdges]
+    // Atomic update: nodes then edges
+    setNodes([...newNodes])
+    await nextTick()
+    setEdges([...newEdges])
 
     // Update cache
     serviceGraphCache.value[selectedService.value.name] = {
