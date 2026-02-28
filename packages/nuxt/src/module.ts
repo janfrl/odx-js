@@ -19,6 +19,7 @@ export interface SapODataService {
   name: string
   url: string
   route?: string
+  icon?: string
   auth?: {
     username?: string
     password?: string
@@ -91,6 +92,7 @@ export default defineNuxtModule<ModuleOptions>({
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
       const envName = process.env[`${prefix}${envKey}_NAME`]
+      const envIcon = process.env[`${prefix}${envKey}_ICON`]
       const envUser = process.env[`${prefix}${envKey}_AUTH_USERNAME`]
       const envPass = process.env[`${prefix}${envKey}_AUTH_PASSWORD`]
       const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
@@ -109,6 +111,7 @@ export default defineNuxtModule<ModuleOptions>({
         ...s,
         url: envUrl || s.url,
         name: envName || s.name,
+        icon: envIcon || s.icon,
         auth: {
           username: envUser || s.auth?.username,
           password: envPass || s.auth?.password,
@@ -141,6 +144,7 @@ export default defineNuxtModule<ModuleOptions>({
       const url = process.env[`${prefix}${key}_URL`]
       if (url) {
         const name = process.env[`${prefix}${key}_NAME`] || key
+        const icon = process.env[`${prefix}${key}_ICON`]
         const username = process.env[`${prefix}${key}_AUTH_USERNAME`]
         const password = process.env[`${prefix}${key}_AUTH_PASSWORD`]
         const bearerToken = process.env[`${prefix}${key}_AUTH_BEARER_TOKEN`]
@@ -158,6 +162,7 @@ export default defineNuxtModule<ModuleOptions>({
         services.push({
           name,
           url,
+          icon,
           auth: { username, password, bearerToken },
           headers: { ...envHeadersJson, ...envHeadersIndividual },
         })
