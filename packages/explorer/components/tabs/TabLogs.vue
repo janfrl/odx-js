@@ -30,40 +30,50 @@ async function runClear() {
 </script>
 
 <template>
-  <div class="h-full flex flex-col min-h-0 bg-transparent">
-    <div class="pt-4 px-4 pb-0 sm:pt-6 sm:px-6 sm:pb-0 flex-1 flex flex-col min-h-0">
-      <div class="flex-1 flex flex-col min-h-0 overflow-hidden ring-1 ring-neutral-200/70 dark:ring-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all">
-        <!-- Toolbar -->
-        <div class="px-8 py-4 border-b border-neutral-200/70 dark:border-neutral-800/70 flex justify-between items-center shrink-0 bg-neutral-50/50 dark:bg-neutral-950 rounded-t-[inherit]">
-          <div class="flex items-center gap-4">
-            <h1 class="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">
-              Traffic Monitor
-            </h1>
-            <UBadge
-              v-if="logs.length"
-              color="neutral"
-              variant="subtle"
-              size="md"
-              class="font-mono font-bold text-[11px] px-3"
-            >
-              {{ logs.length }} Entries
-            </UBadge>
+  <div class="h-full flex flex-col overflow-hidden font-sans">
+    <!-- Header Area -->
+    <div class="px-6 py-4 shrink-0">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="p-2 rounded-lg bg-primary/10 text-primary">
+            <UIcon name="i-lucide-terminal" class="w-5 h-5" />
           </div>
+          <div>
+            <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100">Traffic Monitor</h2>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400">Live request/response logs from the OData proxy</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <UBadge
+            v-if="logs.length"
+            color="neutral"
+            variant="subtle"
+            size="md"
+            class="font-mono font-bold text-[11px] px-3"
+          >
+            {{ logs.length }} Entries
+          </UBadge>
           <UButton
             label="Purge History"
             color="error"
             variant="ghost"
-            size="md"
+            size="sm"
             icon="i-lucide-trash-2"
-            class="uppercase text-[11px] font-bold tracking-widest px-6"
+            class="font-bold"
             @click="runClear"
           />
         </div>
+      </div>
+    </div>
 
+    <!-- Unified Content Block -->
+    <div class="flex-1 flex flex-col min-h-0 relative px-6 pb-0">
+      <div class="flex-1 flex flex-col min-h-0 overflow-hidden border-t border-x border-neutral-200/70 dark:border-neutral-800/70 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-2xl transition-all">
         <!-- Log Table -->
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <table class="w-full text-left text-xs min-w-max border-collapse">
-            <thead class="sticky top-0 z-10 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
+            <thead class="sticky top-0 z-10 bg-neutral-50/80 dark:bg-neutral-950/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800">
               <tr>
                 <th class="px-8 py-4 font-black uppercase tracking-widest text-[10px] text-neutral-400 w-24">
                   Status

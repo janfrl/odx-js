@@ -46,7 +46,7 @@ onMounted(() => {
         <!-- Header -->
         <header class="h-14 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between px-6 shrink-0 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md">
           <div class="flex items-center gap-2">
-            <UIcon name="i-heroicons-cube-transparent" class="w-5 h-5 text-primary" />
+            <UIcon name="i-lucide-box" class="w-5 h-5 text-primary" />
             <h1 class="text-sm font-bold uppercase tracking-widest text-neutral-900 dark:text-neutral-100">
               ODX Explorer
             </h1>
@@ -59,7 +59,7 @@ onMounted(() => {
 
         <main class="flex-1 overflow-hidden relative">
           <div class="h-full flex flex-col overflow-hidden">
-            <TabsTabOverview v-show="activeTab === 'overview'" class="overflow-y-auto custom-scrollbar" />
+            <TabsTabOverview v-show="activeTab === 'overview'" />
             <TabsTabServices v-show="activeTab === 'services'" />
             <TabsTabLogs v-show="activeTab === 'logs'" />
           </div>
