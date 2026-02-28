@@ -50,15 +50,23 @@ export function useSchemaExplorer(): any {
 
   function performInitialFocus() {
     const serviceName = selectedService.value?.name
+    // Only focus if in schema mode and not yet focused for THIS service
     if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema') {
-      try {
-        // Force instant fit without any animation duration
-        fitView({ padding: 0.2, duration: 0 })
-        schemaFocusedServices.value.add(serviceName)
-      }
-      catch (e) {
-        console.warn('[SchemaExplorer] fitView failed: ', e)
-      }
+      // Mark as focused immediately to prevent double calls
+      schemaFocusedServices.value.add(serviceName)
+
+      // Wait for layout stability
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            fitView({ padding: 0.2, duration: 0 })
+          }
+          catch (e) {
+            console.warn('[SchemaExplorer] fitView failed: ', e)
+            schemaFocusedServices.value.delete(serviceName) // Allow retry
+          }
+        })
+      })
     }
   }
 
@@ -66,7 +74,7 @@ export function useSchemaExplorer(): any {
     const cache = serviceGraphCache.value[serviceName]
     if (cache) {
       isReady.value = false
-      // Set nodes first, then edges to prevent "source undefined" errors
+      // Atomic update: nodes then edges to prevent "source undefined" errors
       setNodes([...cache.nodes])
       await nextTick()
       setEdges([...cache.edges])
@@ -79,6 +87,7 @@ export function useSchemaExplorer(): any {
       setTimeout(() => {
         isReady.value = true
         loading.value = false
+        performInitialFocus() // Just in case it wasn't focused before
       }, 50)
       return true
     }
@@ -112,14 +121,12 @@ export function useSchemaExplorer(): any {
     }
     else {
       // First time: Wait for layout, fit instantly, then show
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          performInitialFocus()
-          setTimeout(() => {
-            isReady.value = true
-          }, 100)
-        })
-      })
+      setTimeout(() => {
+        performInitialFocus()
+        setTimeout(() => {
+          isReady.value = true
+        }, 100)
+      }, 100)
     }
   })
 
@@ -141,13 +148,11 @@ export function useSchemaExplorer(): any {
   watch(globalViewMode, (newMode) => {
     if (newMode === 'schema') {
       nextTick(() => {
-        setTimeout(() => {
-          performInitialFocus()
-          // If we just focused, make sure we show it
-          if (nodes.value.length > 0) {
-            isReady.value = true
-          }
-        }, 100)
+        performInitialFocus()
+        // If we just switched and have nodes but not ready, show it
+        if (nodes.value.length > 0 && !isReady.value) {
+          isReady.value = true
+        }
       })
     }
   })
@@ -215,7 +220,9 @@ export function useSchemaExplorer(): any {
     try {
       const res = await fetch(`/__sap_odata__/schema?service=${serviceName}`)
       schemaData.value = (await res.json())
-      await generateGraph(forceAutoFit || !serviceGraphCache.value[serviceName])
+      // If we are fetching, autoFit if not in cache or forced
+      const shouldAutoFit = forceAutoFit || !serviceGraphCache.value[serviceName]
+      await generateGraph(shouldAutoFit)
     }
     catch (e) {
       console.error('[SchemaExplorer] Failed to fetch schema', e)
@@ -328,16 +335,14 @@ export function useSchemaExplorer(): any {
     }
 
     if (autoFit) {
-      // First time: Wait for layout, fit instantly, then show
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          performInitialFocus()
-          setTimeout(() => {
-            isReady.value = true
-            loading.value = false
-          }, 100)
-        })
-      })
+      // Wait for layout stability, then fit and show
+      setTimeout(() => {
+        performInitialFocus()
+        setTimeout(() => {
+          isReady.value = true
+          loading.value = false
+        }, 100)
+      }, 50)
     }
     else {
       if (nodes.value.length > 0) {
@@ -348,7 +353,11 @@ export function useSchemaExplorer(): any {
   }
 
   function resetGraph(): void {
-    fetchSchema(true)
+    const serviceName = selectedService.value?.name
+    if (serviceName) {
+      schemaFocusedServices.value.delete(serviceName)
+      fetchSchema(true)
+    }
   }
 
   function copyMermaid(): void {
