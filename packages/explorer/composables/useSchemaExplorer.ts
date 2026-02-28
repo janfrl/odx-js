@@ -12,8 +12,6 @@ const schemaData = ref<any>(null)
 
 const containerRef = ref<HTMLElement | null>(null)
 
-let initialized = false
-
 export function useSchemaExplorer(): any {
   const {
     selectedService,
@@ -52,7 +50,7 @@ export function useSchemaExplorer(): any {
     }
   }
 
-  // Lifecycle & Watchers that need to run per-instance
+  // Lifecycle & Watchers
   onMounted(() => {
     if (selectedService.value) {
       fetchSchema()
@@ -63,11 +61,13 @@ export function useSchemaExplorer(): any {
     const serviceName = selectedService.value?.name || ''
     if (!initializedServices.value.has(serviceName)) {
       initializedServices.value.add(serviceName)
-      // We don't fitView here anymore, we wait for the tab switch or initial load to be ready
+      // Wait for nodes to be present before focusing
       setTimeout(() => {
         isReady.value = true
-        performInitialFocus()
-      }, 100)
+        if (globalNodes.value.length > 0) {
+          performInitialFocus()
+        }
+      }, 150)
     }
     else {
       setViewport(globalViewport.value)
@@ -75,42 +75,40 @@ export function useSchemaExplorer(): any {
     }
   })
 
-  if (!initialized) {
-    initialized = true
+  // Per-instance watchers
+  watch(selectedService, async (newSvc) => {
+    if (newSvc) {
+      isReady.value = false
+      schemaData.value = null
+      globalNodes.value = []
+      globalEdges.value = []
+      await fetchSchema()
+    }
+  })
 
-    // Global Listeners & Watchers (Singleton side-effects)
-    window.addEventListener('fullscreenchange', () => {
-      isFullscreen.value = !!document.fullscreenElement
-    })
-
-    watch(selectedService, (newSvc) => {
-      if (newSvc) {
-        fetchSchema()
-      }
-    })
-
-    watch(globalViewMode, (newMode) => {
-      if (newMode === 'schema') {
-        nextTick(() => {
+  watch(globalViewMode, (newMode) => {
+    if (newMode === 'schema') {
+      nextTick(() => {
+        setTimeout(() => {
           performInitialFocus()
-        })
-      }
-    })
-
-    onEdgesChange((changes: any[]) => {
-      changes.forEach((change: any) => {
-        if (change.type === 'remove') {
-          globalEdges.value = globalEdges.value.filter((e: any) => e.id !== change.id)
-        }
+        }, 100)
       })
-    })
+    }
+  })
 
-    onViewportChange((viewport) => {
-      if (isReady.value) {
-        globalViewport.value = { ...viewport }
+  onEdgesChange((changes: any[]) => {
+    changes.forEach((change: any) => {
+      if (change.type === 'remove') {
+        globalEdges.value = globalEdges.value.filter((e: any) => e.id !== change.id)
       }
     })
-  }
+  })
+
+  onViewportChange((viewport) => {
+    if (isReady.value) {
+      globalViewport.value = { ...viewport }
+    }
+  })
 
   async function toggleFullscreen(): Promise<void> {
     if (!containerRef.value) {
@@ -153,6 +151,8 @@ export function useSchemaExplorer(): any {
     if (isNewService) {
       loading.value = true
       isReady.value = false
+      globalNodes.value = []
+      globalEdges.value = []
     }
     else if (forceAutoFit) {
       loading.value = true
@@ -163,7 +163,7 @@ export function useSchemaExplorer(): any {
       schemaData.value = await res.json()
 
       if (isNewService || forceAutoFit) {
-        await generateGraph(forceAutoFit)
+        await generateGraph(forceAutoFit || isNewService)
       }
       else {
         await nextTick()
