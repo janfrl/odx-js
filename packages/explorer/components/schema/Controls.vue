@@ -72,7 +72,7 @@ const {
       <!-- View Modes -->
       <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
-          icon="i-lucide-minimize"
+          icon="i-lucide-focus"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
