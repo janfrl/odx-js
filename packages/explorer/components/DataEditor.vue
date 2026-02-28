@@ -13,14 +13,14 @@ let validationTimeout: ReturnType<typeof setTimeout> | null = null
 const modeConfig = computed(() => {
   switch (editor.value.mode) {
     case 'create':
-      return { title: 'Create Record', icon: 'i-heroicons-plus', method: 'POST' }
+      return { title: 'Create Record', icon: 'i-lucide-plus', method: 'POST' }
     case 'update':
-      return { title: 'Edit Record', icon: 'i-heroicons-pencil', method: 'PATCH' }
+      return { title: 'Edit Record', icon: 'i-lucide-pencil', method: 'PATCH' }
     case 'headers':
-      return { title: 'Session Headers', icon: 'i-heroicons-adjustments-horizontal', method: 'CONFIG' }
+      return { title: 'Session Headers', icon: 'i-lucide-sliders-horizontal', method: 'CONFIG' }
     case 'view':
     default:
-      return { title: 'View Details', icon: 'i-heroicons-eye', method: 'GET' }
+      return { title: 'View Details', icon: 'i-lucide-eye', method: 'GET' }
   }
 })
 
@@ -88,7 +88,7 @@ async function saveItem() {
       sessionHeaders.value = payload
       toast.add({
         title: 'Session headers updated',
-        icon: 'i-heroicons-cog-6-tooth',
+        icon: 'i-lucide-settings',
         color: 'success',
       })
       editor.value.show = false
@@ -124,7 +124,7 @@ async function saveItem() {
 
     toast.add({
       title: `Item ${id ? 'updated' : 'created'} successfully`,
-      icon: 'i-heroicons-check-circle',
+      icon: 'i-lucide-circle-check',
       color: 'success',
     })
 
@@ -174,7 +174,7 @@ function close() {
           </div>
         </div>
         <UButton
-          icon="i-heroicons-x-mark"
+          icon="i-lucide-x"
           color="neutral"
           variant="ghost"
           @click="close"
@@ -187,7 +187,7 @@ function close() {
         <div class="flex-1 relative flex flex-col min-h-0 bg-white dark:bg-neutral-900 rounded-xl ring-1 ring-neutral-200 dark:ring-neutral-800 shadow-sm focus-within:ring-2 focus-within:ring-neutral-300 dark:focus-within:ring-neutral-700 transition-all overflow-hidden">
           <div class="px-4 py-2.5 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 shrink-0">
             <div class="flex items-center gap-2">
-              <UIcon name="i-heroicons-command-line" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <UIcon name="i-lucide-terminal" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
               <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-300 font-mono tracking-tight">payload.json</span>
             </div>
             <div class="flex items-center gap-2">
@@ -217,7 +217,7 @@ function close() {
               class="absolute bottom-4 left-4 right-4 z-10"
             >
               <UAlert
-                icon="i-heroicons-exclamation-circle"
+                icon="i-lucide-circle-alert"
                 color="error"
                 variant="subtle"
                 :title="editor.error"

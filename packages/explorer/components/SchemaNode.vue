@@ -15,31 +15,31 @@ const props = defineProps<NodeProps<EntityData>>()
 const entityIcon = computed(() => {
   const name = props.data.entity.name.toLowerCase()
   if (name.includes('user') || name.includes('person') || name.includes('contact') || name.includes('customer') || name.includes('supplier'))
-    return 'i-heroicons-user'
+    return 'i-lucide-user'
   if (name.includes('order') || name.includes('sale') || name.includes('purchase') || name.includes('cart'))
-    return 'i-heroicons-shopping-cart'
+    return 'i-lucide-shopping-cart'
   if (name.includes('product') || name.includes('item') || name.includes('material'))
-    return 'i-heroicons-cube'
+    return 'i-lucide-box'
   if (name.includes('invoice') || name.includes('bill') || name.includes('document'))
-    return 'i-heroicons-document-text'
+    return 'i-lucide-file-text'
   if (name.includes('payment') || name.includes('money') || name.includes('price'))
-    return 'i-heroicons-banknotes'
+    return 'i-lucide-banknote'
   if (name.includes('address') || name.includes('location') || name.includes('site') || name.includes('warehouse'))
-    return 'i-heroicons-map-pin'
+    return 'i-lucide-map-pin'
   if (name.includes('category') || name.includes('tag') || name.includes('group'))
-    return 'i-heroicons-tag'
+    return 'i-lucide-tag'
   if (name.includes('config') || name.includes('setting') || name.includes('parameter'))
-    return 'i-heroicons-cog-6-tooth'
+    return 'i-lucide-settings'
   if (name.includes('log') || name.includes('history') || name.includes('audit'))
-    return 'i-heroicons-clipboard-document-list'
+    return 'i-lucide-clipboard-list'
   if (name.includes('date') || name.includes('time') || name.includes('event') || name.includes('schedule'))
-    return 'i-heroicons-calendar'
+    return 'i-lucide-calendar'
   if (name.includes('file') || name.includes('attachment') || name.includes('image'))
-    return 'i-heroicons-paper-clip'
+    return 'i-lucide-paperclip'
   if (name.includes('message') || name.includes('chat') || name.includes('mail'))
-    return 'i-heroicons-envelope'
+    return 'i-lucide-mail'
 
-  return 'i-heroicons-circle-stack'
+  return 'i-lucide-database'
 })
 </script>
 
@@ -63,7 +63,7 @@ const entityIcon = computed(() => {
         <div class="flex items-center gap-2 overflow-hidden">
           <UIcon
             v-if="prop.isKey"
-            name="i-heroicons-key"
+            name="i-lucide-key"
             class="text-amber-500 w-3 h-3 shrink-0"
             title="Primary Key"
           />

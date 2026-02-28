@@ -45,7 +45,7 @@ function getRowData(row: any): Record<string, any> {
       v-if="showLoadingIndicator"
       class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[1px]"
     >
-      <UIcon name="i-heroicons-arrow-path" class="animate-spin w-10 h-10 text-primary" />
+      <UIcon name="i-lucide-refresh-cw" class="animate-spin w-10 h-10 text-primary" />
     </div>
 
     <!-- Error State -->
@@ -54,7 +54,7 @@ function getRowData(row: any): Record<string, any> {
       class="flex-1 flex flex-col items-center justify-center text-center p-12"
     >
       <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
-        <UIcon name="i-heroicons-exclamation-triangle" class="text-error-500 w-8 h-8" />
+        <UIcon name="i-lucide-triangle-alert" class="text-error-500 w-8 h-8" />
       </div>
       <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
         Request Failed
@@ -86,9 +86,9 @@ function getRowData(row: any): Record<string, any> {
       >
         <template #actions-cell="{ row }">
           <div class="flex items-center justify-center gap-2 w-30 shrink-0 sticky left-0 z-10">
-            <UButton icon="i-heroicons-eye" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('view', getRowData(row))" />
-            <UButton icon="i-heroicons-pencil" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('update', getRowData(row))" />
-            <UButton icon="i-heroicons-trash" variant="ghost" color="neutral" size="sm" class="hover:text-error-500 hover:bg-error-500/10 transition-colors" @click="deleteItem(getRowData(row).ID || getRowData(row).Id)" />
+            <UButton icon="i-lucide-eye" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('view', getRowData(row))" />
+            <UButton icon="i-lucide-pencil" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('update', getRowData(row))" />
+            <UButton icon="i-lucide-trash-2" variant="ghost" color="neutral" size="sm" class="hover:text-error-500 hover:bg-error-500/10 transition-colors" @click="deleteItem(getRowData(row).ID || getRowData(row).Id)" />
           </div>
         </template>
 
@@ -117,7 +117,7 @@ function getRowData(row: any): Record<string, any> {
         v-if="previewData.length === 0 && !previewLoading"
         class="p-32 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
       >
-        <UIcon name="i-heroicons-magnifying-glass" class="w-12 h-12 mb-4 opacity-20" />
+        <UIcon name="i-lucide-search" class="w-12 h-12 mb-4 opacity-20" />
         <p class="text-base uppercase tracking-[0.2em]">
           No records match your query
         </p>

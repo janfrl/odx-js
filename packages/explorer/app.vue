@@ -5,9 +5,9 @@ import { useSharedODataState } from './composables/useODataState'
 const { activeTab, fetchConfig, refreshLogs } = useSharedODataState()
 
 const items = [
-  { label: 'Overview', icon: 'i-heroicons-home', id: 'overview' },
-  { label: 'Services', icon: 'i-heroicons-circle-stack', id: 'services' },
-  { label: 'Logs', icon: 'i-heroicons-command-line', id: 'logs' },
+  { label: 'Overview', icon: 'i-lucide-house', id: 'overview' },
+  { label: 'Services', icon: 'i-lucide-database', id: 'services' },
+  { label: 'Logs', icon: 'i-lucide-terminal', id: 'logs' },
 ]
 
 onMounted(() => {

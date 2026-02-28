@@ -231,7 +231,7 @@ export function useEntityExplorer(): any {
       if (res.ok) {
         toast.add({
           title: `Item ${id} deleted successfully`,
-          icon: 'i-heroicons-check-circle',
+          icon: 'i-lucide-circle-check',
           color: 'success',
         })
         await refreshEntityData()
@@ -240,7 +240,7 @@ export function useEntityExplorer(): any {
     catch (e: unknown) {
       toast.add({
         title: (e as Error).message,
-        icon: 'i-heroicons-x-circle',
+        icon: 'i-lucide-circle-x',
         color: 'error',
       })
     }
@@ -259,7 +259,7 @@ export function useEntityExplorer(): any {
       await clearEntityMockData(selectedService.value.name, selectedEntity.value)
       toast.add({
         title: `All mock data for ${selectedEntity.value} cleared`,
-        icon: 'i-heroicons-trash',
+        icon: 'i-lucide-trash-2',
         color: 'success',
       })
       await refreshEntityData()
@@ -267,7 +267,7 @@ export function useEntityExplorer(): any {
     catch (e: unknown) {
       toast.add({
         title: (e as Error).message,
-        icon: 'i-heroicons-x-circle',
+        icon: 'i-lucide-circle-x',
         color: 'error',
       })
     }

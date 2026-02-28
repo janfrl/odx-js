@@ -23,7 +23,7 @@ const {
     <div class="absolute top-6 right-6 pointer-events-auto">
       <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
-          icon="i-heroicons-clipboard-document"
+          icon="i-lucide-clipboard"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
@@ -38,7 +38,7 @@ const {
       <!-- Layout Calculation -->
       <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
-          icon="i-heroicons-arrow-path"
+          icon="i-lucide-refresh-cw"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
@@ -51,7 +51,7 @@ const {
       <!-- Navigation -->
       <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
-          icon="i-heroicons-plus"
+          icon="i-lucide-plus"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
@@ -60,7 +60,7 @@ const {
         />
         <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
         <UButton
-          icon="i-heroicons-minus"
+          icon="i-lucide-minus"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
@@ -72,7 +72,7 @@ const {
       <!-- View Modes -->
       <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
         <UButton
-          icon="i-heroicons-arrows-pointing-in"
+          icon="i-lucide-minimize"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
@@ -81,7 +81,7 @@ const {
         />
         <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
         <UButton
-          :icon="isFullscreen ? 'i-heroicons-arrows-pointing-in' : 'i-heroicons-arrows-pointing-out'"
+          :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
           color="neutral"
           variant="ghost"
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"

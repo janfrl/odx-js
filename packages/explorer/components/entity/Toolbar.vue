@@ -18,7 +18,7 @@ const {
       <UInput
         v-model="queryInput"
         placeholder="?id=... or ?$filter=..."
-        icon="i-heroicons-magnifying-glass"
+        icon="i-lucide-search"
         class="flex-1 font-mono"
         size="md"
         @keyup.enter="refreshEntityData"
@@ -29,7 +29,7 @@ const {
       </UInput>
       <UButton
         label="Execute"
-        icon="i-heroicons-play"
+        icon="i-lucide-play"
         color="primary"
         size="md"
         class="px-4 font-bold"
@@ -45,16 +45,16 @@ const {
         </span>
         <USeparator orientation="vertical" class="h-4" />
         <div class="flex items-center gap-2">
-          <UButton label="Headers" icon="i-heroicons-adjustments-horizontal" variant="ghost" color="neutral" size="sm" @click="openEditor('headers')" />
+          <UButton label="Headers" icon="i-lucide-sliders-horizontal" variant="ghost" color="neutral" size="sm" @click="openEditor('headers')" />
           <template v-if="previewData.length > 0">
-            <UButton label="JSON" icon="i-heroicons-arrow-down-tray" variant="ghost" color="neutral" size="sm" @click="downloadJson" />
-            <UButton label="Clear" icon="i-heroicons-trash" variant="ghost" color="error" size="sm" @click="clearData" />
+            <UButton label="JSON" icon="i-lucide-download" variant="ghost" color="neutral" size="sm" @click="downloadJson" />
+            <UButton label="Clear" icon="i-lucide-trash-2" variant="ghost" color="error" size="sm" @click="clearData" />
           </template>
         </div>
       </div>
       <UButton
         label="New Record"
-        icon="i-heroicons-plus"
+        icon="i-lucide-plus"
         variant="outline"
         color="neutral"
         size="sm"

@@ -7,8 +7,8 @@ const { services, selectedService, config, generateService, generatingStatus, se
 const toast = useToast()
 
 const tabs = [
-  { label: 'Data', icon: 'i-heroicons-table-cells', value: 'explorer' },
-  { label: 'Schema', icon: 'i-heroicons-share', value: 'schema' },
+  { label: 'Data', icon: 'i-lucide-table-2', value: 'explorer' },
+  { label: 'Schema', icon: 'i-lucide-share-2', value: 'schema' },
 ]
 
 /**
@@ -18,7 +18,7 @@ async function runGenerate(name: string) {
   await generateService(name)
   toast.add({
     title: `SDK for ${name} regenerated successfully`,
-    icon: 'i-heroicons-check-circle',
+    icon: 'i-lucide-circle-check',
     color: 'success',
   })
 }
@@ -45,7 +45,7 @@ async function runGenerate(name: string) {
           <div class="flex items-start gap-4">
             <div class="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-400 group-hover:text-primary-500 transition-colors">
               <UIcon
-                name="i-heroicons-circle-stack"
+                name="i-lucide-database"
                 class="w-6 h-6"
               />
             </div>
@@ -92,7 +92,7 @@ async function runGenerate(name: string) {
     >
       <div class="p-6 flex items-center gap-4 shrink-0">
         <UButton
-          icon="i-heroicons-chevron-left"
+          icon="i-lucide-chevron-left"
           color="neutral"
           variant="ghost"
           @click="selectedService = null; selectedEntity = null"
@@ -103,7 +103,7 @@ async function runGenerate(name: string) {
               {{ selectedService.name }}
             </h2>
             <UButton
-              icon="i-heroicons-arrow-path"
+              icon="i-lucide-refresh-cw"
               color="neutral"
               variant="ghost"
               size="xs"

@@ -307,7 +307,7 @@ export function useSchemaExplorer(): any {
     toast.add({
       id: 'copy-mermaid-success',
       title: 'Mermaid diagram code copied to clipboard!',
-      icon: 'i-heroicons-clipboard-document-check',
+      icon: 'i-lucide-clipboard-check',
       color: 'success',
     })
   }

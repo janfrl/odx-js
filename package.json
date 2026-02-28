@@ -47,6 +47,7 @@
     "@antfu/eslint-config": "^7.4.3",
     "@antfu/ni": "^28.2.0",
     "@iconify-json/carbon": "^1.2.18",
+    "@iconify-json/lucide": "^1.2.94",
     "@nuxt/devtools": "^3.2.1",
     "@nuxt/devtools-ui-kit": "^3.2.1",
     "@nuxt/eslint": "1.10.0",

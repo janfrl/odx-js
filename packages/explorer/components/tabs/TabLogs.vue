@@ -22,7 +22,7 @@ async function runClear() {
     await clearLogs()
     toast.add({
       title: 'Traffic history purged',
-      icon: 'i-heroicons-trash',
+      icon: 'i-lucide-trash-2',
       color: 'success',
     })
   }
@@ -54,7 +54,7 @@ async function runClear() {
             color="error"
             variant="ghost"
             size="md"
-            icon="i-heroicons-trash"
+            icon="i-lucide-trash-2"
             class="uppercase text-[11px] font-bold tracking-widest px-6"
             @click="runClear"
           />
@@ -123,7 +123,7 @@ async function runClear() {
                     <div class="p-10 flex flex-col gap-12 max-w-6xl mx-auto text-neutral-900 dark:text-neutral-100">
                       <div class="space-y-4">
                         <div class="flex items-center gap-3 text-[11px] font-black uppercase text-neutral-400 tracking-widest">
-                          <UIcon name="i-heroicons-link" class="w-4 h-4" />
+                          <UIcon name="i-lucide-link" class="w-4 h-4" />
                           Backend Target
                         </div>
                         <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 font-mono text-[12px] break-all select-all text-neutral-600 dark:text-neutral-400 leading-relaxed shadow-sm ring-1 ring-black/5 dark:ring-white/5">
@@ -133,7 +133,7 @@ async function runClear() {
 
                       <div v-if="log.requestHeaders" class="space-y-4">
                         <div class="flex items-center gap-3 text-[11px] font-black uppercase text-neutral-400 tracking-widest">
-                          <UIcon name="i-heroicons-adjustments-horizontal" class="w-4 h-4" />
+                          <UIcon name="i-lucide-sliders-horizontal" class="w-4 h-4" />
                           Request Headers
                         </div>
                         <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-3 text-[12px] shadow-sm ring-1 ring-black/5 dark:ring-white/5">
@@ -147,26 +147,26 @@ async function runClear() {
                       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
                         <div class="space-y-4">
                           <div class="flex items-center gap-3 text-[11px] font-black uppercase text-neutral-400 tracking-widest">
-                            <UIcon name="i-heroicons-arrow-up-on-square" class="w-4 h-4" />
+                            <UIcon name="i-lucide-upload" class="w-4 h-4" />
                             Payload
                           </div>
                           <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 h-80 overflow-auto custom-scrollbar shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                             <pre v-if="log.requestBody" class="text-[12px] leading-relaxed text-neutral-600 dark:text-neutral-400 font-mono">{{ JSON.stringify(log.requestBody, null, 2) }}</pre>
                             <div v-else class="h-full flex flex-col items-center justify-center opacity-20 italic text-sm">
-                              <UIcon name="i-heroicons-document-minus" class="w-10 h-10 mb-3" />
+                              <UIcon name="i-lucide-file-minus" class="w-10 h-10 mb-3" />
                               No Payload
                             </div>
                           </div>
                         </div>
                         <div class="space-y-4">
                           <div class="flex items-center gap-3 text-[11px] font-black uppercase text-neutral-400 tracking-widest">
-                            <UIcon name="i-heroicons-arrow-down-on-square" class="w-4 h-4" />
+                            <UIcon name="i-lucide-download" class="w-4 h-4" />
                             Response
                           </div>
                           <div class="p-6 bg-white dark:bg-black rounded-2xl border border-neutral-200 dark:border-neutral-800 h-80 overflow-auto custom-scrollbar shadow-sm ring-1 ring-black/5 dark:ring-white/5">
                             <pre v-if="log.responseBody" class="text-[12px] leading-relaxed text-neutral-600 dark:text-neutral-400 font-mono">{{ JSON.stringify(log.responseBody, null, 2) }}</pre>
                             <div v-else class="h-full flex flex-col items-center justify-center opacity-20 italic text-sm">
-                              <UIcon name="i-heroicons-document-minus" class="w-10 h-10 mb-3" />
+                              <UIcon name="i-lucide-file-minus" class="w-10 h-10 mb-3" />
                               No Response Body
                             </div>
                           </div>
@@ -180,7 +180,7 @@ async function runClear() {
               <tr v-if="logs.length === 0">
                 <td colspan="4" class="px-8 py-48 text-center text-neutral-400 italic">
                   <div class="flex flex-col items-center gap-4">
-                    <UIcon name="i-heroicons-no-symbol" class="w-16 h-16 opacity-10 mb-4" />
+                    <UIcon name="i-lucide-ban" class="w-16 h-16 opacity-10 mb-4" />
                     <p class="text-lg tracking-wide font-medium">
                       No network activity recorded yet.
                     </p>

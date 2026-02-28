@@ -5,10 +5,10 @@ import { useSharedODataState } from '../../composables/useODataState'
 const { config, services } = useSharedODataState()
 
 const stats = computed(() => [
-  { label: 'Status', value: 'Active', color: 'success', icon: 'i-heroicons-check-circle' },
-  { label: 'Mode', value: config.value.mode, color: 'primary', icon: 'i-heroicons-cpu-chip' },
-  { label: 'Base Path', value: config.value.basePath, color: 'neutral', icon: 'i-heroicons-link' },
-  { label: 'Services', value: services.value.length.toString(), color: 'neutral', icon: 'i-heroicons-server' },
+  { label: 'Status', value: 'Active', color: 'success', icon: 'i-lucide-circle-check' },
+  { label: 'Mode', value: config.value.mode, color: 'primary', icon: 'i-lucide-cpu' },
+  { label: 'Base Path', value: config.value.basePath, color: 'neutral', icon: 'i-lucide-link' },
+  { label: 'Services', value: services.value.length.toString(), color: 'neutral', icon: 'i-lucide-server' },
 ])
 </script>
 
@@ -18,7 +18,7 @@ const stats = computed(() => [
     <div class="flex items-center gap-8">
       <div class="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center shrink-0 shadow-inner">
         <UIcon
-          name="i-heroicons-cube"
+          name="i-lucide-box"
           class="w-12 h-12 text-primary"
         />
       </div>
@@ -70,7 +70,7 @@ const stats = computed(() => [
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
       <section class="space-y-6">
         <div class="flex items-center gap-2 px-2">
-          <UIcon name="i-heroicons-adjustments-horizontal" class="text-neutral-400 w-4 h-4" />
+          <UIcon name="i-lucide-sliders-horizontal" class="text-neutral-400 w-4 h-4" />
           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">
             Module Configuration
           </h3>
@@ -104,7 +104,7 @@ const stats = computed(() => [
 
       <section class="space-y-6">
         <div class="flex items-center gap-2 px-2">
-          <UIcon name="i-heroicons-command-line" class="text-neutral-400 w-4 h-4" />
+          <UIcon name="i-lucide-terminal" class="text-neutral-400 w-4 h-4" />
           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">
             System Environment
           </h3>
