@@ -50,16 +50,14 @@ export function useSchemaExplorer(): any {
 
   function performInitialFocus() {
     const serviceName = selectedService.value?.name
-    if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema' && isReady.value) {
-      setTimeout(() => {
-        try {
-          fitView({ padding: 0.2 })
-          schemaFocusedServices.value.add(serviceName)
-        }
-        catch (e) {
-          console.warn('[SchemaExplorer] fitView deferred: ', e)
-        }
-      }, 50)
+    if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema') {
+      try {
+        fitView({ padding: 0.2 })
+        schemaFocusedServices.value.add(serviceName)
+      }
+      catch (e) {
+        console.warn('[SchemaExplorer] fitView deferred: ', e)
+      }
     }
   }
 
@@ -71,12 +69,12 @@ export function useSchemaExplorer(): any {
       setNodes([...cache.nodes])
       await nextTick()
       setEdges([...cache.edges])
-      
+
       if (cache.viewport) {
         await nextTick()
         setViewport(cache.viewport)
       }
-      
+
       setTimeout(() => {
         isReady.value = true
         loading.value = false
@@ -112,9 +110,12 @@ export function useSchemaExplorer(): any {
       setTimeout(() => isReady.value = true, 50)
     }
     else {
+      // First time: fit then show
       setTimeout(() => {
-        isReady.value = true
         performInitialFocus()
+        setTimeout(() => {
+          isReady.value = true
+        }, 60)
       }, 150)
     }
   })
@@ -139,6 +140,10 @@ export function useSchemaExplorer(): any {
       nextTick(() => {
         setTimeout(() => {
           performInitialFocus()
+          // If we just focused, make sure we show it
+          if (nodes.value.length > 0) {
+            isReady.value = true
+          }
         }, 100)
       })
     }
@@ -321,16 +326,11 @@ export function useSchemaExplorer(): any {
 
     if (autoFit) {
       setTimeout(() => {
-        try {
-          fitView({ padding: 0.2 })
-        }
-        catch (e) {
-          console.warn('[SchemaExplorer] fitView failed in generateGraph: ', e)
-        }
+        performInitialFocus()
         setTimeout(() => {
           isReady.value = true
           loading.value = false
-        }, 50)
+        }, 60)
       }, 100)
     }
     else {
