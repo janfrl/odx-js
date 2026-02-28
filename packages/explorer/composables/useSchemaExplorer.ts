@@ -52,11 +52,12 @@ export function useSchemaExplorer(): any {
     const serviceName = selectedService.value?.name
     if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema') {
       try {
-        fitView({ padding: 0.2 })
+        // Force instant fit without any animation duration
+        fitView({ padding: 0.2, duration: 0 })
         schemaFocusedServices.value.add(serviceName)
       }
       catch (e) {
-        console.warn('[SchemaExplorer] fitView deferred: ', e)
+        console.warn('[SchemaExplorer] fitView failed: ', e)
       }
     }
   }
@@ -110,13 +111,15 @@ export function useSchemaExplorer(): any {
       setTimeout(() => isReady.value = true, 50)
     }
     else {
-      // First time: fit then show
-      setTimeout(() => {
-        performInitialFocus()
-        setTimeout(() => {
-          isReady.value = true
-        }, 60)
-      }, 150)
+      // First time: Wait for layout, fit instantly, then show
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          performInitialFocus()
+          setTimeout(() => {
+            isReady.value = true
+          }, 100)
+        })
+      })
     }
   })
 
@@ -325,13 +328,16 @@ export function useSchemaExplorer(): any {
     }
 
     if (autoFit) {
-      setTimeout(() => {
-        performInitialFocus()
-        setTimeout(() => {
-          isReady.value = true
-          loading.value = false
-        }, 60)
-      }, 100)
+      // First time: Wait for layout, fit instantly, then show
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          performInitialFocus()
+          setTimeout(() => {
+            isReady.value = true
+            loading.value = false
+          }, 100)
+        })
+      })
     }
     else {
       if (nodes.value.length > 0) {
