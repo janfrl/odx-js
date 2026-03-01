@@ -1,6 +1,7 @@
 import type { ODataEntitySet, ODataKey, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
-import { useFetch, useODataBasePath } from '#imports'
 import { $odata } from '@bc8-odx/core'
+import { useFetch } from 'nuxt/app'
+import { useODataBasePath } from './useODataBasePath'
 
 type ODataQuery = Record<string, string | number | boolean | null | undefined>
 type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | ArrayBuffer | null

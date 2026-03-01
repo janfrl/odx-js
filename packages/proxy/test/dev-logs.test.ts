@@ -17,7 +17,7 @@ describe('proxy Dev Logs', () => {
 
     const logs = getODataLogs()
     expect(logs).toHaveLength(1)
-    expect(logs[0].id).toBe('1')
+    expect(logs[0]?.id).toBe('1')
   })
 
   it('respects maximum log limit', () => {
