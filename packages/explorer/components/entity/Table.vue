@@ -86,14 +86,16 @@ function getRowData(row: any): Record<string, any> {
         }"
       >
         <!-- Empty State Slot within UTable -->
-        <template #empty-state>
-          <div class="flex flex-col items-center justify-center py-32 opacity-40 italic text-neutral-500">
-            <UIcon name="i-lucide-database-zap" class="w-12 h-12 mb-4 opacity-20" />
-            <p class="text-base uppercase tracking-[0.2em]">
+        <template #empty>
+          <div class="flex flex-col items-center justify-center py-32 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+              <UIcon name="i-lucide-database-zap" class="text-neutral-400 w-8 h-8" />
+            </div>
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
               No data loaded yet
-            </p>
-            <p class="text-[10px] mt-2 non-italic opacity-60 font-sans">
-              Modify query parameters and click Execute to fetch records
+            </h3>
+            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
+              Modify query parameters and click Execute to fetch records from the OData service.
             </p>
           </div>
         </template>
