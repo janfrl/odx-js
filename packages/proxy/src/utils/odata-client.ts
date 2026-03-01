@@ -1,23 +1,23 @@
-import type { NitroRuntimeConfig } from '../api/config'
-import { useRequestHeaders, useRuntimeConfig } from 'nitropack/runtime'
+import type { ODataProxyConfig } from '@bc8-odx/core'
 import { ofetch } from 'ofetch'
 
-export function createODataClient(): any {
-  const config = useRuntimeConfig() as unknown as NitroRuntimeConfig
-  const baseURL = config.public.odata?.basePath || '/api/sap-odata'
+export interface ODataClientOptions {
+  config: ODataProxyConfig
+  authorization?: string
+}
+
+export function createODataClient(options: ODataClientOptions): any {
+  const { config, authorization } = options
+  const baseURL = config.basePath || '/api/sap-odata'
 
   return ofetch.create({
     baseURL,
     onRequest({ options }) {
-      if (config.odata?.forwardAuthHeader) {
-        const reqHeaders = useRequestHeaders(['authorization'])
-        const auth = reqHeaders.authorization
-        if (auth) {
-          if (!(options.headers instanceof Headers)) {
-            options.headers = new Headers(options.headers as HeadersInit)
-          }
-          options.headers.append('authorization', auth)
+      if (config.forwardAuthHeader && authorization) {
+        if (!(options.headers instanceof Headers)) {
+          options.headers = new Headers(options.headers as HeadersInit)
         }
+        options.headers.append('authorization', authorization)
       }
     },
     onResponseError({ response }) {

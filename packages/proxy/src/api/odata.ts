@@ -1,12 +1,10 @@
-import type { SapODataService } from '@bc8-odx/core'
-import type { NitroRuntimeConfig } from './config'
+import type { ODataProxyConfig, SapODataService } from '@bc8-odx/core'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getQuery, getRequestURL, readBody } from 'h3'
 import { createJiti } from 'jiti'
-import { useRuntimeConfig } from 'nitropack/runtime'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { fetchWithCsrf } from '../utils/csrf'
@@ -14,9 +12,13 @@ import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
-  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
-  const basePath = config.public.odata?.basePath || '/api/sap-odata'
-  const buildDir = config.odata?.buildDir ?? ''
+  const config = event.context.odataConfig as ODataProxyConfig
+  if (!config) {
+    throw createError({ statusCode: 500, message: '[nuxt-sap-odata] Proxy configuration missing in context' })
+  }
+
+  const basePath = config.basePath || '/api/sap-odata'
+  const buildDir = config.buildDir ?? ''
 
   const fullPath = event.path || ''
   const pathOnly = fullPath.split('?')[0] || ''
@@ -34,7 +36,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const services: SapODataService[] = config.odata?.services ?? []
+  const services: SapODataService[] = config.services ?? []
   const matched = services.find(svc =>
     svc.name.toLowerCase() === serviceRoute.toLowerCase()
     || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
@@ -44,7 +46,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
-  const globalDest = (config.odata?.destination || '').replace(/\/$/, '')
+  const globalDest = (config.destination || '').replace(/\/$/, '')
   let baseUrl = (matched.url && matched.url.startsWith('http')) ? matched.url.replace(/\/$/, '') : globalDest
 
   const isExternal = baseUrl.startsWith('http')
@@ -52,8 +54,8 @@ export default defineEventHandler(async (event) => {
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
-  const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
-  const auth = matched.auth || config.odata?.auth || {}
+  const customHeaders: Record<string, string> = { ...config.headers, ...matched.headers }
+  const auth = matched.auth || config.auth || {}
   if (auth.bearerToken && !customHeaders.authorization) {
     customHeaders.authorization = `Bearer ${auth.bearerToken}`
   }
@@ -75,7 +77,7 @@ export default defineEventHandler(async (event) => {
       requestBody,
       requestHeaders,
       responseBody: flattenOData(responseBody),
-    })
+    }, config.devtools?.maxLogs)
   }
 
   let capturedBody: unknown = null
@@ -135,12 +137,12 @@ export default defineEventHandler(async (event) => {
           if (entityApi) {
             const destination = {
               url: baseUrl.split('/sap/opu/odata/')[0],
-              isTrustingAllCertificates: config.odata?.rejectUnauthorized === false,
+              isTrustingAllCertificates: config.rejectUnauthorized === false,
               username: '',
               password: '',
               authTokens: [] as { value: string }[],
             }
-            const auth = matched.auth || config.odata?.auth || {}
+            const auth = matched.auth || config.auth || {}
             if (auth.bearerToken) {
               destination.authTokens = [{ value: auth.bearerToken }]
             }
@@ -148,7 +150,7 @@ export default defineEventHandler(async (event) => {
               destination.username = auth.username
               destination.password = auth.password
             }
-            const customHeaders: Record<string, string> = { ...config.odata?.headers, ...matched.headers }
+            const customHeaders: Record<string, string> = { ...config.headers, ...matched.headers }
             const query = getQuery(event)
 
             if (event.method === 'GET') {

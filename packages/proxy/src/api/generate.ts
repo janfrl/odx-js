@@ -1,12 +1,10 @@
-import type { NitroRuntimeConfig } from './config'
+import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
-import { generateODataTypes } from '@bc8-odx/nuxt/generate'
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
+  const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
 
@@ -14,15 +12,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: 'Missing service name' })
   }
 
-  const services = config.odata?.services ?? []
+  const services = config.services ?? []
   const matched = services.find(s => s.name === serviceName)
 
   if (!matched) {
     throw createError({ statusCode: 404, statusMessage: `Service ${serviceName} not found` })
   }
 
-  const buildDir = config.odata?.buildDir ?? ''
-  const rootDir = config.odata?.rootDir ?? ''
+  const buildDir = config.buildDir ?? ''
+  const rootDir = config.rootDir ?? ''
   const outRoot = join(buildDir, 'sap-odata', 'generated')
   const outDir = join(outRoot, matched.name)
 
@@ -64,7 +62,14 @@ export default defineEventHandler(async (event) => {
       throw new Error(`Input EDMX file not found at ${inputPath}`)
     }
 
-    await generateODataTypes(inputPath, outDir, matched.name)
+    // Logic for triggering generation should be injected or passed via context
+    // For now, we assume the host provides the generator if it wants to support this endpoint
+    const generate = event.context.odataGenerator
+    if (typeof generate !== 'function') {
+      throw createError({ statusCode: 501, statusMessage: 'SDK Generation not supported by host' })
+    }
+
+    await generate(inputPath, outDir, matched.name)
 
     return {
       success: true,

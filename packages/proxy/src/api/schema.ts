@@ -1,12 +1,11 @@
-import type { NitroRuntimeConfig } from './config'
+import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
 import { XMLParser } from 'fast-xml-parser'
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { useRuntimeConfig } from 'nitropack/runtime'
 import { resolve } from 'pathe'
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
+  const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
 
@@ -14,15 +13,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Missing service query parameter' })
   }
 
-  const services = config.odata?.services ?? []
+  const services = config.services ?? []
   const svc = services.find(s => s.name === serviceName)
 
   if (!svc) {
     throw createError({ statusCode: 404, message: `Service "${serviceName}" not found` })
   }
 
-  const rootDir = config.odata?.rootDir ?? ''
-  const buildDir = config.odata?.buildDir ?? ''
+  const rootDir = config.rootDir ?? ''
+  const buildDir = config.buildDir ?? ''
 
   let edmxPath = ''
   if (svc.url.startsWith('http')) {

@@ -14,12 +14,12 @@ export interface ODataLog {
   responseBody?: any
 }
 
-const MAX_LOGS = 100
+const DEFAULT_MAX_LOGS = 100
 const logs: ODataLog[] = []
 
-export function addODataLog(log: ODataLog): void {
+export function addODataLog(log: ODataLog, maxLogs = DEFAULT_MAX_LOGS): void {
   logs.unshift(log)
-  if (logs.length > MAX_LOGS) {
+  if (logs.length > maxLogs) {
     logs.pop()
   }
 }

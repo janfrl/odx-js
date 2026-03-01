@@ -155,7 +155,7 @@ export default defineNuxtModule<ModuleOptions>({
 
         const envHeadersJson = parseEnvJson(process.env[`${prefix}${key}_HEADERS`])
         const envHeadersIndividual: Record<string, string> = {}
-        const headerPrefix = `${prefix}${envKey}_HEADERS_`
+        const headerPrefix = `${prefix}${key}_HEADERS_`
         for (const k in process.env) {
           if (k.startsWith(headerPrefix)) {
             const headerName = k.slice(headerPrefix.length).replace(/_/g, '-')
@@ -220,6 +220,10 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     addImportsDir(resolver.resolve('./runtime/composables'))
+
+    addServerHandler({
+      handler: resolver.resolve('./runtime/server-middleware'),
+    })
 
     addServerHandler({
       route: `${basePath}/**`,

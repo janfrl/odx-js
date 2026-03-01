@@ -1,44 +1,17 @@
-import type { SapODataService } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { defineEventHandler } from 'h3'
 import { createJiti } from 'jiti'
-import { useRuntimeConfig } from 'nitropack/runtime'
 import { join, resolve } from 'pathe'
 
-/**
- * Interface for the Nitro runtime configuration.
- */
-export interface NitroRuntimeConfig {
-  odata?: {
-    services?: SapODataService[]
-    buildDir?: string
-    rootDir?: string
-    destination?: string
-    headers?: Record<string, string>
-    forwardAuthHeader?: boolean
-    rejectUnauthorized?: boolean
-    auth?: {
-      username?: string
-      password?: string
-      bearerToken?: string
-    }
-  }
-  public: {
-    odata?: {
-      basePath?: string
-      mode?: string
-    }
-  }
-}
-
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig(event) as unknown as NitroRuntimeConfig
-  const buildDir = config.odata?.buildDir ?? ''
-  const rootDir = config.odata?.rootDir ?? ''
-  const services = config.odata?.services ?? []
+  const config = event.context.odataConfig as ODataProxyConfig
+  const buildDir = config.buildDir ?? ''
+  const rootDir = config.rootDir ?? ''
+  const services = config.services ?? []
 
   const jiti = createJiti(import.meta.url)
 
@@ -99,7 +72,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (entities.length === 0) {
-      entities = extractEntitiesFromEdmx(edmxAbs)
+      entities = extractEntitiesFromEdmx(edmxAbs).map(e => e.name)
     }
 
     return {
@@ -111,10 +84,10 @@ export default defineEventHandler(async (event) => {
   }))
 
   return {
-    basePath: config.public.odata?.basePath || '/api/sap-odata',
-    mode: config.public.odata?.mode || 'sdk',
+    basePath: config.basePath || '/api/sap-odata',
+    mode: config.mode || 'sdk',
     services: enhancedServices,
-    forwardAuthHeader: config.odata?.forwardAuthHeader,
+    forwardAuthHeader: config.forwardAuthHeader,
     versions: {
       node: process.version,
       module: '1.0.0',

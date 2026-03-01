@@ -86,6 +86,32 @@ export interface ODataServiceRegistry {}
 
 export type RegisteredServiceNames = keyof ODataServiceRegistry | (string & {})
 
+export interface ODataProxyConfig {
+  services: SapODataService[]
+  buildDir: string
+  rootDir: string
+  destination?: string
+  headers?: Record<string, string>
+  forwardAuthHeader?: boolean
+  rejectUnauthorized?: boolean
+  auth?: {
+    username?: string
+    password?: string
+    bearerToken?: string
+  }
+  basePath: string
+  mode: string
+  devtools?: {
+    maxLogs?: number
+  }
+}
+
+export interface ODataPublicConfig {
+  basePath?: string
+  mode?: string
+  services?: SapODataService[]
+}
+
 export interface ModuleOptions {
   mode?: 'sdk'
   basePath?: string
