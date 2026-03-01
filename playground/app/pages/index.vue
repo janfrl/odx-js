@@ -1,74 +1,120 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-// Accessing a specific entity set of the 'dummy' service
-const products = useOData('dummy').entities('Products')
+import { useOData } from '#imports'
+
+const products = useOData('V2Service').entities('Products')
 
 const { data, pending, error, refresh } = await products.list()
 
-async function addItem() {
-  // POST request to /api/sap-odata/dummy/Products
-  await products.create({ Name: 'New Product', Price: 99.99, Currency: 'EUR' })
+/**
+ * Creates a new dummy product and triggers a refresh of the list.
+ */
+async function addItem(): Promise<void> {
+  await products.create({
+    Name: 'New Product',
+    Price: '99.99',
+    Currency: 'EUR',
+  })
+  refresh()
+}
+
+/**
+ * Updates an existing product's name and price, then triggers a refresh.
+ * @param {string} id The ID of the product to update.
+ */
+async function updateItem(id: string): Promise<void> {
+  await products.update(id, {
+    Name: 'Updated Product (Edited)',
+    Price: '149.99',
+  })
+  refresh()
+}
+
+/**
+ * Removes a product and triggers a refresh of the list.
+ * @param {string} id The ID of the product to remove.
+ */
+async function deleteItem(id: string): Promise<void> {
+  await products.remove(id)
   refresh()
 }
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
-    <header>
-      <h1 class="text-2xl font-bold text-slate-800">
-        Nuxt SAP OData
+  <UContainer class="py-8">
+    <header class="border-b border-neutral-200 dark:border-neutral-800 pb-4 mb-8">
+      <h1 class="text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight">
+        Nuxt ODX Playground
       </h1>
-      <p class="text-sm text-slate-500">
-        Testing EntitySet abstraction: <code>dummy/Products</code>
+      <p class="text-neutral-500 mt-2 flex items-center gap-2">
+        Testing EntitySet abstraction: <UBadge color="neutral" variant="solid">
+          V2Service/Products
+        </UBadge>
       </p>
     </header>
 
-    <div class="flex items-center gap-2">
-      <button
-        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors"
-        @click="addItem"
-      >
-        Create Product
-      </button>
-      <button
-        class="px-4 py-2 border border-slate-300 hover:bg-slate-50 rounded-md transition-colors"
-        @click="refresh"
-      >
-        Refresh
-      </button>
+    <div class="flex items-center gap-3 mb-8">
+      <UButton icon="i-heroicons-plus" color="primary" label="Create Product" @click="addItem" />
+      <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" label="Refresh" @click="refresh" />
     </div>
 
-    <div
-      v-if="pending"
-      class="animate-pulse flex space-x-4"
-    >
-      <div class="flex-1 space-y-4 py-1">
-        <div class="h-4 bg-slate-200 rounded w-3/4" />
-        <div class="space-y-2">
-          <div class="h-4 bg-slate-200 rounded" />
-          <div class="h-4 bg-slate-200 rounded w-5/6" />
-        </div>
-      </div>
+    <div v-if="pending" class="space-y-4">
+      <USkeleton class="h-12 w-full" />
+      <USkeleton class="h-64 w-full" />
     </div>
 
-    <div
+    <UAlert
       v-else-if="error"
-      class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md"
-    >
-      <p class="font-bold">
-        Error loading data
-      </p>
-      <pre class="text-xs mt-2">{{ error }}</pre>
-    </div>
+      icon="i-heroicons-exclamation-triangle"
+      color="error"
+      variant="subtle"
+      title="Error loading data"
+      :description="String(error)"
+    />
 
-    <div
-      v-else
-      class="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden"
-    >
-      <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs font-mono text-slate-600">
-        Result from Proxy
-      </div>
-      <pre class="p-4 text-xs overflow-auto max-h-[400px]">{{ data }}</pre>
+    <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <UCard>
+        <template #header>
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-neutral-500 uppercase tracking-wider">UI Representation</span>
+            <UBadge color="info" variant="subtle">
+              {{ data?.length || 0 }} Items
+            </UBadge>
+          </div>
+        </template>
+
+        <ul class="divide-y divide-neutral-100 dark:divide-neutral-800 overflow-auto max-h-125 -m-4 sm:-m-6 px-4 sm:px-6">
+          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-medium text-neutral-900 dark:text-white">
+                  {{ product.Name }}
+                </p>
+                <p class="text-xs text-neutral-500 mt-1">
+                  ID: {{ product.ID || 'N/A' }}
+                </p>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <div class="text-right">
+                  <p class="font-semibold text-neutral-900 dark:text-white">
+                    {{ product.Price }} {{ product.Currency }}
+                  </p>
+                </div>
+                <div v-if="product.ID" class="flex items-center gap-2">
+                  <UButton icon="i-heroicons-pencil" color="neutral" variant="ghost" size="xs" @click="updateItem(product.ID)" />
+                  <UButton icon="i-heroicons-trash" color="error" variant="ghost" size="xs" @click="deleteItem(product.ID)" />
+                </div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </UCard>
+
+      <UCard class="bg-neutral-900 dark:bg-neutral-950 border-neutral-800">
+        <template #header>
+          <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
+        </template>
+        <pre class="text-xs text-primary-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
+      </UCard>
     </div>
-  </div>
+  </UContainer>
 </template>

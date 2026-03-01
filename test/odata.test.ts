@@ -1,5 +1,5 @@
+import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from '@bc8-odx/core'
 import { describe, expect, it } from 'vitest'
-import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from '../src/runtime/utils/odata-utils'
 
 describe('oData Utils', () => {
   describe('sanitizeBaseURL', () => {

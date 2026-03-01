@@ -1,0 +1,17 @@
+{
+  "name": "@bc8-odx/nuxt",
+  "type": "module",
+  "version": "0.0.1",
+  "exports": {
+    ".": "./src/module.ts",
+    "./generate": "./src/generate.ts"
+  },
+  "main": "./src/module.ts",
+  "dependencies": {
+    "@bc8-odx/core": "workspace:*",
+    "@bc8-odx/proxy": "workspace:*"
+  },
+  "devDependencies": {
+    "@odata2ts/odata2ts": "^0.40.1"
+  }
+}

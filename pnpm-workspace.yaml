@@ -1,13 +1,9 @@
-shellEmulator: true
-
-trustPolicy: check
-
 packages:
-  - .
-  - client
+  - packages/*
   - playground
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - esbuild
   - unrs-resolver
+  - vue-demi
