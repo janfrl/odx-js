@@ -1,82 +1,75 @@
-<!--
-Get your module up and running quickly.
+# Nuxt SAP OData
 
-Find and replace all on all files (CMD+SHIFT+F):
-- Name: My Module
-- Package name: nuxt-sap-odata
-- Description: My new Nuxt module
--->
+[![Nuxt](https://img.shields.io/badge/Nuxt-4-green.svg)](https://nuxt.com)
 
-# My Module
+A powerful Nuxt module for seamless, type-safe integration with SAP OData services. It provides a robust server-side proxy, automated TypeScript model generation, and a high-fidelity DevTools UI for exploration.
 
-[![npm version][npm-version-src]][npm-version-href]
-[![npm downloads][npm-downloads-src]][npm-downloads-href]
-[![License][license-src]][license-href]
-[![Nuxt][nuxt-src]][nuxt-href]
+## 📦 Packages
 
-My new Nuxt module for doing amazing things.
+This repository is a monorepo managed with `pnpm`.
 
-- [✨ &nbsp;Release Notes](/CHANGELOG.md)
-<!-- - [🏀 Online playground](https://stackblitz.com/github/Bechtle-AG/nuxt-sap-odata?file=playground%2Fapp.vue) -->
-<!-- - [📖 &nbsp;Documentation](https://example.com) -->
+| Package | Description |
+| :--- | :--- |
+| [`@bc8-odx/core`](./packages/core) | Core OData types and framework-agnostic utilities. |
+| [`@bc8-odx/proxy`](./packages/proxy) | H3-based server proxy for SAP backends. |
+| [`@bc8-odx/nuxt`](./packages/nuxt) | The main Nuxt module and client-side composables. |
+| [`@bc8-odx/explorer`](./packages/explorer) | Standalone UI for the OData DevTools. |
 
-## Features
+## ✨ Features
 
-<!-- Highlight some of the features your module provide here -->
-- ⛰ &nbsp;Foo
-- 🚠 &nbsp;Bar
-- 🌲 &nbsp;Baz
+- **Type-Safe SDK:** Automated TypeScript model generation from EDMX schemas using `odata2ts`.
+- **Nuxt DevTools:** Integrated Traffic Monitor, Schema Explorer, and Entity Data browser.
+- **Server Proxy:** Automated handling of authentication, CSRF tokens, and mock data.
+- **SAP Optimized:** Specifically built for the nuances of SAP OData V2 and V4.
+- **Flexible Mocking:** Serve local mock data based on JSON files or EDMX definitions.
 
-## Quick Setup
+## 🚀 Quick Start
 
-Install the module to your Nuxt application with one command:
+1. Install the module:
 
 ```bash
-npx nuxi module add nuxt-sap-odata
+pnpm add @bc8-odx/nuxt
 ```
 
-That's it! You can now use My Module in your Nuxt app ✨
+2. Configure your services in `nuxt.config.ts`:
 
-## Contribution
+```typescript
+export default defineNuxtConfig({
+  modules: ['@bc8-odx/nuxt'],
+  odata: {
+    services: [
+      {
+        name: 'Northwind',
+        url: 'https://services.odata.org/V2/Northwind/Northwind.svc',
+        route: 'northwind',
+        icon: 'i-lucide-globe',
+      },
+    ]
+  }
+})
+```
 
-<details>
-  <summary>Local development</summary>
+3. Use typed composables in your components:
 
-  ```bash
-  # Install dependencies
-  npm install
+```vue
+<script setup lang="ts">
+// Full type autocomplete for services and entity sets
+const { data, refresh } = await useOData('Northwind').entities('Products').list()
+</script>
+```
 
-  # Generate type stubs
-  npm run dev:prepare
+## 🛠️ Development
 
-  # Develop with the playground
-  npm run dev
+```bash
+# Install dependencies
+pnpm install
 
-  # Build the playground
-  npm run dev:build
+# Prepare for development (generates types and stubs)
+pnpm run dev:prepare
 
-  # Run ESLint
-  npm run lint
+# Start development server with playground
+pnpm run dev
 
-  # Run Vitest
-  npm run test
-  npm run test:watch
-
-  # Release new version
-  npm run release
-  ```
-
-</details>
-
-<!-- Badges -->
-[npm-version-src]: https://img.shields.io/npm/v/nuxt-sap-odata/latest.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-version-href]: https://npmjs.com/package/nuxt-sap-odata
-
-[npm-downloads-src]: https://img.shields.io/npm/dm/nuxt-sap-odata.svg?style=flat&colorA=020420&colorB=00DC82
-[npm-downloads-href]: https://npm.chart.dev/nuxt-sap-odata
-
-[license-src]: https://img.shields.io/npm/l/nuxt-sap-odata.svg?style=flat&colorA=020420&colorB=00DC82
-[license-href]: https://npmjs.com/package/nuxt-sap-odata
-
-[nuxt-src]: https://img.shields.io/badge/Nuxt-020420?logo=nuxt.js
-[nuxt-href]: https://nuxt.com
+# Run tests
+pnpm run test
+```
