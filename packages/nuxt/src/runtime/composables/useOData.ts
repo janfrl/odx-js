@@ -40,12 +40,12 @@ export function useOData<T extends RegisteredServiceNames>(
     }
 
     return {
-      list: (query?: ODataQuery): any =>
-        useFetch(fullPath, { query }),
+      list: (query?: ODataQuery, options?: any): any =>
+        useFetch(fullPath, { ...options, query }),
 
-      get: (key: ODataKey, query?: ODataQuery): any => {
+      get: (key: ODataKey, query?: ODataQuery, options?: any): any => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return useFetch(itemPath, { query })
+        return useFetch(itemPath, { ...options, query })
       },
 
       create: (body: ODataBody): Promise<any> =>
