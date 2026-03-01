@@ -1,5 +1,5 @@
-import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from '@bc8-odx/core'
 import { describe, expect, it } from 'vitest'
+import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from '../src/odata-utils'
 
 describe('oData Utils', () => {
   describe('sanitizeBaseURL', () => {
@@ -42,14 +42,14 @@ describe('oData Utils', () => {
   describe('stringifyQuery', () => {
     it('converts OData parameters correctly', () => {
       const query = {
-        $filter: 'Name eq \'Test\'',
+        $filter: "Name eq 'Test'",
         $top: 10,
         $expand: 'Category',
         other: 'param',
       }
 
       const result = stringifyQuery(query)
-      expect(result.$filter).toBe('Name eq \'Test\'')
+      expect(result.$filter).toBe("Name eq 'Test'")
       expect(result.$top).toBe('10')
       expect(result.other).toBe('param')
     })
@@ -67,8 +67,6 @@ describe('oData Utils', () => {
           results: [{ ID: 1, Name: 'A' }, { ID: 2, Name: 'B' }],
         },
       }
-      // Note: In our current implementation, we pass data.d to flattenOData in the proxy,
-      // but let's test the logic recursively.
       const flattened = flattenOData(data.d)
       expect(Array.isArray(flattened)).toBe(true)
       expect(flattened).toHaveLength(2)
