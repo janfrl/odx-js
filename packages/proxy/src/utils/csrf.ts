@@ -34,7 +34,7 @@ export async function fetchWithCsrf<T = any>(targetUrl: string, options: any): P
   }
 
   if (setCookie) {
-    const cookies = setCookie.split(/[ ,]+/).filter(c => c.includes('=')).join('; ')
+    const cookies = setCookie.split(',').map(s => s.trim().split(';')[0]).filter(Boolean).join('; ')
     finalHeaders.cookie = finalHeaders.cookie ? `${finalHeaders.cookie}; ${cookies}` : cookies
   }
 
