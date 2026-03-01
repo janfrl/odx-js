@@ -146,6 +146,20 @@ async function runClear() {
               tbody: 'divide-y divide-neutral-200 dark:divide-neutral-800/60 [&>tr:hover]:bg-primary-500/5 [&>tr[data-expanded=true]]:bg-neutral-50 dark:[&>tr[data-expanded=true]]:bg-neutral-900/40 [&>tr]:transition-colors [&>tr]:group',
             }"
           >
+            <template #empty>
+              <div class="flex flex-col items-center justify-center py-24 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+                  <UIcon name="i-lucide-activity" class="text-neutral-400 w-8 h-8" />
+                </div>
+                <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+                  No network activity
+                </h3>
+                <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
+                  Recorded OData request and response logs will appear here in real-time.
+                </p>
+              </div>
+            </template>
+
             <template #expanded="{ row }">
               <div
                 class="px-6 py-8 border-b border-neutral-100 dark:border-neutral-800/50 cursor-default"
@@ -206,16 +220,6 @@ async function runClear() {
               </div>
             </template>
           </UTable>
-
-          <div
-            v-if="logs.length === 0"
-            class="p-32 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
-          >
-            <UIcon name="i-lucide-ban" class="w-12 h-12 mb-4 opacity-20" />
-            <p class="text-base uppercase tracking-[0.2em]">
-              No network activity recorded yet
-            </p>
-          </div>
         </div>
       </div>
     </div>

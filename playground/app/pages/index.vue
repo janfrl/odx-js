@@ -3,7 +3,7 @@ import { useOData } from '#imports'
 
 const products = useOData('V2Service').entities('Products')
 
-const { data, pending, error, refresh } = await products.list()
+const { data, pending, error, refresh, execute, status } = products.list(undefined, { immediate: false })
 
 /**
  * Creates a new dummy product and triggers a refresh of the list.
@@ -53,8 +53,9 @@ async function deleteItem(id: string): Promise<void> {
     </header>
 
     <div class="flex items-center gap-3 mb-8">
-      <UButton icon="i-heroicons-plus" color="primary" label="Create Product" @click="addItem" />
-      <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" label="Refresh" @click="refresh" />
+      <UButton icon="i-heroicons-play" color="primary" label="Execute Fetch" @click="execute" />
+      <UButton icon="i-heroicons-plus" color="neutral" variant="soft" label="Create Product" @click="addItem" />
+      <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" label="Refresh" :disabled="status === 'idle'" @click="refresh" />
     </div>
 
     <div v-if="pending" class="space-y-4">
@@ -70,6 +71,12 @@ async function deleteItem(id: string): Promise<void> {
       title="Error loading data"
       :description="String(error)"
     />
+
+    <div v-else-if="status === 'idle'" class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/50">
+      <UIcon name="i-heroicons-bolt" class="w-12 h-12 text-neutral-300 mb-4" />
+      <p class="text-neutral-500 font-medium">No data loaded yet</p>
+      <p class="text-neutral-400 text-sm mt-1">Click the "Execute Fetch" button to start</p>
+    </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <UCard>

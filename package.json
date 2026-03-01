@@ -24,11 +24,13 @@
     "dist"
   ],
   "scripts": {
+    "build": "pnpm -r prepack",
     "prepack": "nuxt-module-build build",
     "dev": "nr dev:prepare && nuxi dev playground",
     "dev:build": "nuxi build playground",
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare playground",
-    "release": "nr lint && nr test && nr prepack && changelogen --release && npm publish && git push --follow-tags",
+    "release": "tsx scripts/release.ts",
+    "bump": "tsx scripts/bump.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -60,8 +62,12 @@
     "@types/dagre": "^0.7.52",
     "@types/node": "latest",
     "changelogen": "^0.6.2",
+    "consola": "^3.4.2",
     "eslint": "^10.0.0",
     "nuxt": "^4.3.1",
+    "pathe": "^2.0.3",
+    "tinyglobby": "^0.2.15",
+    "tsx": "^4.19.3",
     "typescript": "~5.9.3",
     "vitest": "^4.0.18",
     "vue-tsc": "^3.2.4"
