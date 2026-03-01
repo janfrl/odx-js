@@ -13,7 +13,27 @@ const editor = ref<EditorState>({
 
 const showLoadingIndicator = ref(false)
 
-export function useEntityExplorer(): any {
+export function useEntityExplorer(): {
+  selectedService: globalThis.Ref<any>
+  selectedEntity: globalThis.Ref<string | null>
+  previewLoading: globalThis.Ref<boolean>
+  showLoadingIndicator: globalThis.Ref<boolean>
+  previewError: globalThis.Ref<string | null>
+  previewData: globalThis.Ref<Record<string, any>[]>
+  queryInput: globalThis.Ref<string>
+  entitySchema: globalThis.Ref<any>
+  entitySchemaLoading: globalThis.Ref<boolean>
+  editor: globalThis.Ref<EditorState>
+  currentEntitySchema: globalThis.ComputedRef<any>
+  previewColumns: globalThis.ComputedRef<string[]>
+  navigationItems: globalThis.ComputedRef<any[]>
+  refreshEntityData: () => Promise<void>
+  isNavigationProperty: (key: string) => boolean
+  openEditor: (mode: 'view' | 'create' | 'update' | 'headers', row?: any) => void
+  deleteItem: (id: any) => Promise<void>
+  clearData: () => Promise<void>
+  downloadJson: () => void
+} {
   const {
     selectedService,
     selectedEntity,
@@ -124,7 +144,7 @@ export function useEntityExplorer(): any {
     }
   }
 
-  const currentEntitySchema = computed(() => {
+  const currentEntitySchema = computed((): any => {
     const entityName = selectedEntity.value
     if (!entitySchema.value || !entityName) {
       return null
@@ -144,7 +164,7 @@ export function useEntityExplorer(): any {
     ) || null
   })
 
-  const previewColumns = computed(() => {
+  const previewColumns = computed((): string[] => {
     const edmxEntity = currentEntitySchema.value
 
     if (!edmxEntity) {
@@ -286,7 +306,7 @@ export function useEntityExplorer(): any {
     URL.revokeObjectURL(url)
   }
 
-  const navigationItems = computed(() => {
+  const navigationItems = computed((): any[] => {
     if (!selectedService.value?.entities)
       return []
 
@@ -323,3 +343,4 @@ export function useEntityExplorer(): any {
     downloadJson,
   }
 }
+

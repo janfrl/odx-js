@@ -5,12 +5,37 @@ import { markRaw, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
 import { useSharedODataState } from './useODataState'
 
+interface Viewport {
+  x: number
+  y: number
+  zoom: number
+}
+
+interface GraphState {
+  nodes: any[]
+  edges: any[]
+  viewport?: Viewport
+}
+
 // Per-service cache for graph data and viewport
-const serviceGraphCache = ref<Record<string, { nodes: any[], edges: any[], viewport?: any }>>({})
+const serviceGraphCache = ref<Record<string, GraphState>>({})
 
 const containerRef = ref<HTMLElement | null>(null)
 
-export function useSchemaExplorer(): any {
+export function useSchemaExplorer(): {
+  selectedService: any
+  containerRef: typeof containerRef
+  loading: globalThis.Ref<boolean>
+  isReady: globalThis.Ref<boolean>
+  isFullscreen: globalThis.Ref<boolean>
+  nodeTypes: NodeTypesObject
+  fetchSchema: (forceAutoFit?: boolean) => Promise<void>
+  generateGraph: (autoFit?: boolean) => Promise<void>
+  resetGraph: () => void
+  copyMermaid: () => void
+  toggleFullscreen: () => Promise<void>
+  fitToScreen: () => void
+} {
   const {
     selectedService,
     globalViewMode,
@@ -44,11 +69,11 @@ export function useSchemaExplorer(): any {
     schema: markRaw(SchemaNode),
   }
 
-  function onFullscreenChange() {
+  function onFullscreenChange(): void {
     isFullscreen.value = !!document.fullscreenElement
   }
 
-  function performInitialFocus() {
+  function performInitialFocus(): void {
     const serviceName = selectedService.value?.name
     // Only focus if in schema mode and not yet focused for THIS service
     if (serviceName && !schemaFocusedServices.value.has(serviceName) && globalViewMode.value === 'schema') {
@@ -70,7 +95,7 @@ export function useSchemaExplorer(): any {
     }
   }
 
-  async function restoreServiceState(serviceName: string) {
+  async function restoreServiceState(serviceName: string): Promise<boolean> {
     const cache = serviceGraphCache.value[serviceName]
     if (cache) {
       isReady.value = false
@@ -162,7 +187,10 @@ export function useSchemaExplorer(): any {
     if (serviceName && serviceGraphCache.value[serviceName]) {
       changes.forEach((change: any) => {
         if (change.type === 'remove') {
-          serviceGraphCache.value[serviceName].edges = serviceGraphCache.value[serviceName].edges.filter((e: any) => e.id !== change.id)
+          const cache = serviceGraphCache.value[serviceName]
+          if (cache) {
+            cache.edges = cache.edges.filter((e: any) => e.id !== change.id)
+          }
         }
       })
     }
@@ -174,7 +202,10 @@ export function useSchemaExplorer(): any {
       if (!serviceGraphCache.value[serviceName]) {
         serviceGraphCache.value[serviceName] = { nodes: [...nodes.value], edges: [...edges.value] }
       }
-      serviceGraphCache.value[serviceName].viewport = { ...viewport }
+      const cache = serviceGraphCache.value[serviceName]
+      if (cache) {
+        cache.viewport = { ...viewport }
+      }
     }
   })
 
