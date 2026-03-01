@@ -14,8 +14,8 @@ const configItems = computed(() => [
 ])
 
 const runtimeItems = computed(() => [
-  { label: 'Node.js', value: config.value.versions?.node || 'unknown' },
-  { label: 'Module', value: `v${config.value.versions?.module || '1.0.0'}` },
+  { id: 'node', label: 'Node.js', type: 'code', value: config.value.versions?.node || 'unknown' },
+  { id: 'module', label: 'Module', type: 'code', value: `v${config.value.versions?.module || '1.0.0'}` },
 ])
 </script>
 
@@ -44,15 +44,12 @@ const runtimeItems = computed(() => [
               <UIcon name="i-lucide-sliders-horizontal" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
               Configuration
             </h3>
-
             <div class="border-y border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800">
               <div v-for="item in configItems" :key="item.id" class="py-3.5 flex justify-between items-center">
                 <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">{{ item.label }}</span>
-
                 <UBadge v-if="item.type === 'badge'" :color="item.value ? 'success' : 'neutral'" variant="subtle" size="sm">
                   {{ item.value ? 'Enabled' : 'Disabled' }}
                 </UBadge>
-
                 <code v-else-if="item.type === 'code'" class="text-[11px] font-mono text-neutral-900 dark:text-neutral-300 bg-neutral-200/50 dark:bg-neutral-800/50 px-2 py-1 rounded">
                   {{ item.value }}
                 </code>
@@ -65,11 +62,11 @@ const runtimeItems = computed(() => [
               <UIcon name="i-lucide-terminal" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
               Runtime
             </h3>
-
             <div class="border-y border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800">
-              <div v-for="item in runtimeItems" :key="item.label" class="py-3.5 flex justify-between items-center">
+              <div v-for="item in runtimeItems" :key="item.id" class="py-3.5 flex justify-between items-center">
                 <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">{{ item.label }}</span>
-                <span class="text-sm font-medium text-neutral-900 dark:text-neutral-200">{{ item.value }}</span>
+                <code v-if="item.type === 'code'" class="text-[11px] font-mono text-neutral-900 dark:text-neutral-300 bg-neutral-200/50 dark:bg-neutral-800/50 px-2 py-1 rounded">{{ item.value }}</code>
+                <span v-else class="text-sm font-medium text-neutral-900 dark:text-neutral-200">{{ item.value }}</span>
               </div>
             </div>
           </section>
