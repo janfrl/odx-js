@@ -2,12 +2,6 @@ import type { EditorState, EntityMapping } from './useODataState'
 import { computed, ref, watch } from 'vue'
 import { useSharedODataState } from './useODataState'
 
-const previewLoading = ref(false)
-const showLoadingIndicator = ref(false)
-const previewError = ref<string | null>(null)
-const previewData = ref<Record<string, any>[]>([])
-const queryInput = ref('?')
-const schema = ref<any>(null)
 const editor = ref<EditorState>({
   show: false,
   mode: 'view',
@@ -17,7 +11,7 @@ const editor = ref<EditorState>({
   original: null,
 })
 
-let initialized = false
+const showLoadingIndicator = ref(false)
 
 export function useEntityExplorer(): any {
   const {
@@ -26,66 +20,34 @@ export function useEntityExplorer(): any {
     config,
     clearEntityMockData,
     sessionHeaders,
+    previewLoading,
+    previewError,
+    previewData,
+    queryInput,
+    entitySchema,
+    entitySchemaLoading,
+    entityDataCache,
   } = useSharedODataState()
 
   const toast = useToast()
 
   let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
-  if (!initialized) {
-    initialized = true
-
-    watch(previewLoading, (isLoading) => {
-      if (loadingTimeout) {
-        clearTimeout(loadingTimeout)
-      }
-
-      if (isLoading) {
-        loadingTimeout = setTimeout(() => {
-          showLoadingIndicator.value = true
-        }, 400)
-      }
-      else {
-        showLoadingIndicator.value = false
-      }
-    })
-
-    watch(selectedService, (newSvc) => {
-      selectedEntity.value = null
-      schema.value = null
-
-      if (newSvc) {
-        fetchSchema()
-      }
-    }, { immediate: true })
-
-    watch(selectedEntity, (newEntity) => {
-      if (newEntity) {
-        refreshEntityData()
-      }
-    }, { immediate: true })
-  }
-
-  async function fetchSchema(): Promise<void> {
-    if (!selectedService.value) {
-      return
+  // Loading indicator local logic
+  watch(previewLoading, (isLoading: boolean) => {
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout)
     }
-    try {
-      const res = await fetch(`/__sap_odata__/schema?service=${selectedService.value.name}`)
-      if (!res.ok) {
-        throw new Error(`Schema API returned ${res.status}: ${res.statusText}`)
-      }
-      const text = await res.text()
-      if (!text) {
-        throw new Error('Schema API returned an empty response')
-      }
-      schema.value = JSON.parse(text)
+
+    if (isLoading) {
+      loadingTimeout = setTimeout(() => {
+        showLoadingIndicator.value = true
+      }, 400)
     }
-    catch (e) {
-      console.error('[nuxt-sap-odata] Failed to fetch schema:', e)
-      schema.value = null
+    else {
+      showLoadingIndicator.value = false
     }
-  }
+  })
 
   async function refreshEntityData(): Promise<void> {
     if (!selectedService.value || !selectedEntity.value) {
@@ -123,21 +85,39 @@ export function useEntityExplorer(): any {
         throw new Error(statusMessage)
       }
       const data = await res.json()
-      // Handle both wrapped { d: { results: [...] } } (already partially flattened by proxy)
-      // and unwrapped [...] results.
+
+      let finalData = []
       if (Array.isArray(data)) {
-        previewData.value = data
+        finalData = data
       }
       else if (data && typeof data === 'object') {
-        previewData.value = data.value || data.results || [data]
+        finalData = data.value || data.results || [data]
       }
-      else {
-        previewData.value = []
+
+      previewData.value = finalData
+
+      // Update cache
+      const cacheKey = `${selectedService.value.name}:${selectedEntity.value}`
+      entityDataCache.value[cacheKey] = {
+        data: [...finalData],
+        error: null,
+        query: queryInput.value,
       }
     }
     catch (e: unknown) {
-      previewError.value = (e as Error).message
+      const msg = (e as Error).message
+      previewError.value = msg
       previewData.value = []
+
+      // Cache the error state too
+      if (selectedService.value && selectedEntity.value) {
+        const cacheKey = `${selectedService.value.name}:${selectedEntity.value}`
+        entityDataCache.value[cacheKey] = {
+          data: [],
+          error: msg,
+          query: queryInput.value,
+        }
+      }
     }
     finally {
       previewLoading.value = false
@@ -146,20 +126,18 @@ export function useEntityExplorer(): any {
 
   const currentEntitySchema = computed(() => {
     const entityName = selectedEntity.value
-    if (!schema.value || !entityName) {
+    if (!entitySchema.value || !entityName) {
       return null
     }
 
-    // 1. Exact match by entitySet or name
-    const exact = schema.value.entities?.find((e: any) =>
+    const exact = entitySchema.value.entities?.find((e: any) =>
       e.entitySet === entityName || e.name === entityName,
     )
     if (exact) {
       return exact
     }
 
-    // 2. Fuzzy match as fallback
-    return schema.value.entities?.find((e: any) =>
+    return entitySchema.value.entities?.find((e: any) =>
       entityName.toLowerCase().startsWith(e.name.toLowerCase())
       || e.name.toLowerCase().startsWith(entityName.toLowerCase())
       || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
@@ -170,7 +148,6 @@ export function useEntityExplorer(): any {
     const edmxEntity = currentEntitySchema.value
 
     if (!edmxEntity) {
-      // Fallback: Use keys from first data item if available
       if (previewData.value.length > 0) {
         return Object.keys(previewData.value[0] || {}).filter(k => k !== '__metadata')
       }
@@ -183,7 +160,7 @@ export function useEntityExplorer(): any {
     const combined = [...edmxProps, ...edmxNavProps]
 
     return combined.filter((col) => {
-      const isTechnicalFK = (schema.value?.associations || []).some((assoc: any) => {
+      const isTechnicalFK = (entitySchema.value?.associations || []).some((assoc: any) => {
         return assoc.constraint?.dependentProperty === col
       })
       return !isTechnicalFK
@@ -243,7 +220,7 @@ export function useEntityExplorer(): any {
       return
     }
 
-    /* eslint-disable no-alert */
+    // eslint-disable-next-line no-alert
     if (!confirm(`Delete item ${id}?`)) {
       return
     }
@@ -273,6 +250,7 @@ export function useEntityExplorer(): any {
       return
     }
 
+    // eslint-disable-next-line no-alert
     if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}?`)) {
       return
     }
@@ -318,7 +296,6 @@ export function useEntityExplorer(): any {
         active: selectedEntity.value === entity.name,
         onSelect: () => {
           selectedEntity.value = entity.name
-          queryInput.value = '?'
         },
       })),
     ]
@@ -332,12 +309,12 @@ export function useEntityExplorer(): any {
     previewError,
     previewData,
     queryInput,
-    schema,
+    entitySchema,
+    entitySchemaLoading,
     editor,
     currentEntitySchema,
     previewColumns,
     navigationItems,
-    fetchSchema,
     refreshEntityData,
     isNavigationProperty,
     openEditor,

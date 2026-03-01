@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 export interface EntityMapping {
   name: string
@@ -60,10 +60,71 @@ const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
 
+const previewLoading = ref(false)
+const previewError = ref<string | null>(null)
+const previewData = ref<Record<string, any>[]>([])
+const queryInput = ref('?')
+const entitySchema = ref<any>(null)
+const entitySchemaLoading = ref(false)
+
+// Per-entity cache for data and query state
+const entityDataCache = ref<Record<string, { data: any[], error: string | null, query: string }>>({})
+
 const initializedServices = ref<Set<string>>(new Set())
 const schemaFocusedServices = ref<Set<string>>(new Set())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 const globalViewMode = ref<'explorer' | 'schema'>('explorer')
+
+// GLOBAL SYNC LOGIC (Persists across unmounts)
+
+// 1. Service Change: Reset everything and fetch new schema
+watch(selectedService, async (newSvc) => {
+  selectedEntity.value = null
+  previewData.value = []
+  previewError.value = null
+  queryInput.value = '?'
+  entitySchema.value = null
+
+  if (newSvc) {
+    entitySchemaLoading.value = true
+    try {
+      const res = await fetch(`/__sap_odata__/schema?service=${newSvc.name}`)
+      if (res.ok) {
+        entitySchema.value = await res.json()
+      }
+    }
+    catch (e) {
+      console.error('[SharedState] Failed to fetch schema:', e)
+    }
+    finally {
+      entitySchemaLoading.value = false
+    }
+  }
+})
+
+// 2. Entity Change: Restore from cache or reset
+watch(selectedEntity, (newEntity) => {
+  if (newEntity && selectedService.value) {
+    const cacheKey = `${selectedService.value.name}:${newEntity}`
+    const cache = entityDataCache.value[cacheKey]
+
+    if (cache) {
+      previewData.value = [...cache.data]
+      previewError.value = cache.error
+      queryInput.value = cache.query
+    }
+    else {
+      previewData.value = []
+      previewError.value = null
+      queryInput.value = '?'
+    }
+  }
+  else {
+    previewData.value = []
+    previewError.value = null
+    queryInput.value = '?'
+  }
+})
 
 export function useSharedODataState(): any {
   async function fetchConfig(): Promise<void> {
@@ -120,6 +181,12 @@ export function useSharedODataState(): any {
       if (data.success) {
         initializedServices.value.delete(name)
         schemaFocusedServices.value.delete(name)
+        // Clear entity cache for this service
+        for (const key in entityDataCache.value) {
+          if (key.startsWith(`${name}:`)) {
+            delete entityDataCache.value[key]
+          }
+        }
         await fetchConfig()
       }
     }
@@ -159,6 +226,13 @@ export function useSharedODataState(): any {
     selectedEntity,
     generatingStatus,
     sessionHeaders,
+    previewLoading,
+    previewError,
+    previewData,
+    queryInput,
+    entitySchema,
+    entitySchemaLoading,
+    entityDataCache,
     globalViewMode,
     initializedServices,
     schemaFocusedServices,

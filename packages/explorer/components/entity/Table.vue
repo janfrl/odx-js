@@ -8,6 +8,7 @@ const {
   previewLoading,
   previewError,
   showLoadingIndicator,
+  entitySchemaLoading,
   refreshEntityData,
   openEditor,
   deleteItem,
@@ -40,9 +41,9 @@ function getRowData(row: any): Record<string, any> {
 
 <template>
   <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden">
-    <!-- Loading Indicator -->
+    <!-- Loading Indicator (Full Overlay) -->
     <div
-      v-if="showLoadingIndicator"
+      v-if="showLoadingIndicator || entitySchemaLoading"
       class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[1px]"
     >
       <UIcon name="i-lucide-refresh-cw" class="animate-spin w-10 h-10 text-primary" />
@@ -84,6 +85,20 @@ function getRowData(row: any): Record<string, any> {
           th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
         }"
       >
+        <!-- Empty State Slot within UTable -->
+        <template #empty-state>
+          <div class="flex flex-col items-center justify-center py-32 opacity-40 italic text-neutral-500">
+            <UIcon name="i-lucide-database-zap" class="w-12 h-12 mb-4 opacity-20" />
+            <p class="text-base uppercase tracking-[0.2em]">
+              No data loaded yet
+            </p>
+            <p class="text-[10px] mt-2 non-italic opacity-60 font-sans">
+              Modify query parameters and click Execute to fetch records
+            </p>
+          </div>
+        </template>
+
+        <!-- Actions Column -->
         <template #actions-cell="{ row }">
           <div class="flex items-center justify-center gap-2 w-30 shrink-0 sticky left-0 z-10">
             <UButton icon="i-lucide-eye" variant="ghost" color="neutral" size="sm" class="hover:text-primary-500 hover:bg-primary-500/10 transition-colors" @click="openEditor('view', getRowData(row))" />
@@ -92,6 +107,7 @@ function getRowData(row: any): Record<string, any> {
           </div>
         </template>
 
+        <!-- Dynamic Cells -->
         <template v-for="col in tableColumns.filter(c => c.id !== 'actions')" :key="col.id" #[`${col.id}-cell`]="{ getValue, row }">
           <template v-if="getRowData(row)">
             <div class="px-2 py-1">
@@ -112,14 +128,14 @@ function getRowData(row: any): Record<string, any> {
         </template>
       </UTable>
 
-      <!-- Empty Data State -->
+      <!-- Full-table Empty State (Only if Schema/Columns missing) -->
       <div
-        v-if="(previewData.length === 0 || tableColumns.length <= 1) && !previewLoading"
+        v-if="tableColumns.length <= 1 && !previewLoading && !entitySchemaLoading"
         class="p-32 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
       >
         <UIcon name="i-lucide-search-x" class="w-12 h-12 mb-4 opacity-20" />
         <p class="text-base uppercase tracking-[0.2em]">
-          {{ tableColumns.length <= 1 ? 'No schema or data fields found' : 'No records match your query' }}
+          No schema available for this entity
         </p>
       </div>
     </div>
