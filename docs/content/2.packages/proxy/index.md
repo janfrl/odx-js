@@ -1,4 +1,7 @@
-# ODX Proxy
+---
+title: Proxy
+description: Robust H3 server-side proxy layer for SAP OData services.
+---
 
 A robust server-side proxy layer built on **H3**. It handles the complexities of SAP backend communication, ensuring your frontend remains clean and secure.
 

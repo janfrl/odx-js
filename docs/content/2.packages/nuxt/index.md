@@ -1,4 +1,7 @@
-# ODX Nuxt (@bc8-odx/nuxt)
+---
+title: Nuxt
+description: The high-level Nuxt module for the ODX ecosystem.
+---
 
 The high-level Nuxt module that integrates the ODX ecosystem into your application. It provides the developer-facing API and automates the build-time SDK generation.
 

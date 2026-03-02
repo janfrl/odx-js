@@ -1,4 +1,7 @@
-# ODX Explorer
+---
+title: Explorer
+description: Interactive DevTools UI for OData debugging and exploration.
+---
 
 A high-fidelity DevTools UI for OData debugging and exploration. Built with **Nuxt UI**, it provides deep introspection into your SAP services.
 

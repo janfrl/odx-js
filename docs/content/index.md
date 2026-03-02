@@ -14,7 +14,7 @@ Modern [OData Developer Experience]{.text-primary} for Nuxt.
   ---
   color: primary
   size: xl
-  to: /getting-started
+  to: /guide
   trailing-icon: i-lucide-arrow-right
   ---
   Get started

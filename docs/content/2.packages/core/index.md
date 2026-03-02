@@ -1,4 +1,7 @@
-# ODX Core
+---
+title: Core
+description: The foundational OData types and utilities of the ODX ecosystem.
+---
 
 The foundational layer of the ODX ecosystem. This package contains the fundamental OData types, utilities, and framework-agnostic clients.
 
