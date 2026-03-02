@@ -1,6 +1,6 @@
 import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
-import { $odata, stringifyQuery } from '@bc8-odx/core'
 import { useFetch } from '#imports'
+import { $odata, stringifyQuery } from '@bc8-odx/core'
 import { useODataBasePath } from './useODataBasePath'
 
 /**
@@ -65,18 +65,16 @@ export function useOData(service?: string): any {
 
   const createServiceProxy = (serviceName: string): ODataService => {
     return new Proxy({} as any, {
-      get(target, prop: string) {
-        // Special case for the .entitySet() method
+      get(target, prop) {
         if (prop === 'entitySet') {
           return (name: string) => createMethods(serviceName, name)
         }
-        
-        // Return methods for the entity set if it looks like one (not a built-in symbol)
-        if (typeof prop === 'string' && !prop.startsWith('__') && prop !== 'toJSON') {
-          return createMethods(serviceName, prop)
+
+        if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then') {
+          return target[prop]
         }
-        
-        return target[prop]
+
+        return createMethods(serviceName, prop as string)
       },
     })
   }
@@ -88,11 +86,11 @@ export function useOData(service?: string): any {
 
   // Handle useOData().MyService.MyEntitySet
   return new Proxy({} as any, {
-    get(target, prop: string) {
-      if (typeof prop === 'string' && !prop.startsWith('__') && prop !== 'toJSON') {
-        return createServiceProxy(prop)
+    get(target, prop) {
+      if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then') {
+        return target[prop]
       }
-      return target[prop]
+      return createServiceProxy(prop as string)
     },
   })
 }
