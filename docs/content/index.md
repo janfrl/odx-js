@@ -1,5 +1,6 @@
 ---
 navigation: false
+aside: false
 ---
 
 ::u-page-hero
