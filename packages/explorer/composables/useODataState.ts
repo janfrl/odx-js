@@ -147,7 +147,11 @@ export function useSharedODataState(): any {
     try {
       const res = await fetch('/__sap_odata__/logs')
       if (res.ok) {
-        logs.value = (await res.json()) as ODataLog[]
+        const data = (await res.json()) as ODataLog[]
+        // Only update if number of logs changed or it was empty
+        if (data.length !== logs.value.length || logs.value.length === 0) {
+          logs.value = data
+        }
       }
     }
     catch {

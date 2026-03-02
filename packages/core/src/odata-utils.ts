@@ -1,15 +1,31 @@
 /**
  * Recursive flattener for OData V2 'results' structures and removes metadata.
  * Preserves count information if present.
+ *
+ * @param data The data to flatten
+ * @param depth Current recursion depth
+ * @param maxDepth Maximum recursion depth (default 10)
  */
-export function flattenOData(data: any): any {
-  if (!data || typeof data !== 'object')
+export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
+  if (depth > maxDepth)
+    return '[Max Depth Reached]'
+
+  if (!data)
     return data
+
+  // Handle Binary Data (Buffers, Uint8Arrays)
+  if (data instanceof Uint8Array || (typeof Buffer !== 'undefined' && Buffer.isBuffer(data))) {
+    return `[Binary Data, ${data.length} bytes]`
+  }
+
+  if (typeof data !== 'object') {
+    return data
+  }
 
   const count = data.__count || data['@odata.count'] || data.count
 
   if (data.results && Array.isArray(data.results)) {
-    const flattened = data.results.map((item: any) => flattenOData(item))
+    const flattened = data.results.map((item: any) => flattenOData(item, depth + 1, maxDepth))
     if (count !== undefined) {
       (flattened as any).totalCount = Number(count)
     }
@@ -17,15 +33,17 @@ export function flattenOData(data: any): any {
   }
 
   if (Array.isArray(data))
-    return data.map(item => flattenOData(item))
+    return data.map(item => flattenOData(item, depth + 1, maxDepth))
 
   const flattened: any = {}
+  let hasProperties = false
   for (const key in data) {
     if (key === '__metadata' || key === '__deferred')
       continue
-    flattened[key] = flattenOData(data[key])
+    flattened[key] = flattenOData(data[key], depth + 1, maxDepth)
+    hasProperties = true
   }
-  return Object.keys(flattened).length > 0 ? flattened : null
+  return hasProperties ? flattened : null
 }
 
 /**

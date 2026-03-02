@@ -8,6 +8,22 @@ const toast = useToast()
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
 
+function safeStringify(data: any): string {
+  if (!data)
+    return ''
+  try {
+    return JSON.stringify(data, null, 2)
+  }
+  catch (e: any) {
+    console.error('[TabLogs] Stringify failed:', e)
+    return `[Stringify Failed: ${e.message}]`
+  }
+}
+
+function onToggleExpand(row: any) {
+  row.toggleExpanded()
+}
+
 const columns = [
   {
     id: 'expand',
@@ -132,13 +148,13 @@ async function runClear() {
     <div class="flex-1 flex flex-col min-h-0 relative px-6 pt-2 pb-0">
       <div
         class="flex-1 flex flex-col min-h-0 border-t border-x border-neutral-200 dark:border-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-sm overflow-hidden"
-        style="mask-image: linear-gradient(to bottom, white, white); -webkit-mask-image: -webkit-linear-gradient(to bottom, white, white);"
       >
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <UTable
             :columns="columns"
             :data="logs"
-            class="min-w-max h-full"
+            row-id="id"
+            class="w-full"
             :ui="{
               thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
               th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
@@ -165,7 +181,8 @@ async function runClear() {
                 class="px-6 py-8 border-b border-neutral-100 dark:border-neutral-800/50 cursor-default"
                 @click.stop
               >
-                <div class="space-y-6">
+                <div class="space-y-6 max-w-full overflow-hidden">
+                  <!-- URL Section -->
                   <div class="space-y-3">
                     <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2">
                       <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 opacity-70" /> Request URL
@@ -176,21 +193,25 @@ async function runClear() {
                     </div>
                   </div>
 
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                    <div class="flex flex-col gap-3 h-full">
+                  <!-- Payload Grid -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch w-full">
+                    <!-- Request Column -->
+                    <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
                       <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
                         <UIcon name="i-lucide-upload" class="w-3.5 h-3.5 opacity-70" /> Request Payload
                       </h3>
 
-                      <div class="flex flex-col gap-3 flex-1">
-                        <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="shrink-0 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-1.5">
-                          <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex justify-between gap-4">
+                      <div class="flex flex-col gap-3 min-w-0 flex-1">
+                        <!-- Headers -->
+                        <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="shrink-0 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-1.5 overflow-hidden">
+                          <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex justify-between gap-4 min-w-0">
                             <span class="font-bold text-neutral-700 dark:text-neutral-500 shrink-0">{{ key }}:</span>
                             <span class="text-neutral-500 dark:text-neutral-400 truncate" :title="val">{{ val }}</span>
                           </div>
                         </div>
 
-                        <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300">{{ JSON.stringify(row.original.requestBody, null, 2) }}</pre>
+                        <!-- Body -->
+                        <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300 whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
 
                         <div v-else class="flex-1 min-h-32 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
                           <UIcon name="i-lucide-file-x-2" class="w-8 h-8 mb-3 text-neutral-400 dark:text-neutral-600 opacity-50" />
@@ -200,13 +221,14 @@ async function runClear() {
                       </div>
                     </div>
 
-                    <div class="flex flex-col gap-3 h-full">
+                    <!-- Response Column -->
+                    <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
                       <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
                         <UIcon name="i-lucide-download" class="w-3.5 h-3.5 opacity-70" /> Response Payload
                       </h3>
 
-                      <div class="flex flex-col gap-3 flex-1">
-                        <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300">{{ JSON.stringify(row.original.responseBody, null, 2) }}</pre>
+                      <div class="flex flex-col gap-3 min-w-0 flex-1">
+                        <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300 whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
 
                         <div v-else class="flex-1 min-h-32 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
                           <UIcon name="i-lucide-file-x-2" class="w-8 h-8 mb-3 text-neutral-400 dark:text-neutral-600 opacity-50" />

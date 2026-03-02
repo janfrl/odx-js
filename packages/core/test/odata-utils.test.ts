@@ -93,7 +93,33 @@ describe('oData Utils', () => {
       const flattened = flattenOData(data)
       expect(flattened.ID).toBe(1)
       expect(flattened.__metadata).toBeUndefined()
-      expect(flattened.Sub).toBeNull()
+      expect(flattened.Sub).toEqual({})
+    })
+
+    it('truncates very long strings', () => {
+      const longString = 'A'.repeat(6000)
+      const data = { text: longString }
+      const flattened = flattenOData(data)
+      expect(flattened.text).toContain('[Truncated, 6000 chars total]')
+      expect(flattened.text.length).toBeLessThan(5100)
+    })
+
+    it('protects against deep recursion', () => {
+      const deep: any = { a: {} }
+      let curr = deep.a
+      for (let i = 0; i < 20; i++) {
+        curr.b = {}
+        curr = curr.b
+      }
+      const flattened = flattenOData(deep)
+      const json = JSON.stringify(flattened)
+      expect(json).toContain('[Max Depth Reached]')
+    })
+
+    it('handles binary data (Uint8Array) by truncating', () => {
+      const data = { bin: new Uint8Array([1, 2, 3, 4, 5]) }
+      const flattened = flattenOData(data)
+      expect(flattened.bin).toBe('[Binary Data, 5 bytes]')
     })
   })
 })

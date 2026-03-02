@@ -164,7 +164,7 @@ export default defineEventHandler(async (event) => {
               const rawResponse = await rb.executeRaw(destination)
               const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data
               logRequest(200, res, capturedBody, await rb.url(destination).catch(() => baseUrl), customHeaders)
-              return flattenOData(res)
+              return res
             }
             else if (event.method === 'POST') {
               const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
@@ -204,7 +204,7 @@ export default defineEventHandler(async (event) => {
     const data = response as Record<string, any>
     const finalData = data?.d?.results || data?.d || data
     logRequest(200, finalData, capturedBody, fullTargetUrl)
-    return flattenOData(finalData)
+    return finalData
   }
   catch (err: unknown) {
     const error = err as { response?: { status?: number }, message: string }
