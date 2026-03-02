@@ -63,7 +63,6 @@ export function useOData<T extends RegisteredServiceNames>(
   }
 
   const serviceMethods = {
-    ...createMethods(),
     entities: (name: string): ODataEntitySet<any> => createMethods(name),
   }
 

@@ -120,7 +120,7 @@ export interface ODataEntitySet<T = any> {
  * E: Union of available entity set names.
  * M: Mapping of entity set names to their model types.
  */
-export interface ODataService<E extends string = string, M extends Record<string, any> = any> extends ODataEntitySet {
+export interface ODataService<E extends string = string, M extends Record<string, any> = any> {
   /**
    * Accesses a specific entity set of the service.
    */
