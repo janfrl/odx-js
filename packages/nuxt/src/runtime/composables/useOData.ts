@@ -1,16 +1,16 @@
 import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
-import { useFetch } from '#imports'
 import { $odata, stringifyQuery } from '@bc8-odx/core'
+import { useFetch } from '#imports'
 import { useODataBasePath } from './useODataBasePath'
 
 /**
  * Composable for interacting with OData services.
- * Provides autocomplete for registered services and their entity sets.
+ * Provides autocomplete for registered services and their entity sets via dot notation
+ * or standard method calls.
  */
-export function useOData<T extends RegisteredServiceNames>(
-  service: T,
-): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService {
-  const basePath = useODataBasePath(service as string)
+export function useOData(): ODataServiceRegistry
+export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService
+export function useOData(service?: string): any {
   const client = globalThis.$fetch
 
   /**
@@ -25,7 +25,8 @@ export function useOData<T extends RegisteredServiceNames>(
       .join(',')
   }
 
-  const createMethods = <TModel = unknown>(entitySet?: string): ODataEntitySet<TModel> => {
+  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataEntitySet<TModel> => {
+    const basePath = useODataBasePath(serviceName)
     const isDirect = basePath.startsWith('http')
 
     let fullPath = ''
@@ -33,7 +34,7 @@ export function useOData<T extends RegisteredServiceNames>(
       fullPath = entitySet ? `${basePath}/${entitySet}` : basePath
     }
     else {
-      const path = entitySet ? `${service as string}/${entitySet}` : (service as string)
+      const path = entitySet ? `${serviceName}/${entitySet}` : serviceName
       fullPath = `${basePath}/${path}`
     }
 
@@ -62,9 +63,36 @@ export function useOData<T extends RegisteredServiceNames>(
     }
   }
 
-  const serviceMethods = {
-    entitySet: (name: string): ODataEntitySet<any> => createMethods(name),
+  const createServiceProxy = (serviceName: string): ODataService => {
+    return new Proxy({} as any, {
+      get(target, prop: string) {
+        // Special case for the .entitySet() method
+        if (prop === 'entitySet') {
+          return (name: string) => createMethods(serviceName, name)
+        }
+        
+        // Return methods for the entity set if it looks like one (not a built-in symbol)
+        if (typeof prop === 'string' && !prop.startsWith('__') && prop !== 'toJSON') {
+          return createMethods(serviceName, prop)
+        }
+        
+        return target[prop]
+      },
+    })
   }
 
-  return serviceMethods as unknown as (T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService)
+  // Handle useOData('MyService')
+  if (service) {
+    return createServiceProxy(service)
+  }
+
+  // Handle useOData().MyService.MyEntitySet
+  return new Proxy({} as any, {
+    get(target, prop: string) {
+      if (typeof prop === 'string' && !prop.startsWith('__') && prop !== 'toJSON') {
+        return createServiceProxy(prop)
+      }
+      return target[prop]
+    },
+  })
 }

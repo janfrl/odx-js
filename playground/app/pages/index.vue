@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const products = useOData('V2Service').entitySet('Products')
+const products = useOData().V2Service.Products
 
 // Demonstrate OData query options: select specific fields and filter by price
 const { data, pending, error, refresh, execute, status } = products.list({
