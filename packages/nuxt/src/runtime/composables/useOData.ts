@@ -1,9 +1,7 @@
-import type { ODataEntitySet, ODataKey, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
+import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
 import { useFetch } from '#imports'
 import { $odata, stringifyQuery } from '@bc8-odx/core'
 import { useODataBasePath } from './useODataBasePath'
-
-type ODataBody = Record<string, unknown> | FormData | Blob | ArrayBufferView | ArrayBuffer | null
 
 /**
  * Composable for interacting with OData services.
@@ -27,7 +25,7 @@ export function useOData<T extends RegisteredServiceNames>(
       .join(',')
   }
 
-  const createMethods = (entitySet?: string): ODataEntitySet => {
+  const createMethods = <TModel = unknown>(entitySet?: string): ODataEntitySet<TModel> => {
     const isDirect = basePath.startsWith('http')
 
     let fullPath = ''
@@ -40,33 +38,34 @@ export function useOData<T extends RegisteredServiceNames>(
     }
 
     return {
-      list: (query?: ODataQuery, options?: any): any =>
-        useFetch(fullPath, { ...options, query: stringifyQuery(query || {}) }),
-
-      get: (key: ODataKey, query?: ODataQuery, options?: any): any => {
-        const itemPath = `${fullPath}(${formatKey(key)})`
-        return useFetch(itemPath, { ...options, query: stringifyQuery(query || {}) })
+      list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
+        return useFetch(fullPath, { ...(options as any), query: stringifyQuery(query || {}) }) as unknown as ODataAsyncDataPromise<TModel[]>
       },
 
-      create: (body: ODataBody): Promise<any> =>
-        $odata<any>(client, fullPath, 'POST', { body }),
-
-      update: (key: ODataKey, body: ODataBody): Promise<any> => {
+      get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return $odata<any>(client, itemPath, 'PATCH', { body })
+        return useFetch(itemPath, { ...(options as any), query: stringifyQuery(query || {}) }) as unknown as ODataAsyncDataPromise<TModel>
       },
 
-      remove: (key: ODataKey): Promise<any> => {
+      create: (body: Partial<TModel>): Promise<TModel> =>
+        $odata<TModel>(client, fullPath, 'POST', { body }),
+
+      update: (key: ODataKey, body: Partial<TModel>): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return $odata<any>(client, itemPath, 'DELETE')
+        return $odata<TModel>(client, itemPath, 'PATCH', { body })
+      },
+
+      remove: (key: ODataKey): Promise<unknown> => {
+        const itemPath = `${fullPath}(${formatKey(key)})`
+        return $odata<unknown>(client, itemPath, 'DELETE')
       },
     }
   }
 
   const serviceMethods = {
     ...createMethods(),
-    entities: (name: string): ODataEntitySet => createMethods(name),
+    entities: (name: string): ODataEntitySet<any> => createMethods(name),
   }
 
-  return serviceMethods as any
+  return serviceMethods as unknown as (T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService)
 }

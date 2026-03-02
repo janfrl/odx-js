@@ -57,24 +57,24 @@ async function deleteItem(id: string): Promise<void> {
     <div class="flex items-center gap-3 mb-8">
       <UButton icon="i-heroicons-play" color="primary" label="Execute Fetch" @click="execute" />
       <UButton icon="i-heroicons-plus" color="neutral" variant="soft" label="Create Product" @click="addItem" />
-      <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" label="Refresh" :disabled="status === 'idle'" @click="refresh" />
+      <UButton icon="i-heroicons-arrow-path" color="neutral" variant="outline" label="Refresh" :disabled="status.value === 'idle'" @click="refresh" />
     </div>
 
-    <div v-if="pending" class="space-y-4">
+    <div v-if="pending.value" class="space-y-4">
       <USkeleton class="h-12 w-full" />
       <USkeleton class="h-64 w-full" />
     </div>
 
     <UAlert
-      v-else-if="error"
+      v-else-if="error.value"
       icon="i-heroicons-exclamation-triangle"
       color="error"
       variant="subtle"
       title="Error loading data"
-      :description="String(error)"
+      :description="String(error.value)"
     />
 
-    <div v-else-if="status === 'idle'" class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/50">
+    <div v-else-if="status.value === 'idle'" class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/50">
       <UIcon name="i-heroicons-bolt" class="w-12 h-12 text-neutral-300 mb-4" />
       <p class="text-neutral-500 font-medium">
         No data loaded yet
@@ -90,14 +90,14 @@ async function deleteItem(id: string): Promise<void> {
           <div class="flex justify-between items-center">
             <span class="text-xs font-bold text-neutral-500 uppercase tracking-wider">UI Representation</span>
             <UBadge color="info" variant="subtle">
-              {{ data?.length || 0 }} Items
+              {{ data.value?.length || 0 }} Items
             </UBadge>
           </div>
         </template>
 
         <ul class="divide-y divide-neutral-100 dark:divide-neutral-800 overflow-auto max-h-125 -m-4 sm:-m-6 px-4 sm:px-6">
-          <li v-for="(product, index) in data" :key="product.ID || index" class="py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
-            <div class="flex justify-between items-start">
+          <li v-for="(product, index) in data.value" :key="product?.ID || index" class="py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+            <div v-if="product" class="flex justify-between items-start">
               <div>
                 <p class="font-medium text-neutral-900 dark:text-white">
                   {{ product.Name }}
@@ -126,7 +126,7 @@ async function deleteItem(id: string): Promise<void> {
         <template #header>
           <span class="text-xs font-bold text-neutral-400 uppercase tracking-wider">Raw JSON Proxy Response</span>
         </template>
-        <pre class="text-xs text-primary-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data }}</pre>
+        <pre class="text-xs text-primary-400 overflow-auto max-h-125 font-mono -m-4 sm:-m-6 p-4 sm:p-6">{{ data.value }}</pre>
       </UCard>
     </div>
   </UContainer>

@@ -13,15 +13,20 @@ export interface SapODataService {
 }
 
 /**
+ * Simple structural interface for a Vue Ref to avoid direct dependency on Vue.
+ */
+export interface Ref<T> {
+  value: T
+}
+
+/**
  * Minimal interface mimicking Nuxt's AsyncData for type inference.
- * It uses a structure compatible with Vue Refs for the script block,
- * while allowing the template to see the unwrapped type.
  */
 export interface ODataAsyncData<T> {
-  data: { value: T | null } | any
-  pending: { value: boolean } | any
-  error: { value: any | null } | any
-  status: { value: 'idle' | 'pending' | 'success' | 'error' } | any
+  data: Ref<T | null>
+  pending: Ref<boolean>
+  error: Ref<any | null>
+  status: Ref<'idle' | 'pending' | 'success' | 'error'>
   refresh: (opts?: any) => Promise<void>
   execute: (opts?: any) => Promise<void>
   clear: () => void
@@ -170,6 +175,7 @@ export interface ModuleOptions {
   forwardAuthHeader?: boolean
   services?: SapODataService[]
   buildDir?: string
+  rootDir?: string
   devtools?: {
     enabled?: boolean
     maxLogs?: number
