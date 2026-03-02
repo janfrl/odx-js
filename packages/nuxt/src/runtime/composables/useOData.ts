@@ -63,7 +63,7 @@ export function useOData<T extends RegisteredServiceNames>(
   }
 
   const serviceMethods = {
-    entities: (name: string): ODataEntitySet<any> => createMethods(name),
+    entitySet: (name: string): ODataEntitySet<any> => createMethods(name),
   }
 
   return serviceMethods as unknown as (T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService)

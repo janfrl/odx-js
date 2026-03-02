@@ -17,7 +17,7 @@ export interface SapODataService {
  * The intersection with the raw type T helps the Vue template compiler
  * and IDE to see the unwrapped types without a direct Vue dependency.
  */
-export type ODataAsyncData<T> = {
+export interface ODataAsyncData<T> {
   data: { value: T | null } & (T | null)
   pending: { value: boolean } & boolean
   error: { value: any | null } & any
@@ -119,7 +119,7 @@ export interface ODataService<E extends string = string, M extends Record<string
   /**
    * Accesses a specific entity set of the service.
    */
-  entities: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : any>
+  entitySet: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : any>
 }
 
 /**

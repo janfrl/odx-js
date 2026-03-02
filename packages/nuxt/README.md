@@ -43,7 +43,7 @@ export default defineNuxtConfig({
 ```vue
 <script setup lang="ts">
 // Full type autocomplete for services and entity sets
-const { data, refresh } = await useOData('Northwind').entities('Products').list()
+const { data, refresh } = await useOData('Northwind').entitySet('Products').list()
 </script>
 
 <template>
