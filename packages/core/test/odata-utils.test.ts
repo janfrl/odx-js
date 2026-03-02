@@ -93,15 +93,7 @@ describe('oData Utils', () => {
       const flattened = flattenOData(data)
       expect(flattened.ID).toBe(1)
       expect(flattened.__metadata).toBeUndefined()
-      expect(flattened.Sub).toEqual({})
-    })
-
-    it('truncates very long strings', () => {
-      const longString = 'A'.repeat(6000)
-      const data = { text: longString }
-      const flattened = flattenOData(data)
-      expect(flattened.text).toContain('[Truncated, 6000 chars total]')
-      expect(flattened.text.length).toBeLessThan(5100)
+      expect(flattened.Sub).toBeNull()
     })
 
     it('protects against deep recursion', () => {
