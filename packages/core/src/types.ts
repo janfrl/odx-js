@@ -13,21 +13,15 @@ export interface SapODataService {
 }
 
 /**
- * Simple structural interface for a Vue Ref to avoid direct dependency on Vue.
- */
-export interface Ref<T> {
-  value: T
-}
-
-/**
  * Minimal interface mimicking Nuxt's AsyncData for type inference.
- * It uses a structure compatible with Vue Refs for the script block.
+ * It uses a structure compatible with Vue Refs for the script block,
+ * while allowing the template to see the unwrapped type.
  */
 export interface ODataAsyncData<T> {
-  data: Ref<T | null>
-  pending: Ref<boolean>
-  error: Ref<any | null>
-  status: Ref<'idle' | 'pending' | 'success' | 'error'>
+  data: { value: T | null } | any
+  pending: { value: boolean } | any
+  error: { value: any | null } | any
+  status: { value: 'idle' | 'pending' | 'success' | 'error' } | any
   refresh: (opts?: any) => Promise<void>
   execute: (opts?: any) => Promise<void>
   clear: () => void
@@ -52,12 +46,12 @@ export interface ODataEntitySet<T = any> {
   /**
    * Fetches a list of entities.
    */
-  list: (query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<T[]>
+  list: (query?: Record<string, string | number | boolean | null | undefined>, options?: any) => ODataAsyncDataPromise<T[]>
   /**
    * Fetches a single entity by key.
    * Key can be a single value or an object for composite keys.
    */
-  get: (key: ODataKey, query?: Record<string, string | number | boolean | null | undefined>) => ODataAsyncDataPromise<T>
+  get: (key: ODataKey, query?: Record<string, string | number | boolean | null | undefined>, options?: any) => ODataAsyncDataPromise<T>
   /**
    * Creates a new entity.
    */

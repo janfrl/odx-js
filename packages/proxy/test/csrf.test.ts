@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
 import { ofetch } from 'ofetch'
+import { describe, expect, it, vi } from 'vitest'
 import { fetchWithCsrf } from '../src/utils/csrf'
 
 vi.mock('ofetch', async () => {
@@ -10,7 +10,7 @@ vi.mock('ofetch', async () => {
   return { ofetch: mockOfetch }
 })
 
-describe('CSRF Utility', () => {
+describe('cSRF Utility', () => {
   it('bypasses preflight for GET requests', async () => {
     await fetchWithCsrf('/api/data', { method: 'GET' })
     expect(ofetch.raw).not.toHaveBeenCalled()
@@ -22,8 +22,8 @@ describe('CSRF Utility', () => {
     ;(ofetch.raw as any).mockResolvedValueOnce({
       headers: new Headers({
         'x-csrf-token': 'token-123',
-        'set-cookie': 'sap-user-context=123; path=/'
-      })
+        'set-cookie': 'sap-user-context=123; path=/',
+      }),
     })
 
     await fetchWithCsrf('/api/data', { method: 'POST', headers: { 'X-Existing': 'foo' } })
@@ -31,7 +31,7 @@ describe('CSRF Utility', () => {
     // Verify HEAD request
     expect(ofetch.raw).toHaveBeenCalledWith('/api/data', expect.objectContaining({
       method: 'HEAD',
-      headers: expect.objectContaining({ 'x-csrf-token': 'Fetch' })
+      headers: expect.objectContaining({ 'x-csrf-token': 'Fetch' }),
     }))
 
     // Verify final POST request with injected headers
@@ -40,8 +40,8 @@ describe('CSRF Utility', () => {
       headers: expect.objectContaining({
         'x-csrf-token': 'token-123',
         'cookie': 'sap-user-context=123',
-        'X-Existing': 'foo'
-      })
+        'X-Existing': 'foo',
+      }),
     }))
   })
 })

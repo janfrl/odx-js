@@ -7,7 +7,7 @@ describe('$odata fetcher', () => {
     await $odata(client, 'MyService', 'GET', { entitySet: 'Products' })
 
     expect(client).toHaveBeenCalledWith('MyService/Products', expect.objectContaining({
-      method: 'GET'
+      method: 'GET',
     }))
   })
 
@@ -28,7 +28,7 @@ describe('$odata fetcher', () => {
     expect(client).toHaveBeenCalledWith('S/E', expect.objectContaining({
       method: 'POST',
       body,
-      query
+      query,
     }))
   })
 })

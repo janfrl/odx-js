@@ -74,8 +74,12 @@ async function deleteItem(id: string): Promise<void> {
 
     <div v-else-if="status === 'idle'" class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl bg-neutral-50/50 dark:bg-neutral-900/50">
       <UIcon name="i-heroicons-bolt" class="w-12 h-12 text-neutral-300 mb-4" />
-      <p class="text-neutral-500 font-medium">No data loaded yet</p>
-      <p class="text-neutral-400 text-sm mt-1">Click the "Execute Fetch" button to start</p>
+      <p class="text-neutral-500 font-medium">
+        No data loaded yet
+      </p>
+      <p class="text-neutral-400 text-sm mt-1">
+        Click the "Execute Fetch" button to start
+      </p>
     </div>
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">

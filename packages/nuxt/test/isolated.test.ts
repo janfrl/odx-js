@@ -11,7 +11,7 @@ describe('isolated production e2e', async () => {
 
   it('renders data from direct odata fetch in production build', async () => {
     const html = await $fetch('/')
-    
+
     // Assert that the data fetched via useOData is present in the SSR output
     expect(html).toContain('First Category: Beverages')
     expect(html).not.toContain('No data found')

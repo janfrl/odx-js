@@ -42,14 +42,14 @@ describe('oData Utils', () => {
   describe('stringifyQuery', () => {
     it('converts OData parameters correctly', () => {
       const query = {
-        $filter: "Name eq 'Test'",
+        $filter: 'Name eq \'Test\'',
         $top: 10,
         $expand: 'Category',
         other: 'param',
       }
 
       const result = stringifyQuery(query)
-      expect(result.$filter).toBe("Name eq 'Test'")
+      expect(result.$filter).toBe('Name eq \'Test\'')
       expect(result.$top).toBe('10')
       expect(result.other).toBe('param')
     })

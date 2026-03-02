@@ -1,13 +1,13 @@
-import { describe, expect, it, vi } from 'vitest'
 import fs from 'node:fs'
-import { extractEntitiesFromEdmx, detectODataVersion } from '../src/server'
+import { describe, expect, it, vi } from 'vitest'
+import { detectODataVersion, extractEntitiesFromEdmx } from '../src/server'
 
 vi.mock('node:fs')
 
-describe('Server Utils (EDMX Parsing)', () => {
+describe('server Utils (EDMX Parsing)', () => {
   it('detects OData V2 vs V4 versions correctly', () => {
     vi.mocked(fs.existsSync).mockReturnValue(true)
-    
+
     vi.mocked(fs.readFileSync).mockReturnValue('<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx">')
     expect(detectODataVersion('test.edmx')).toBe('v2')
 
