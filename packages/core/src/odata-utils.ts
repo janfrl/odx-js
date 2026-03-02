@@ -1,5 +1,3 @@
-import { Buffer } from 'node:buffer'
-
 /**
  * Recursive flattener for OData V2 'results' structures and removes metadata.
  * Preserves count information if present.
@@ -16,7 +14,7 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
     return data
 
   // Handle Binary Data (Buffers, Uint8Arrays)
-  if (data instanceof Uint8Array || (typeof Buffer !== 'undefined' && Buffer.isBuffer(data))) {
+  if (data instanceof Uint8Array || (typeof data === 'object' && data.constructor && data.constructor.name === 'Buffer')) {
     return `[Binary Data, ${data.length} bytes]`
   }
 
