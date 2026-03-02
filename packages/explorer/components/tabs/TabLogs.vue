@@ -20,10 +20,6 @@ function safeStringify(data: any): string {
   }
 }
 
-function onToggleExpand(row: any) {
-  row.toggleExpanded()
-}
-
 const columns = [
   {
     id: 'expand',

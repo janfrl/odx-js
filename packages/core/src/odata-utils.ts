@@ -1,3 +1,5 @@
+import { Buffer } from 'node:buffer'
+
 /**
  * Recursive flattener for OData V2 'results' structures and removes metadata.
  * Preserves count information if present.
