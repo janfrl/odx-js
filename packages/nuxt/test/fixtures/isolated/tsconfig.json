@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "#imports": [".nuxt/imports.d.ts"],
+      "@bc8-odx/core": ["../../../../core/src/index.ts"],
+      "@bc8-odx/core/server": ["../../../../core/src/server.ts"],
+      "@bc8-odx/proxy": ["../../../../proxy/src/index.ts"]
+    },
+    "types": ["node"]
+  },
+  "include": [
+    "../../../../src/**/*",
+    ".nuxt/types/nitro.d.ts",
+    ".nuxt/types/schema.d.ts",
+    ".nuxt/types/imports.d.ts",
+    ".nuxt/odx-types/**/*",
+    "app.vue",
+    "nuxt.config.ts"
+  ]
+}
