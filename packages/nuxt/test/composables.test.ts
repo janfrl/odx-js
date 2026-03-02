@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { useOData } from '../src/runtime/composables/useOData'
 
 // Mock Nuxt-specific imports
-vi.mock('nuxt/app', () => ({
+vi.mock('#imports', () => ({
   useFetch: vi.fn(url => ({ url })), // Return url for inspection
   useRuntimeConfig: vi.fn(() => ({
     public: {
