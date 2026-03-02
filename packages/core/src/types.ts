@@ -39,6 +39,50 @@ export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncDat
 export type ODataKey = string | number | Record<string, string | number>
 
 /**
+ * Structured OData query options.
+ * T: The model type of the entity being queried.
+ */
+export interface ODataQuery<T = any> {
+  /**
+   * Select specific properties to return.
+   * Can be a single property name, an array of names, or a comma-separated string.
+   */
+  $select?: keyof T | (keyof T)[] | string
+  /**
+   * Filter expression to restrict the results.
+   */
+  $filter?: string
+  /**
+   * Order the results by specific properties.
+   */
+  $orderby?: string
+  /**
+   * Number of results to return.
+   */
+  $top?: number
+  /**
+   * Number of results to skip.
+   */
+  $skip?: number
+  /**
+   * Expand navigation properties.
+   */
+  $expand?: string
+  /**
+   * Include the count of the matching entities.
+   */
+  $inlinecount?: 'allpages' | 'none'
+  /**
+   * Search expression (OData V4).
+   */
+  $search?: string
+  /**
+   * Allow for custom query parameters.
+   */
+  [key: string]: any
+}
+
+/**
  * Interface for a specific OData Entity Set.
  * T: The model type of the entity.
  */
@@ -46,12 +90,12 @@ export interface ODataEntitySet<T = any> {
   /**
    * Fetches a list of entities.
    */
-  list: (query?: Record<string, string | number | boolean | null | undefined>, options?: any) => ODataAsyncDataPromise<T[]>
+  list: (query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T[]>
   /**
    * Fetches a single entity by key.
    * Key can be a single value or an object for composite keys.
    */
-  get: (key: ODataKey, query?: Record<string, string | number | boolean | null | undefined>, options?: any) => ODataAsyncDataPromise<T>
+  get: (key: ODataKey, query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T>
   /**
    * Creates a new entity.
    */

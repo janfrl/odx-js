@@ -1,5 +1,5 @@
 import type { ODataEntitySet, ODataKey, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
-import { $odata } from '@bc8-odx/core'
+import { $odata, stringifyQuery } from '@bc8-odx/core'
 import { useFetch } from 'nuxt/app'
 import { useODataBasePath } from './useODataBasePath'
 
@@ -41,12 +41,12 @@ export function useOData<T extends RegisteredServiceNames>(
     }
 
     return {
-      list: (query?: ODataQuery, options?: any): any =>
-        useFetch(fullPath, { ...options, query }),
+      list: (query?: any, options?: any): any =>
+        useFetch(fullPath, { ...options, query: stringifyQuery(query || {}) }),
 
-      get: (key: ODataKey, query?: ODataQuery, options?: any): any => {
+      get: (key: ODataKey, query?: any, options?: any): any => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return useFetch(itemPath, { ...options, query })
+        return useFetch(itemPath, { ...options, query: stringifyQuery(query || {}) })
       },
 
       create: (body: ODataBody): Promise<any> =>

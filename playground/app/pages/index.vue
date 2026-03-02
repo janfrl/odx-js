@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { useOData } from '#imports'
-
 const products = useOData('V2Service').entities('Products')
 
-const { data, pending, error, refresh, execute, status } = products.list(undefined, { immediate: false })
+// Demonstrate OData query options: select specific fields and filter by price
+const { data, pending, error, refresh, execute, status } = products.list({
+  $select: ['ID', 'Name', 'Price', 'Currency'],
+  $filter: 'Price gt 1000.00',
+}, { immediate: false })
 
 /**
  * Creates a new dummy product and triggers a refresh of the list.

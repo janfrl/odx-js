@@ -87,13 +87,19 @@ export function mergeHeaders(...headers: (HeadersInit | undefined)[]): Record<st
 /**
  * Stringifies an OData query object into a URL-compatible record.
  * Handles special OData parameters like $filter and $expand.
+ * Arrays (e.g. for $select) are joined with commas.
  */
 export function stringifyQuery(query: Record<string, any>): Record<string, string> {
   const result: Record<string, string> = {}
   for (const [key, value] of Object.entries(query)) {
     if (value === undefined || value === null)
       continue
-    result[key] = String(value)
+    if (Array.isArray(value)) {
+      result[key] = value.join(',')
+    }
+    else {
+      result[key] = String(value)
+    }
   }
   return result
 }
