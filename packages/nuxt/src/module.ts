@@ -1,3 +1,4 @@
+import type { ODataProxyConfig, ODataPublicConfig } from '@bc8-odx/core'
 import type { EntityMapping } from '@bc8-odx/core/server'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
@@ -43,6 +44,7 @@ export interface ModuleOptions {
   forwardAuthHeader?: boolean
   services?: SapODataService[]
   buildDir?: string
+  rootDir?: string
   devtools?: {
     enabled?: boolean
     maxLogs?: number
@@ -196,6 +198,8 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     nuxt.options.runtimeConfig.odata = {
+      basePath,
+      mode: options.mode ?? 'sdk',
       destination: options.destination ?? '',
       auth: globalAuth,
       headers: globalHeaders,
@@ -272,7 +276,7 @@ export default defineNuxtModule<ModuleOptions>({
     }
 
     nuxt.hook('prepare:types', async ({ references }) => {
-      if (!nuxt.options.dev || !allServices.length) {
+      if (!allServices.length) {
         return
       }
 
@@ -374,3 +378,25 @@ export default defineNuxtModule<ModuleOptions>({
     }
   },
 })
+
+declare module '@nuxt/schema' {
+  interface NuxtConfig {
+    odata?: ModuleOptions
+  }
+  interface NuxtOptions {
+    odata?: ModuleOptions
+  }
+  interface RuntimeConfig {
+    odata: ODataProxyConfig
+  }
+  interface PublicRuntimeConfig {
+    odata: ODataPublicConfig
+  }
+}
+
+declare module 'h3' {
+  interface H3EventContext {
+    odataConfig: ODataProxyConfig
+    odataAuth?: string
+  }
+}

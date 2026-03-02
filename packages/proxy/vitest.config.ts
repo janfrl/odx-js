@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    projects: [
-      'packages/*',
-    ],
+    name: 'proxy',
+    environment: 'node',
+    include: ['**/*.test.ts'],
   },
 })

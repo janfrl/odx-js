@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    projects: [
-      'packages/*',
-    ],
+    name: 'nuxt',
+    environment: 'node',
+    include: ['**/*.test.ts'],
   },
 })
