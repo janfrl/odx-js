@@ -1,0 +1,21 @@
+# ODX Proxy
+
+A robust server-side proxy layer built on **H3**. It handles the complexities of SAP backend communication, ensuring your frontend remains clean and secure.
+
+## Features
+
+- **Auth Management:** Seamless handling of Basic and Bearer authentication.
+- **CSRF Protection:** Automated "Preflight" requests to fetch and maintain SAP CSRF tokens.
+- **Dynamic Routing:** Automatically maps OData service endpoints to Nitro server routes.
+- **Logging Hub:** Captures and stores request/response traffic for the [Explorer](/packages/explorer).
+
+## Installation
+
+::code-group
+  ```bash [pnpm]
+  pnpm add @bc8-odx/proxy
+  ```
+  ```bash [npm]
+  npm install @bc8-odx/proxy
+  ```
+::
