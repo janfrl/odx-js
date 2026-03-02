@@ -1,5 +1,5 @@
 import type { ODataPublicConfig } from '@bc8-odx/core'
-import { useRuntimeConfig } from 'nuxt/app'
+import { useRuntimeConfig } from '#imports'
 
 export function useODataBasePath(serviceName?: string): string {
   const config = useRuntimeConfig()
