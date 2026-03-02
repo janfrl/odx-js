@@ -28,7 +28,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
     return mappings
   }
   catch (e) {
-    console.error(`[nuxt-sap-odata] Failed to parse EDMX at ${edmxPath}`, e)
+    console.error(`[@bc8-odx/core] Failed to parse EDMX at ${edmxPath}`, e)
     return []
   }
 }

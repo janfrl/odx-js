@@ -1,11 +1,11 @@
 {
-  "name": "nuxt-sap-odata",
+  "name": "odx",
   "type": "module",
   "version": "1.0.0",
   "packageManager": "pnpm@10.30.0",
-  "description": "My new Nuxt module",
+  "description": "ODX: OData Developer Experience - A modern toolkit for SAP OData integration",
   "license": "MIT",
-  "repository": "Bechtle-AG/nuxt-sap-odata",
+  "repository": "janfrl/odx-js",
   "exports": {
     ".": {
       "types": "./dist/types.d.mts",

@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!fs.existsSync(edmxPath)) {
-    console.error(`[nuxt-sap-odata] Schema API: EDMX file not found at ${edmxPath}`)
+    console.error(`[@bc8-odx/proxy] Schema API: EDMX file not found at ${edmxPath}`)
     throw createError({ statusCode: 404, message: `EDMX file not found at ${edmxPath}` })
   }
 

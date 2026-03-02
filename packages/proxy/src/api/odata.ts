@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = event.context.odataConfig as ODataProxyConfig
   if (!config) {
-    throw createError({ statusCode: 500, message: '[nuxt-sap-odata] Proxy configuration missing in context' })
+    throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
   }
 
   const basePath = config.basePath || '/api/sap-odata'

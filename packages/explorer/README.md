@@ -8,4 +8,4 @@ A high-fidelity DevTools UI built with Nuxt UI for inspecting OData schemas, tra
 pnpm add @bc8-odx/explorer
 ```
 
-**For documentation on the DevTools UI and debugging patterns, please visit: [nuxt-sap-odata.com/packages/explorer](https://your-docs-domain.com/packages/explorer)**
+**For documentation on the DevTools UI and debugging patterns, please visit: [odx-js.io/packages/explorer](https://odx-js.io/packages/explorer)**

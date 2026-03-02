@@ -1,11 +1,11 @@
-# nuxt-sap-odata
+# @bc8-odx/nuxt
 
-The official Nuxt module providing type-safe OData composables, automated SDK generation, and native DevTools integration.
+The official Nuxt module for the ODX ecosystem. It provides type-safe OData composables, automated SDK generation, and native DevTools integration.
 
 ## Installation
 
 ```bash
-pnpm add nuxt-sap-odata
+pnpm add @bc8-odx/nuxt
 ```
 
-**For getting started guides, module configuration, and usage examples, please visit: [nuxt-sap-odata.com/packages/nuxt](https://your-docs-domain.com/packages/nuxt)**
+**For full documentation, getting started guides, and module configuration, please visit: [odx-js.io/packages/nuxt](https://odx-js.io/packages/nuxt)**

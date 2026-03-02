@@ -53,7 +53,7 @@ export interface ModuleOptions {
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
-    name: 'nuxt-sap-odata',
+    name: '@bc8-odx/nuxt',
     configKey: 'odata',
   },
   defaults: {
@@ -69,7 +69,7 @@ export default defineNuxtModule<ModuleOptions>({
   },
   async setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)
-    const logger = useLogger('nuxt-sap-odata')
+    const logger = useLogger('@bc8-odx/nuxt')
 
     const basePath = options.basePath ?? '/api/sap-odata'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
@@ -86,7 +86,7 @@ export default defineNuxtModule<ModuleOptions>({
         return JSON.parse(envValue)
       }
       catch {
-        logger.warn(`[nuxt-sap-odata] Failed to parse JSON from environment variable: ${envValue}. Ensure it is a valid JSON string.`)
+        logger.warn(`[@bc8-odx/nuxt] Failed to parse JSON from environment variable: ${envValue}. Ensure it is a valid JSON string.`)
         return {}
       }
     }
@@ -319,7 +319,7 @@ export default defineNuxtModule<ModuleOptions>({
             inputPath = tempFile
           }
           catch (err) {
-            logger.error(`[nuxt-sap-odata] Could not download metadata for ${svc.name}:`, err)
+            logger.error(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name}:`, err)
             continue
           }
         }
@@ -374,7 +374,7 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     if (options.mode !== 'sdk') {
-      logger.warn('[nuxt-sap-odata] Only "sdk" mode is implemented right now.')
+      logger.warn('[@bc8-odx/nuxt] Only "sdk" mode is implemented right now.')
     }
   },
 })

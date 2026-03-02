@@ -9,7 +9,7 @@ This project is a Nuxt module designed to integrate SAP OData services into Nuxt
 - **Packages:**
     - `packages/core`: Shared OData types and low-level utilities (e.g., `$odata`, entity set interfaces).
     - `packages/proxy`: Server handlers for proxying OData requests, fetching schemas from EDMX, and managing development logs.
-    - `packages/nuxt`: The main Nuxt module (`nuxt-sap-odata`) that handles configuration, type generation via `odata2ts`, and DevTools registration.
+    - `packages/nuxt`: The main Nuxt module (`ODX (OData Developer Experience)`) that handles configuration, type generation via `odata2ts`, and DevTools registration.
     - `packages/explorer`: Source code for the custom DevTools UI (built with Nuxt UI and Vue).
 - **Key Features:**
     - **OData Proxy:** Nitro server handlers (`packages/proxy/src/api/odata.ts`) manage authentication and proxy requests to SAP backends.
@@ -65,3 +65,6 @@ This project is a Nuxt module designed to integrate SAP OData services into Nuxt
 - **Environment Variables:** Configuration can be overridden or extended using environment variables prefixed with `NUXT_ODATA_SERVICES_` (e.g., `NUXT_ODATA_SERVICES_V2SERVICE_URL`).
 - **Code Style:** Uses `@antfu/eslint-config` for consistent linting across the monorepo.
 - **Testing:** Uses Vitest and `@nuxt/test-utils` for unit and integration testing.
+
+---
+Repo: https://github.com/janfrl/odx-js

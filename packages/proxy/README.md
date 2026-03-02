@@ -8,4 +8,4 @@ Framework-agnostic H3 server handlers for OData request proxying, CSRF token man
 pnpm add @bc8-odx/proxy
 ```
 
-**For full documentation, server-side configuration, and security guides, please visit: [nuxt-sap-odata.com/packages/proxy](https://your-docs-domain.com/packages/proxy)**
+**For full documentation, server-side configuration, and security guides, please visit: [odx-js.io/packages/proxy](https://odx-js.io/packages/proxy)**

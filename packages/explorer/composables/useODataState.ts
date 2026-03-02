@@ -195,7 +195,7 @@ export function useSharedODataState(): any {
       }
     }
     catch (err: any) {
-      console.error('[nuxt-sap-odata] Generate failed:', err)
+      console.error('[@bc8-odx/explorer] Generate failed:', err)
     }
     finally {
       generatingStatus.value[name] = false

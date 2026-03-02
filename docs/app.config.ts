@@ -2,24 +2,27 @@ export default defineAppConfig({
   docus: {
     title: 'ODX',
     description: 'OData Developer Experience: The modern ecosystem for SAP OData integration.',
-    image: 'https://user-images.githubusercontent.com/904724/185365452-87b7ca7b-6030-4813-a2db-5bd65b7f0df0.png',
+    image: 'https://odx-js.com/cover.png',
     socials: {
-      github: 'Bechtle-AG/nuxt-sap-odata'
+      github: 'janfrl/odx-js'
     },
     aside: {
-      level: 0,
+      level: 1,
       collapsed: false,
       exclude: []
-    },
-    main: {
-      padded: true,
-      fluid: true
     },
     header: {
       logo: false,
       showLinkIcon: true,
       exclude: [],
       fluid: true
+    },
+    footer: {
+      credits: {
+        icon: 'i-lucide-box',
+        text: 'ODX Ecosystem',
+        href: 'https://github.com/janfrl/odx-js'
+      }
     }
   }
 })

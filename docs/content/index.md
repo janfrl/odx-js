@@ -25,7 +25,7 @@ Modern [OData Developer Experience]{.text-primary} for Nuxt.
   color: neutral
   icon: i-simple-icons-github
   size: xl
-  to: https://github.com/Bechtle-AG/nuxt-sap-odata
+  to: https://github.com/janfrl/odx-js
   variant: outline
   ---
   GitHub

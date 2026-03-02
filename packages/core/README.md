@@ -8,4 +8,4 @@ Framework-agnostic OData types and low-level utilities for handling results, met
 pnpm add @bc8-odx/core
 ```
 
-**For full documentation, architecture details, and API reference, please visit: [nuxt-sap-odata.com/packages/core](https://your-docs-domain.com/packages/core)**
+**For full documentation, architecture details, and API reference, please visit: [odx-js.io/packages/core](https://odx-js.io/packages/core)**

@@ -1,4 +1,4 @@
-# ODX Nuxt
+# ODX Nuxt (@bc8-odx/nuxt)
 
 The high-level Nuxt module that integrates the ODX ecosystem into your application. It provides the developer-facing API and automates the build-time SDK generation.
 
@@ -13,9 +13,9 @@ The high-level Nuxt module that integrates the ODX ecosystem into your applicati
 
 ::code-group
   ```bash [pnpm]
-  pnpm add nuxt-sap-odata
+  pnpm add @bc8-odx/nuxt
   ```
   ```bash [npm]
-  npm install nuxt-sap-odata
+  npm install @bc8-odx/nuxt
   ```
 ::

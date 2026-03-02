@@ -21,7 +21,7 @@ export function createODataClient(options: ODataClientOptions): any {
       }
     },
     onResponseError({ response }) {
-      console.error('[nuxt-sap-odata] request failed', response?._data || response)
+      console.error('[@bc8-odx/proxy] request failed', response?._data || response)
     },
   })
 }
