@@ -11,43 +11,33 @@ const { docus: config } = useAppConfig()
           <div class="w-8 h-8 bg-neutral-900 dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-neutral-900 font-bold transition-transform group-hover:scale-110">
             O
           </div>
-          <span class="font-bold text-xl tracking-tight text-neutral-900 dark:text-white">
+          <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white">
             ODX
           </span>
         </NuxtLink>
       </div>
 
-      <!-- Right: Resources, Search, Socials, Theme -->
-      <div class="flex items-center justify-end gap-1.5 lg:flex-1">
-        <!-- Text Links (Nuxt UI Style) -->
-        <div class="hidden md:flex items-center gap-4 mr-4 border-r border-neutral-200 dark:border-neutral-800 pr-4">
-          <NuxtLink 
-            to="https://github.com/janfrl/odx-js/releases" 
-            target="_blank"
-            class="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
-          >
-            Releases
-          </NuxtLink>
-          <NuxtLink 
-            to="/guide/quick-start" 
-            class="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
-          >
-            Examples
-          </NuxtLink>
-          <NuxtLink 
-            to="https://odx-js.io/playground" 
-            target="_blank"
-            class="text-sm font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors"
-          >
-            Playground
-          </NuxtLink>
-        </div>
+      <!-- Center: Navigation -->
+      <div class="hidden lg:flex items-center justify-center">
+        <AppHeaderCenter />
+      </div>
 
-        <AppSearch v-if="config.header?.search" />
+      <!-- Right: Search, Socials, Theme -->
+      <div class="flex items-center justify-end gap-1.5 lg:flex-1">
+        <UContentSearchButton label="Search..." />
+
+        <div class="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-2" />
 
         <div class="flex items-center gap-0.5">
-          <AppHeaderSocial />
-          <AppColorMode class="hidden md:flex" />
+          <UButton
+            v-if="config.socials?.github"
+            :to="`https://github.com/${config.socials.github}`"
+            target="_blank"
+            color="neutral"
+            variant="ghost"
+            icon="i-simple-icons-github"
+          />
+          <UColorModeButton />
         </div>
       </div>
     </nav>

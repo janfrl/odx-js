@@ -14,8 +14,8 @@ export default defineAppConfig({
     header: {
       logo: false,
       showLinkIcon: true,
-      // Exclude content folders from top nav to match Nuxt UI style
-      exclude: ['/guide', '/packages', '/guides', '/community'],
+      // Exclude content folders from top nav
+      exclude: ['/getting-started', '/nuxt', '/proxy', '/explorer', '/core', '/guides', '/community'],
       fluid: true
     },
     footer: {

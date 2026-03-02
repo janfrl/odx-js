@@ -1,3 +1,6 @@
 export default defineNuxtConfig({
-  extends: ['docus']
+  extends: ['docus'],
+  site: {
+    name: 'ODX'
+  }
 })
