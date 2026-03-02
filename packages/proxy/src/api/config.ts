@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
+import type { EntityMapping } from '@bc8-odx/core/server'
 import { defineEventHandler } from 'h3'
 import { createJiti } from 'jiti'
 import { join, resolve } from 'pathe'
@@ -26,7 +27,7 @@ export default defineEventHandler(async (event) => {
       join(outDir, subDirName, 'index.js'),
     ]
 
-    let entities: string[] = []
+    let entities: EntityMapping[] = []
     let isGenerated = false
     let targetFile: string | null = null
 
@@ -61,7 +62,7 @@ export default defineEventHandler(async (event) => {
           const api = apiFactory()
           const sdkEntities = Object.keys(api).filter(k =>
             typeof api[k] === 'object' && k !== 'requestBuilder' && !k.startsWith('_'),
-          )
+          ).map(name => ({ name, type: name }))
           if (sdkEntities.length > 0) {
             entities = sdkEntities
           }
@@ -72,7 +73,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (entities.length === 0) {
-      entities = extractEntitiesFromEdmx(edmxAbs).map(e => e.name)
+      entities = extractEntitiesFromEdmx(edmxAbs)
     }
 
     return {
