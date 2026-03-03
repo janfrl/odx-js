@@ -17,7 +17,8 @@ const needsInitialFit = ref(false)
 
 export function useSchemaExplorer(): any {
   const { selectedService } = useSharedODataState()
-  const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport } = useVueFlow()
+  const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport, edges } = useVueFlow()
+  const toast = useToast()
 
   const nodeTypes: NodeTypesObject = {
     schema: markRaw(SchemaNode),
@@ -138,6 +139,10 @@ export function useSchemaExplorer(): any {
                   source: entity.name,
                   target: targetEntitySet.name,
                   label,
+                  data: {
+                    assocName: assoc.name,
+                    multiplicity: { m1: assoc.ends[0]?.multiplicity, m2: assoc.ends[1]?.multiplicity },
+                  },
                   animated: true,
                   labelStyle: { fontWeight: 500, fontSize: '11px' },
                   style: { stroke: '#10b981', strokeWidth: 1.5, opacity: 0.8 },
@@ -184,7 +189,6 @@ export function useSchemaExplorer(): any {
 
       if (autoFit) {
         needsInitialFit.value = true
-        // Try to fit immediately if visible, otherwise defer to onPaneReady
         performInitialFit()
       }
       else {
@@ -251,15 +255,56 @@ export function useSchemaExplorer(): any {
       return
 
     let mermaid = 'erDiagram\n'
+    
+    const nameMap: Record<string, string> = {}
     schemaData.value.entities.forEach((entity: any) => {
-      mermaid += `  ${entity.name} {\n`
+      nameMap[entity.name] = entity.type
+    })
+
+    // 1. Relationships first (to guide Mermaid layout engine)
+    const sortedEdges = [...edges.value].sort((a, b) => {
+      const s1 = nameMap[a.source] || a.source
+      const s2 = nameMap[b.source] || b.source
+      return s1.localeCompare(s2) || (nameMap[a.target] || a.target).localeCompare(nameMap[b.target] || b.target)
+    })
+
+    sortedEdges.forEach((edge: any) => {
+      const source = nameMap[edge.source] || edge.source
+      const target = nameMap[edge.target] || edge.target
+      
+      let rel = '||--||'
+      if (edge.label === '1:N') {
+        rel = '||--o{'
+      } else if (edge.label === 'N:M') {
+        rel = '}o--o{'
+      }
+
+      const label = edge.data?.assocName || edge.id.split('-').pop()
+      mermaid += `  ${source} ${rel} ${target} : "${label}"\n`
+    })
+
+    // 2. Entities second
+    const sortedEntities = [...schemaData.value.entities].sort((a, b) => a.type.localeCompare(b.type))
+
+    sortedEntities.forEach((entity: any) => {
+      mermaid += `  ${entity.type} {\n`
       entity.properties?.forEach((prop: any) => {
-        mermaid += `    ${prop.type} ${prop.name} ${prop.isKey ? 'PK' : ''}\n`
+        let type = prop.type.split('.').pop() || prop.type
+        if (type === 'DateTimeOffset') type = 'DateTime'
+        mermaid += `    ${type} ${prop.name} ${prop.isKey ? 'PK' : ''}\n`
       })
       mermaid += '  }\n'
     })
 
     navigator.clipboard.writeText(mermaid)
+    
+    toast.add({
+      id: 'copy-mermaid-success',
+      title: 'Copied to clipboard',
+      description: 'The Mermaid diagram is ready to be pasted.',
+      icon: 'i-lucide-check-circle',
+      color: 'success',
+    })
   }
 
   return {
