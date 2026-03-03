@@ -1,6 +1,6 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
-import type { EntityMapping } from '../../explorer/composables/useODataState.ts'
+import type { EntityMapping, ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
+import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { defineEventHandler } from 'h3'
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
           const api = apiFactory()
           const sdkEntities = Object.keys(api).filter(k =>
             typeof api[k] === 'object' && k !== 'requestBuilder' && !k.startsWith('_'),
-          ).map(name => ({ name, type: name }))
+          ).map(name => ({ name, type: name, properties: [], navigationProperties: [] }))
           if (sdkEntities.length > 0) {
             entities = sdkEntities
           }

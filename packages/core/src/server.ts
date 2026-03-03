@@ -29,7 +29,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
     const mappings: EntityMapping[] = []
 
     const entityTypes: Record<string, { properties: EntityProperty[], navProps: NavigationProperty[] }> = {}
-    const typeBlocks = xml.split(/<[\w:]*EntityType\s+/i).slice(1)
+    const typeBlocks = xml.split(/<[\w:]*EntityType\s/i).slice(1)
 
     for (const block of typeBlocks) {
       const tagEnd = block.indexOf('>')
@@ -50,19 +50,25 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
       const keyBlockEnd = contentLower.indexOf('</key>')
       if (keyBlockStart !== -1 && keyBlockEnd !== -1) {
         const keyBlock = blockContent.slice(keyBlockStart + 5, keyBlockEnd)
-        const krMatches = keyBlock.matchAll(/<PropertyRef\s+([^>]+)>/gi)
-        for (const km of krMatches) {
-          const kAttrs = getAttributes(km[1]!)
-          if (kAttrs.Name)
-            keyNames.push(kAttrs.Name)
+        const krParts = keyBlock.split(/<[\w:]*PropertyRef\s/i).slice(1)
+        for (const kr of krParts) {
+          const krTagEnd = kr.indexOf('>')
+          if (krTagEnd === -1)
+            continue
+          const krAttrs = getAttributes(kr.slice(0, krTagEnd))
+          if (krAttrs.Name)
+            keyNames.push(krAttrs.Name)
         }
       }
 
       // Extract Properties
       const properties: EntityProperty[] = []
-      const propMatches = blockContent.matchAll(/<Property\s+([^>]+)>/gi)
-      for (const pm of propMatches) {
-        const pAttrs = getAttributes(pm[1]!)
+      const propParts = blockContent.split(/<[\w:]*Property\s/i).slice(1)
+      for (const p of propParts) {
+        const pTagEnd = p.indexOf('>')
+        if (pTagEnd === -1)
+          continue
+        const pAttrs = getAttributes(p.slice(0, pTagEnd))
         if (pAttrs.Name && pAttrs.Type) {
           properties.push({
             name: pAttrs.Name,
@@ -74,9 +80,12 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
 
       // Extract Navigation Properties
       const navProps: NavigationProperty[] = []
-      const navMatches = blockContent.matchAll(/<NavigationProperty\s+([^>]+)>/gi)
-      for (const nm of navMatches) {
-        const nAttrs = getAttributes(nm[1]!)
+      const navParts = blockContent.split(/<[\w:]*NavigationProperty\s/i).slice(1)
+      for (const n of navParts) {
+        const nTagEnd = n.indexOf('>')
+        if (nTagEnd === -1)
+          continue
+        const nAttrs = getAttributes(n.slice(0, nTagEnd))
         if (nAttrs.Name) {
           navProps.push({
             name: nAttrs.Name,
@@ -90,7 +99,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
       entityTypes[typeName] = { properties, navProps }
     }
 
-    const entitySetParts = xml.split(/<[\w:]*EntitySet\s+/i).slice(1)
+    const entitySetParts = xml.split(/<[\w:]*EntitySet\s/i).slice(1)
     for (const s of entitySetParts) {
       const sTagEnd = s.indexOf('>')
       if (sTagEnd === -1)
@@ -114,7 +123,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
 
     return mappings
   }
-  catch (e) {
+  catch {
     return []
   }
 }
@@ -129,7 +138,7 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
     const xml = fs.readFileSync(edmxPath, 'utf-8')
     const associations: Association[] = []
 
-    const assocParts = xml.split(/<[\w:]*Association\s+/i).slice(1)
+    const assocParts = xml.split(/<[\w:]*Association\s/i).slice(1)
     for (const a of assocParts) {
       const aTagEnd = a.indexOf('>')
       if (aTagEnd === -1)
@@ -142,7 +151,7 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
       const body = a.slice(aTagEnd).split(/<\/[\w:]*Association>/i)[0] || ''
       const ends: AssociationEnd[] = []
 
-      const endParts = body.split(/<[\w:]*End\s+/i).slice(1)
+      const endParts = body.split(/<[\w:]*End\s/i).slice(1)
       for (const e of endParts) {
         const eTagEnd = e.indexOf('>')
         if (eTagEnd === -1)

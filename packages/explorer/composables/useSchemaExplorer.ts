@@ -14,9 +14,9 @@ const isReady = ref(false)
 const isFullscreen = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
 
-export function useSchemaExplorer() {
+export function useSchemaExplorer(): any {
   const { selectedService } = useSharedODataState()
-  const { setNodes, setEdges, fitView, onPaneReady, viewport } = useVueFlow()
+  const { setNodes, setEdges, fitView, onPaneReady } = useVueFlow()
 
   const nodeTypes: NodeTypesObject = {
     schema: markRaw(SchemaNode),

@@ -1,4 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
 import { defineNitroModule } from 'nitropack/kit'
 
 export default defineNitroModule({
@@ -9,10 +9,10 @@ export default defineNitroModule({
       return
     }
 
-    // Use .href to get a proper file:// URL which is required for ESM loading on Windows
+    // Resolve handler path
     const handlerPath = new URL('./api/odata.ts', import.meta.url).href
 
-    // Register the OData proxy handler
+    // Register the OData proxy handler as a file path
     nitro.options.handlers.push({
       route: `${config.basePath}/**`,
       handler: handlerPath,
@@ -40,3 +40,12 @@ export default defineNitroModule({
     }
   },
 })
+
+// Augment both nitropack and nitropack/runtime to ensure visibility in all environments
+declare module 'nitropack' {
+  interface NitroRuntimeHooks extends ODataProxyHooks {}
+}
+
+declare module 'nitropack/runtime' {
+  interface NitroRuntimeHooks extends ODataProxyHooks {}
+}

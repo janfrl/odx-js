@@ -1,6 +1,10 @@
+import type { App } from 'h3'
 import { createApp, createError, createRouter, defineEventHandler, getHeaders } from 'h3'
 
-export function createBackend() {
+/**
+ * Creates a mock backend server for testing OData proxy functionality.
+ */
+export function createBackend(): App {
   const app = createApp()
   const router = createRouter()
 
