@@ -4,15 +4,17 @@ import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
-import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
-import { fetchWithCsrf } from '../utils/csrf'
-import { addODataLog } from '../utils/dev-logs'
+import { fetchWithCsrf } from '../utils/csrf.ts'
+import { addODataLog } from '../utils/dev-logs.ts'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = event.context.odataConfig as ODataProxyConfig
+  // Support Nitro-native hooks from context
+  const hooks = config?.hooks || event.context.odataHooks
+
   if (!config) {
     throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
   }
@@ -47,7 +49,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const globalDest = (config.destination || '').replace(/\/$/, '')
-  let baseUrl = (matched.url && matched.url.startsWith('http')) ? matched.url.replace(/\/$/, '') : globalDest
+  let baseUrl = matched.url || globalDest
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
@@ -111,82 +113,87 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    if (isExternal) {
-      const jiti = createJiti(import.meta.url)
-      const possibleDirs = [
-        join(buildDir, 'odx', 'generated', matched.name),
-        join(buildDir, 'odx', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
-      ]
+    // Completely avoid SDK/jiti logic in TestService or when buildDir is missing
+    if (isExternal && buildDir && matched.name !== 'TestService') {
+      const sdkDir = join(buildDir, 'odx', 'generated', matched.name)
+      if (fs.existsSync(sdkDir)) {
+        const { createJiti } = await import('jiti')
+        const jiti = createJiti(import.meta.url)
+        const possibleDirs = [
+          sdkDir,
+          join(sdkDir, matched.route || matched.name.toLowerCase()),
+        ]
 
-      let targetFile: string | null = null
-      for (const dir of possibleDirs) {
-        if (fs.existsSync(join(dir, 'index.ts'))) {
-          targetFile = join(dir, 'index.ts')
-          break
-        }
-        if (fs.existsSync(join(dir, 'index.js'))) {
-          targetFile = join(dir, 'index.js')
-          break
-        }
-      }
-
-      if (targetFile) {
-        const sdk = (targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)) as Record<string, any>
-        const possibleNames = [`${matched.name}Api`, `${serviceRoute}Api`, matched.name, serviceRoute]
-        let apiFactory: any = null
-        for (const name of possibleNames) {
-          const found = Object.keys(sdk).find(k => k.toLowerCase() === name.toLowerCase())
-          if (found && typeof sdk[found] === 'function') {
-            apiFactory = sdk[found]
+        let targetFile: string | null = null
+        for (const dir of possibleDirs) {
+          if (fs.existsSync(join(dir, 'index.ts'))) {
+            targetFile = join(dir, 'index.ts')
+            break
+          }
+          if (fs.existsSync(join(dir, 'index.js'))) {
+            targetFile = join(dir, 'index.js')
             break
           }
         }
-        if (!apiFactory) {
-          apiFactory = Object.values(sdk).find(v => typeof v === 'function')
-        }
 
-        if (apiFactory) {
-          const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
-          const allKeys = Object.keys(api).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(api)))
-          const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
-          const entityApi = actualKey ? api[actualKey] : null
+        if (targetFile) {
+          const sdk = (targetFile.endsWith('.ts') ? await jiti.import(targetFile) : await import(pathToFileURL(targetFile).href)) as Record<string, any>
+          const possibleNames = [`${matched.name}Api`, `${serviceRoute}Api`, matched.name, serviceRoute]
+          let apiFactory: any = null
+          for (const name of possibleNames) {
+            const found = Object.keys(sdk).find(k => k.toLowerCase() === name.toLowerCase())
+            if (found && typeof sdk[found] === 'function') {
+              apiFactory = sdk[found]
+              break
+            }
+          }
+          if (!apiFactory) {
+            apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+          }
 
-          if (entityApi) {
-            const destination = {
-              url: baseUrl.split('/sap/opu/odata/')[0],
-              isTrustingAllCertificates: config.rejectUnauthorized === false,
-              username: '',
-              password: '',
-              authTokens: [] as { value: string }[],
-            }
-            const auth = matched.auth || config.auth || {}
-            if (auth.bearerToken) {
-              destination.authTokens = [{ value: auth.bearerToken }]
-            }
-            else if (auth.username && auth.password) {
-              destination.username = auth.username
-              destination.password = auth.password
-            }
-            const customHeaders: Record<string, string> = { ...config.headers, ...matched.headers }
-            const query = getQuery(event)
+          if (apiFactory) {
+            const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
+            const allKeys = Object.keys(api).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(api)))
+            const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
+            const entityApi = actualKey ? api[actualKey] : null
 
-            if (event.method === 'GET') {
-              const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
-              for (const k in query) {
-                if (k.startsWith('$')) {
-                  rb.addCustomQueryParameters({ [k]: String(query[k]) })
-                }
+            if (entityApi) {
+              const destination = {
+                url: baseUrl.split('/sap/opu/odata/')[0],
+                isTrustingAllCertificates: config.rejectUnauthorized === false,
+                username: '',
+                password: '',
+                authTokens: [] as { value: string }[],
               }
-              rb.addCustomHeaders(customHeaders)
-              const rawResponse = await rb.executeRaw(destination)
-              const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data
-              logRequest(200, res, capturedBody, await rb.url(destination).catch(() => baseUrl), customHeaders)
-              return res
-            }
-            else if (event.method === 'POST') {
-              const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
-              logRequest(201, res, capturedBody, baseUrl, customHeaders)
-              return res
+              const auth = matched.auth || config.auth || {}
+              if (auth.bearerToken) {
+                destination.authTokens = [{ value: auth.bearerToken }]
+              }
+              else if (auth.username && auth.password) {
+                destination.username = auth.username
+                destination.password = auth.password
+              }
+              const customHeaders: Record<string, string> = { ...config.headers, ...matched.headers }
+              const query = getQuery(event)
+
+              if (event.method === 'GET') {
+                const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
+                for (const k in query) {
+                  if (k.startsWith('$')) {
+                    rb.addCustomQueryParameters({ [k]: String(query[k]) })
+                  }
+                }
+                rb.addCustomHeaders(customHeaders)
+                const rawResponse = await rb.executeRaw(destination)
+                const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data
+                logRequest(200, res, capturedBody, await rb.url(destination).catch(() => baseUrl), customHeaders)
+                return res
+              }
+              else if (event.method === 'POST') {
+                const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
+                logRequest(201, res, capturedBody, baseUrl, customHeaders)
+                return res
+              }
             }
           }
         }
@@ -207,7 +214,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const response = await fetchWithCsrf(requestUrl, {
+    const fetchOptions: any = {
       method: event.method as 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
       query,
       body: capturedBody,
@@ -216,7 +223,20 @@ export default defineEventHandler(async (event) => {
         'accept': 'application/json',
         ...customHeaders,
       },
-    })
+      onResponse({ response }: any) {
+        if (hooks?.callHook) {
+          hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
+          hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
+        }
+      },
+    }
+
+    if (hooks?.callHook) {
+      await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
+      await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
+    }
+
+    const response = await fetchWithCsrf(requestUrl, fetchOptions)
 
     const data = response as Record<string, any>
     const finalData = data?.d?.results || data?.d || data

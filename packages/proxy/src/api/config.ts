@@ -1,12 +1,11 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
-import type { EntityMapping } from '@bc8-odx/core/server'
+import type { EntityMapping } from '../../explorer/composables/useODataState.ts'
 import fs from 'node:fs'
-import process from 'node:process'
 import { pathToFileURL } from 'node:url'
-import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { defineEventHandler } from 'h3'
 import { createJiti } from 'jiti'
 import { join, resolve } from 'pathe'
+import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 
 export default defineEventHandler(async (event) => {
   const config = event.context.odataConfig as ODataProxyConfig

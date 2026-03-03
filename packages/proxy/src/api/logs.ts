@@ -1,10 +1,9 @@
 import { defineEventHandler } from 'h3'
-import { clearODataLogs, getODataLogs } from '../utils/dev-logs'
+import { clearODataLogs, getODataLogs } from '../utils/dev-logs.ts'
 
 export default defineEventHandler((event) => {
-  if (event.node.req.method === 'DELETE') {
-    clearODataLogs()
-    return { success: true }
+  if (event.method === 'DELETE') {
+    return clearODataLogs()
   }
   return getODataLogs()
 })

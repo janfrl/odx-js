@@ -37,7 +37,7 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
     tabs.push({
       name: 'odx',
       title: 'ODX',
-      icon: 'logos:odata',
+      icon: 'i-lucide-box',
       view: {
         type: 'iframe',
         src: DEVTOOLS_UI_ROUTE,

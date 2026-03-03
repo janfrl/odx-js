@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
 
   app: {
-    baseURL: '/__sap_odata__/client',
+    baseURL: '/__odx__/client',
   },
   vite: {
     server: {
