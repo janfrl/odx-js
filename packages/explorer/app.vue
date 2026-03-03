@@ -1,23 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useSharedODataState } from './composables/useODataState'
 
-const { activeTab, fetchConfig, refreshLogs, selectedService } = useSharedODataState()
+const { activeTab, fetchConfig, refreshLogs } = useSharedODataState()
 
 const items = [
   { label: 'Overview', icon: 'i-lucide-house', id: 'overview' },
   { label: 'Services', icon: 'i-lucide-database', id: 'services' },
   { label: 'Logs', icon: 'i-lucide-terminal', id: 'logs' },
 ]
-
-const metadataUrl = computed(() => {
-  if (!selectedService.value)
-    return ''
-
-  // Always use our internal raw proxy to ensure authentication is handled 
-  // and we see the metadata file that ODX is actually using.
-  return `/__odx__/schema?service=${selectedService.value.name}&raw=true`
-})
 
 onMounted(() => {
   fetchConfig()
@@ -62,16 +53,6 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center gap-4">
-            <UButton
-              v-if="selectedService"
-              icon="i-lucide-file-code"
-              color="neutral"
-              variant="ghost"
-              :to="metadataUrl"
-              target="_blank"
-              title="Open Metadata (EDMX)"
-              :external="true"
-            />
             <UColorModeButton />
           </div>
         </header>

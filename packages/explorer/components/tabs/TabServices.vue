@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
+import { computed } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
@@ -11,14 +13,51 @@ const tabs = [
   { label: 'Schema', icon: 'i-lucide-share-2', value: 'schema' },
 ]
 
-async function runGenerate(name: string) {
-  await generateService(name)
-  toast.add({
-    title: `SDK for ${name} regenerated successfully`,
-    icon: 'i-lucide-circle-check',
-    color: 'success',
-  })
-}
+const metadataUrl = computed((): string => {
+  if (!selectedService.value)
+    return ''
+  return `/__odx__/schema?service=${selectedService.value.name}&raw=true`
+})
+
+const actionItems = computed((): DropdownMenuItem[][] => {
+  if (!selectedService.value)
+    return []
+
+  const menu: DropdownMenuItem[][] = [[]]
+
+  // Metadata link first
+  if (selectedService.value.url?.startsWith('http')) {
+    const extUrl = `${selectedService.value.url.replace(/\/$/, '')}/$metadata`
+    menu[0]!.push({
+      label: 'Open External Metadata',
+      icon: 'i-lucide-external-link',
+      onSelect: () => {
+        window.open(extUrl, '_blank')
+      },
+    })
+  }
+
+  // SDK Regeneration second (in its own group for separation)
+  menu.push([
+    {
+      label: 'Regenerate SDK',
+      icon: 'i-lucide-refresh-cw',
+      loading: generatingStatus.value[selectedService.value.name],
+      onSelect: async () => {
+        await generateService(selectedService.value!.name)
+        toast.add({
+          id: 'gen-success',
+          title: 'SDK Regenerated',
+          description: `Models for ${selectedService.value!.name} are now up to date.`,
+          icon: 'i-lucide-check-circle',
+          color: 'success',
+        })
+      },
+    },
+  ])
+
+  return menu.filter(group => group.length > 0)
+})
 </script>
 
 <template>
@@ -74,40 +113,56 @@ async function runGenerate(name: string) {
       v-else
       class="h-full flex flex-col overflow-hidden"
     >
-      <div class="p-6 flex items-center gap-4 shrink-0">
-        <UButton
-          icon="i-lucide-chevron-left"
-          color="neutral"
-          variant="ghost"
-          @click="selectedService = null; selectedEntity = null"
-        />
-        <div class="min-w-0 flex-1">
-          <div class="flex items-center gap-2">
-            <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+      <div class="p-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-4 shrink-0">
+        <!-- Service Title Section -->
+        <div class="flex items-center gap-4 min-w-[200px] flex-1">
+          <UButton
+            icon="i-lucide-chevron-left"
+            color="neutral"
+            variant="ghost"
+            @click="selectedService = null; selectedEntity = null"
+          />
+          <div class="min-w-0">
+            <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate">
               {{ selectedService.name }}
             </h2>
-            <UButton
-              icon="i-lucide-refresh-cw"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :loading="generatingStatus[selectedService.name]"
-              @click="runGenerate(selectedService.name)"
-            />
-          </div>
-          <div class="text-xs font-mono text-neutral-500 dark:text-neutral-400">
-            {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
+            <div class="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+              {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
+            </div>
           </div>
         </div>
 
-        <UTabs
-          v-model="globalViewMode"
-          :items="tabs"
-          size="sm"
-          color="neutral"
-          class="w-48"
-          :ui="{ list: 'bg-neutral-100 dark:bg-neutral-900', indicator: 'bg-white dark:bg-neutral-700 shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600', trigger: 'text-neutral-500 dark:text-neutral-400 font-semibold transition-colors data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white' }"
-        />
+        <!-- Actions Section -->
+        <div class="flex items-center justify-end gap-3 shrink-0 flex-1">
+          <UFieldGroup class="-mt-2">
+            <UButton
+              icon="i-lucide-file-code"
+              color="neutral"
+              variant="subtle"
+              label="Metadata"
+              :to="metadataUrl"
+              target="_blank"
+              title="Open internal EDMX"
+              :external="true"
+            />
+            <UDropdownMenu :items="actionItems">
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-chevron-down"
+              />
+            </UDropdownMenu>
+          </UFieldGroup>
+
+          <UTabs
+            v-model="globalViewMode"
+            :items="tabs"
+            size="sm"
+            color="neutral"
+            class="w-48"
+            :ui="{ list: 'bg-neutral-100 dark:bg-neutral-900', indicator: 'bg-white dark:bg-neutral-700 shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600', trigger: 'text-neutral-500 dark:text-neutral-400 font-semibold transition-colors data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white' }"
+          />
+        </div>
       </div>
 
       <div class="flex-1 overflow-hidden relative">
