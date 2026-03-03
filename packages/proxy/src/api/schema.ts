@@ -1,13 +1,14 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
-import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
-import { createError, defineEventHandler, getQuery } from 'h3'
+import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { resolve } from 'pathe'
+import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 
 export default defineEventHandler((event) => {
   const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
+  const isRaw = query.raw === 'true'
 
   if (!serviceName) {
     throw createError({ statusCode: 400, message: 'Missing service name' })
@@ -32,6 +33,13 @@ export default defineEventHandler((event) => {
 
   if (!fs.existsSync(edmxPath)) {
     throw createError({ statusCode: 404, message: `EDMX file for ${serviceName} not found at ${edmxPath}` })
+  }
+
+  // Handle RAW XML request
+  if (isRaw) {
+    const xml = fs.readFileSync(edmxPath, 'utf-8')
+    setHeader(event, 'Content-Type', 'application/xml')
+    return xml
   }
 
   try {
