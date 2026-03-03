@@ -1,4 +1,4 @@
-import type { ODataServiceConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!mockHandler) {
-    const config = useRuntimeConfig().odata
+    const config = useRuntimeConfig().odata as unknown as ODataProxyConfig
     const services: ODataServiceConfig[] = config.services || []
 
     const mockServices: MockServiceConfig[] = services
