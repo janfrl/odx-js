@@ -144,6 +144,7 @@ async function runClear() {
     <div class="flex-1 flex flex-col min-h-0 relative px-6 pt-2 pb-0">
       <div
         class="flex-1 flex flex-col min-h-0 border-t border-x border-neutral-200 dark:border-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-sm overflow-hidden isolate"
+        style="transform: translateZ(0);"
       >
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <UTable
@@ -152,7 +153,7 @@ async function runClear() {
             row-id="id"
             class="w-full"
             :ui="{
-              thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
+              thead: 'bg-neutral-50 dark:bg-neutral-900 sticky top-0 z-30',
               th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
               td: 'p-0 font-mono text-neutral-700 dark:text-neutral-300',
               tbody: 'divide-y divide-neutral-200 dark:divide-neutral-800/60 [&>tr:hover]:bg-primary-500/5 [&>tr[data-expanded=true]]:bg-neutral-50 dark:[&>tr[data-expanded=true]]:bg-neutral-900/40 [&>tr]:transition-colors [&>tr]:group',
