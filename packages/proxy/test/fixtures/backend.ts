@@ -1,6 +1,6 @@
-import { createApp, createRouter, defineEventHandler, createError, getHeaders } from 'h3'
+import { createApp, createError, createRouter, defineEventHandler, getHeaders } from 'h3'
 
-export const createBackend = () => {
+export function createBackend() {
   const app = createApp()
   const router = createRouter()
 
@@ -8,9 +8,9 @@ export const createBackend = () => {
     return {
       d: {
         results: [
-          { ID: '1', Name: 'Test Product' }
-        ]
-      }
+          { ID: '1', Name: 'Test Product' },
+        ],
+      },
     }
   }))
 
@@ -18,14 +18,14 @@ export const createBackend = () => {
     throw createError({
       statusCode: 500,
       statusMessage: 'Internal Server Error',
-      data: { message: 'Something went wrong' }
+      data: { message: 'Something went wrong' },
     })
   }))
 
   router.get('/HeaderEcho', defineEventHandler((event) => {
     const headers = getHeaders(event)
     return {
-      receivedHeaders: headers
+      receivedHeaders: headers,
     }
   }))
 

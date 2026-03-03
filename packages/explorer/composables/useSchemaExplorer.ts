@@ -1,7 +1,7 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { computed, markRaw, ref, watch } from 'vue'
+import { markRaw, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
 import { useSharedODataState } from './useODataState'
 

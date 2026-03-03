@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import { extractEntitiesFromEdmx, extractAssociationsFromEdmx } from '../src/server'
 import fs from 'node:fs'
 import { join } from 'pathe'
+import { describe, expect, it } from 'vitest'
+import { extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '../src/server'
 
 // Helper to create a temp file for testing
-const createTempEdmx = (content: string) => {
+function createTempEdmx(content: string) {
   const path = join(process.cwd(), 'temp_test.edmx')
   fs.writeFileSync(path, content)
   return path
 }
 
-describe('EDMX Parser', () => {
+describe('eDMX Parser', () => {
   it('parses OData V2 correctly (properties, keys, associations)', () => {
     const v2xml = `
       <edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx">
@@ -43,7 +43,7 @@ describe('EDMX Parser', () => {
     expect(entities).toHaveLength(1)
     const product = entities[0]
     expect(product.name).toBe('Products')
-    
+
     // Check Keys
     const idProp = product.properties.find(p => p.name === 'ProductID')
     expect(idProp?.isKey).toBe(true)
@@ -85,7 +85,7 @@ describe('EDMX Parser', () => {
     expect(entities).toHaveLength(1)
     const customer = entities[0]
     expect(customer.properties[0].isKey).toBe(true)
-    
+
     // V4 Navigation
     expect(customer.navigationProperties).toHaveLength(1)
     expect(customer.navigationProperties[0].name).toBe('Orders')

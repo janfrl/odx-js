@@ -1,5 +1,5 @@
-import { defineNitroModule } from 'nitropack/kit'
 import type { ODataProxyConfig } from '@bc8-odx/core'
+import { defineNitroModule } from 'nitropack/kit'
 
 export default defineNitroModule({
   setup(nitro) {
@@ -15,7 +15,7 @@ export default defineNitroModule({
     // Register the OData proxy handler
     nitro.options.handlers.push({
       route: `${config.basePath}/**`,
-      handler: handlerPath
+      handler: handlerPath,
     })
 
     // Inject hooks into context for every request
@@ -29,14 +29,14 @@ export default defineNitroModule({
       { route: '/__odx__/logs', handler: 'logs' },
       { route: '/__odx__/config', handler: 'config' },
       { route: '/__odx__/generate', handler: 'generate' },
-      { route: '/__odx__/schema', handler: 'schema' }
+      { route: '/__odx__/schema', handler: 'schema' },
     ]
 
     for (const h of internalHandlers) {
       nitro.options.handlers.push({
         route: h.route,
-        handler: new URL(`./api/${h.handler}.ts`, import.meta.url).href
+        handler: new URL(`./api/${h.handler}.ts`, import.meta.url).href,
       })
     }
-  }
+  },
 })

@@ -1,8 +1,8 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
+import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { resolve } from 'pathe'
-import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 
 export default defineEventHandler((event) => {
   const config = event.context.odataConfig as ODataProxyConfig

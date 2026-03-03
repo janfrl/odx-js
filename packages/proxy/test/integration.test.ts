@@ -2,9 +2,9 @@ import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
 import { createServer } from 'node:http'
 import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
+import { createHooks } from 'hookable'
 import { ofetch } from 'ofetch'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { createHooks } from 'hookable'
 import { createBackend } from './fixtures/backend'
 import { createProxyServer } from './fixtures/server'
 
@@ -66,7 +66,7 @@ describe('proxy integration', () => {
 
     expect(requestSpy).toHaveBeenCalled()
     expect(responseSpy).toHaveBeenCalled()
-    
+
     const ctx = requestSpy.mock.calls[0][0]
     expect(ctx.serviceName).toBe('TestService')
   })

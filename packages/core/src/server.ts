@@ -22,24 +22,27 @@ function getAttributes(tag: string): Record<string, string> {
  * Extracts entity set names, their types, properties and navigation properties from an EDMX file.
  */
 export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
-  if (!fs.existsSync(edmxPath)) return []
+  if (!fs.existsSync(edmxPath))
+    return []
   try {
     const xml = fs.readFileSync(edmxPath, 'utf-8')
     const mappings: EntityMapping[] = []
 
     const entityTypes: Record<string, { properties: EntityProperty[], navProps: NavigationProperty[] }> = {}
-    const typeBlocks = xml.split(/<(?:[\w:]+)?EntityType\s+/i).slice(1)
-    
+    const typeBlocks = xml.split(/<[\w:]*EntityType\s+/i).slice(1)
+
     for (const block of typeBlocks) {
       const tagEnd = block.indexOf('>')
-      if (tagEnd === -1) continue
+      if (tagEnd === -1)
+        continue
       const tagHeader = block.slice(0, tagEnd)
       const typeAttrs = getAttributes(tagHeader)
       const typeName = typeAttrs.Name
-      if (!typeName) continue
+      if (!typeName)
+        continue
 
-      const blockContent = block.slice(tagEnd).split(/<\/(?:[\w:]+)?EntityType>/i)[0] || ''
-      
+      const blockContent = block.slice(tagEnd).split(/<\/[\w:]*EntityType>/i)[0] || ''
+
       // Extract Keys
       const keyNames: string[] = []
       const contentLower = blockContent.toLowerCase()
@@ -50,7 +53,8 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
         const krMatches = keyBlock.matchAll(/<PropertyRef\s+([^>]+)>/gi)
         for (const km of krMatches) {
           const kAttrs = getAttributes(km[1]!)
-          if (kAttrs.Name) keyNames.push(kAttrs.Name)
+          if (kAttrs.Name)
+            keyNames.push(kAttrs.Name)
         }
       }
 
@@ -63,7 +67,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
           properties.push({
             name: pAttrs.Name,
             type: pAttrs.Type,
-            isKey: keyNames.includes(pAttrs.Name)
+            isKey: keyNames.includes(pAttrs.Name),
           })
         }
       }
@@ -78,7 +82,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
             name: nAttrs.Name,
             relationship: nAttrs.Relationship || nAttrs.Type || '',
             fromRole: nAttrs.FromRole || '',
-            toRole: nAttrs.ToRole || ''
+            toRole: nAttrs.ToRole || '',
           })
         }
       }
@@ -86,14 +90,16 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
       entityTypes[typeName] = { properties, navProps }
     }
 
-    const entitySetParts = xml.split(/<(?:[\w:]+)?EntitySet\s+/i).slice(1)
+    const entitySetParts = xml.split(/<[\w:]*EntitySet\s+/i).slice(1)
     for (const s of entitySetParts) {
       const sTagEnd = s.indexOf('>')
-      if (sTagEnd === -1) continue
+      if (sTagEnd === -1)
+        continue
       const setAttrs = getAttributes(s.slice(0, sTagEnd))
       const setName = setAttrs.Name
       const entityTypeFull = setAttrs.EntityType
-      if (!setName || !entityTypeFull) continue
+      if (!setName || !entityTypeFull)
+        continue
 
       const typeName = entityTypeFull.split('.').pop()!
       const typeInfo = entityTypes[typeName] || { properties: [], navProps: [] }
@@ -102,12 +108,13 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
         name: setName,
         type: typeName,
         properties: typeInfo.properties,
-        navigationProperties: typeInfo.navProps
+        navigationProperties: typeInfo.navProps,
       })
     }
 
     return mappings
-  } catch (e) {
+  }
+  catch (e) {
     return []
   }
 }
@@ -116,26 +123,30 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
  * Extracts associations from an EDMX file.
  */
 export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
-  if (!fs.existsSync(edmxPath)) return []
+  if (!fs.existsSync(edmxPath))
+    return []
   try {
     const xml = fs.readFileSync(edmxPath, 'utf-8')
     const associations: Association[] = []
 
-    const assocParts = xml.split(/<(?:[\w:]+)?Association\s+/i).slice(1)
+    const assocParts = xml.split(/<[\w:]*Association\s+/i).slice(1)
     for (const a of assocParts) {
       const aTagEnd = a.indexOf('>')
-      if (aTagEnd === -1) continue
+      if (aTagEnd === -1)
+        continue
       const attrs = getAttributes(a.slice(0, aTagEnd))
       const name = attrs.Name
-      if (!name) continue
+      if (!name)
+        continue
 
-      const body = a.slice(aTagEnd).split(/<\/(?:[\w:]+)?Association>/i)[0] || ''
+      const body = a.slice(aTagEnd).split(/<\/[\w:]*Association>/i)[0] || ''
       const ends: AssociationEnd[] = []
 
-      const endParts = body.split(/<(?:[\w:]+)?End\s+/i).slice(1)
+      const endParts = body.split(/<[\w:]*End\s+/i).slice(1)
       for (const e of endParts) {
         const eTagEnd = e.indexOf('>')
-        if (eTagEnd === -1) continue
+        if (eTagEnd === -1)
+          continue
         const eAttrs = getAttributes(e.slice(0, eTagEnd))
         if (eAttrs.Type && eAttrs.Role && eAttrs.Multiplicity) {
           ends.push({
@@ -149,7 +160,8 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
       associations.push({ name, ends })
     }
     return associations
-  } catch {
+  }
+  catch {
     return []
   }
 }
@@ -158,13 +170,17 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
  * Detects the OData version from an EDMX file.
  */
 export function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
-  if (!fs.existsSync(edmxPath)) return null
+  if (!fs.existsSync(edmxPath))
+    return null
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
-    if (content.includes('Version="4.0"')) return 'v4'
-    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"')) return 'v2'
+    if (content.includes('Version="4.0"'))
+      return 'v4'
+    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"'))
+      return 'v2'
     return content.includes('http://docs.oasis-open.org/odata/ns/edmx') ? 'v4' : 'v2'
-  } catch {
+  }
+  catch {
     return null
   }
 }
