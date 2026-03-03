@@ -18,7 +18,7 @@ describe('explorer State Composable', () => {
     const { fetchConfig, config } = useSharedODataState()
     await fetchConfig()
 
-    expect(globalThis.fetch).toHaveBeenCalledWith('/__sap_odata__/config')
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/config')
     expect(config.value.basePath).toBe('/api')
   })
 
@@ -32,7 +32,7 @@ describe('explorer State Composable', () => {
     const { refreshLogs, logs } = useSharedODataState()
     await refreshLogs()
 
-    expect(globalThis.fetch).toHaveBeenCalledWith('/__sap_odata__/logs')
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/logs')
     expect(logs.value).toHaveLength(1)
     expect(logs.value[0].id).toBe('1')
   })

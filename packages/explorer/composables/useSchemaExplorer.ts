@@ -249,7 +249,7 @@ export function useSchemaExplorer(): {
     loading.value = true
 
     try {
-      const res = await fetch(`/__sap_odata__/schema?service=${serviceName}`)
+      const res = await fetch(`/__odx__/schema?service=${serviceName}`)
       schemaData.value = (await res.json())
       // If we are fetching, autoFit if not in cache or forced
       const shouldAutoFit = forceAutoFit || !serviceGraphCache.value[serviceName]
@@ -333,7 +333,7 @@ export function useSchemaExplorer(): {
         children: newNodes.map(n => ({
           id: n.id,
           width: 250,
-          height: 60 + (n.data.entity.properties.length * 22),
+          height: 60 + ((n.data.entity.properties?.length || 0) * 22),
         })),
         edges: newEdges.map(e => ({
           id: e.id,

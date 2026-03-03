@@ -1,9 +1,5 @@
+import type { EntityMapping } from '@bc8-odx/core'
 import { computed, ref, watch } from 'vue'
-
-export interface EntityMapping {
-  name: string
-  type: string
-}
 
 export interface ODataServiceState {
   name: string

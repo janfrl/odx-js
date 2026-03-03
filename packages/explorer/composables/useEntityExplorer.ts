@@ -150,17 +150,28 @@ export function useEntityExplorer(): {
       return null
     }
 
-    const exact = entitySchema.value.entities?.find((e: any) =>
-      e.entitySet === entityName || e.name === entityName,
+    const entities = entitySchema.value.entities || []
+
+    // 1. Try exact match on name or entitySet
+    const exact = entities.find((e: any) =>
+      e.name === entityName || e.entitySet === entityName,
     )
     if (exact) {
       return exact
     }
 
-    return entitySchema.value.entities?.find((e: any) =>
+    // 2. Try case-insensitive match
+    const caseInsensitive = entities.find((e: any) =>
+      e.name.toLowerCase() === entityName.toLowerCase(),
+    )
+    if (caseInsensitive) {
+      return caseInsensitive
+    }
+
+    // 3. Try to find entity type by stripping possible pluralization or suffixes
+    return entities.find((e: any) =>
       entityName.toLowerCase().startsWith(e.name.toLowerCase())
-      || e.name.toLowerCase().startsWith(entityName.toLowerCase())
-      || (e.name.endsWith('y') && entityName.toLowerCase().startsWith(e.name.toLowerCase().slice(0, -1))),
+      || e.name.toLowerCase().startsWith(entityName.toLowerCase()),
     ) || null
   })
 
