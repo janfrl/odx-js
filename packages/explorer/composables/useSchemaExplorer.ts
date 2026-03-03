@@ -1,7 +1,7 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { markRaw, ref, watch } from 'vue'
+import { computed, markRaw, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
 import { useSharedODataState } from './useODataState'
 
@@ -16,7 +16,7 @@ const containerRef = ref<HTMLElement | null>(null)
 
 export function useSchemaExplorer(): any {
   const { selectedService } = useSharedODataState()
-  const { setNodes, setEdges, fitView, onPaneReady } = useVueFlow()
+  const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport } = useVueFlow()
 
   const nodeTypes: NodeTypesObject = {
     schema: markRaw(SchemaNode),
@@ -37,7 +37,7 @@ export function useSchemaExplorer(): any {
 
   // Ensure zoom/position is correct when Pane is finally ready
   onPaneReady(() => {
-    if (schemaData.value) {
+    if (schemaData.value && !isReady.value) {
       // Immediate fit without animation
       fitView({ padding: 0.2, duration: 0 })
     }
@@ -47,7 +47,7 @@ export function useSchemaExplorer(): any {
     if (loading.value)
       return
     loading.value = true
-    isReady.value = false // Hide while loading/calculating
+    isReady.value = false
     try {
       const res = await fetch(`/__odx__/schema?service=${serviceName}`)
       if (res.ok) {
@@ -161,19 +161,16 @@ export function useSchemaExplorer(): any {
       setEdges(newEdges)
 
       if (autoFit) {
-        // Wait a bit for Vue Flow to update its internal state
+        // Jump instantly to the center before showing
         setTimeout(() => {
           try {
-            // First jump without duration
             fitView({ padding: 0.2, duration: 0 })
-            // Now that everything is at the right place, show the graph
             isReady.value = true
           }
           catch {
-            // If it fails, we still show it (fallback)
             isReady.value = true
           }
-        }, 150)
+        }, 50)
       }
       else {
         isReady.value = true
@@ -196,16 +193,39 @@ export function useSchemaExplorer(): any {
     if (!element)
       return
 
+    // 1. Capture current visual state
+    const oldWidth = element.offsetWidth
+    const oldHeight = element.offsetHeight
+    const { x, y, zoom } = viewport.value
+
     if (!document.fullscreenElement) {
       element.requestFullscreen().then(() => {
         isFullscreen.value = true
+        // 2. Wait for resize, then restore visual position
+        setTimeout(() => {
+          const newWidth = element.offsetWidth
+          const newHeight = element.offsetHeight
+          
+          // Calculate shift needed to keep same center
+          const dx = (newWidth - oldWidth) / 2
+          const dy = (newHeight - oldHeight) / 2
+          
+          setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
+        }, 100)
       }).catch((err) => {
-        console.error(`Error attempting to enable full-screen mode: ${err.message}`)
+        console.error(`Fullscreen failed: ${err.message}`)
       })
     }
     else {
       document.exitFullscreen()
       isFullscreen.value = false
+      setTimeout(() => {
+        const newWidth = element.offsetWidth
+        const newHeight = element.offsetHeight
+        const dx = (newWidth - oldWidth) / 2
+        const dy = (newHeight - oldHeight) / 2
+        setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
+      }, 100)
     }
   }
 
