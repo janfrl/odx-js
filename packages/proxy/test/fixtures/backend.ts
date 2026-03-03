@@ -1,6 +1,6 @@
-import { createApp, createRouter, defineEventHandler, createError, getHeaders } from 'h3'
+import { createApp, createError, createRouter, defineEventHandler, getHeaders } from 'h3'
 
-export const createBackend = () => {
+export function createBackend(): ReturnType<typeof createApp> {
   const app = createApp()
   const router = createRouter()
 
@@ -8,9 +8,9 @@ export const createBackend = () => {
     return {
       d: {
         results: [
-          { ID: '1', Name: 'Test Product' }
-        ]
-      }
+          { ID: '1', Name: 'Test Product' },
+        ],
+      },
     }
   }))
 
@@ -19,7 +19,7 @@ export const createBackend = () => {
     throw createError({
       statusCode: 500,
       statusMessage: 'Internal Server Error from SAP',
-      data: { message: 'Something went wrong in the ABAP backend' }
+      data: { message: 'Something went wrong in the ABAP backend' },
     })
   }))
 
@@ -27,7 +27,7 @@ export const createBackend = () => {
   router.get('/sap/opu/odata/sap/TestService/HeaderEcho', defineEventHandler((event) => {
     const headers = getHeaders(event)
     return {
-      receivedHeaders: headers
+      receivedHeaders: headers,
     }
   }))
 

@@ -1,8 +1,8 @@
-import { createApp, createRouter, defineEventHandler } from 'h3'
-import { createODataHandler } from '../../src'
 import type { ODataProxyConfig } from '@bc8-odx/core'
+import { createApp, createRouter } from 'h3'
+import { createODataHandler } from '../../src'
 
-export const createProxyServer = (config: ODataProxyConfig) => {
+export function createProxyServer(config: ODataProxyConfig): ReturnType<typeof createApp> {
   const app = createApp()
   const router = createRouter()
 

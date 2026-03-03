@@ -10,7 +10,7 @@ export * from './utils/odata-client'
  * Creates a standalone h3 event handler for OData proxying.
  * @param config The proxy configuration.
  */
-export function createODataHandler(config: ODataProxyConfig) {
+export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof defineEventHandler> {
   return defineEventHandler(async (event) => {
     // Inject config into context as expected by the handler
     event.context.odataConfig = config
