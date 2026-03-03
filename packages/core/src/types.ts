@@ -1,3 +1,34 @@
+import type { H3Event } from 'h3'
+import type { Hookable } from 'hookable'
+import type { FetchOptions, FetchResponse } from 'ofetch'
+
+export interface ODataProxyHooks {
+  'odx:proxy:request': (ctx: { event: H3Event, serviceName: string, fetchOptions: FetchOptions }) => void | Promise<void>
+  'odx:proxy:response': (ctx: { event: H3Event, serviceName: string, response: FetchResponse<any> }) => void | Promise<void>
+  [key: `odx:proxy:request:${string}`]: (ctx: { event: H3Event, serviceName: string, fetchOptions: FetchOptions }) => void | Promise<void>
+  [key: `odx:proxy:response:${string}`]: (ctx: { event: H3Event, serviceName: string, response: FetchResponse<any> }) => void | Promise<void>
+}
+
+export interface EntityProperty {
+  name: string
+  type: string
+  isKey: boolean
+}
+
+export interface NavigationProperty {
+  name: string
+  relationship: string
+  fromRole: string
+  toRole: string
+}
+
+export interface EntityMapping {
+  name: string
+  type: string
+  properties: EntityProperty[]
+  navigationProperties: NavigationProperty[]
+}
+
 export interface ODataServiceConfig {
   name: string
   url: string
@@ -150,6 +181,7 @@ export interface ODataProxyConfig {
   }
   basePath: string
   mode: string
+  hooks?: Hookable<ODataProxyHooks>
   devtools?: {
     maxLogs?: number
   }

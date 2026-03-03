@@ -1,34 +1,155 @@
+import type { Association, AssociationEnd, EntityMapping, EntityProperty, NavigationProperty } from './types.ts'
 import fs from 'node:fs'
 
-export interface EntityMapping {
-  name: string
-  type: string
+/**
+ * Robustly extracts attributes from an XML-like tag string.
+ */
+function getAttributes(tag: string): Record<string, string> {
+  const attrs: Record<string, string> = {}
+  const matches = tag.matchAll(/([\w:-]+)="([^"]*)"/g)
+  for (const match of matches) {
+    const rawKey = match[1]!
+    const value = match[2]!
+    attrs[rawKey] = value
+    const parts = rawKey.split(':')
+    const key = parts[parts.length - 1]!
+    attrs[key] = value
+  }
+  return attrs
 }
 
 /**
- * Extracts entity set names and their types from an EDMX file.
+ * Extracts entity set names, their types, properties and navigation properties from an EDMX file.
  */
 export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
-  if (!fs.existsSync(edmxPath)) {
+  if (!fs.existsSync(edmxPath)) return []
+  try {
+    const xml = fs.readFileSync(edmxPath, 'utf-8')
+    const mappings: EntityMapping[] = []
+
+    const entityTypes: Record<string, { properties: EntityProperty[], navProps: NavigationProperty[] }> = {}
+    const typeBlocks = xml.split(/<(?:[\w:]+)?EntityType\s+/i).slice(1)
+    
+    for (const block of typeBlocks) {
+      const tagEnd = block.indexOf('>')
+      if (tagEnd === -1) continue
+      const tagHeader = block.slice(0, tagEnd)
+      const typeAttrs = getAttributes(tagHeader)
+      const typeName = typeAttrs.Name
+      if (!typeName) continue
+
+      const blockContent = block.slice(tagEnd).split(/<\/(?:[\w:]+)?EntityType>/i)[0] || ''
+      
+      // Extract Keys
+      const keyNames: string[] = []
+      const contentLower = blockContent.toLowerCase()
+      const keyBlockStart = contentLower.indexOf('<key>')
+      const keyBlockEnd = contentLower.indexOf('</key>')
+      if (keyBlockStart !== -1 && keyBlockEnd !== -1) {
+        const keyBlock = blockContent.slice(keyBlockStart + 5, keyBlockEnd)
+        const krMatches = keyBlock.matchAll(/<PropertyRef\s+([^>]+)>/gi)
+        for (const km of krMatches) {
+          const kAttrs = getAttributes(km[1]!)
+          if (kAttrs.Name) keyNames.push(kAttrs.Name)
+        }
+      }
+
+      // Extract Properties
+      const properties: EntityProperty[] = []
+      const propMatches = blockContent.matchAll(/<Property\s+([^>]+)>/gi)
+      for (const pm of propMatches) {
+        const pAttrs = getAttributes(pm[1]!)
+        if (pAttrs.Name && pAttrs.Type) {
+          properties.push({
+            name: pAttrs.Name,
+            type: pAttrs.Type,
+            isKey: keyNames.includes(pAttrs.Name)
+          })
+        }
+      }
+
+      // Extract Navigation Properties
+      const navProps: NavigationProperty[] = []
+      const navMatches = blockContent.matchAll(/<NavigationProperty\s+([^>]+)>/gi)
+      for (const nm of navMatches) {
+        const nAttrs = getAttributes(nm[1]!)
+        if (nAttrs.Name) {
+          navProps.push({
+            name: nAttrs.Name,
+            relationship: nAttrs.Relationship || nAttrs.Type || '',
+            fromRole: nAttrs.FromRole || '',
+            toRole: nAttrs.ToRole || ''
+          })
+        }
+      }
+
+      entityTypes[typeName] = { properties, navProps }
+    }
+
+    const entitySetParts = xml.split(/<(?:[\w:]+)?EntitySet\s+/i).slice(1)
+    for (const s of entitySetParts) {
+      const sTagEnd = s.indexOf('>')
+      if (sTagEnd === -1) continue
+      const setAttrs = getAttributes(s.slice(0, sTagEnd))
+      const setName = setAttrs.Name
+      const entityTypeFull = setAttrs.EntityType
+      if (!setName || !entityTypeFull) continue
+
+      const typeName = entityTypeFull.split('.').pop()!
+      const typeInfo = entityTypes[typeName] || { properties: [], navProps: [] }
+
+      mappings.push({
+        name: setName,
+        type: typeName,
+        properties: typeInfo.properties,
+        navigationProperties: typeInfo.navProps
+      })
+    }
+
+    return mappings
+  } catch (e) {
     return []
   }
+}
+
+/**
+ * Extracts associations from an EDMX file.
+ */
+export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
+  if (!fs.existsSync(edmxPath)) return []
   try {
-    const content = fs.readFileSync(edmxPath, 'utf-8')
-    const mappings: EntityMapping[] = []
-    const regex = /<EntitySet\s+Name="([^"]+)"\s+EntityType="([^"]+)"/g
-    let match = regex.exec(content)
-    while (match !== null) {
-      if (match[1] && match[2]) {
-        // Strip namespace from EntityType if present
-        const type = match[2].split('.').pop() || match[2]
-        mappings.push({ name: match[1], type })
+    const xml = fs.readFileSync(edmxPath, 'utf-8')
+    const associations: Association[] = []
+
+    const assocParts = xml.split(/<(?:[\w:]+)?Association\s+/i).slice(1)
+    for (const a of assocParts) {
+      const aTagEnd = a.indexOf('>')
+      if (aTagEnd === -1) continue
+      const attrs = getAttributes(a.slice(0, aTagEnd))
+      const name = attrs.Name
+      if (!name) continue
+
+      const body = a.slice(aTagEnd).split(/<\/(?:[\w:]+)?Association>/i)[0] || ''
+      const ends: AssociationEnd[] = []
+
+      const endParts = body.split(/<(?:[\w:]+)?End\s+/i).slice(1)
+      for (const e of endParts) {
+        const eTagEnd = e.indexOf('>')
+        if (eTagEnd === -1) continue
+        const eAttrs = getAttributes(e.slice(0, eTagEnd))
+        if (eAttrs.Type && eAttrs.Role && eAttrs.Multiplicity) {
+          ends.push({
+            type: eAttrs.Type,
+            role: eAttrs.Role,
+            multiplicity: eAttrs.Multiplicity,
+          })
+        }
       }
-      match = regex.exec(content)
+
+      associations.push({ name, ends })
     }
-    return mappings
-  }
-  catch (e) {
-    console.error(`[@bc8-odx/core] Failed to parse EDMX at ${edmxPath}`, e)
+    return associations
+  } catch {
     return []
   }
 }
@@ -37,29 +158,13 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
  * Detects the OData version from an EDMX file.
  */
 export function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
-  if (!fs.existsSync(edmxPath)) {
-    return null
-  }
+  if (!fs.existsSync(edmxPath)) return null
   try {
     const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
-
-    if (content.includes('Version="4.0"')) {
-      return 'v4'
-    }
-    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"')) {
-      return 'v2'
-    }
-
-    if (content.includes('http://schemas.microsoft.com/ado/2007/06/edmx')) {
-      return 'v2'
-    }
-    if (content.includes('http://docs.oasis-open.org/odata/ns/edmx')) {
-      return 'v4'
-    }
-
-    return null
-  }
-  catch {
+    if (content.includes('Version="4.0"')) return 'v4'
+    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"')) return 'v2'
+    return content.includes('http://docs.oasis-open.org/odata/ns/edmx') ? 'v4' : 'v2'
+  } catch {
     return null
   }
 }
