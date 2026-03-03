@@ -143,7 +143,7 @@ async function runClear() {
 
     <div class="flex-1 flex flex-col min-h-0 relative px-6 pt-2 pb-0">
       <div
-        class="flex-1 flex flex-col min-h-0 border-t border-x border-neutral-200 dark:border-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-sm overflow-hidden"
+        class="flex-1 flex flex-col min-h-0 border-t border-x border-neutral-200 dark:border-neutral-800 rounded-t-2xl bg-white dark:bg-neutral-900/50 shadow-sm overflow-hidden isolate"
       >
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <UTable
