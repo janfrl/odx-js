@@ -115,7 +115,7 @@ const actionItems = computed((): DropdownMenuItem[][] => {
     >
       <div class="p-6 flex flex-wrap items-center justify-between gap-x-8 gap-y-4 shrink-0">
         <!-- Service Title Section -->
-        <div class="flex items-center gap-4 min-w-[200px] flex-1">
+        <div class="flex items-center gap-4 min-w-50 flex-1">
           <UButton
             icon="i-lucide-chevron-left"
             color="neutral"

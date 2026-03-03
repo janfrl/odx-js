@@ -1,7 +1,7 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { computed, markRaw, nextTick, ref, watch } from 'vue'
+import { markRaw, nextTick, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
 import { useSharedODataState } from './useODataState'
 
@@ -255,7 +255,7 @@ export function useSchemaExplorer(): any {
       return
 
     let mermaid = 'erDiagram\n'
-    
+
     const nameMap: Record<string, string> = {}
     schemaData.value.entities.forEach((entity: any) => {
       nameMap[entity.name] = entity.type
@@ -271,11 +271,12 @@ export function useSchemaExplorer(): any {
     sortedEdges.forEach((edge: any) => {
       const source = nameMap[edge.source] || edge.source
       const target = nameMap[edge.target] || edge.target
-      
+
       let rel = '||--||'
       if (edge.label === '1:N') {
         rel = '||--o{'
-      } else if (edge.label === 'N:M') {
+      }
+      else if (edge.label === 'N:M') {
         rel = '}o--o{'
       }
 
@@ -290,14 +291,15 @@ export function useSchemaExplorer(): any {
       mermaid += `  ${entity.type} {\n`
       entity.properties?.forEach((prop: any) => {
         let type = prop.type.split('.').pop() || prop.type
-        if (type === 'DateTimeOffset') type = 'DateTime'
+        if (type === 'DateTimeOffset')
+          type = 'DateTime'
         mermaid += `    ${type} ${prop.name} ${prop.isKey ? 'PK' : ''}\n`
       })
       mermaid += '  }\n'
     })
 
     navigator.clipboard.writeText(mermaid)
-    
+
     toast.add({
       id: 'copy-mermaid-success',
       title: 'Copied to clipboard',
