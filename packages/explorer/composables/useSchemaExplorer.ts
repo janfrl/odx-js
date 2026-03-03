@@ -1,7 +1,7 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { computed, markRaw, ref, watch } from 'vue'
+import { computed, markRaw, nextTick, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
 import { useSharedODataState } from './useODataState'
 
@@ -13,6 +13,7 @@ const loading = ref(false)
 const isReady = ref(false)
 const isFullscreen = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
+const needsInitialFit = ref(false)
 
 export function useSchemaExplorer(): any {
   const { selectedService } = useSharedODataState()
@@ -30,18 +31,39 @@ export function useSchemaExplorer(): any {
     else {
       schemaData.value = null
       isReady.value = false
+      needsInitialFit.value = false
       setNodes([])
       setEdges([])
     }
   }, { immediate: true })
 
-  // Ensure zoom/position is correct when Pane is finally ready
+  // Triggered when the Schema tab is opened and Vue Flow is ready
   onPaneReady(() => {
-    if (schemaData.value && !isReady.value) {
-      // Immediate fit without animation
-      fitView({ padding: 0.2, duration: 0 })
+    if (needsInitialFit.value) {
+      performInitialFit()
     }
   })
+
+  async function performInitialFit(): Promise<void> {
+    // Only perform fit if the container is actually visible (not hidden via v-show/v-if)
+    if (!containerRef.value || !containerRef.value.offsetParent) {
+      return
+    }
+
+    await nextTick()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        try {
+          fitView({ padding: 0.2, duration: 0 })
+          isReady.value = true
+          needsInitialFit.value = false
+        }
+        catch {
+          // Viewport still not ready, will be handled by onPaneReady later
+        }
+      })
+    })
+  }
 
   async function fetchSchema(serviceName: string): Promise<void> {
     if (loading.value)
@@ -161,16 +183,9 @@ export function useSchemaExplorer(): any {
       setEdges(newEdges)
 
       if (autoFit) {
-        // Jump instantly to the center before showing
-        setTimeout(() => {
-          try {
-            fitView({ padding: 0.2, duration: 0 })
-            isReady.value = true
-          }
-          catch {
-            isReady.value = true
-          }
-        }, 50)
+        needsInitialFit.value = true
+        // Try to fit immediately if visible, otherwise defer to onPaneReady
+        performInitialFit()
       }
       else {
         isReady.value = true
@@ -193,7 +208,6 @@ export function useSchemaExplorer(): any {
     if (!element)
       return
 
-    // 1. Capture current visual state
     const oldWidth = element.offsetWidth
     const oldHeight = element.offsetHeight
     const { x, y, zoom } = viewport.value
@@ -201,15 +215,11 @@ export function useSchemaExplorer(): any {
     if (!document.fullscreenElement) {
       element.requestFullscreen().then(() => {
         isFullscreen.value = true
-        // 2. Wait for resize, then restore visual position
         setTimeout(() => {
           const newWidth = element.offsetWidth
           const newHeight = element.offsetHeight
-          
-          // Calculate shift needed to keep same center
           const dx = (newWidth - oldWidth) / 2
           const dy = (newHeight - oldHeight) / 2
-          
           setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
         }, 100)
       }).catch((err) => {
