@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
   const buildDir = config.buildDir ?? ''
   const rootDir = config.rootDir ?? ''
-  const outRoot = join(buildDir, 'sap-odata', 'generated')
+  const outRoot = join(buildDir, 'odx', 'generated')
   const outDir = join(outRoot, matched.name)
 
   let inputPath = matched.url
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
   try {
     if (matched.url.startsWith('http')) {
       const metadataUrl = matched.url.endsWith('/') ? `${matched.url}$metadata` : `${matched.url}/$metadata`
-      const tempDir = join(buildDir, 'sap-odata', 'temp')
+      const tempDir = join(buildDir, 'odx', 'temp')
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true })
       }

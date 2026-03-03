@@ -1,4 +1,4 @@
-export interface SapODataService {
+export interface ODataServiceConfig {
   name: string
   url: string
   route?: string
@@ -136,7 +136,7 @@ export interface ODataServiceRegistry {}
 export type RegisteredServiceNames = keyof ODataServiceRegistry | (string & {})
 
 export interface ODataProxyConfig {
-  services: SapODataService[]
+  services: ODataServiceConfig[]
   buildDir: string
   rootDir: string
   destination?: string
@@ -158,7 +158,7 @@ export interface ODataProxyConfig {
 export interface ODataPublicConfig {
   basePath?: string
   mode?: string
-  services?: SapODataService[]
+  services?: ODataServiceConfig[]
 }
 
 export interface ModuleOptions {
@@ -173,7 +173,7 @@ export interface ModuleOptions {
   headers?: Record<string, string>
   rejectUnauthorized?: boolean
   forwardAuthHeader?: boolean
-  services?: SapODataService[]
+  services?: ODataServiceConfig[]
   buildDir?: string
   rootDir?: string
   devtools?: {

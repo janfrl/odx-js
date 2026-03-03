@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
 
   let edmxPath = ''
   if (svc.url.startsWith('http')) {
-    edmxPath = resolve(buildDir, 'sap-odata/temp', `${svc.name}.edmx`)
+    edmxPath = resolve(buildDir, 'odx/temp', `${svc.name}.edmx`)
   }
   else {
     edmxPath = resolve(rootDir, svc.url)

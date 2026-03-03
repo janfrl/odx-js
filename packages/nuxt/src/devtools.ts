@@ -2,7 +2,7 @@ import type { Resolver } from '@nuxt/kit'
 import type { Nuxt } from 'nuxt/schema'
 import { existsSync } from 'node:fs'
 
-export const DEVTOOLS_UI_ROUTE = '/__sap_odata__/client'
+export const DEVTOOLS_UI_ROUTE = '/__odx__/client'
 export const DEVTOOLS_UI_LOCAL_PORT = 3300
 
 export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
@@ -35,9 +35,9 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
 
   (nuxt as any).hook('devtools:customTabs', (tabs: any[]) => {
     tabs.push({
-      name: 'sap-odata',
-      title: 'SAP OData',
-      icon: 'logos:sap',
+      name: 'odx',
+      title: 'ODX',
+      icon: 'logos:odata',
       view: {
         type: 'iframe',
         src: DEVTOOLS_UI_ROUTE,

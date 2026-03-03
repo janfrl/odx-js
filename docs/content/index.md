@@ -9,7 +9,7 @@ aside: false
 Modern [OData Developer Experience]{.text-primary} for Nuxt.
 
 #description
-**ODX** is a modular ecosystem designed to simplify SAP OData integration. :br From type-safe SDKs to interactive DevTools, it automates the friction of enterprise data.
+**ODX** is a modular, framework-agnostic toolkit designed to bridge the gap between OData services and modern web applications. :br Works with Microsoft Dynamics, Salesforce, Olingo, and more.
 
 #links
   :::u-button
@@ -39,53 +39,25 @@ Modern [OData Developer Experience]{.text-primary} for Nuxt.
     ::::u-page-card
     ---
     spotlight: true
-    icon: i-lucide-box
-    to: /nuxt
+    icon: i-lucide-globe
     ---
     #title
-    Nuxt Module
+    Universal Compatibility
 
     #description
-    A powerful Nuxt 4 integration providing auto-imported composables and automated type generation.
+    ODX works with any standard OData V2/V4 endpoint. Connect your Microsoft Dynamics, Salesforce, or .NET backends seamlessly.
     ::::
 
     ::::u-page-card
     ---
     spotlight: true
-    icon: i-lucide-server
-    to: /proxy
+    icon: i-simple-icons-sap
     ---
     #title
-    Proxy Layer
+    First-Class SAP Support
 
     #description
-    A robust server-side proxy handling CSRF tokens, authentication, and live request logging.
-    ::::
-
-    ::::u-page-card
-    ---
-    spotlight: true
-    icon: i-lucide-computer-desktop
-    to: /explorer
-    ---
-    #title
-    Explorer UI
-
-    #description
-    Deep introspection into your SAP services with schema visualization and real-time traffic monitoring.
-    ::::
-
-    ::::u-page-card
-    ---
-    spotlight: true
-    icon: i-lucide-code-bracket
-    to: /core
-    ---
-    #title
-    Core Utilities
-
-    #description
-    Framework-agnostic OData types and recursive data flattening tools for any TypeScript environment.
+    Premium out-of-the-box support for SAP systems, handling NetWeaver routing, automated CSRF-Token pre-fetching, and Basic/Bearer auth.
     ::::
 
     ::::u-page-card
@@ -94,10 +66,34 @@ Modern [OData Developer Experience]{.text-primary} for Nuxt.
     icon: i-lucide-shield-check
     ---
     #title
-    Type Safe
+    Type-Safe SDK
 
     #description
-    Automated TypeScript model generation from your actual SAP schema.
+    Automated TypeScript model generation from your EDMX schema. Catch errors at compile time, not runtime.
+    ::::
+
+    ::::u-page-card
+    ---
+    spotlight: true
+    icon: i-lucide-zap
+    ---
+    #title
+    Nuxt-First DX
+
+    #description
+    Intuitive dot-notation syntax with `useOData().Service.EntitySet.list()`. Built-in SSR support and zero-config setup.
+    ::::
+
+    ::::u-page-card
+    ---
+    spotlight: true
+    icon: i-lucide-activity
+    ---
+    #title
+    Deep Introspection
+
+    #description
+    Visualize complex schemas, monitor live OData traffic, and browse entity data directly within the Nuxt DevTools.
     ::::
 
     ::::u-page-card
@@ -106,10 +102,10 @@ Modern [OData Developer Experience]{.text-primary} for Nuxt.
     icon: i-lucide-database
     ---
     #title
-    Offline Ready
+    Offline-Ready
 
     #description
-    Mock your SAP backend with local JSON files for isolated development.
+    Mock any OData backend with local JSON files. Build your UI even when the enterprise systems are offline.
     ::::
   :::
 ::

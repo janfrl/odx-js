@@ -12,5 +12,5 @@ export function useODataBasePath(serviceName?: string): string {
     }
   }
 
-  return publicConfig?.basePath || '/api/sap-odata'
+  return publicConfig?.basePath || '/api/odx'
 }

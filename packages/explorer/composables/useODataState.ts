@@ -5,7 +5,7 @@ export interface EntityMapping {
   type: string
 }
 
-export interface SapService {
+export interface ODataServiceState {
   name: string
   route?: string
   entities?: EntityMapping[]
@@ -14,10 +14,10 @@ export interface SapService {
   strategy?: 'proxied' | 'direct'
 }
 
-export interface SapConfig {
+export interface ODataConfig {
   basePath: string
   mode: string
-  services: SapService[]
+  services: ODataServiceState[]
   forwardAuthHeader: boolean
   versions: { node: string, module: string }
 }
@@ -46,8 +46,8 @@ export interface EditorState {
   original: Record<string, unknown> | null
 }
 
-const config = ref<SapConfig>({
-  basePath: '/api/sap-odata',
+const config = ref<ODataConfig>({
+  basePath: '/api/odx',
   mode: 'sdk',
   services: [],
   forwardAuthHeader: true,
@@ -55,7 +55,7 @@ const config = ref<SapConfig>({
 })
 const activeTab = ref('services')
 const logs = ref<ODataLog[]>([])
-const selectedService = ref<SapService | null>(null)
+const selectedService = ref<ODataServiceState | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
@@ -88,7 +88,7 @@ watch(selectedService, async (newSvc) => {
   if (newSvc) {
     entitySchemaLoading.value = true
     try {
-      const res = await fetch(`/__sap_odata__/schema?service=${newSvc.name}`)
+      const res = await fetch(`/__odx__/schema?service=${newSvc.name}`)
       if (res.ok) {
         entitySchema.value = await res.json()
       }
@@ -129,8 +129,8 @@ watch(selectedEntity, (newEntity) => {
 export function useSharedODataState(): any {
   async function fetchConfig(): Promise<void> {
     try {
-      const res = await fetch('/__sap_odata__/config')
-      const data = (await res.json()) as SapConfig
+      const res = await fetch('/__odx__/config')
+      const data = (await res.json()) as ODataConfig
       config.value = data
       if (selectedService.value) {
         const updated = data.services.find(s => s.name === selectedService.value?.name)
@@ -145,7 +145,7 @@ export function useSharedODataState(): any {
 
   async function refreshLogs(): Promise<void> {
     try {
-      const res = await fetch('/__sap_odata__/logs')
+      const res = await fetch('/__odx__/logs')
       if (res.ok) {
         const data = (await res.json()) as ODataLog[]
         // Only update if number of logs changed or it was empty
@@ -162,7 +162,7 @@ export function useSharedODataState(): any {
     generatingStatus.value[name] = true
     const start = Date.now()
     try {
-      const res = await fetch(`/__sap_odata__/generate?service=${name}`)
+      const res = await fetch(`/__odx__/generate?service=${name}`)
 
       let data: any
       const text = await res.text()
@@ -204,7 +204,7 @@ export function useSharedODataState(): any {
 
   async function clearLogs(): Promise<void> {
     try {
-      await fetch('/__sap_odata__/logs', { method: 'DELETE' })
+      await fetch('/__odx__/logs', { method: 'DELETE' })
       logs.value = []
     }
     catch {
@@ -213,7 +213,7 @@ export function useSharedODataState(): any {
 
   async function clearEntityMockData(service: string, entitySet: string): Promise<void> {
     try {
-      await fetch(`/__sap_odata__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
+      await fetch(`/__odx__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
     }
     catch {
     }

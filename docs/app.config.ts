@@ -1,7 +1,7 @@
 export default defineAppConfig({
   docus: {
     title: 'ODX',
-    description: 'OData Developer Experience: The modern ecosystem for SAP OData integration.',
+    description: 'OData Developer Experience: The modern ecosystem for OData integration.',
     image: 'https://odx-js.io/cover.png',
     socials: {
       github: 'janfrl/odx-js',

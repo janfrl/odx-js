@@ -1,4 +1,4 @@
-import type { SapODataService } from '@bc8-odx/core'
+import type { ODataServiceConfig } from '@bc8-odx/core'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'
@@ -17,20 +17,21 @@ const FEMockserver = (pkg as any).default || pkg
 let mockHandler: any
 
 export default defineEventHandler(async (event) => {
-  if (!event.path.startsWith('/sap/opu/odata/')) {
+  // Use a more universal mock path prefix
+  if (!event.path.startsWith('/api/odx/')) {
     return
   }
 
   if (!mockHandler) {
     const config = useRuntimeConfig().odata
-    const services: SapODataService[] = config.services || []
+    const services: ODataServiceConfig[] = config.services || []
 
     const mockServices: MockServiceConfig[] = services
-      .filter((s: SapODataService) => s.url && !s.url.startsWith('http'))
-      .map((s: SapODataService) => {
+      .filter((s: ODataServiceConfig) => s.url && !s.url.startsWith('http'))
+      .map((s: ODataServiceConfig) => {
         console.warn(`[MockServer] Registering dynamic service: ${s.name}`)
         return {
-          urlPath: `/sap/opu/odata/sap/${s.name}`,
+          urlPath: `/api/odx/${s.name}`,
           metadataPath: resolve(process.cwd(), 'playground', s.url),
           mockdataPath: resolve(process.cwd(), 'playground/server/mockdata', s.name),
         }

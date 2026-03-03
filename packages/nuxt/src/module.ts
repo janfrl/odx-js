@@ -16,7 +16,7 @@ import { join, resolve } from 'pathe'
 import { setupDevToolsUI } from './devtools'
 import { generateODataTypes } from './generate'
 
-export interface SapODataService {
+export interface ODataServiceConfig {
   name: string
   url: string
   route?: string
@@ -42,7 +42,7 @@ export interface ModuleOptions {
   headers?: Record<string, string>
   rejectUnauthorized?: boolean
   forwardAuthHeader?: boolean
-  services?: SapODataService[]
+  services?: ODataServiceConfig[]
   buildDir?: string
   rootDir?: string
   devtools?: {
@@ -58,7 +58,7 @@ export default defineNuxtModule<ModuleOptions>({
   },
   defaults: {
     mode: 'sdk',
-    basePath: '/api/sap-odata',
+    basePath: '/api/odx',
     forwardAuthHeader: true,
     rejectUnauthorized: false,
     services: [],
@@ -71,7 +71,7 @@ export default defineNuxtModule<ModuleOptions>({
     const resolver = createResolver(import.meta.url)
     const logger = useLogger('@bc8-odx/nuxt')
 
-    const basePath = options.basePath ?? '/api/sap-odata'
+    const basePath = options.basePath ?? '/api/odx'
     const forwardAuthHeader = options.forwardAuthHeader ?? true
 
     const rejectUnauthorized = options.rejectUnauthorized !== false && process.env.NUXT_ODATA_REJECT_UNAUTHORIZED !== 'false'
@@ -91,7 +91,7 @@ export default defineNuxtModule<ModuleOptions>({
       }
     }
 
-    const services = (options.services || []).map((s: SapODataService) => {
+    const services = (options.services || []).map((s: ODataServiceConfig) => {
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
       const envName = process.env[`${prefix}${envKey}_NAME`]
@@ -235,22 +235,22 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     addServerHandler({
-      route: '/__sap_odata__/logs',
+      route: '/__odx__/logs',
       handler: resolver.resolve('../../proxy/src/api/logs'),
     })
 
     addServerHandler({
-      route: '/__sap_odata__/config',
+      route: '/__odx__/config',
       handler: resolver.resolve('../../proxy/src/api/config'),
     })
 
     addServerHandler({
-      route: '/__sap_odata__/generate',
+      route: '/__odx__/generate',
       handler: resolver.resolve('../../proxy/src/api/generate'),
     })
 
     addServerHandler({
-      route: '/__sap_odata__/schema',
+      route: '/__odx__/schema',
       handler: resolver.resolve('../../proxy/src/api/schema'),
     })
 
@@ -280,7 +280,7 @@ export default defineNuxtModule<ModuleOptions>({
         return
       }
 
-      const tempDir = join(nuxt.options.buildDir, 'sap-odata', 'temp')
+      const tempDir = join(nuxt.options.buildDir, 'odx', 'temp')
       const outRoot = join(nuxt.options.buildDir, 'odx-types')
 
       if (!fs.existsSync(tempDir)) {

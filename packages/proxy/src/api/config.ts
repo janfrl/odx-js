@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
   const jiti = createJiti(import.meta.url)
 
   const enhancedServices = await Promise.all(services.map(async (svc) => {
-    const outDir = join(buildDir, 'sap-odata', 'generated', svc.name)
+    const outDir = join(buildDir, 'odx', 'generated', svc.name)
     const subDirName = svc.route || svc.name.toLowerCase()
 
     const possiblePaths = [
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
     let edmxAbs = ''
     if (svc.url.startsWith('http')) {
-      edmxAbs = join(buildDir, 'sap-odata', 'temp', `${svc.name}.edmx`)
+      edmxAbs = join(buildDir, 'odx', 'temp', `${svc.name}.edmx`)
     }
     else {
       edmxAbs = resolve(rootDir, svc.url)
@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
   }))
 
   return {
-    basePath: config.basePath || '/api/sap-odata',
+    basePath: config.basePath || '/api/odx',
     mode: config.mode || 'sdk',
     services: enhancedServices,
     forwardAuthHeader: config.forwardAuthHeader,

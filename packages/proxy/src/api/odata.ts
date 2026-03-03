@@ -1,4 +1,4 @@
-import type { ODataProxyConfig, SapODataService } from '@bc8-odx/core'
+import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
   }
 
-  const basePath = config.basePath || '/api/sap-odata'
+  const basePath = config.basePath || '/api/odx'
   const buildDir = config.buildDir ?? ''
 
   const fullPath = event.path || ''
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const services: SapODataService[] = config.services ?? []
+  const services: ODataServiceConfig[] = config.services ?? []
   const matched = services.find(svc =>
     svc.name.toLowerCase() === serviceRoute.toLowerCase()
     || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
   // Combine headers: config < service < client
   const incomingHeaders = getHeaders(event)
   const headersToForward: Record<string, string> = {}
-  
+
   // Filter out headers we don't want to forward blindly
   const skipHeaders = ['host', 'connection', 'content-length', 'content-type', 'accept', 'accept-encoding', 'cookie']
   for (const [key, value] of Object.entries(incomingHeaders)) {
@@ -66,12 +66,12 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const customHeaders: Record<string, string> = { 
-    ...config.headers, 
+  const customHeaders: Record<string, string> = {
+    ...config.headers,
     ...matched.headers,
-    ...headersToForward
+    ...headersToForward,
   }
-  
+
   const auth = matched.auth || config.auth || {}
   if (auth.bearerToken && !customHeaders.authorization) {
     customHeaders.authorization = `Bearer ${auth.bearerToken}`
@@ -114,8 +114,8 @@ export default defineEventHandler(async (event) => {
     if (isExternal) {
       const jiti = createJiti(import.meta.url)
       const possibleDirs = [
-        join(buildDir, 'sap-odata', 'generated', matched.name),
-        join(buildDir, 'sap-odata', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
+        join(buildDir, 'odx', 'generated', matched.name),
+        join(buildDir, 'odx', 'generated', matched.name, matched.route || matched.name.toLowerCase()),
       ]
 
       let targetFile: string | null = null

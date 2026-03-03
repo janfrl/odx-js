@@ -19,8 +19,8 @@ export default defineNuxtConfig({
             cwd: resolve(__dirname, '../packages/explorer'),
           },
           {
-            id: 'sap-odata:client',
-            name: 'SAP OData Client Dev',
+            id: 'odx:client',
+            name: 'ODX Client Dev',
           },
         )
       },
