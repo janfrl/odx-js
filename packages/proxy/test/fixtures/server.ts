@@ -6,7 +6,8 @@ export function createProxyServer(config: ODataProxyConfig): ReturnType<typeof c
   const app = createApp()
   const router = createRouter()
 
-  router.use('/api/odata/**', createODataHandler(config))
+  // Use the basePath from config for the router
+  router.use(`${config.basePath}/**`, createODataHandler(config))
 
   app.use(router)
   return app

@@ -197,7 +197,7 @@ export default defineNuxtModule<ModuleOptions>({
       }
     }
 
-    nuxt.options.runtimeConfig.odata = {
+    const odataConfig: ODataProxyConfig = {
       basePath,
       mode: options.mode ?? 'sdk',
       destination: options.destination ?? '',
@@ -212,6 +212,8 @@ export default defineNuxtModule<ModuleOptions>({
         maxLogs: options.devtools?.maxLogs ?? 100,
       },
     }
+
+    nuxt.options.runtimeConfig.odata = odataConfig
     nuxt.options.runtimeConfig.public.odata = {
       mode: options.mode ?? 'sdk',
       basePath,
@@ -229,30 +231,10 @@ export default defineNuxtModule<ModuleOptions>({
       handler: resolver.resolve('./runtime/server-middleware'),
     })
 
-    addServerHandler({
-      route: `${basePath}/**`,
-      handler: resolver.resolve('../../proxy/src/api/odata'),
-    })
-
-    addServerHandler({
-      route: '/__odx__/logs',
-      handler: resolver.resolve('../../proxy/src/api/logs'),
-    })
-
-    addServerHandler({
-      route: '/__odx__/config',
-      handler: resolver.resolve('../../proxy/src/api/config'),
-    })
-
-    addServerHandler({
-      route: '/__odx__/generate',
-      handler: resolver.resolve('../../proxy/src/api/generate'),
-    })
-
-    addServerHandler({
-      route: '/__odx__/schema',
-      handler: resolver.resolve('../../proxy/src/api/schema'),
-    })
+    // Integrate with Nitro via the new ODX Proxy Nitro module
+    nuxt.options.nitro.odata = odataConfig
+    nuxt.options.nitro.modules = nuxt.options.nitro.modules || []
+    nuxt.options.nitro.modules.push('@bc8-odx/proxy/nitro')
 
     if (options.devtools && nuxt.options.dev) {
       setupDevToolsUI(nuxt, resolver)

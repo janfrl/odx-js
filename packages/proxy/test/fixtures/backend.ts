@@ -1,38 +1,35 @@
-import { createApp, createError, createRouter, defineEventHandler, getHeaders } from 'h3'
+import { createApp, createRouter, defineEventHandler, createError, getHeaders } from 'h3'
 
-export function createBackend(): ReturnType<typeof createApp> {
+export const createBackend = () => {
   const app = createApp()
   const router = createRouter()
 
-  router.get('/sap/opu/odata/sap/TestService/Products', defineEventHandler(() => {
+  router.get('/Products', defineEventHandler(() => {
     return {
       d: {
         results: [
-          { ID: '1', Name: 'Test Product' },
-        ],
-      },
+          { ID: '1', Name: 'Test Product' }
+        ]
+      }
     }
   }))
 
-  // Endpoint that always throws a 500 error
-  router.get('/sap/opu/odata/sap/TestService/FailingEntity', defineEventHandler(() => {
+  router.get('/FailingEntity', defineEventHandler(() => {
     throw createError({
       statusCode: 500,
-      statusMessage: 'Internal Server Error from SAP',
-      data: { message: 'Something went wrong in the ABAP backend' },
+      statusMessage: 'Internal Server Error',
+      data: { message: 'Something went wrong' }
     })
   }))
 
-  // Endpoint to verify header passthrough
-  router.get('/sap/opu/odata/sap/TestService/HeaderEcho', defineEventHandler((event) => {
+  router.get('/HeaderEcho', defineEventHandler((event) => {
     const headers = getHeaders(event)
     return {
-      receivedHeaders: headers,
+      receivedHeaders: headers
     }
   }))
 
-  // Handle CSRF token fetch
-  router.get('/sap/opu/odata/sap/TestService/', defineEventHandler((event) => {
+  router.get('/', defineEventHandler((event) => {
     const csrfFetch = event.node.req.headers['x-csrf-token']
     if (csrfFetch === 'fetch') {
       event.node.res.setHeader('x-csrf-token', 'dummy-token')
