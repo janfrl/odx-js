@@ -4,7 +4,7 @@
 
 A powerful ecosystem for seamless, type-safe integration with OData services. It provides a robust server-side proxy, automated TypeScript model generation, and a high-fidelity DevTools UI for exploration.
 
-ODX works with any standard OData V2/V4 endpoint (e.g., Microsoft Dynamics, Salesforce, Olingo). Additionally, it comes with first-class support for SAP systems out of the box (handling NetWeaver routing, basic auth, and automated CSRF-Token pre-fetching).
+ODX works with any standard OData V2/V4 endpoint. Additionally, it comes with first-class support for SAP systems out of the box (handling NetWeaver routing, basic auth, and automated CSRF-Token pre-fetching).
 
 ## 📦 Packages
 

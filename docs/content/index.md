@@ -1,15 +1,15 @@
 ---
-title: Modern OData Developer Experience for Nuxt
+title: Modern OData Developer Experience
 navigation: false
 aside: false
 ---
 
 ::u-page-hero
 #title
-Modern [OData Developer Experience]{.text-primary} for Nuxt.
+Modern [OData Developer Experience]{.text-primary}
 
 #description
-**ODX** is a modular, framework-agnostic toolkit designed to bridge the gap between OData services and modern web applications. :br Works with Microsoft Dynamics, Salesforce, Olingo, and more.
+**ODX** is a modular, framework-agnostic toolkit designed to bridge the gap between OData services and modern web applications. :br Built for standard OData V2 and V4 compliance.
 
 #links
   :::u-button
@@ -45,7 +45,7 @@ Modern [OData Developer Experience]{.text-primary} for Nuxt.
     Universal Compatibility
 
     #description
-    ODX works with any standard OData V2/V4 endpoint. Connect your Microsoft Dynamics, Salesforce, or .NET backends seamlessly.
+    ODX works with any compliant OData V2 or V4 endpoint. Seamlessly connect to standard enterprise services and APIs.
     ::::
 
     ::::u-page-card
