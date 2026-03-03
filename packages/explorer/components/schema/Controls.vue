@@ -11,7 +11,7 @@ const {
   isFullscreen,
   toggleFullscreen,
   fitToScreen,
-  fetchSchema,
+  resetGraph,
   copyMermaid,
   loading,
 } = useSchemaExplorer()
@@ -44,7 +44,7 @@ const {
           class="w-9 h-9 flex items-center justify-center rounded-none opacity-70 hover:opacity-100 transition-opacity"
           :loading="loading"
           title="Auto Layout (Shift+R)"
-          @click="fetchSchema(true)"
+          @click="resetGraph"
         />
       </div>
 

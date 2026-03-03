@@ -4,7 +4,7 @@ import { useEventListener } from '@vueuse/core'
 import { useSchemaExplorer } from '../../composables/useSchemaExplorer'
 
 const { zoomIn, zoomOut, fitView } = useVueFlow()
-const { toggleFullscreen, fetchSchema } = useSchemaExplorer()
+const { toggleFullscreen, resetGraph } = useSchemaExplorer()
 
 useEventListener('keydown', (e: KeyboardEvent) => {
   const isInput = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
@@ -16,7 +16,7 @@ useEventListener('keydown', (e: KeyboardEvent) => {
     toggleFullscreen()
   }
   if (e.key === 'R' && e.shiftKey) {
-    fetchSchema(true)
+    resetGraph()
   }
   else if (e.key === 'r' || e.key === 'R') {
     fitView({ padding: 0.2, duration: 400 })
