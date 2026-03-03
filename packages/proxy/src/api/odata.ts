@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { flattenOData } from '@bc8-odx/core'
-import { createError, defineEventHandler, getQuery, getRequestURL, readBody } from 'h3'
+import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
 import { createJiti } from 'jiti'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
@@ -54,7 +54,24 @@ export default defineEventHandler(async (event) => {
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
-  const customHeaders: Record<string, string> = { ...config.headers, ...matched.headers }
+  // Combine headers: config < service < client
+  const incomingHeaders = getHeaders(event)
+  const headersToForward: Record<string, string> = {}
+  
+  // Filter out headers we don't want to forward blindly
+  const skipHeaders = ['host', 'connection', 'content-length', 'content-type', 'accept', 'accept-encoding', 'cookie']
+  for (const [key, value] of Object.entries(incomingHeaders)) {
+    if (value && !skipHeaders.includes(key.toLowerCase())) {
+      headersToForward[key] = value
+    }
+  }
+
+  const customHeaders: Record<string, string> = { 
+    ...config.headers, 
+    ...matched.headers,
+    ...headersToForward
+  }
+  
   const auth = matched.auth || config.auth || {}
   if (auth.bearerToken && !customHeaders.authorization) {
     customHeaders.authorization = `Bearer ${auth.bearerToken}`

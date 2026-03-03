@@ -63,4 +63,28 @@ describe('proxy integration', () => {
     
     expect(Array.isArray(response)).toBe(true)
   })
+
+  it('forwards 500 errors from backend to client', async () => {
+    try {
+      await ofetch(`${proxyUrl}/api/odata/TestService/FailingEntity`)
+      expect(true).toBe(false)
+    } catch (err: any) {
+      expect(err.status).toBe(500)
+      // h3 wraps error data in its own structure, and we put the message in data.data
+      expect(err.data.data.data.message).toContain('Something went wrong')
+    }
+  })
+
+  it('passes through custom SAP headers to the backend', async () => {
+    const response = await ofetch(`${proxyUrl}/api/odata/TestService/HeaderEcho`, {
+      headers: {
+        'sap-client': '100',
+        'x-custom-header': 'odx-test'
+      }
+    })
+
+    const received = response.receivedHeaders
+    expect(received['sap-client']).toBe('100')
+    expect(received['x-custom-header']).toBe('odx-test')
+  })
 })
