@@ -63,7 +63,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
 
       // Extract Properties
       const properties: EntityProperty[] = []
-      const propParts = blockContent.split(/<[\w:]*Property\s/i).slice(1)
+      const propParts = blockContent.split(/<[\w:]*\bProperty\s/i).slice(1)
       for (const p of propParts) {
         const pTagEnd = p.indexOf('>')
         if (pTagEnd === -1)
@@ -80,7 +80,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
 
       // Extract Navigation Properties
       const navProps: NavigationProperty[] = []
-      const navParts = blockContent.split(/<[\w:]*NavigationProperty\s/i).slice(1)
+      const navParts = blockContent.split(/<[\w:]*\bNavigationProperty\s/i).slice(1)
       for (const n of navParts) {
         const nTagEnd = n.indexOf('>')
         if (nTagEnd === -1)

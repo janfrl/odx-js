@@ -188,7 +188,7 @@ export function useEntityExplorer(): {
     const edmxProps = edmxEntity.properties?.map((p: any) => p.name) || []
     const edmxNavProps = edmxEntity.navigationProperties?.map((np: any) => np.name) || []
 
-    const combined = [...edmxProps, ...edmxNavProps]
+    const combined = [...new Set([...edmxProps, ...edmxNavProps])]
 
     return combined.filter((col) => {
       const isTechnicalFK = (entitySchema.value?.associations || []).some((assoc: any) => {
@@ -324,6 +324,7 @@ export function useEntityExplorer(): {
     return [
       selectedService.value.entities.map((entity: EntityMapping) => ({
         label: entity.name,
+        value: entity.name,
         active: selectedEntity.value === entity.name,
         onSelect: () => {
           selectedEntity.value = entity.name
