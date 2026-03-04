@@ -16,9 +16,12 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = event.context.odataConfig as ODataProxyConfig
 
-  // Retrieve runtime hooks from Nitro app instance if available
+  // Retrieve runtime hooks:
+  // 1. Explicitly passed in config (for tests)
+  // 2. Injected via middleware (for Nuxt app)
+  // 3. From Nitro app instance (fallback)
   const nitroApp = (event.context as any).nitroApp
-  const hooks = event.context.odataHooks || nitroApp?.hooks
+  const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
 
   if (!config) {
     throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
@@ -63,6 +66,7 @@ export default defineEventHandler(async (event) => {
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
+    // Standard SAP path for non-external services
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
@@ -143,7 +147,6 @@ export default defineEventHandler(async (event) => {
 
   // TRIGGER REQUEST HOOKS (Now unified before either path is taken)
   if (hooks) {
-    console.warn(`[ODX Proxy] Triggering hooks for ${matched.name}...`)
     if (typeof hooks.callHook === 'function') {
       await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
       await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
@@ -234,12 +237,13 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    let requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
     let fullTargetUrl = withQuery(requestUrl, query)
 
     if (requestUrl.startsWith('/')) {
       try {
         const origin = getRequestURL(event).origin
+        requestUrl = origin + requestUrl
         fullTargetUrl = origin + fullTargetUrl
       }
       catch {
