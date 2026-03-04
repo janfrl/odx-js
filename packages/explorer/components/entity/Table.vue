@@ -49,32 +49,8 @@ function getRowData(row: any): Record<string, any> {
       <UIcon name="i-lucide-refresh-cw" class="animate-spin w-10 h-10 text-primary" />
     </div>
 
-    <!-- Error State -->
-    <div
-      v-if="previewError"
-      class="flex-1 flex flex-col items-center justify-center text-center p-12"
-    >
-      <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
-        <UIcon name="i-lucide-triangle-alert" class="text-error-500 w-8 h-8" />
-      </div>
-      <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
-        Request Failed
-      </h3>
-      <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-lg leading-relaxed mb-8 font-mono">
-        {{ previewError }}
-      </p>
-      <UButton
-        label="Retry Request"
-        color="neutral"
-        variant="soft"
-        size="md"
-        class="px-8 font-bold"
-        @click="refreshEntityData"
-      />
-    </div>
-
     <!-- Table Content -->
-    <div v-else class="flex-1 overflow-auto custom-scrollbar h-full">
+    <div class="flex-1 overflow-auto custom-scrollbar h-full">
       <UTable
         v-if="tableColumns.length > 1 && !previewLoading"
         :columns="tableColumns"
@@ -85,9 +61,34 @@ function getRowData(row: any): Record<string, any> {
           th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
         }"
       >
-        <!-- Empty State Slot within UTable -->
+        <!-- Empty / Error State Slot within UTable -->
         <template #empty>
-          <div class="flex flex-col items-center justify-center py-32 text-center">
+          <!-- Error State -->
+          <div
+            v-if="previewError"
+            class="flex flex-col items-center justify-center py-32 text-center"
+          >
+            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+              <UIcon name="i-lucide-triangle-alert" class="text-error-500 w-8 h-8" />
+            </div>
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+              Request Failed
+            </h3>
+            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-lg leading-relaxed mb-8 font-mono">
+              {{ previewError }}
+            </p>
+            <UButton
+              label="Retry Request"
+              color="neutral"
+              variant="soft"
+              size="md"
+              class="px-8 font-bold"
+              @click="refreshEntityData"
+            />
+          </div>
+
+          <!-- Empty State (No Data) -->
+          <div v-else class="flex flex-col items-center justify-center py-32 text-center">
             <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
               <UIcon name="i-lucide-database-zap" class="text-neutral-400 w-8 h-8" />
             </div>
