@@ -2,9 +2,7 @@ import type { ODataProxyConfig } from '@bc8-odx/core'
 import { defineEventHandler } from 'h3'
 import odataHandler from './api/odata'
 
-export * from './utils/csrf'
-export * from './utils/dev-logs'
-export * from './utils/odata-client'
+export { addODataLog, clearODataLogs, createODataClient, fetchWithCsrf, getODataLogs } from '@bc8-odx/core'
 
 /**
  * Creates a standalone h3 event handler for OData proxying.

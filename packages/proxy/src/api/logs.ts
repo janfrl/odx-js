@@ -1,5 +1,5 @@
+import { clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { defineEventHandler } from 'h3'
-import { clearODataLogs, getODataLogs } from '../utils/dev-logs.ts'
 
 export default defineEventHandler((event) => {
   if (event.method === 'DELETE') {

@@ -1,5 +1,5 @@
+import { addODataLog, clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { addODataLog, clearODataLogs, getODataLogs } from '../src/utils/dev-logs'
 
 describe('proxy Dev Logs', () => {
   beforeEach(() => {

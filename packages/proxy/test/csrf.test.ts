@@ -1,6 +1,6 @@
+import { fetchWithCsrf } from '@bc8-odx/core'
 import { ofetch } from 'ofetch'
 import { describe, expect, it, vi } from 'vitest'
-import { fetchWithCsrf } from '../src/utils/csrf'
 
 vi.mock('ofetch', async () => {
   const actual = await vi.importActual('ofetch') as any
