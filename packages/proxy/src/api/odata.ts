@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
+import type { FetchOptions, FetchResponse } from 'ofetch'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { fetchWithCsrf } from '../utils/csrf.ts'
@@ -12,7 +13,6 @@ import { addODataLog } from '../utils/dev-logs.ts'
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = event.context.odataConfig as ODataProxyConfig
-  // Support Nitro-native hooks from context
   const hooks = config?.hooks || event.context.odataHooks
 
   if (!config) {
@@ -53,14 +53,13 @@ export default defineEventHandler(async (event) => {
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
+    // Standard SAP path for non-external services
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
-  // Combine headers: config < service < client
   const incomingHeaders = getHeaders(event)
   const headersToForward: Record<string, string> = {}
 
-  // Filter out headers we don't want to forward blindly
   const skipHeaders = ['host', 'connection', 'content-length', 'content-type', 'accept', 'accept-encoding', 'cookie']
   for (const [key, value] of Object.entries(incomingHeaders)) {
     if (value && !skipHeaders.includes(key.toLowerCase())) {
@@ -113,7 +112,6 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Completely avoid SDK/jiti logic in TestService or when buildDir is missing
     if (isExternal && buildDir && matched.name !== 'TestService') {
       const sdkDir = join(buildDir, 'odx', 'generated', matched.name)
       if (fs.existsSync(sdkDir)) {
@@ -159,7 +157,7 @@ export default defineEventHandler(async (event) => {
 
             if (entityApi) {
               const destination = {
-                url: baseUrl.split('/sap/opu/odata/')[0],
+                url: baseUrl.split('/sap/opu/odata/')[0]!,
                 isTrustingAllCertificates: config.rejectUnauthorized === false,
                 username: '',
                 password: '',
@@ -173,14 +171,13 @@ export default defineEventHandler(async (event) => {
                 destination.username = auth.username
                 destination.password = auth.password
               }
-              const customHeaders: Record<string, string> = { ...config.headers, ...matched.headers }
-              const query = getQuery(event)
+              const currentQuery = getQuery(event)
 
               if (event.method === 'GET') {
                 const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
-                for (const k in query) {
+                for (const k in currentQuery) {
                   if (k.startsWith('$')) {
-                    rb.addCustomQueryParameters({ [k]: String(query[k]) })
+                    rb.addCustomQueryParameters({ [k]: String(currentQuery[k]) })
                   }
                 }
                 rb.addCustomHeaders(customHeaders)
@@ -214,16 +211,16 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const fetchOptions: any = {
+    const fetchOptions: FetchOptions = {
       method: event.method as 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
       query,
-      body: capturedBody,
+      body: capturedBody as any,
       headers: {
         'content-type': 'application/json',
         'accept': 'application/json',
         ...customHeaders,
       },
-      onResponse({ response }: any) {
+      onResponse({ response }: { response: FetchResponse<any> }) {
         if (hooks?.callHook) {
           hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
           hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
@@ -243,7 +240,7 @@ export default defineEventHandler(async (event) => {
     logRequest(200, finalData, capturedBody, fullTargetUrl)
     return finalData
   }
-  catch (err: unknown) {
+  catch (err: any) {
     const error = err as { response?: { status?: number }, message: string }
     const query = getQuery(event)
     let errorUrl = withQuery(baseUrl, query)
