@@ -3,7 +3,6 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import https from 'node:https'
 import { createError, defineEventHandler, getQuery } from 'h3'
-import { ofetch } from 'ofetch'
 import { join, resolve } from 'pathe'
 
 export default defineEventHandler(async (event) => {
@@ -53,25 +52,29 @@ export default defineEventHandler(async (event) => {
       }
 
       console.warn(`[ODX] Downloading metadata for ${matched.name} from ${metadataUrl}...`)
-      if (headers.Authorization) {
-        console.warn(`[ODX]   - Using Authorization: ${headers.Authorization.split(' ')[0]} ...`)
-      }
 
-      const fetchOptions: any = {
-        headers,
-        timeout: 15000,
-        retry: 1,
-      }
-
-      if (config.rejectUnauthorized === false) {
-        // For Node environments, we need to pass the agent to handle self-signed certificates
-        fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
-      }
-
-      const xml = await ofetch<string>(metadataUrl, fetchOptions)
+      // Use native https module as it's proven to work with rejectUnauthorized in this environment
+      const xml = await new Promise<string>((resolve, reject) => {
+        const req = https.get(metadataUrl, {
+          headers,
+          rejectUnauthorized: config.rejectUnauthorized !== false,
+        }, (res) => {
+          if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+            return reject(new Error(`Status: ${res.statusCode} ${res.statusMessage}`))
+          }
+          let data = ''
+          res.on('data', chunk => data += chunk)
+          res.on('end', () => resolve(data))
+        })
+        req.on('error', reject)
+        req.setTimeout(15000, () => {
+          req.destroy()
+          reject(new Error('Request timed out'))
+        })
+      })
 
       if (!xml || xml.length < 100 || !xml.includes('Edmx')) {
-        throw new Error(`Received invalid or empty metadata from ${metadataUrl}. Content length: ${xml?.length || 0}`)
+        throw new Error(`Received invalid or empty metadata from ${metadataUrl}`)
       }
 
       fs.writeFileSync(tempFile, xml)
@@ -86,7 +89,6 @@ export default defineEventHandler(async (event) => {
       throw new Error(`Input EDMX file not found at ${inputPath}`)
     }
 
-    // Logic for triggering generation should be injected or passed via context
     const generate = event.context.odataGenerator
     if (typeof generate !== 'function') {
       throw createError({ statusCode: 501, statusMessage: 'SDK Generation not supported by host' })
@@ -103,11 +105,11 @@ export default defineEventHandler(async (event) => {
   }
   catch (err: unknown) {
     const error = err as any
-    const message = error.data?.message || error.message || String(error)
+    const message = error.message || String(error)
     console.error(`[ODX] Generation failed for ${serviceName}:`, message)
     
     throw createError({
-      statusCode: error.status || 500,
+      statusCode: 500,
       statusMessage: `Generation failed: ${message}`,
       data: { error: message },
     })

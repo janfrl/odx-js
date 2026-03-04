@@ -1,3 +1,4 @@
+import https from 'node:https'
 import { ofetch } from 'ofetch'
 
 /**
@@ -13,12 +14,17 @@ export async function fetchWithCsrf<T = any>(targetUrl: string, options: any): P
     return ofetch<T>(targetUrl, options)
   }
 
-  const preflightOptions = {
+  const preflightOptions: any = {
     method: 'HEAD',
     headers: {
       ...options.headers,
       'x-csrf-token': 'Fetch',
     },
+  }
+
+  // Forward agent for self-signed certificates
+  if (options.agent) {
+    preflightOptions.agent = options.agent
   }
 
   const preflightResponse = await ofetch.raw(targetUrl, preflightOptions)

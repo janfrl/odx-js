@@ -1,6 +1,8 @@
 import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
+import https from 'node:https'
+import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
@@ -17,6 +19,12 @@ export default defineEventHandler(async (event) => {
 
   if (!config) {
     throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
+  }
+
+  // Robustly handle self-signed certificates globally for the process if disabled in config
+  // This is often necessary because modern fetch implementations in Node ignore the 'agent' option
+  if (config.rejectUnauthorized === false) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
   }
 
   const basePath = config.basePath || '/api/odx'
@@ -49,7 +57,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const globalDest = (config.destination || '').replace(/\/$/, '')
-  let baseUrl = matched.url || globalDest
+  let baseUrl = (matched.url || globalDest).replace(/\/$/, '')
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
@@ -197,14 +205,13 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    let requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
     const query = getQuery(event)
     let fullTargetUrl = withQuery(requestUrl, query)
 
     if (requestUrl.startsWith('/')) {
       try {
         const origin = getRequestURL(event).origin
-        requestUrl = origin + requestUrl
         fullTargetUrl = origin + fullTargetUrl
       }
       catch {
@@ -226,6 +233,11 @@ export default defineEventHandler(async (event) => {
           hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
         }
       },
+    }
+
+    // Pass the agent for environments that still respect it (e.g. node-fetch-native)
+    if (config.rejectUnauthorized === false) {
+      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
     }
 
     if (hooks?.callHook) {
