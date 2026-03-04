@@ -11,7 +11,7 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
   // Use pnpm odata2ts to use the locally installed version in the workspace
   // Note: Ensure @odata2ts/odata-service and odata2ts are installed in the workspace
   const command = `pnpm odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --emit-mode ts --prettier`
-  
+
   try {
     // Pipe to capture output and avoid cluttering the terminal unless there's an error
     execSync(command, { stdio: 'pipe' })

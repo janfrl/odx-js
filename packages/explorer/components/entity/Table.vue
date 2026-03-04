@@ -51,9 +51,9 @@ function getRowData(row: any): Record<string, any> {
 
     <!-- Main Content Area -->
     <div class="flex-1 overflow-auto custom-scrollbar h-full relative">
-      <!-- 
-        The Table itself. 
-        Even if there's an error, we keep the UTable rendered (if columns exist) 
+      <!--
+        The Table itself.
+        Even if there's an error, we keep the UTable rendered (if columns exist)
         so the HEADERS are visible. We just pass an empty data array.
       -->
       <UTable
@@ -101,13 +101,13 @@ function getRowData(row: any): Record<string, any> {
         </template>
       </UTable>
 
-      <!-- 
-        Centrally positioned message container. 
-        By using absolute and inset-0 with flex, but only if data is empty, 
-        we get a message that is centered relative to the table's container 
+      <!--
+        Centrally positioned message container.
+        By using absolute and inset-0 with flex, but only if data is empty,
+        we get a message that is centered relative to the table's container
         (the viewport) rather than the table's scrollable width.
       -->
-      <div 
+      <div
         v-if="(!previewData?.length || previewError) && tableColumns.length > 1 && !previewLoading"
         class="absolute inset-0 top-14 flex items-center justify-center pointer-events-none"
       >

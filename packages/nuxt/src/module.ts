@@ -322,12 +322,13 @@ export default defineNuxtModule<ModuleOptions>({
         serviceEntities[svc.name] = extractEntitiesFromEdmx(inputPath)
 
         const outDir = join(outRoot, svc.name)
-        
+
         // Skip generation if already exists to avoid double-work on startup
         // The dev:prepare script will handle the initial generation
         if (!fs.existsSync(outDir) || fs.readdirSync(outDir).length === 0) {
           await generateODataTypes(inputPath, outDir, svc.name)
-        } else {
+        }
+        else {
           logger.debug(`[@bc8-odx/nuxt] Skipping generation for ${svc.name}, already exists in ${outDir}`)
         }
 
