@@ -42,12 +42,27 @@ describe('proxy integration', () => {
     proxyServer = createServer(toNodeListener(createProxyServer(config)))
     await new Promise(resolve => proxyServer.listen(proxyPort, () => resolve(true)))
     proxyUrl = `http://127.0.0.1:${proxyPort}`
-  })
+  }, 20000)
 
   afterAll(async () => {
-    await new Promise(resolve => backendServer.close(() => resolve(true)))
-    await new Promise(resolve => proxyServer.close(() => resolve(true)))
-  })
+    const closeServer = (server: any) => new Promise((resolve) => {
+      if (!server)
+        return resolve(true)
+      const timeout = setTimeout(() => {
+        server.closeAllConnections?.()
+        resolve(true)
+      }, 2000)
+      server.close(() => {
+        clearTimeout(timeout)
+        resolve(true)
+      })
+    })
+
+    await Promise.all([
+      closeServer(backendServer),
+      closeServer(proxyServer),
+    ])
+  }, 20000)
 
   it('proxies GET request to backend and returns data', async () => {
     const response = await ofetch(`${proxyUrl}/api/odx/TestService/Products`)
