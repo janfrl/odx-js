@@ -91,6 +91,16 @@ export default defineNuxtModule<ModuleOptions>({
       }
     }
 
+    const stringifyHeaders = (headers: Record<string, any> = {}): Record<string, string> => {
+      const result: Record<string, string> = {}
+      for (const [key, value] of Object.entries(headers)) {
+        if (value !== undefined && value !== null) {
+          result[key] = String(value)
+        }
+      }
+      return result
+    }
+
     const services = (options.services || []).map((s: ODataServiceConfig) => {
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
@@ -122,11 +132,11 @@ export default defineNuxtModule<ModuleOptions>({
           password: envPass || s.auth?.password,
           bearerToken: envToken || s.auth?.bearerToken,
         },
-        headers: {
+        headers: stringifyHeaders({
           ...s.headers,
           ...envHeadersJson,
           ...envHeadersIndividual,
-        },
+        }),
       }
     })
 
@@ -171,7 +181,7 @@ export default defineNuxtModule<ModuleOptions>({
           icon,
           strategy: strategy || 'proxied',
           auth: { username, password, bearerToken },
-          headers: { ...envHeadersJson, ...envHeadersIndividual },
+          headers: stringifyHeaders({ ...envHeadersJson, ...envHeadersIndividual }),
         })
       }
     }
@@ -202,7 +212,7 @@ export default defineNuxtModule<ModuleOptions>({
       mode: options.mode ?? 'sdk',
       destination: options.destination ?? '',
       auth: globalAuth,
-      headers: globalHeaders,
+      headers: stringifyHeaders(globalHeaders),
       forwardAuthHeader,
       rejectUnauthorized,
       services: allServices,
