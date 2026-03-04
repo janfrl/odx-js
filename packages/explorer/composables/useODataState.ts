@@ -8,6 +8,7 @@ export interface ODataServiceState {
   isGenerated?: boolean
   version?: 'v2' | 'v4' | null
   strategy?: 'proxied' | 'direct'
+  health?: 'online' | 'offline' | 'checking'
 }
 
 export interface ODataConfig {
@@ -82,15 +83,24 @@ watch(selectedService, async (newSvc) => {
   entitySchema.value = null
 
   if (newSvc) {
+    const svcInConfig = config.value.services.find(s => s.name === newSvc.name)
     entitySchemaLoading.value = true
     try {
       const res = await fetch(`/__odx__/schema?service=${newSvc.name}`)
       if (res.ok) {
         entitySchema.value = await res.json()
+        if (svcInConfig)
+          svcInConfig.health = 'online'
+      }
+      else {
+        if (svcInConfig)
+          svcInConfig.health = 'offline'
       }
     }
     catch (e) {
       console.error('[SharedState] Failed to fetch schema:', e)
+      if (svcInConfig)
+        svcInConfig.health = 'offline'
     }
     finally {
       entitySchemaLoading.value = false
@@ -127,7 +137,28 @@ export function useSharedODataState(): any {
     try {
       const res = await fetch('/__odx__/config')
       const data = (await res.json()) as ODataConfig
+
+      // Initialize with 'online' or keep previous health if available
+      data.services = data.services.map((s) => {
+        const existing = config.value.services.find(ex => ex.name === s.name)
+        return { ...s, health: existing?.health || 'online' }
+      })
+
       config.value = data
+
+      // Kick off background health checks via schema fetch
+      data.services.forEach((svc) => {
+        fetch(`/__odx__/schema?service=${svc.name}`).then((r) => {
+          const s = config.value.services.find(x => x.name === svc.name)
+          if (s)
+            s.health = r.ok ? 'online' : 'offline'
+        }).catch(() => {
+          const s = config.value.services.find(x => x.name === svc.name)
+          if (s)
+            s.health = 'offline'
+        })
+      })
+
       if (selectedService.value) {
         const updated = data.services.find(s => s.name === selectedService.value?.name)
         if (updated) {

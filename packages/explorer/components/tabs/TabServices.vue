@@ -81,6 +81,7 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             :icon="svc.icon || 'i-lucide-database'"
             variant="subtle"
             to="#"
+            :ui="{ leadingIcon: svc.health === 'offline' ? 'text-error' : 'text-primary' }"
             @click.prevent="selectedService = svc"
           >
             <template #footer>
@@ -123,8 +124,9 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             @click="selectedService = null; selectedEntity = null"
           />
           <div class="min-w-0">
-            <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate">
+            <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate flex items-center gap-2">
               {{ selectedService.name }}
+              <div v-if="selectedService.health === 'offline'" class="w-2.5 h-2.5 rounded-full bg-error-500 animate-pulse" title="Service unreachable" />
             </h2>
             <div class="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
               {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
