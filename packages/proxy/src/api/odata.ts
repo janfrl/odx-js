@@ -15,14 +15,13 @@ import { addODataLog } from '../utils/dev-logs.ts'
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = event.context.odataConfig as ODataProxyConfig
-  const hooks = config?.hooks || event.context.odataHooks
+  const hooks = event.context.odataHooks
 
   if (!config) {
     throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
   }
 
   // Robustly handle self-signed certificates globally for the process if disabled in config
-  // This is often necessary because modern fetch implementations in Node ignore the 'agent' option
   if (config.rejectUnauthorized === false) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
   }
@@ -61,7 +60,6 @@ export default defineEventHandler(async (event) => {
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
-    // Standard SAP path for non-external services
     baseUrl = `/sap/opu/odata/sap/${matched.name}`
   }
 
@@ -114,10 +112,43 @@ export default defineEventHandler(async (event) => {
         capturedBody = JSON.parse(capturedBody)
       }
       catch {
-        // Not JSON
       }
     }
   }
+
+  const query = getQuery(event)
+  const fetchOptions: FetchOptions = {
+    method: event.method as any,
+    query,
+    body: capturedBody as any,
+    headers: {
+      'content-type': 'application/json',
+      'accept': 'application/json',
+      ...customHeaders,
+    },
+    onResponse({ response }: { response: FetchResponse<any> }) {
+      if (hooks?.callHook) {
+        hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
+        hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
+      }
+    },
+  }
+
+  if (config.rejectUnauthorized === false) {
+    fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
+  }
+
+  // TRIGGER REQUEST HOOKS (Now unified before either path is taken)
+  if (hooks) {
+    console.warn(`[ODX Proxy] Triggering hooks for ${matched.name}...`)
+    if (typeof hooks.callHook === 'function') {
+      await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
+      await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
+    }
+  }
+
+  // Update headers from hooks if they were modified
+  const finalHeaders = { ...fetchOptions.headers as Record<string, string> }
 
   try {
     if (isExternal && buildDir && matched.name !== 'TestService') {
@@ -125,21 +156,12 @@ export default defineEventHandler(async (event) => {
       if (fs.existsSync(sdkDir)) {
         const { createJiti } = await import('jiti')
         const jiti = createJiti(import.meta.url)
-        const possibleDirs = [
-          sdkDir,
-          join(sdkDir, matched.route || matched.name.toLowerCase()),
-        ]
+        const possibleDirs = [sdkDir, join(sdkDir, matched.route || matched.name.toLowerCase())]
 
         let targetFile: string | null = null
         for (const dir of possibleDirs) {
-          if (fs.existsSync(join(dir, 'index.ts'))) {
-            targetFile = join(dir, 'index.ts')
-            break
-          }
-          if (fs.existsSync(join(dir, 'index.js'))) {
-            targetFile = join(dir, 'index.js')
-            break
-          }
+          if (fs.existsSync(join(dir, 'index.ts'))) { targetFile = join(dir, 'index.ts'); break }
+          if (fs.existsSync(join(dir, 'index.js'))) { targetFile = join(dir, 'index.js'); break }
         }
 
         if (targetFile) {
@@ -148,14 +170,9 @@ export default defineEventHandler(async (event) => {
           let apiFactory: any = null
           for (const name of possibleNames) {
             const found = Object.keys(sdk).find(k => k.toLowerCase() === name.toLowerCase())
-            if (found && typeof sdk[found] === 'function') {
-              apiFactory = sdk[found]
-              break
-            }
+            if (found && typeof sdk[found] === 'function') { apiFactory = sdk[found]; break }
           }
-          if (!apiFactory) {
-            apiFactory = Object.values(sdk).find(v => typeof v === 'function')
-          }
+          if (!apiFactory) apiFactory = Object.values(sdk).find(v => typeof v === 'function')
 
           if (apiFactory) {
             const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
@@ -171,32 +188,21 @@ export default defineEventHandler(async (event) => {
                 password: '',
                 authTokens: [] as { value: string }[],
               }
-              const auth = matched.auth || config.auth || {}
-              if (auth.bearerToken) {
-                destination.authTokens = [{ value: auth.bearerToken }]
-              }
-              else if (auth.username && auth.password) {
-                destination.username = auth.username
-                destination.password = auth.password
-              }
-              const currentQuery = getQuery(event)
+              if (auth.bearerToken) destination.authTokens = [{ value: auth.bearerToken }]
+              else if (auth.username && auth.password) { destination.username = auth.username; destination.password = auth.password }
 
               if (event.method === 'GET') {
                 const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
-                for (const k in currentQuery) {
-                  if (k.startsWith('$')) {
-                    rb.addCustomQueryParameters({ [k]: String(currentQuery[k]) })
-                  }
-                }
-                rb.addCustomHeaders(customHeaders)
+                for (const k in query) { if (k.startsWith('$')) rb.addCustomQueryParameters({ [k]: String(query[k]) }) }
+                rb.addCustomHeaders(finalHeaders)
                 const rawResponse = await rb.executeRaw(destination)
                 const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data
-                logRequest(200, res, capturedBody, await rb.url(destination).catch(() => baseUrl), customHeaders)
+                logRequest(200, res, capturedBody, await rb.url(destination).catch(() => baseUrl), finalHeaders)
                 return res
               }
               else if (event.method === 'POST') {
-                const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(customHeaders).execute(destination)
-                logRequest(201, res, capturedBody, baseUrl, customHeaders)
+                const res = await entityApi.requestBuilder().create(capturedBody).addCustomHeaders(finalHeaders).execute(destination)
+                logRequest(201, res, capturedBody, baseUrl, finalHeaders)
                 return res
               }
             }
@@ -206,7 +212,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
-    const query = getQuery(event)
     let fullTargetUrl = withQuery(requestUrl, query)
 
     if (requestUrl.startsWith('/')) {
@@ -218,33 +223,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const fetchOptions: FetchOptions = {
-      method: event.method as 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
-      query,
-      body: capturedBody as any,
-      headers: {
-        'content-type': 'application/json',
-        'accept': 'application/json',
-        ...customHeaders,
-      },
-      onResponse({ response }: { response: FetchResponse<any> }) {
-        if (hooks?.callHook) {
-          hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
-          hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
-        }
-      },
-    }
-
-    // Pass the agent for environments that still respect it (e.g. node-fetch-native)
-    if (config.rejectUnauthorized === false) {
-      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
-    }
-
-    if (hooks?.callHook) {
-      await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
-      await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
-    }
-
+    // Pass final headers to fetchWithCsrf
+    fetchOptions.headers = finalHeaders
     const response = await fetchWithCsrf(requestUrl, fetchOptions)
 
     const data = response as Record<string, any>
