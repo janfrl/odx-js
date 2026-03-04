@@ -223,6 +223,7 @@ export function useSharedODataState(): any {
     }
     catch (err: any) {
       console.error('[@bc8-odx/explorer] Generate failed:', err)
+      throw err
     }
     finally {
       generatingStatus.value[name] = false

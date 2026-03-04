@@ -44,14 +44,25 @@ const actionItems = computed((): DropdownMenuItem[][] => {
       icon: 'i-lucide-refresh-cw',
       loading: generatingStatus.value[selectedService.value.name],
       onSelect: async () => {
-        await generateService(selectedService.value!.name)
-        toast.add({
-          id: 'gen-success',
-          title: 'SDK Regenerated',
-          description: `Models for ${selectedService.value!.name} are now up to date.`,
-          icon: 'i-lucide-check-circle',
-          color: 'success',
-        })
+        try {
+          await generateService(selectedService.value!.name)
+          toast.add({
+            id: 'gen-success',
+            title: 'SDK Regenerated',
+            description: `Models for ${selectedService.value!.name} are now up to date.`,
+            icon: 'i-lucide-check-circle',
+            color: 'success',
+          })
+        }
+        catch (e: any) {
+          toast.add({
+            id: 'gen-error',
+            title: 'Generation Failed',
+            description: e.message || 'An unexpected error occurred during SDK generation.',
+            icon: 'i-lucide-circle-x',
+            color: 'error',
+          })
+        }
       },
     },
   ])
