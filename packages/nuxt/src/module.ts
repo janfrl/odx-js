@@ -246,6 +246,12 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.nitro.modules = nuxt.options.nitro.modules || []
     nuxt.options.nitro.modules.push('@bc8-odx/proxy/nitro')
 
+    // Ensure Nitro correctly resolves the proxy package and its dependencies
+    nuxt.options.nitro.externals = nuxt.options.nitro.externals || {}
+    nuxt.options.nitro.externals.inline = nuxt.options.nitro.externals.inline || []
+    nuxt.options.nitro.externals.inline.push('@bc8-odx/proxy')
+    nuxt.options.nitro.externals.inline.push('@bc8-odx/core')
+
     if (options.devtools && nuxt.options.dev) {
       setupDevToolsUI(nuxt, resolver)
     }
@@ -322,7 +328,14 @@ export default defineNuxtModule<ModuleOptions>({
         serviceEntities[svc.name] = extractEntitiesFromEdmx(inputPath)
 
         const outDir = join(outRoot, svc.name)
-        await generateODataTypes(inputPath, outDir, svc.name)
+        
+        // Skip generation if already exists to avoid double-work on startup
+        // The dev:prepare script will handle the initial generation
+        if (!fs.existsSync(outDir) || fs.readdirSync(outDir).length === 0) {
+          await generateODataTypes(inputPath, outDir, svc.name)
+        } else {
+          logger.debug(`[@bc8-odx/nuxt] Skipping generation for ${svc.name}, already exists in ${outDir}`)
+        }
 
         if (fs.existsSync(outDir)) {
           const files = fs.readdirSync(outDir)

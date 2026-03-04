@@ -1,5 +1,9 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineNitroModule } from 'nitropack/kit'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineNitroModule({
   setup(nitro) {
@@ -10,7 +14,7 @@ export default defineNitroModule({
     }
 
     // Resolve handler path
-    const handlerPath = new URL('./api/odata.ts', import.meta.url).href
+    const handlerPath = resolve(__dirname, './api/odata.ts')
 
     // Register the OData proxy handler as a file path
     nitro.options.handlers.push({
@@ -29,7 +33,7 @@ export default defineNitroModule({
     for (const h of internalHandlers) {
       nitro.options.handlers.push({
         route: h.route,
-        handler: new URL(`./api/${h.handler}.ts`, import.meta.url).href,
+        handler: resolve(__dirname, `./api/${h.handler}.ts`),
       })
     }
   },
