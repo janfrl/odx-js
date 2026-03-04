@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
     "baseUrl": ".",
@@ -7,9 +7,17 @@
     "moduleResolution": "Bundler",
     "paths": {
       "@bc8-odx/core": ["../core/src/index.ts"],
-      "@bc8-odx/proxy": ["../proxy/src/index.ts"]
+      "@bc8-odx/proxy": ["../proxy/src/index.ts"],
+      "~/*": ["./*"]
     },
     "strict": true
   },
-  "include": ["app.vue", "components", "composables", "test"]
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    "**/*",
+    "app.vue",
+    "components",
+    "composables",
+    "test"
+  ]
 }
