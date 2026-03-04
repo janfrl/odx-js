@@ -19,17 +19,66 @@ const metadataUrl = computed((): string => {
   return `/__odx__/schema?service=${selectedService.value.name}&raw=true`
 })
 
+async function onRegenerate() {
+  if (!selectedService.value)
+    return
+  try {
+    await generateService(selectedService.value.name)
+    toast.add({
+      id: 'gen-success',
+      title: 'SDK Regenerated',
+      description: `Models for ${selectedService.value.name} are now up to date.`,
+      icon: 'i-lucide-check-circle',
+      color: 'success',
+    })
+  }
+  catch (e: any) {
+    toast.add({
+      id: 'gen-error',
+      title: 'Generation Failed',
+      description: e.message || 'An unexpected error occurred during SDK generation.',
+      icon: 'i-lucide-circle-x',
+      color: 'error',
+    })
+  }
+}
+
 const actionItems = computed((): DropdownMenuItem[][] => {
   if (!selectedService.value)
     return []
 
+  const isOffline = selectedService.value.health === 'offline'
   const menu: DropdownMenuItem[][] = [[]]
 
-  // Metadata link first
+  // If online, Regenerate is in the dropdown. If offline, it's the primary button.
+  if (!isOffline) {
+    menu[0]!.push({
+      label: 'Regenerate SDK',
+      icon: 'i-lucide-refresh-cw',
+      loading: generatingStatus.value[selectedService.value.name],
+      onSelect: onRegenerate,
+    })
+  }
+
+  // Metadata links
+  const metadataGroup: DropdownMenuItem[] = []
+
+  // Internal metadata (only if online)
+  if (!isOffline) {
+    metadataGroup.push({
+      label: 'Internal Metadata',
+      icon: 'i-lucide-file-code',
+      onSelect: () => {
+        window.open(metadataUrl.value, '_blank')
+      },
+    })
+  }
+
+  // External metadata link (always show if URL is external)
   if (selectedService.value.url?.startsWith('http')) {
     const extUrl = `${selectedService.value.url.replace(/\/$/, '')}/$metadata`
-    menu[0]!.push({
-      label: 'Open External Metadata',
+    metadataGroup.push({
+      label: 'External Metadata',
       icon: 'i-lucide-external-link',
       onSelect: () => {
         window.open(extUrl, '_blank')
@@ -37,35 +86,9 @@ const actionItems = computed((): DropdownMenuItem[][] => {
     })
   }
 
-  // SDK Regeneration second (in its own group for separation)
-  menu.push([
-    {
-      label: 'Regenerate SDK',
-      icon: 'i-lucide-refresh-cw',
-      loading: generatingStatus.value[selectedService.value.name],
-      onSelect: async () => {
-        try {
-          await generateService(selectedService.value!.name)
-          toast.add({
-            id: 'gen-success',
-            title: 'SDK Regenerated',
-            description: `Models for ${selectedService.value!.name} are now up to date.`,
-            icon: 'i-lucide-check-circle',
-            color: 'success',
-          })
-        }
-        catch (e: any) {
-          toast.add({
-            id: 'gen-error',
-            title: 'Generation Failed',
-            description: e.message || 'An unexpected error occurred during SDK generation.',
-            icon: 'i-lucide-circle-x',
-            color: 'error',
-          })
-        }
-      },
-    },
-  ])
+  if (metadataGroup.length > 0) {
+    menu.push(metadataGroup)
+  }
 
   return menu.filter(group => group.length > 0)
 })
@@ -148,7 +171,18 @@ const actionItems = computed((): DropdownMenuItem[][] => {
         <!-- Actions Section -->
         <div class="flex items-center justify-end gap-3 shrink-0 flex-1">
           <UFieldGroup class="-mt-2">
+            <!-- If offline, Regenerate is primary. If online, Metadata is primary. -->
             <UButton
+              v-if="selectedService.health === 'offline'"
+              icon="i-lucide-refresh-cw"
+              color="neutral"
+              variant="subtle"
+              label="Regenerate SDK"
+              :loading="generatingStatus[selectedService.name]"
+              @click="onRegenerate"
+            />
+            <UButton
+              v-else
               icon="i-lucide-file-code"
               color="neutral"
               variant="subtle"
@@ -158,6 +192,7 @@ const actionItems = computed((): DropdownMenuItem[][] => {
               title="Open internal EDMX"
               :external="true"
             />
+
             <UDropdownMenu :items="actionItems">
               <UButton
                 color="neutral"
