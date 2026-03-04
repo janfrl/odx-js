@@ -1,5 +1,5 @@
-import type { ODataProxyConfig, ODataPublicConfig } from '@bc8-odx/core'
-import type { EntityMapping } from '@bc8-odx/core/server'
+import type { EntityMapping, ODataProxyConfig, ODataPublicConfig } from '@bc8-odx/core'
+import type { NitroConfig } from 'nitropack'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import https from 'node:https'
@@ -385,6 +385,7 @@ declare module '@nuxt/schema' {
   }
   interface NuxtOptions {
     odata?: ModuleOptions
+    nitro: NitroConfig
   }
   interface RuntimeConfig {
     odata: ODataProxyConfig
@@ -398,5 +399,11 @@ declare module 'h3' {
   interface H3EventContext {
     odataConfig: ODataProxyConfig
     odataAuth?: string
+  }
+}
+
+declare module 'nitropack' {
+  interface NitroConfig {
+    odata?: ODataProxyConfig
   }
 }
