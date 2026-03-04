@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 import type { Hookable } from 'hookable'
 import type { FetchOptions, FetchResponse } from 'ofetch'
+import type { UserContext } from './auth.ts'
 
 export interface ODataProxyHooks {
   'odx:proxy:request': (ctx: { event: H3Event, serviceName: string, fetchOptions: FetchOptions }) => void | Promise<void>
@@ -213,4 +214,12 @@ export interface ModuleOptions {
 // Global hook augmentations for Nitro
 declare module 'nitropack' {
   interface NitroRuntimeHooks extends ODataProxyHooks {}
+}
+
+declare module 'h3' {
+  interface H3EventContext {
+    odataConfig: ODataProxyConfig
+    odataAuth?: string
+    userContext?: UserContext
+  }
 }
