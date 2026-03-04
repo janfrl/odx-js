@@ -82,10 +82,6 @@ export interface ODataQuery<T = any> {
   /**
    * Filter expression to restrict the results.
    */
-  $filter?: string
-  /**
-   * Order the results by specific properties.
-   */
   $orderby?: string
   /**
    * Number of results to return.
@@ -212,4 +208,9 @@ export interface ModuleOptions {
     enabled?: boolean
     maxLogs?: number
   }
+}
+
+// Global hook augmentations for Nitro
+declare module 'nitropack' {
+  interface NitroRuntimeHooks extends ODataProxyHooks {}
 }

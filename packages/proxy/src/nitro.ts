@@ -18,12 +18,6 @@ export default defineNitroModule({
       handler: handlerPath,
     })
 
-    // Inject hooks into context for every request
-    nitro.hooks.hook('request', (event) => {
-      event.context.odataHooks = nitro.hooks
-      event.context.odataConfig = config
-    })
-
     // Also register the internal API handlers
     const internalHandlers = [
       { route: '/__odx__/logs', handler: 'logs' },
@@ -40,12 +34,3 @@ export default defineNitroModule({
     }
   },
 })
-
-// Augment both nitropack and nitropack/runtime to ensure visibility in all environments
-declare module 'nitropack' {
-  interface NitroRuntimeHooks extends ODataProxyHooks {}
-}
-
-declare module 'nitropack/runtime' {
-  interface NitroRuntimeHooks extends ODataProxyHooks {}
-}
