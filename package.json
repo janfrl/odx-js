@@ -37,6 +37,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:unit": "vitest run --exclude='**/test/*.test.ts' --include='packages/core/test/*.test.ts' --include='packages/explorer/test/*.test.ts' --include='packages/proxy/test/*.test.ts'",
     "test:watch": "vitest watch"
   },
   "dependencies": {
