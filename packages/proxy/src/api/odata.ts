@@ -9,8 +9,8 @@ import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
-import { fetchWithCsrf } from '../utils/csrf'
-import { addODataLog } from '../utils/dev-logs'
+import { fetchWithCsrf } from '../utils/csrf.ts'
+import { addODataLog } from '../utils/dev-logs.ts'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
