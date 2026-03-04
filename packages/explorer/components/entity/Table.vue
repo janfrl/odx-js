@@ -49,56 +49,26 @@ function getRowData(row: any): Record<string, any> {
       <UIcon name="i-lucide-refresh-cw" class="animate-spin w-10 h-10 text-primary" />
     </div>
 
-    <!-- Table Content -->
-    <div class="flex-1 overflow-auto custom-scrollbar h-full">
+    <!-- Main Content Area -->
+    <div class="flex-1 overflow-auto custom-scrollbar h-full relative">
+      <!-- 
+        The Table itself. 
+        Even if there's an error, we keep the UTable rendered (if columns exist) 
+        so the HEADERS are visible. We just pass an empty data array.
+      -->
       <UTable
         v-if="tableColumns.length > 1 && !previewLoading"
         :columns="tableColumns"
-        :data="previewData || []"
-        class="min-w-max h-full"
+        :data="previewData?.length ? previewData : []"
+        class="min-w-max"
         :ui="{
           thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
           th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
         }"
       >
-        <!-- Empty / Error State Slot within UTable -->
+        <!-- Hide the built-in empty slot when showing our own centered message -->
         <template #empty>
-          <!-- Error State -->
-          <div
-            v-if="previewError"
-            class="flex flex-col items-center justify-center py-32 text-center"
-          >
-            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
-              <UIcon name="i-lucide-triangle-alert" class="text-error-500 w-8 h-8" />
-            </div>
-            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
-              Request Failed
-            </h3>
-            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-lg leading-relaxed mb-8 font-mono">
-              {{ previewError }}
-            </p>
-            <UButton
-              label="Retry Request"
-              color="neutral"
-              variant="soft"
-              size="md"
-              class="px-8 font-bold"
-              @click="refreshEntityData"
-            />
-          </div>
-
-          <!-- Empty State (No Data) -->
-          <div v-else class="flex flex-col items-center justify-center py-32 text-center">
-            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
-              <UIcon name="i-lucide-database-zap" class="text-neutral-400 w-8 h-8" />
-            </div>
-            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
-              No data loaded yet
-            </h3>
-            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
-              Modify query parameters and click Execute to fetch records from the OData service.
-            </p>
-          </div>
+          <div class="h-32" />
         </template>
 
         <!-- Actions Column -->
@@ -130,6 +100,53 @@ function getRowData(row: any): Record<string, any> {
           </template>
         </template>
       </UTable>
+
+      <!-- 
+        Centrally positioned message container. 
+        By using absolute and inset-0 with flex, but only if data is empty, 
+        we get a message that is centered relative to the table's container 
+        (the viewport) rather than the table's scrollable width.
+      -->
+      <div 
+        v-if="(!previewData?.length || previewError) && tableColumns.length > 1 && !previewLoading"
+        class="absolute inset-0 top-14 flex items-center justify-center pointer-events-none"
+      >
+        <div class="flex flex-col items-center justify-center p-12 text-center pointer-events-auto">
+          <!-- Error State -->
+          <template v-if="previewError">
+            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+              <UIcon name="i-lucide-triangle-alert" class="text-error-500 w-8 h-8" />
+            </div>
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+              Request Failed
+            </h3>
+            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-lg leading-relaxed mb-8 font-mono">
+              {{ previewError }}
+            </p>
+            <UButton
+              label="Retry Request"
+              color="neutral"
+              variant="soft"
+              size="md"
+              class="px-8 font-bold"
+              @click="refreshEntityData"
+            />
+          </template>
+
+          <!-- Empty State (No Data) -->
+          <template v-else>
+            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+              <UIcon name="i-lucide-database-zap" class="text-neutral-400 w-8 h-8" />
+            </div>
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+              No data loaded yet
+            </h3>
+            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
+              Modify query parameters and click Execute to fetch records from the OData service.
+            </p>
+          </template>
+        </div>
+      </div>
 
       <!-- Full-table Empty State (Only if Schema/Columns missing) -->
       <div
