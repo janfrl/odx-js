@@ -1,4 +1,3 @@
-import https from 'node:https'
 import { ofetch } from 'ofetch'
 
 /**

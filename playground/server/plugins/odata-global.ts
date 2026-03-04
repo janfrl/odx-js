@@ -4,7 +4,6 @@ export default defineNitroPlugin((nitro) => {
   // Global logic applied to ALL OData services
   nitro.hooks.hook('odx:proxy:request', ({ serviceName, fetchOptions }) => {
     console.warn(`[ODX Global] Request to service: "${serviceName}"`)
-    console.warn(`[ODX Global] Available headers:`, Object.keys(fetchOptions.headers || {}))
 
     // Example: Track global request count or inject telemetry headers
     fetchOptions.headers = {

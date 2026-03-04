@@ -1,4 +1,4 @@
-import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@bc8-odx/core'
 import { defineNitroModule } from 'nitropack/kit'
 
 export default defineNitroModule({

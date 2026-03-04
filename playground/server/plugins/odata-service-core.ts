@@ -3,7 +3,7 @@ import { defineNitroPlugin } from 'nitropack/runtime'
 
 export default defineNitroPlugin((nitro) => {
   // Service-specific logic for 'Core' service only
-  nitro.hooks.hook('odx:proxy:request:Core' as any, ({ fetchOptions }: any) => {
+  nitro.hooks.hook('odx:proxy:request:Core', ({ fetchOptions }) => {
     console.warn('[ODX Core] Specific interceptor active')
 
     // Access control policy for Core service

@@ -4,8 +4,6 @@ import { defineNitroPlugin } from 'nitropack/runtime'
 export default defineNitroPlugin((nitro) => {
   // Service-specific logic for 'Northwind' service only
   nitro.hooks.hook('odx:proxy:request:Northwind', ({ event, fetchOptions }) => {
-    console.warn('[ODX Northwind] Specific interceptor active')
-
     // 1. Entity-based blocking (Customers is forbidden)
     if (event.path.includes('/Customers')) {
       console.error('[ODX Northwind] DENYING request to Customers entity set')

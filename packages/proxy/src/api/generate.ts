@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
       const tempFile = join(tempDir, `${matched.name}.edmx`)
 
       const headers: Record<string, string> = {
-        'Accept': 'application/xml, text/xml, */*',
+        Accept: 'application/xml, text/xml, */*',
         ...matched.headers,
       }
 
@@ -107,7 +107,7 @@ export default defineEventHandler(async (event) => {
     const error = err as any
     const message = error.message || String(error)
     console.error(`[ODX] Generation failed for ${serviceName}:`, message)
-    
+
     throw createError({
       statusCode: 500,
       statusMessage: `Generation failed: ${message}`,

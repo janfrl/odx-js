@@ -1,4 +1,5 @@
 import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { FetchOptions, FetchResponse } from 'ofetch'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import https from 'node:https'
@@ -6,16 +7,18 @@ import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
-import type { FetchOptions, FetchResponse } from 'ofetch'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
-import { fetchWithCsrf } from '../utils/csrf.ts'
-import { addODataLog } from '../utils/dev-logs.ts'
+import { fetchWithCsrf } from '../utils/csrf'
+import { addODataLog } from '../utils/dev-logs'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const config = event.context.odataConfig as ODataProxyConfig
-  const hooks = event.context.odataHooks
+
+  // Retrieve runtime hooks from Nitro app instance if available
+  const nitroApp = (event.context as any).nitroApp
+  const hooks = event.context.odataHooks || nitroApp?.hooks
 
   if (!config) {
     throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
@@ -107,7 +110,7 @@ export default defineEventHandler(async (event) => {
   let capturedBody: unknown = null
   if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
     capturedBody = await readBody(event).catch(() => null)
-    if (typeof capturedBody === 'string') {
+    if (capturedBody && typeof capturedBody === 'string') {
       try {
         capturedBody = JSON.parse(capturedBody)
       }
@@ -160,8 +163,14 @@ export default defineEventHandler(async (event) => {
 
         let targetFile: string | null = null
         for (const dir of possibleDirs) {
-          if (fs.existsSync(join(dir, 'index.ts'))) { targetFile = join(dir, 'index.ts'); break }
-          if (fs.existsSync(join(dir, 'index.js'))) { targetFile = join(dir, 'index.js'); break }
+          if (fs.existsSync(join(dir, 'index.ts'))) {
+            targetFile = join(dir, 'index.ts')
+            break
+          }
+          if (fs.existsSync(join(dir, 'index.js'))) {
+            targetFile = join(dir, 'index.js')
+            break
+          }
         }
 
         if (targetFile) {
@@ -170,9 +179,14 @@ export default defineEventHandler(async (event) => {
           let apiFactory: any = null
           for (const name of possibleNames) {
             const found = Object.keys(sdk).find(k => k.toLowerCase() === name.toLowerCase())
-            if (found && typeof sdk[found] === 'function') { apiFactory = sdk[found]; break }
+            if (found && typeof sdk[found] === 'function') {
+              apiFactory = sdk[found]
+              break
+            }
           }
-          if (!apiFactory) apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+          if (!apiFactory) {
+            apiFactory = Object.values(sdk).find(v => typeof v === 'function')
+          }
 
           if (apiFactory) {
             const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
@@ -188,12 +202,21 @@ export default defineEventHandler(async (event) => {
                 password: '',
                 authTokens: [] as { value: string }[],
               }
-              if (auth.bearerToken) destination.authTokens = [{ value: auth.bearerToken }]
-              else if (auth.username && auth.password) { destination.username = auth.username; destination.password = auth.password }
+              if (auth.bearerToken) {
+                destination.authTokens = [{ value: auth.bearerToken }]
+              }
+              else if (auth.username && auth.password) {
+                destination.username = auth.username
+                destination.password = auth.password
+              }
 
               if (event.method === 'GET') {
                 const rb = resourceId ? entityApi.requestBuilder().getByKey(resourceId) : entityApi.requestBuilder().getAll()
-                for (const k in query) { if (k.startsWith('$')) rb.addCustomQueryParameters({ [k]: String(query[k]) }) }
+                for (const k in query) {
+                  if (k.startsWith('$')) {
+                    rb.addCustomQueryParameters({ [k]: String(query[k]) })
+                  }
+                }
                 rb.addCustomHeaders(finalHeaders)
                 const rawResponse = await rb.executeRaw(destination)
                 const res = rawResponse.data?.d?.results || rawResponse.data?.d || rawResponse.data
@@ -234,8 +257,8 @@ export default defineEventHandler(async (event) => {
   }
   catch (err: any) {
     const error = err as { response?: { status?: number }, message: string }
-    const query = getQuery(event)
-    let errorUrl = withQuery(baseUrl, query)
+    const q = getQuery(event)
+    let errorUrl = withQuery(baseUrl, q)
     if (errorUrl.startsWith('/')) {
       try {
         const origin = getRequestURL(event).origin
