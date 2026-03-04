@@ -246,12 +246,6 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.nitro.modules = nuxt.options.nitro.modules || []
     nuxt.options.nitro.modules.push('@bc8-odx/proxy/nitro')
 
-    // Ensure Nitro correctly resolves the proxy package and its dependencies
-    nuxt.options.nitro.externals = nuxt.options.nitro.externals || {}
-    nuxt.options.nitro.externals.inline = nuxt.options.nitro.externals.inline || []
-    nuxt.options.nitro.externals.inline.push('@bc8-odx/proxy')
-    nuxt.options.nitro.externals.inline.push('@bc8-odx/core')
-
     if (options.devtools && nuxt.options.dev) {
       setupDevToolsUI(nuxt, resolver)
     }

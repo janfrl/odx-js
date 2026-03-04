@@ -1,39 +1,35 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { createResolver } from '@nuxt/kit'
 import { defineNitroModule } from 'nitropack/kit'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineNitroModule({
   setup(nitro) {
     const config = (nitro.options as any).odata as ODataProxyConfig
+    const resolver = createResolver(import.meta.url)
 
     if (!config) {
       return
     }
 
-    // Resolve handler path
-    const handlerPath = resolve(__dirname, './api/odata.ts')
-
-    // Register the OData proxy handler as a file path
+    // Register handlers using absolute paths resolved via Nuxt resolver
+    // This is the most reliable way to bridge the gap between Nuxt modules and Nitro
     nitro.options.handlers.push({
       route: `${config.basePath}/**`,
-      handler: handlerPath,
+      handler: resolver.resolve('./api/odata.ts'),
     })
 
     // Also register the internal API handlers
     const internalHandlers = [
-      { route: '/__odx__/logs', handler: 'logs' },
-      { route: '/__odx__/config', handler: 'config' },
-      { route: '/__odx__/generate', handler: 'generate' },
-      { route: '/__odx__/schema', handler: 'schema' },
+      { route: '/__odx__/logs', handler: './api/logs.ts' },
+      { route: '/__odx__/config', handler: './api/config.ts' },
+      { route: '/__odx__/generate', handler: './api/generate.ts' },
+      { route: '/__odx__/schema', handler: './api/schema.ts' },
     ]
 
     for (const h of internalHandlers) {
       nitro.options.handlers.push({
         route: h.route,
-        handler: resolve(__dirname, `./api/${h.handler}.ts`),
+        handler: resolver.resolve(h.handler),
       })
     }
   },
