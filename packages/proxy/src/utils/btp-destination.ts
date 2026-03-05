@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import process from 'node:process'
 import { ofetch } from 'ofetch'
 
@@ -12,29 +14,46 @@ export interface BtpDestination {
   authTokens?: Array<{ value: string }>
 }
 
-interface ServiceBinding {
-  credentials: {
-    clientid: string
-    clientsecret: string
-    url: string
-    uri?: string
+// In-memory cache to prevent redundant BTP API calls and improve performance
+const destinationCache = new Map<string, BtpDestination>()
+
+/**
+ * Loads VCAP_SERVICES from the environment (production) or local default-env.json (development).
+ */
+function getVcapServices(): any {
+  if (process.env.VCAP_SERVICES) {
+    return JSON.parse(process.env.VCAP_SERVICES)
   }
+
+  try {
+    const defaultEnvPath = path.resolve(process.cwd(), 'default-env.json')
+    if (fs.existsSync(defaultEnvPath)) {
+      const defaultEnv = JSON.parse(fs.readFileSync(defaultEnvPath, 'utf-8'))
+      return defaultEnv.VCAP_SERVICES || {}
+    }
+  }
+  catch (err) {
+    console.warn('[@bc8-odx/proxy] Could not read local default-env.json:', err)
+  }
+
+  return {}
 }
 
 /**
- * Resolves real technical user credentials and target URL from the SAP BTP Destination Service.
- * Supports VCAP_SERVICES (on BTP) and individual env variables (local).
+ * Resolves technical user credentials and target URL from the SAP BTP Destination Service.
+ * Uses an internal cache to minimize latency.
  */
 export async function resolveBtpDestination(serviceName: string): Promise<BtpDestination> {
-  const vcap = JSON.parse(process.env.VCAP_SERVICES || '{}')
-  
-  // 1. Extract Service Credentials (Destination & XSUAA)
-  const destService = vcap.destination?.[0] || JSON.parse(process.env.NUXT_ODATA_BTP_DESTINATION_KEY || '{}')
-  const xsuaaService = vcap.xsuaa?.[0] || JSON.parse(process.env.NUXT_ODATA_BTP_XSUAA_KEY || '{}')
+  if (destinationCache.has(serviceName)) {
+    return destinationCache.get(serviceName)!
+  }
+
+  const vcap = getVcapServices()
+  const destService = vcap.destination?.[0]
+  const xsuaaService = vcap.xsuaa?.[0]
 
   if (!destService?.credentials || !xsuaaService?.credentials) {
-    // Fallback to mock for local dev if no keys are provided
-    console.warn(`[@bc8-odx/proxy] No BTP Service Keys found. Falling back to mock for "${serviceName}"`)
+    console.warn(`[@bc8-odx/proxy] No BTP Service bindings found. Falling back to mock for "${serviceName}"`)
     return {
       name: serviceName,
       url: 'https://mock-backend.btp.example.com/sap/opu/odata/sap',
@@ -47,15 +66,16 @@ export async function resolveBtpDestination(serviceName: string): Promise<BtpDes
     const { clientid, clientsecret, url: xsuaaUrl } = xsuaaService.credentials
     const { uri: destApiUrl } = destService.credentials
 
-    // 2. Get Access Token for Destination Service via XSUAA
     const auth = Buffer.from(`${clientid}:${clientsecret}`).toString('base64')
     const tokenRes = await ofetch<{ access_token: string }>(`${xsuaaUrl}/oauth/token`, {
       method: 'POST',
-      headers: { Authorization: `Basic ${auth}` },
-      params: { grant_type: 'client_credentials' },
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({ grant_type: 'client_credentials' }),
     })
 
-    // 3. Fetch Destination Details
     const destData = await ofetch<any>(`${destApiUrl}/destination-configuration/v1/destinations/${serviceName}`, {
       headers: { Authorization: `Bearer ${tokenRes.access_token}` },
     })
@@ -63,13 +83,16 @@ export async function resolveBtpDestination(serviceName: string): Promise<BtpDes
     const config = destData.destinationConfiguration
     const authTokens = destData.authTokens
 
-    return {
+    const resolvedDestination: BtpDestination = {
       name: serviceName,
       url: config.URL,
       user: config.User,
       password: config.Password,
       authTokens: authTokens?.map((t: any) => ({ value: t.value })),
     }
+
+    destinationCache.set(serviceName, resolvedDestination)
+    return resolvedDestination
   }
   catch (err: any) {
     throw new Error(`Failed to resolve BTP destination "${serviceName}": ${err.message}`)
