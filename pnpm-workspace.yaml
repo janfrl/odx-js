@@ -2,6 +2,7 @@ packages:
   - packages/*
   - playground
   - docs
+  - local-approuter
 
 onlyBuiltDependencies:
   - '@parcel/watcher'
