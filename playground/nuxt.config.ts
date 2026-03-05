@@ -23,6 +23,28 @@ export default defineNuxtConfig({
             name: 'ODX Client Dev',
           },
         )
+
+        startSubprocess(
+          {
+            command: 'npm',
+            args: ['start'],
+            cwd: resolve(__dirname, '../local-approuter'),
+            env: {
+              PORT: '5000',
+              destinations: JSON.stringify([
+                {
+                  name: 'nuxt-local',
+                  url: 'http://localhost:3000',
+                  forwardAuthToken: true,
+                },
+              ]),
+            },
+          },
+          {
+            id: 'odx:approuter',
+            name: 'SAP Approuter',
+          },
+        )
       },
     }),
   ],
