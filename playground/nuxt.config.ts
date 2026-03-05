@@ -31,10 +31,9 @@ export default defineNuxtConfig({
             cwd: resolve(__dirname, '../local-approuter'),
             env: {
               PORT: '5000',
-              TENANT_HOST_PATTERN: '^(.*).localhost',
               destinations: JSON.stringify([
                 {
-                  name: 'nuxt-local',
+                  name: 'genericodataproxy-destination',
                   url: 'http://localhost:3000',
                   forwardAuthToken: true,
                 },
