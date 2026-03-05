@@ -31,13 +31,14 @@ export default defineNitroPlugin((nitro) => {
       // Create a synthetic payload for local testing if credentials exist in .env
       const matched = config.services?.find(s => s.name === serviceName)
       const username = matched?.auth?.username || config.auth?.username || 'DEVELOPER'
+      const mockCompanies = matched?.auth?.mockUserCompanies || config.auth?.mockUserCompanies || [
+        { company: '1000', source: 'ERP' },
+        { company: 'DE01', source: 'CRM' },
+      ]
       
       userPayload = {
         userId: username,
-        userCompanies: [
-          { company: '1000', source: 'ERP' },
-          { company: 'DE01', source: 'CRM' },
-        ],
+        userCompanies: mockCompanies,
       }
       console.warn(`[@bc8-odx/proxy] Synthetic Auth: Acting as user "${username}"`)
     }
@@ -48,7 +49,10 @@ export default defineNitroPlugin((nitro) => {
 
     // 2. Resolve Technical User credentials via BTP Destination
     try {
-      const destination = await resolveBtpDestination(serviceName)
+      const matched = config?.services?.find(s => s.name === serviceName)
+      const btpTargetName = matched?.destination || serviceName
+      
+      const destination = await resolveBtpDestination(btpTargetName)
       console.warn(`[@bc8-odx/proxy] BTP Swap: Swapping user credentials for Destination "${destination.name}"`)
 
       // 3. Mutate Request: Update target URL

@@ -105,6 +105,7 @@ export default defineNuxtModule<ModuleOptions>({
       const envKey = s.name.toUpperCase()
       const envUrl = process.env[`${prefix}${envKey}_URL`]
       const envName = process.env[`${prefix}${envKey}_NAME`]
+      const envDest = process.env[`${prefix}${envKey}_DESTINATION`]
       const envIcon = process.env[`${prefix}${envKey}_ICON`]
       const envStrategy = process.env[`${prefix}${envKey}_STRATEGY`] as 'proxied' | 'direct' | undefined
       const envUser = process.env[`${prefix}${envKey}_AUTH_USERNAME`]
@@ -125,6 +126,7 @@ export default defineNuxtModule<ModuleOptions>({
         ...s,
         url: envUrl || s.url,
         name: envName || s.name,
+        destination: envDest || s.destination,
         icon: envIcon || s.icon,
         strategy: envStrategy || s.strategy || 'proxied',
         auth: {
@@ -159,6 +161,7 @@ export default defineNuxtModule<ModuleOptions>({
       const url = process.env[`${prefix}${key}_URL`]
       if (url) {
         const name = process.env[`${prefix}${key}_NAME`] || key
+        const destination = process.env[`${prefix}${key}_DESTINATION`]
         const icon = process.env[`${prefix}${key}_ICON`]
         const strategy = process.env[`${prefix}${key}_STRATEGY`] as 'proxied' | 'direct' | undefined
         const username = process.env[`${prefix}${key}_AUTH_USERNAME`]
@@ -180,6 +183,7 @@ export default defineNuxtModule<ModuleOptions>({
           url,
           icon,
           strategy: strategy || 'proxied',
+          destination,
           auth: { username, password, bearerToken },
           headers: stringifyHeaders({ ...envHeadersJson, ...envHeadersIndividual }),
         })
@@ -192,6 +196,7 @@ export default defineNuxtModule<ModuleOptions>({
       username: process.env.NUXT_ODATA_AUTH_USERNAME || options.auth?.username,
       password: process.env.NUXT_ODATA_AUTH_PASSWORD || options.auth?.password,
       bearerToken: process.env.NUXT_ODATA_AUTH_BEARER_TOKEN || options.auth?.bearerToken,
+      mockUserCompanies: process.env.NUXT_ODATA_AUTH_MOCK_COMPANIES ? JSON.parse(process.env.NUXT_ODATA_AUTH_MOCK_COMPANIES) : options.auth?.mockUserCompanies,
     }
 
     const globalHeaders: Record<string, string> = { ...options.headers }

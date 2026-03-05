@@ -1,3 +1,6 @@
+import { Buffer } from 'node:buffer'
+import { ofetch } from 'ofetch'
+
 /**
  * Raw payload structure expected from the SAP XSUAA JWT token.
  */
@@ -27,6 +30,29 @@ export interface PolicyRule {
 export interface UserContext {
   userId: string
   policies: PolicyRule[]
+}
+
+/**
+ * Fetches a real JWT token from SAP BTP XSUAA using Password Grant.
+ * Used for local testing with real user data.
+ */
+export async function fetchRealXsuaaToken(credentials: { clientid: string, clientsecret: string, url: string }, user: string, pass: string): Promise<string> {
+  const auth = Buffer.from(`${credentials.clientid}:${credentials.clientsecret}`).toString('base64')
+
+  const res = await ofetch<{ access_token: string }>(`${credentials.url}/oauth/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'password',
+      username: user,
+      password: pass,
+    }),
+  })
+
+  return res.access_token
 }
 
 /**
