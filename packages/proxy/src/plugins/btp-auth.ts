@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import type { XsuaaPayload } from '@bc8-odx/core'
 import { parseXsuaaPolicies } from '@bc8-odx/core'
 import { defineNitroPlugin } from 'nitropack/runtime'
@@ -20,7 +19,8 @@ export default defineNitroPlugin((nitro) => {
       try {
         const payloadPart = authHeader.split(' ')[1]!.split('.')[1]
         if (payloadPart) {
-          userPayload = JSON.parse(Buffer.from(payloadPart, 'base64').toString('utf-8'))
+          const json = atob(payloadPart)
+          userPayload = JSON.parse(json)
         }
       }
       catch (e) {
@@ -35,7 +35,7 @@ export default defineNitroPlugin((nitro) => {
         { company: '1000', source: 'ERP' },
         { company: 'DE01', source: 'CRM' },
       ]
-      
+
       userPayload = {
         userId: username,
         userCompanies: mockCompanies,
@@ -51,7 +51,7 @@ export default defineNitroPlugin((nitro) => {
     try {
       const matched = config?.services?.find(s => s.name === serviceName)
       const btpTargetName = matched?.destination || serviceName
-      
+
       const destination = await resolveBtpDestination(btpTargetName)
       console.warn(`[@bc8-odx/proxy] BTP Swap: Swapping user credentials for Destination "${destination.name}"`)
 
@@ -60,7 +60,7 @@ export default defineNitroPlugin((nitro) => {
 
       // 4. Mutate Request: Set Technical Authorization (Drops original user token)
       if (destination.user && destination.password) {
-        const credentials = Buffer.from(`${destination.user}:${destination.password}`).toString('base64')
+        const credentials = btoa(`${destination.user}:${destination.password}`)
         fetchOptions.headers = {
           ...fetchOptions.headers,
           Authorization: `Basic ${credentials}`,

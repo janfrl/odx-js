@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import type { XsuaaPayload } from '@bc8-odx/core'
 import { fetchRealXsuaaToken, parseXsuaaPolicies } from '@bc8-odx/core'
@@ -20,7 +19,8 @@ export default defineEventHandler(async (event) => {
     try {
       const payloadPart = authHeader.split(' ')[1]!.split('.')[1]
       if (payloadPart) {
-        const payload = JSON.parse(Buffer.from(payloadPart, 'base64').toString('utf-8')) as XsuaaPayload
+        const json = atob(payloadPart)
+        const payload = JSON.parse(json) as XsuaaPayload
         return parseXsuaaPolicies(payload)
       }
     }
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   let password = config?.auth?.password
 
   if (authHeader && authHeader.startsWith('Basic ')) {
-    const credentials = Buffer.from(authHeader.split(' ')[1]!, 'base64').toString('utf-8')
+    const credentials = atob(authHeader.split(' ')[1]!)
     const [u, p] = credentials.split(':')
     if (u && p) {
       username = u
@@ -51,15 +51,15 @@ export default defineEventHandler(async (event) => {
       if (xsuaaService?.credentials) {
         console.warn(`[@bc8-odx/proxy] Local Dev: Fetching real XSUAA token for user "${username}"...`)
         const token = await fetchRealXsuaaToken(xsuaaService.credentials, username, password)
-        
+
         const payloadPart = token.split('.')[1]!
-        const payload = JSON.parse(Buffer.from(payloadPart, 'base64').toString('utf-8')) as XsuaaPayload
+        const json = atob(payloadPart)
+        const payload = JSON.parse(json) as XsuaaPayload
         return parseXsuaaPolicies(payload)
       }
     }
     catch (err: any) {
       console.error('[@bc8-odx/proxy] BTP Token Exchange failed:', err.message)
-      // If BTP login failed, we don't fallback to synthetic, we want to see the error
       throw createError({
         statusCode: 401,
         statusMessage: `BTP Login failed: ${err.message}`,

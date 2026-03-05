@@ -26,11 +26,12 @@ export default defineNuxtConfig({
 
         startSubprocess(
           {
-            command: 'npm',
+            command: 'pnpm',
             args: ['start'],
             cwd: resolve(__dirname, '../local-approuter'),
             env: {
               PORT: '5000',
+              TENANT_HOST_PATTERN: '^(.*).localhost',
               destinations: JSON.stringify([
                 {
                   name: 'nuxt-local',

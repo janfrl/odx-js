@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import { ofetch } from 'ofetch'
 
 /**
@@ -37,7 +36,7 @@ export interface UserContext {
  * Used for local testing with real user data.
  */
 export async function fetchRealXsuaaToken(credentials: { clientid: string, clientsecret: string, url: string }, user: string, pass: string): Promise<string> {
-  const auth = Buffer.from(`${credentials.clientid}:${credentials.clientsecret}`).toString('base64')
+  const auth = btoa(`${credentials.clientid}:${credentials.clientsecret}`)
 
   const res = await ofetch<{ access_token: string }>(`${credentials.url}/oauth/token`, {
     method: 'POST',
