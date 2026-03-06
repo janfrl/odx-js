@@ -2,10 +2,16 @@ import { ofetch } from 'ofetch'
 
 /**
  * Raw payload structure expected from the SAP XSUAA JWT token.
+ * Supports both real XSUAA attributes and synthetic mock structures.
  */
 export interface XsuaaPayload {
-  userId: string
-  userCompanies: Array<{
+  user_id?: string
+  userId?: string
+  email?: string
+  // Real XSUAA custom attributes are usually here
+  'xs.user.attributes'?: Record<string, string[]>
+  // Fallback for our mock structure
+  userCompanies?: Array<{
     company: string
     source: string
     [key: string]: unknown
@@ -55,30 +61,53 @@ export async function fetchRealXsuaaToken(credentials: { clientid: string, clien
 }
 
 /**
- * Transforms raw XSUAA company assignments into a structured policy-based user context.
- * Groups companies by their source system.
+ * Transforms raw XSUAA data into a structured policy-based user context.
+ * Robustly handles real BTP attributes and local mock formats.
  */
 export function parseXsuaaPolicies(payload: XsuaaPayload): UserContext {
-  const policiesMap = new Map<string, string[]>()
+  const policies: PolicyRule[] = []
+  const userId = payload.userId || payload.user_id || 'UNKNOWN'
 
-  for (const entry of payload.userCompanies) {
-    const action = entry.source
-    if (!policiesMap.has(action)) {
-      policiesMap.set(action, [])
+  // 1. Handle Real BTP Attributes (from xs.user.attributes)
+  const attributes = payload['xs.user.attributes']
+  if (attributes) {
+    // Example: If you have attributes like 'CompanyCode' or 'Source' in BTP
+    // We map all found attributes to policies for flexibility
+    for (const [key, values] of Object.entries(attributes)) {
+      policies.push({
+        action: key, // e.g. 'CompanyCode'
+        subject: 'all',
+        conditions: {
+          companyCode: values,
+        },
+      })
     }
-    policiesMap.get(action)!.push(entry.company)
   }
 
-  const policies: PolicyRule[] = Array.from(policiesMap.entries()).map(([action, companies]) => ({
-    action,
-    subject: 'all',
-    conditions: {
-      companyCode: companies,
-    },
-  }))
+  // 2. Handle Mock Format (Fallback)
+  if (payload.userCompanies && Array.isArray(payload.userCompanies)) {
+    const policiesMap = new Map<string, string[]>()
+    for (const entry of payload.userCompanies) {
+      const action = entry.source
+      if (!policiesMap.has(action)) {
+        policiesMap.set(action, [])
+      }
+      policiesMap.get(action)!.push(entry.company)
+    }
+
+    for (const [action, companies] of policiesMap.entries()) {
+      policies.push({
+        action,
+        subject: 'all',
+        conditions: {
+          companyCode: companies,
+        },
+      })
+    }
+  }
 
   return {
-    userId: payload.userId,
+    userId,
     policies,
   }
 }
