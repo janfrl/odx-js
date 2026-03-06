@@ -1,0 +1,10 @@
+applications:
+  - name: odx-proxy
+    memory: 256M
+    disk_quota: 512M
+    buildpacks:
+      - nodejs_buildpack
+    command: node .output/server/index.mjs
+    services:
+      - genericodataproxy-xsuaa
+      - genericodataproxy-destination
