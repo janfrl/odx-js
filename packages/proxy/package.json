@@ -8,6 +8,7 @@
   },
   "main": "./src/index.ts",
   "scripts": {
+    "build": "nitropack build",
     "test": "vitest run"
   },
   "dependencies": {
