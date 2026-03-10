@@ -1,0 +1,13 @@
+{
+  "authenticationMethod": "route",
+  "routes": [
+    {
+      "source": "^/api/(.*)$",
+      "target": "/$1",
+      "destination": "odx-proxy-backend",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false,
+      "forwardAuthToken": true
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+applications:
+  - name: odx-approuter
+    memory: 128M
+    disk_quota: 256M
+    buildpacks:
+      - nodejs_buildpack
+    env:
+      destinations: >
+        [
+          {
+            "name": "genericodataproxy-destination",
+            "url": "https://odx-proxy.cfapps.eu10-004.hana.ondemand.com",
+            "forwardAuthToken": true
+          }
+        ]
+    services:
+      - genericodataproxy-xsuaa
