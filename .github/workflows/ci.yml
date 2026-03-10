@@ -45,8 +45,5 @@ jobs:
       - name: Playground prepare
         run: npm run dev:prepare
 
-      - name: Explorer prepare
-        run: npx nuxi prepare packages/explorer
-
       - name: Test
         run: npm run test:unit

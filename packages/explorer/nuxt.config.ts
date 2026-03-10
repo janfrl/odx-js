@@ -10,6 +10,12 @@ export default defineNuxtConfig({
 
   devtools: { enabled: false },
 
+  typescript: {
+    tsconfig: {
+      extends: './tsconfig.nuxt.json',
+    },
+  },
+
   app: {
     baseURL: '/__odx__/client',
   },

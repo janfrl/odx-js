@@ -1,8 +1,17 @@
 {
-  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@bc8-odx/core": ["packages/core/src/index.ts"],
+      "@bc8-odx/core/server": ["packages/core/src/server.ts"],
+      "@bc8-odx/proxy": ["packages/proxy/src/index.ts"]
+    }
   },
   "exclude": [
     "dist",
