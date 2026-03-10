@@ -16,5 +16,7 @@ export default defineBuildConfig({
     'hookable',
     'nitropack',
     '@bc8-odx/core',
+    '@sap/xssec',
+    '@sap/xsenv',
   ],
 })

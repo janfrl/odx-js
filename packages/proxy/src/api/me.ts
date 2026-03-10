@@ -1,72 +1,84 @@
 import process from 'node:process'
-import { fetchRealXsuaaToken, parseXsuaaPolicies } from '@bc8-odx/core'
+import { fetchRealXsuaaToken } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeader, setResponseHeader } from 'h3'
 
 /**
- * Returns the user context.
+ * Returns the current user's identity details using the official SAP security context methods.
  */
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
   const config = event.context.odataConfig
+  const sc = event.context.securityContext
 
-  // 1. Check for validated security context from SAP XSUAA Plugin
-  if (event.context.securityContext) {
-    const tokenInfo = event.context.securityContext.getTokenInfo()
+  // 1. Unified Return via SAP Security Context (Real Cloud Flow)
+  if (sc) {
+    const authAttr = sc.getAttribute('auth')?.[0]
+    let userCompanies: any[] = []
+    if (authAttr) {
+      try {
+        userCompanies = JSON.parse(authAttr)
+      } catch (e) {}
+    }
+
     return {
-      ...parseXsuaaPolicies(tokenInfo),
-      _raw: tokenInfo,
+      Usermail: sc.getEmail() || '',
+      Userid: sc.getAttribute('employee_id')?.[0] || sc.getLogonName() || '',
+      Usercompany: sc.getAttribute('company_id')?.[0] || '',
+      Usercompanies: userCompanies,
+      _raw: sc.getTokenInfo()
     }
   }
 
-  // 2. Fallback for Bearer Token (Manual)
+  // 2. Manual decoding fallback (Approuter present but plugin skipped)
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const payloadPart = authHeader.split(' ')[1]!.split('.')[1]
       if (payloadPart) {
-        const payload = JSON.parse(atob(payloadPart))
+        const p = JSON.parse(atob(payloadPart))
+        const attr = p['xs.user.attributes'] || {}
+        let userCompanies: any[] = []
+        try {
+          userCompanies = JSON.parse(attr.auth?.[0] || '[]')
+        } catch (e) {}
+
         return {
-          ...parseXsuaaPolicies(payload),
-          _raw: payload,
+          Usermail: p.email || '',
+          Userid: attr.employee_id?.[0] || p.user_id || p.sub || '',
+          Usercompany: attr.company_id?.[0] || '',
+          Usercompanies: userCompanies,
+          _raw: p
         }
       }
     }
     catch (e) {
-      console.error('[@bc8-odx/proxy] Failed to parse JWT in /me:', e)
+      console.error('[@bc8-odx/proxy] Failed to manually parse JWT in /me:', e)
     }
   }
 
-  // 3. Local Development Flow
-  // Only offer Basic Auth prompt and Token Exchange if NOT in Cloud Foundry
+  // 3. Local Development Flows (Token Exchange / Browser Prompt)
   const isCloud = !!process.env.VCAP_APPLICATION || !!process.env.VCAP_SERVICES
   
   if (!isCloud) {
-    // 3a. Token Exchange via Config/Env
+    // Local Token Exchange Logic here... (bleibt wie bisher)
     if (config?.auth?.username && config?.auth?.password) {
       try {
-        const defaultEnv = JSON.parse(process.env.NUXT_ODATA_BTP_XSUAA_KEY || '{}')
-        if (defaultEnv.credentials) {
-          const token = await fetchRealXsuaaToken(defaultEnv.credentials, config.auth.username, config.auth.password)
+        const xsuaaService = JSON.parse(process.env.NUXT_ODATA_BTP_XSUAA_KEY || '{}')
+        if (xsuaaService.credentials) {
+          const token = await fetchRealXsuaaToken(xsuaaService.credentials, config.auth.username, config.auth.password)
           const payloadPart = token.split('.')[1]!
-          const payload = JSON.parse(atob(payloadPart))
-          return {
-            ...parseXsuaaPolicies(payload),
-            _raw: payload,
-          }
+          const p = JSON.parse(atob(payloadPart))
+          // Recursive call or simple return for local dev...
+          return { Usermail: p.email, Userid: p.user_id, Usercompany: '', Usercompanies: [], _raw: p }
         }
-      }
-      catch (err: any) {
-        console.error('[@bc8-odx/proxy] Local BTP Token Exchange failed:', err.message)
-      }
+      } catch (err) {}
     }
-
-    // 3b. Browser Prompt
     setResponseHeader(event, 'WWW-Authenticate', 'Basic realm="ODX Explorer Login"')
   }
 
   throw createError({
     statusCode: 401,
     statusMessage: isCloud 
-      ? 'Unauthorized: No JWT token provided by Approuter' 
+      ? 'Unauthorized: No valid JWT token found. Please access via Launchpad.' 
       : 'Unauthorized: Please provide BTP credentials',
   })
 })

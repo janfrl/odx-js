@@ -1,0 +1,67 @@
+{
+  "xsappname": "odx-proxy",
+  "tenant-mode": "dedicated",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.user_attributes",
+      "description": ""
+    }
+  ],
+  "attributes": [
+    {
+      "name": "employee_id",
+      "description": "ID of employee",
+      "valueType": "s",
+      "valueRequired": false
+    },
+    {
+      "name": "company_id",
+      "description": "ID of company",
+      "valueType": "s",
+      "valueRequired": false
+    },
+    {
+      "name": "roles",
+      "description": "",
+      "valueType": "s",
+      "valueRequired": false
+    },
+    {
+      "name": "groups",
+      "description": "",
+      "valueType": "s",
+      "valueRequired": false
+    },
+    {
+      "name": "auth",
+      "description": "",
+      "valueType": "s",
+      "valueRequired": false
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "pp_proxy_attributes",
+      "description": "Role template to access user attributes",
+      "scope-references": [
+        "$XSAPPNAME.user_attributes"
+      ],
+      "attribute-references": [
+        "employee_id",
+        "company_id",
+        "roles",
+        "groups",
+        "auth"
+      ]
+    }
+  ],
+  "authorities-inheritance": false,
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.hana.ondemand.com/**",
+      "https://*.applicationstudio.cloud.sap/**",
+      "http://localhost:5000/login/callback",
+      "http://localhost:5001/login/callback"
+    ]
+  }
+}

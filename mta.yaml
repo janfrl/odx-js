@@ -1,55 +1,27 @@
-_schema-version: '3.2'
-ID: odx-workspace
+_schema-version: "3.2"
+ID: odx-proxy
 version: 0.0.1
+description: "ODX OData Proxy"
 
 parameters:
   enable-parallel-deployments: true
 
-build-parameters:
-  before-all:
-    - builder: custom
-      commands:
-        - pnpm install
-        - pnpm build
-
 modules:
-  # 1. Der Proxy (Backend)
   - name: odx-proxy
     type: nodejs
-    path: packages/proxy
+    path: packages/proxy/.output/server
     requires:
-      - name: genericodataproxy-xsuaa
-      - name: genericodataproxy-destination
       - name: genericodataproxy-connectivity
+      - name: genericodataproxy-destination
+      - name: genericodataproxy-xsuaa
+      - name: genericodataproxy-config
     parameters:
+      command: node index.mjs
       memory: 256M
-      disk_quota: 512M
+      disk-quota: 512M
     build-parameters:
       builder: custom
-      commands:
-        - pnpm build
-      ignore:
-        - node_modules/
-
-  # 2. Der Approuter (Frontend Entry Point & SSO)
-  - name: odx-approuter
-    type: nodejs
-    path: local-approuter
-    requires:
-      - name: genericodataproxy-xsuaa
-      - name: odx-proxy-url # Wir brauchen die URL des Proxys
-    parameters:
-      memory: 128M
-      disk_quota: 256M
-    env:
-      destinations: >
-        [
-          {
-            "name": "genericodataproxy-destination",
-            "url": "~{odx-proxy-url/url}",
-            "forwardAuthToken": true
-          }
-        ]
+      commands: []
 
 resources:
   - name: genericodataproxy-xsuaa
@@ -57,27 +29,13 @@ resources:
     parameters:
       service: xsuaa
       service-plan: application
-      config:
-        xsappname: genericodataproxy
-        tenant-mode: dedicated
+      config-path: xs-security.json
 
   - name: genericodataproxy-destination
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: destination
-      service-plan: lite
+    type: org.cloudfoundry.existing-service
 
   - name: genericodataproxy-connectivity
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: connectivity
-      service-plan: lite
+    type: org.cloudfoundry.existing-service
 
-  # Diese Ressource stellt die URL des Proxys für den Approuter bereit
-  - name: odx-proxy-url
-    type: configuration
-    parameters:
-      content:
-        url: '${default-url}'
-    requires:
-      - name: odx-proxy
+  - name: genericodataproxy-config
+    type: org.cloudfoundry.existing-service

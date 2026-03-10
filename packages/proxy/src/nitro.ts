@@ -17,8 +17,9 @@ export default defineNitroModule({
       handler: resolver.resolve('./api/odata.ts'),
     })
 
-    // Register BTP Auth plugin
+    // Register BTP Auth plugins
     nitro.options.plugins = nitro.options.plugins || []
+    nitro.options.plugins.push(resolver.resolve('./plugins/auth-btp.ts'))
     nitro.options.plugins.push(resolver.resolve('./plugins/btp-auth.ts'))
 
     // Also register the internal API handlers
