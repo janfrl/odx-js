@@ -1,6 +1,16 @@
 <script setup lang="ts">
 const products = useOData().V2Service.Products
 
+// Fetch current user info from our /me endpoint
+const { data: user } = await useFetch('/__odx__/me')
+
+/**
+ * Triggers the SAP Approuter logout flow.
+ */
+function logout() {
+  window.location.href = '/logout'
+}
+
 // Demonstrate OData query options: select specific fields and filter by price
 const { data, pending, error, refresh, execute, status } = products.list({
   $select: ['ID', 'Name', 'Price', 'Currency'],
@@ -43,15 +53,36 @@ async function deleteItem(id: string): Promise<void> {
 
 <template>
   <UContainer class="py-8">
-    <header class="border-b border-neutral-200 dark:border-neutral-800 pb-4 mb-8">
-      <h1 class="text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight">
-        Nuxt ODX Playground
-      </h1>
-      <p class="text-neutral-500 mt-2 flex items-center gap-2">
-        Testing EntitySet abstraction: <UBadge color="neutral" variant="solid">
-          V2Service/Products
-        </UBadge>
-      </p>
+    <header class="border-b border-neutral-200 dark:border-neutral-800 pb-4 mb-8 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight">
+          Nuxt ODX Playground
+        </h1>
+        <p class="text-neutral-500 mt-2 flex items-center gap-2">
+          Testing EntitySet abstraction: <UBadge color="neutral" variant="solid">
+            V2Service/Products
+          </UBadge>
+        </p>
+      </div>
+
+      <!-- User Context & Logout -->
+      <div v-if="user" class="flex items-center gap-4">
+        <div class="text-right">
+          <p class="text-sm font-bold text-neutral-900 dark:text-white">
+            {{ (user as any).logonName || (user as any).user_id || (user as any).Userid || 'Logged In' }}
+          </p>
+          <p class="text-xs text-neutral-500">
+            {{ (user as any).email || (user as any).Usermail || 'No email' }}
+          </p>
+        </div>
+        <UButton
+          icon="i-heroicons-arrow-left-on-rectangle"
+          color="error"
+          variant="ghost"
+          label="Logout"
+          @click="logout"
+        />
+      </div>
     </header>
 
     <div class="flex items-center gap-3 mb-8">
