@@ -1,41 +1,93 @@
 _schema-version: "3.2"
-ID: odx-proxy
+ID: odx-fullstack
 version: 0.0.1
-description: "ODX OData Proxy"
+description: "ODX OData Developer Experience - Fullstack Setup"
 
 parameters:
   enable-parallel-deployments: true
 
 modules:
+  # 1. GATEKEEPER: AppRouter
+  - name: odx-approuter
+    type: nodejs
+    path: local-approuter
+    parameters:
+      memory: 128M
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: custom
+      commands: []
+    requires:
+      - name: odx-xsuaa
+      - name: odx-proxy-destination
+        group: destinations
+        properties:
+          name: odx-proxy-backend
+          url: ~{url}
+          forwardAuthToken: true
+      - name: odx-explorer-destination
+        group: destinations
+        properties:
+          name: odx-explorer-ui
+          url: ~{url}
+          forwardAuthToken: true
+
+  # 2. FRONTEND: Explorer UI
+  - name: odx-explorer
+    type: nodejs
+    path: packages/explorer/.output
+    provides:
+      - name: odx-explorer-destination
+        properties:
+          url: ${default-url}
+    requires:
+      - name: odx-xsuaa
+    parameters:
+      command: node server/index.mjs
+      memory: 256M
+      buildpack: nodejs_buildpack
+    build-parameters:
+      builder: custom
+      commands: []
+    properties:
+      NUXT_APP_BASE_URL: /__odx__/client/
+
+  # 3. BACKEND: OData Proxy
   - name: odx-proxy
     type: nodejs
-    path: packages/proxy/.output/server
+    path: packages/proxy/.output
+    provides:
+      - name: odx-proxy-destination
+        properties:
+          url: ${default-url}
     requires:
-      - name: genericodataproxy-connectivity
-      - name: genericodataproxy-destination
-      - name: genericodataproxy-xsuaa
-      - name: genericodataproxy-config
+      - name: odx-connectivity
+      - name: odx-destination
+      - name: odx-xsuaa
     parameters:
-      command: node index.mjs
+      command: node server/index.mjs
       memory: 256M
-      disk-quota: 512M
+      buildpack: nodejs_buildpack
     build-parameters:
       builder: custom
       commands: []
 
 resources:
-  - name: genericodataproxy-xsuaa
+  - name: odx-xsuaa
     type: org.cloudfoundry.managed-service
     parameters:
       service: xsuaa
       service-plan: application
       config-path: xs-security.json
 
-  - name: genericodataproxy-destination
-    type: org.cloudfoundry.existing-service
+  - name: odx-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite
 
-  - name: genericodataproxy-connectivity
-    type: org.cloudfoundry.existing-service
-
-  - name: genericodataproxy-config
-    type: org.cloudfoundry.existing-service
+  - name: odx-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-plan: lite

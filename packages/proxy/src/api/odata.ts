@@ -9,9 +9,14 @@ import { addODataLog, fetchWithCsrf, flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
+import { validateBtpAuth } from '../utils/auth'
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
+
+  // Enforce BTP Authentication
+  await validateBtpAuth(event)
+
   const config = event.context.odataConfig as ODataProxyConfig
 
   // Retrieve runtime hooks:

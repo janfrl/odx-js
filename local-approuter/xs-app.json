@@ -2,11 +2,18 @@
   "authenticationMethod": "route",
   "routes": [
     {
+      "source": "^/api/(.*)$",
+      "target": "/api/$1",
+      "destination": "odx-proxy-backend",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false,
+      "forwardAuthToken": true
+    },
+    {
       "source": "^/(.*)$",
       "target": "/$1",
-      "destination": "genericodataproxy-destination",
-      "authenticationType": "xsuaa",
-      "csrfProtection": false
+      "destination": "odx-explorer-ui",
+      "authenticationType": "xsuaa"
     }
   ]
 }

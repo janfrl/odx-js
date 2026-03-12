@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node node_modules/@sap/approuter/approuter.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "@sap/approuter": "^21.0.0"

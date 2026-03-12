@@ -1,6 +1,6 @@
 import process from 'node:process'
 import { fetchRealXsuaaToken } from '@bc8-odx/core'
-import { createError, defineEventHandler, getHeader, setResponseHeader } from 'h3'
+import { createError, defineEventHandler, getHeader, getHeaders, setResponseHeader } from 'h3'
 
 /**
  * Returns the current user's identity details using the official SAP security context methods.
@@ -9,6 +9,9 @@ export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
   const config = event.context.odataConfig
   const sc = event.context.securityContext
+
+  console.log('[@bc8-odx/proxy] /api/me request headers:', getHeaders(event))
+  console.log('[@bc8-odx/proxy] /api/me securityContext present:', !!sc)
 
   // 1. Unified Return via SAP Security Context (Real Cloud Flow)
   if (sc) {

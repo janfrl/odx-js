@@ -1,10 +1,15 @@
 # Ignore source and dependencies
 node_modules/
 src/
-test/
-package.json
-pnpm-lock.yaml
+components/
+composables/
+assets/
+pages/
+app.vue
+app.config.ts
+nuxt.config.ts
 tsconfig.json
+pnpm-lock.yaml
 
 # Keep the output
 !.output/
