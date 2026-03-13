@@ -24,8 +24,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm --filter @bc8-odx/explorer build && pnpm --filter @bc8-odx/proxy build && shx cp -f packages/explorer/.output/server/package.json packages/explorer/.output/package.json && shx cp -f packages/proxy/.output/server/package.json packages/proxy/.output/package.json && mbt build -t mta_archives",
-    "deploy": "cf deploy mta_archives/odx-fullstack_0.2.0.mtar",
+    "build": "pnpm --filter @bc8-odx/explorer build && pnpm --filter @bc8-odx/proxy build && shx cp -f packages/explorer/.output/server/package.json packages/explorer/.output/package.json && shx cp -f packages/proxy/.output/server/package.json packages/proxy/.output/package.json && mbt build -t mta_archives --mtar odx-fullstack.mtar",
+    "deploy": "cf deploy mta_archives/odx-fullstack.mtar",
     "dev": "nr dev:prepare && nuxi dev playground",
     "dev:prepare": "pnpm exec nuxt-module-build build --stub && pnpm exec nuxt-module-build prepare && nuxi prepare playground",
     "prepack": "pnpm exec nuxt-module-build build",
