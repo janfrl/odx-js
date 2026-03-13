@@ -1,63 +1,52 @@
-_schema-version: "3.2"
+_schema-version: '3.2'
 ID: odx-fullstack
-version: 0.0.1
-description: "ODX OData Developer Experience - Fullstack Setup"
+version: 0.2.0
+description: ODX OData Developer Experience - Standalone AppRouter Setup
 
 parameters:
   enable-parallel-deployments: true
+  # HIER KONFIGURIEREN: Die Subdomain Ihres BTP Subaccounts (Overview -> Subdomain)
+  # Für DEV/PROD überschreiben Sie diesen Wert in einer .mtaext Datei.
+  xsuaa-subdomain: abap-development-bechtle-test
 
 modules:
   # 1. GATEKEEPER: AppRouter
   - name: odx-approuter
     type: nodejs
-    path: local-approuter
-    parameters:
-      memory: 128M
-      buildpack: nodejs_buildpack
-    build-parameters:
-      builder: custom
-      commands: []
+    path: packages/approuter
     requires:
       - name: odx-xsuaa
-      - name: odx-proxy-destination
+      - name: odx-destination
+      - name: odx-proxy-url
         group: destinations
         properties:
           name: odx-proxy-backend
           url: ~{url}
           forwardAuthToken: true
-      - name: odx-explorer-destination
+      - name: odx-explorer-url
         group: destinations
         properties:
           name: odx-explorer-ui
           url: ~{url}
           forwardAuthToken: true
-
-  # 2. FRONTEND: Explorer UI
-  - name: odx-explorer
-    type: nodejs
-    path: packages/explorer/.output
-    provides:
-      - name: odx-explorer-destination
-        properties:
-          url: ${default-url}
-    requires:
-      - name: odx-xsuaa
     parameters:
-      command: node server/index.mjs
-      memory: 256M
+      memory: 128M
       buildpack: nodejs_buildpack
+      # Wir setzen den Hostnamen so, dass er mit der Subdomain beginnt
+      host: ${xsuaa-subdomain}-odx
     build-parameters:
-      builder: custom
-      commands: []
+      ignore:
+        - node_modules/
     properties:
-      NUXT_APP_BASE_URL: /__odx__/client/
+      # Dieser RegEx sorgt dafür, dass der AppRouter den Tenant korrekt an XSUAA sendet
+      TENANT_HOST_PATTERN: '^(.*)-odx.cfapps.(.*).hana.ondemand.com'
 
-  # 3. BACKEND: OData Proxy
+  # 2. BACKEND: OData Proxy
   - name: odx-proxy
     type: nodejs
     path: packages/proxy/.output
     provides:
-      - name: odx-proxy-destination
+      - name: odx-proxy-url
         properties:
           url: ${default-url}
     requires:
@@ -69,8 +58,26 @@ modules:
       memory: 256M
       buildpack: nodejs_buildpack
     build-parameters:
-      builder: custom
-      commands: []
+      ignore:
+        - node_modules/
+
+  # 3. FRONTEND: Explorer UI
+  - name: odx-explorer
+    type: nodejs
+    path: packages/explorer/.output
+    provides:
+      - name: odx-explorer-url
+        properties:
+          url: ${default-url}
+    requires:
+      - name: odx-xsuaa
+    parameters:
+      command: node server/index.mjs
+      memory: 256M
+      buildpack: nodejs_buildpack
+    build-parameters:
+      ignore:
+        - node_modules/
 
 resources:
   - name: odx-xsuaa

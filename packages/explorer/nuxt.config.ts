@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   },
 
   app: {
-    baseURL: '/__odx__/client',
+    baseURL: './',
   },
   vite: {
     server: {

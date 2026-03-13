@@ -3,11 +3,16 @@
   "routes": [
     {
       "source": "^/api/(.*)$",
-      "target": "/$1",
+      "target": "/api/$1",
       "destination": "odx-proxy-backend",
       "authenticationType": "xsuaa",
-      "csrfProtection": false,
-      "forwardAuthToken": true
+      "csrfProtection": false
+    },
+    {
+      "source": "^/(.*)$",
+      "target": "/$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
     }
   ]
 }
