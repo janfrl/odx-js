@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   },
 
   app: {
-    baseURL: './',
+    baseURL: '/explorer/',
   },
   vite: {
     server: {

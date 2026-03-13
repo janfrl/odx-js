@@ -1,17 +1,17 @@
 {
   "authenticationMethod": "route",
-  "welcomeFile": "/index.html",
+  "welcomeFile": "/explorer/",
   "routes": [
     {
-      "source": "^/api/(.*)$",
-      "target": "/api/$1",
+      "source": "^/api/odx/(.*)$",
+      "target": "/api/odx/$1",
       "destination": "odx-proxy-backend",
       "authenticationType": "xsuaa",
       "csrfProtection": false
     },
     {
-      "source": "^/(.*)$",
-      "target": "/$1",
+      "source": "^/explorer/(.*)$",
+      "target": "/explorer/$1",
       "destination": "odx-explorer-ui",
       "authenticationType": "xsuaa"
     }
