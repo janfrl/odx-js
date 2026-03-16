@@ -1,11 +1,10 @@
 _schema-version: '3.2'
 ID: odx-fullstack
-version: 1.0.5
+version: 1.1.2
 description: ODX OData Developer Experience - Standalone AppRouter Setup
 
 parameters:
   enable-parallel-deployments: true
-  # HIER KONFIGURIEREN: Die Subdomain Ihres BTP Subaccounts (Overview -> Subdomain)
   xsuaa-subdomain: abap-development-bechtle-test
 
 modules:
@@ -31,14 +30,14 @@ modules:
     parameters:
       memory: 128M
       buildpack: nodejs_buildpack
-      # Hostname MUSS mit der Subdomain beginnen für korrektes Redirect-Handling
+      # Hostname beginnt mit der Subdomain für XSUAA-Erkennung
       host: ${xsuaa-subdomain}-odx
     build-parameters:
       ignore:
         - node_modules/
     properties:
-      # Dieser RegEx extrahiert den Tenant 'abap-development-bechtle-test' aus der URL
-      TENANT_HOST_PATTERN: "^(.*)-odx.cfapps.(.*).hana.ondemand.com"
+      # Dieses universelle Pattern nimmt alles vor .cfapps als Tenant
+      TENANT_HOST_PATTERN: "^(.*).cfapps.(.*).hana.ondemand.com"
 
   # 2. BACKEND: OData Proxy
   - name: odx-proxy
@@ -85,6 +84,8 @@ resources:
       service: xsuaa
       service-plan: application
       config-path: xs-security.json
+      service-keys:
+        - name: odx-xsuaa-key
 
   - name: odx-destination
     type: org.cloudfoundry.managed-service
