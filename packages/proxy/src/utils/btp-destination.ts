@@ -53,10 +53,12 @@ export async function resolveBtpDestination(serviceName: string): Promise<BtpDes
   const xsuaaService = vcap.xsuaa?.[0]
 
   if (!destService?.credentials || !xsuaaService?.credentials) {
-    console.warn(`[@bc8-odx/proxy] No BTP Service bindings found. Falling back to mock for "${serviceName}"`)
+    if (process.env.NODE_ENV === 'production') {
+      console.warn(`[@bc8-odx/proxy] No BTP Service bindings found. Falling back to mock for "${serviceName}"`)
+    }
     return {
       name: serviceName,
-      url: 'https://mock-backend.btp.example.com/sap/opu/odata/sap',
+      url: '/sap/opu/odata/sap',
       user: 'TECHNICAL_USER',
       password: 'MOCK_PASSWORD',
     }
@@ -95,6 +97,14 @@ export async function resolveBtpDestination(serviceName: string): Promise<BtpDes
     return resolvedDestination
   }
   catch (err: any) {
+    if (process.env.NODE_ENV !== 'production') {
+      return {
+        name: serviceName,
+        url: '/sap/opu/odata/sap',
+        user: 'MOCK',
+        password: 'MOCK',
+      }
+    }
     throw new Error(`Failed to resolve BTP destination "${serviceName}": ${err.message}`)
   }
 }

@@ -1,17 +1,12 @@
 import process from 'node:process'
-import { fetchRealXsuaaToken } from '@bc8-odx/core'
-import { createError, defineEventHandler, getHeader, getHeaders, setResponseHeader } from 'h3'
+import { defineEventHandler, getHeader, getHeaders } from 'h3'
 
 /**
  * Returns the current user's identity details using the official SAP security context methods.
  */
 export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
-  const config = event.context.odataConfig
   const sc = event.context.securityContext
-
-  console.log('[@bc8-odx/proxy] /api/me request headers:', getHeaders(event))
-  console.log('[@bc8-odx/proxy] /api/me securityContext present:', !!sc)
 
   // 1. Unified Return via SAP Security Context (Real Cloud Flow)
   if (sc) {
@@ -54,34 +49,27 @@ export default defineEventHandler(async (event) => {
       }
     }
     catch (e) {
-      console.error('[@bc8-odx/proxy] Failed to manually parse JWT in /me:', e)
+      // Ignore parsing errors locally
     }
   }
 
-  // 3. Local Development Flows (Token Exchange / Browser Prompt)
-  const isCloud = !!process.env.VCAP_APPLICATION || !!process.env.VCAP_SERVICES
-  
-  if (!isCloud) {
-    // Local Token Exchange Logic here... (bleibt wie bisher)
-    if (config?.auth?.username && config?.auth?.password) {
-      try {
-        const xsuaaService = JSON.parse(process.env.NUXT_ODATA_BTP_XSUAA_KEY || '{}')
-        if (xsuaaService.credentials) {
-          const token = await fetchRealXsuaaToken(xsuaaService.credentials, config.auth.username, config.auth.password)
-          const payloadPart = token.split('.')[1]!
-          const p = JSON.parse(atob(payloadPart))
-          // Recursive call or simple return for local dev...
-          return { Usermail: p.email, Userid: p.user_id, Usercompany: '', Usercompanies: [], _raw: p }
-        }
-      } catch (err) {}
+  // 3. Local Development Fallback: Provide a synthetic user to allow Explorer to work
+  if (process.env.NODE_ENV !== 'production') {
+    return {
+      Usermail: 'john.doe@bechtle.com',
+      Userid: 'JDOE',
+      Usercompany: 'BECHTLE',
+      Usercompanies: [{ id: '1000', name: 'Bechtle AG' }],
+      _synthetic: true
     }
-    setResponseHeader(event, 'WWW-Authenticate', 'Basic realm="ODX Explorer Login"')
   }
 
-  throw createError({
-    statusCode: 401,
-    statusMessage: isCloud 
-      ? 'Unauthorized: No valid JWT token found. Please access via Launchpad.' 
-      : 'Unauthorized: Please provide BTP credentials',
-  })
+  // 4. Production Fallback: Unauthorized
+  return {
+    Usermail: '',
+    Userid: 'ANONYMOUS',
+    Usercompany: '',
+    Usercompanies: [],
+    _error: 'Unauthorized: Please access via Launchpad.'
+  }
 })

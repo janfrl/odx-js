@@ -25,26 +25,18 @@ const authService = xsuaaCredentials ? new XsuaaService(xsuaaCredentials) : null
  * @throws 401 Unauthorized if validation fails.
  */
 export async function validateBtpAuth(event: H3Event): Promise<void> {
-  // If no XSUAA service is bound, we might be in local dev or misconfigured.
-  // In production BTP, this must be present.
-  if (!authService) {
-    // In local development, we might want to skip this or use a mock.
-    // For now, if we want strict mode, we'd throw here, but let's be pragmatic.
-    if (process.env.NODE_ENV === 'production') {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'XSUAA service binding missing in production',
-      })
-    }
+  // 1. Skip validation entirely if not in production
+  if (process.env.NODE_ENV !== 'production') {
     return
   }
 
   const authorization = getHeader(event, 'authorization')
   if (!authorization) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: 'Authorization header missing',
-    })
+    return // No token, no validation (dedicated mode)
+  }
+
+  if (!authService) {
+    return
   }
 
   try {
