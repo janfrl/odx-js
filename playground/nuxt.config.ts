@@ -1,52 +1,16 @@
-import { resolve } from 'node:path'
-import { startSubprocess } from '@nuxt/devtools-kit'
-import { defineNuxtModule } from '@nuxt/kit'
+import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
+  // Nuxt 4 compatibility
+  compatibilityDate: '2026-03-17',
+
+  future: {
+    compatibilityVersion: 4,
+  },
+
   modules: [
     '@bc8-odx/nuxt',
     '@nuxt/ui',
-    defineNuxtModule({
-      setup(_, nuxt) {
-        if (!nuxt.options.dev) {
-          return
-        }
-
-        startSubprocess(
-          {
-            command: 'npx',
-            args: ['nuxi', 'dev', '--port', '3300'],
-            cwd: resolve(__dirname, '../packages/explorer'),
-          },
-          {
-            id: 'odx:client',
-            name: 'ODX Client Dev',
-          },
-        )
-
-        startSubprocess(
-          {
-            command: 'pnpm',
-            args: ['start'],
-            cwd: resolve(__dirname, '../local-approuter'),
-            env: {
-              PORT: '5000',
-              destinations: JSON.stringify([
-                {
-                  name: 'genericodataproxy-destination',
-                  url: 'http://localhost:3000',
-                  forwardAuthToken: true,
-                },
-              ]),
-            },
-          },
-          {
-            id: 'odx:approuter',
-            name: 'SAP Approuter',
-          },
-        )
-      },
-    }),
   ],
 
   devtools: { enabled: true },

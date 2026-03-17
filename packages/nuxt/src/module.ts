@@ -315,9 +315,14 @@ export default defineNuxtModule<ModuleOptions>({
             fs.writeFileSync(tempFile, xml)
             inputPath = tempFile
           }
-          catch (err) {
-            logger.error(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name}:`, err)
-            continue
+          catch (err: any) {
+            if (fs.existsSync(tempFile)) {
+              logger.warn(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name}, using existing local cache: ${err.message}`)
+              inputPath = tempFile
+            } else {
+              logger.error(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name} and no local cache available:`, err.message)
+              continue
+            }
           }
         }
         else {
