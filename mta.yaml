@@ -1,11 +1,10 @@
 _schema-version: '3.2'
 ID: odx-fullstack
-version: 1.1.3
-description: ODX OData Developer Experience - Standalone AppRouter Setup
+version: 1.2.0
+description: ODX OData Developer Experience - Clean Standalone Setup
 
 parameters:
   enable-parallel-deployments: true
-  xsuaa-subdomain: abap-development-bechtle-test
 
 modules:
   # 1. GATEKEEPER: AppRouter
@@ -30,14 +29,9 @@ modules:
     parameters:
       memory: 256M
       buildpack: nodejs_buildpack
-      host: ${xsuaa-subdomain}-odx
-      command: npm start
     build-parameters:
       ignore:
         - node_modules/
-    properties:
-      # FIX: Das '-odx' Suffix wird nun explizit aus dem Tenant-Teil ausgeschlossen
-      TENANT_HOST_PATTERN: "^(.*)-odx.cfapps.(.*).hana.ondemand.com"
 
   # 2. BACKEND: OData Proxy
   - name: odx-proxy
@@ -84,8 +78,6 @@ resources:
       service: xsuaa
       service-plan: application
       config-path: xs-security.json
-      service-keys:
-        - name: odx-xsuaa-key
 
   - name: odx-destination
     type: org.cloudfoundry.managed-service
