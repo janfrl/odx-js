@@ -18,6 +18,8 @@ const modeConfig = computed(() => {
       return { title: 'Edit Record', icon: 'i-lucide-pencil', method: 'PATCH' }
     case 'headers':
       return { title: 'Session Headers', icon: 'i-lucide-sliders-horizontal', method: 'CONFIG' }
+    case 'response':
+      return { title: 'Response Data', icon: 'i-lucide-terminal', method: 'REST' }
     case 'view':
     default:
       return { title: 'View Details', icon: 'i-lucide-eye', method: 'GET' }
@@ -200,7 +202,7 @@ function close() {
           <div class="flex-1 min-h-0 relative bg-transparent rounded-b-xl overflow-hidden">
             <ShikiEditor
               v-model="editor.json"
-              :readonly="editor.mode === 'view'"
+              :readonly="editor.mode === 'view' || editor.mode === 'response'"
             />
           </div>
 
@@ -228,7 +230,7 @@ function close() {
       </div>
     </template>
 
-    <template #footer>
+    <template v-if="editor.mode !== 'view' && editor.mode !== 'response'" #footer>
       <div class="flex items-center justify-end gap-3 w-full">
         <UButton
           label="Cancel"
@@ -238,7 +240,6 @@ function close() {
           @click="close"
         />
         <UButton
-          v-if="editor.mode !== 'view'"
           :label="editor.mode === 'create' ? 'Create Record' : 'Save Changes'"
           color="primary"
           class="px-5 font-semibold shadow-sm"

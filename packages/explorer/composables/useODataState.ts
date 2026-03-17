@@ -36,7 +36,7 @@ export interface ODataLog {
 
 export interface EditorState {
   show: boolean
-  mode: 'view' | 'create' | 'update' | 'headers'
+  mode: 'view' | 'create' | 'update' | 'headers' | 'response'
   json: string
   loading: boolean
   error: string | null
@@ -61,11 +61,12 @@ const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
 const previewData = ref<Record<string, any>[]>([])
 const queryInput = ref('?')
+const queryMethod = ref('GET')
 const entitySchema = ref<any>(null)
 const entitySchemaLoading = ref(false)
 
 // Per-entity cache for data and query state
-const entityDataCache = ref<Record<string, { data: any[], error: string | null, query: string }>>({})
+const entityDataCache = ref<Record<string, { data: any[], error: string | null, query: string, method: string }>>({})
 
 const initializedServices = ref<Set<string>>(new Set())
 const schemaFocusedServices = ref<Set<string>>(new Set())
@@ -80,6 +81,7 @@ watch(selectedService, async (newSvc) => {
   previewData.value = []
   previewError.value = null
   queryInput.value = '?'
+  queryMethod.value = 'GET'
   entitySchema.value = null
 
   if (newSvc) {
@@ -118,17 +120,20 @@ watch(selectedEntity, (newEntity) => {
       previewData.value = [...cache.data]
       previewError.value = cache.error
       queryInput.value = cache.query
+      queryMethod.value = cache.method || 'GET'
     }
     else {
       previewData.value = []
       previewError.value = null
       queryInput.value = '?'
+      queryMethod.value = 'GET'
     }
   }
   else {
     previewData.value = []
     previewError.value = null
     queryInput.value = '?'
+    queryMethod.value = 'GET'
   }
 })
 
@@ -262,6 +267,7 @@ export function useSharedODataState(): any {
     previewError,
     previewData,
     queryInput,
+    queryMethod,
     entitySchema,
     entitySchemaLoading,
     entityDataCache,

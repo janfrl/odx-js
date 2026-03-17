@@ -54,6 +54,15 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  const query = getQuery(event)
+
+  // Use 'id' from query if resourceId is empty
+  if (!resourceId && query.id) {
+    resourceId = String(query.id)
+    // Remove it from query so it's not appended twice if we use withQuery later
+    delete query.id
+  }
+
   const services: ODataServiceConfig[] = config.services ?? []
   const matched = services.find(svc =>
     svc.name.toLowerCase() === serviceRoute.toLowerCase()
@@ -126,7 +135,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const query = getQuery(event)
   const fetchOptions: FetchOptions = {
     method: event.method as any,
     query,

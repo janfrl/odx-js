@@ -3,18 +3,28 @@ import { useEntityExplorer } from '../../composables/useEntityExplorer'
 
 const {
   queryInput,
+  queryMethod,
   refreshEntityData,
   previewData,
   openEditor,
   downloadJson,
   clearData,
 } = useEntityExplorer()
+
+const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 </script>
 
 <template>
   <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
     <!-- Query Area -->
     <div class="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center gap-4 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md rounded-t-[inherit]">
+      <USelect
+        v-model="queryMethod"
+        :items="methods"
+        class="font-mono min-w-24"
+        size="md"
+        variant="subtle"
+      />
       <UInput
         v-model="queryInput"
         placeholder="?id=... or ?$filter=..."

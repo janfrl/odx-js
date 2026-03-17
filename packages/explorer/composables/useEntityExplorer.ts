@@ -21,6 +21,7 @@ export function useEntityExplorer(): {
   previewError: globalThis.Ref<string | null>
   previewData: globalThis.Ref<Record<string, any>[]>
   queryInput: globalThis.Ref<string>
+  queryMethod: globalThis.Ref<string>
   entitySchema: globalThis.Ref<any>
   entitySchemaLoading: globalThis.Ref<boolean>
   editor: globalThis.Ref<EditorState>
@@ -44,6 +45,7 @@ export function useEntityExplorer(): {
     previewError,
     previewData,
     queryInput,
+    queryMethod,
     entitySchema,
     entitySchemaLoading,
     entityDataCache,
@@ -85,6 +87,7 @@ export function useEntityExplorer(): {
       }
 
       const res = await fetch(urlPath, {
+        method: queryMethod.value,
         headers: {
           'Content-Type': 'application/json',
           ...sessionHeaders.value,
@@ -104,7 +107,28 @@ export function useEntityExplorer(): {
         }
         throw new Error(statusMessage)
       }
-      const data = await res.json()
+      
+      const responseText = await res.text()
+      let data: any
+      try {
+        data = JSON.parse(responseText)
+      } catch {
+        data = { response: responseText }
+      }
+
+      // For non-GET requests (POST, PUT, PATCH, DELETE), we show the response in the editor
+      if (queryMethod.value !== 'GET') {
+        editor.value = {
+          show: true,
+          mode: 'response',
+          json: typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+          loading: false,
+          error: null,
+          original: null,
+        }
+        previewLoading.value = false
+        return
+      }
 
       let finalData = []
       if (Array.isArray(data)) {
@@ -122,6 +146,7 @@ export function useEntityExplorer(): {
         data: [...finalData],
         error: null,
         query: queryInput.value,
+        method: queryMethod.value,
       }
     }
     catch (e: unknown) {
@@ -136,6 +161,7 @@ export function useEntityExplorer(): {
           data: [],
           error: msg,
           query: queryInput.value,
+          method: queryMethod.value,
         }
       }
     }
@@ -341,6 +367,7 @@ export function useEntityExplorer(): {
     previewError,
     previewData,
     queryInput,
+    queryMethod,
     entitySchema,
     entitySchemaLoading,
     editor,
