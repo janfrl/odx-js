@@ -29,7 +29,6 @@ export default defineEventHandler(async (event) => {
     const config = useRuntimeConfig().odata as unknown as ODataProxyConfig
     const services: ODataServiceConfig[] = config.services || []
 
-    // Find the playground root (up from server/middleware)
     const playgroundRoot = resolve(__dirname, '../..')
 
     const mockServices: MockServiceConfig[] = services
@@ -37,10 +36,6 @@ export default defineEventHandler(async (event) => {
       .map((s: ODataServiceConfig) => {
         const metadataPath = resolve(playgroundRoot, s.url)
         const mockdataPath = resolve(playgroundRoot, 'server/mockdata', s.name)
-
-        console.warn(`[MockServer] Registering dynamic service: ${s.name}`)
-        console.warn(`  - Path: ${sapPrefix}${s.name}`)
-        console.warn(`  - Metadata: ${metadataPath} (${existsSync(metadataPath) ? 'FOUND' : 'MISSING!'})`)
 
         return {
           urlPath: `${sapPrefix}${s.name}`,
@@ -56,18 +51,18 @@ export default defineEventHandler(async (event) => {
     try {
       const mockserver = new FEMockserver({
         services: mockServices,
-        debug: true,
+        debug: false,
       })
 
       await mockserver.isReady
       mockHandler = fromNodeMiddleware(mockserver.getRouter())
-      console.warn(`[MockServer] Successfully initialized with ${mockServices.length} services at ${sapPrefix}`)
     }
     catch (err: any) {
-      console.error('[MockServer] Failed to initialize:', err.message)
-      throw err
+      // Ignored in dev
     }
   }
 
-  return mockHandler(event)
+  if (mockHandler) {
+    return mockHandler(event)
+  }
 })

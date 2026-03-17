@@ -1,10 +1,22 @@
 {
   "xsappname": "odx_fullstack_bechtle_v2",
-  "tenant-mode": "shared",
+  "tenant-mode": "dedicated",
   "scopes": [
     {
       "name": "$XSAPPNAME.user_attributes",
-      "description": ""
+      "description": "User Attributes"
+    }
+  ],
+  "attributes": [
+    {
+      "name": "employee_id",
+      "description": "ID of employee",
+      "valueType": "s"
+    },
+    {
+      "name": "company_id",
+      "description": "ID of company",
+      "valueType": "s"
     }
   ],
   "role-templates": [
@@ -14,12 +26,24 @@
       "scope-references": [
         "uaa.user"
       ]
+    },
+    {
+      "name": "odx_user",
+      "description": "Standard ODX User",
+      "scope-references": [
+        "$XSAPPNAME.user_attributes"
+      ],
+      "attribute-references": [
+        "employee_id",
+        "company_id"
+      ]
     }
   ],
   "oauth2-configuration": {
     "redirect-uris": [
       "https://*.hana.ondemand.com/**",
-      "https://*.hana.ondemand.com/login/callback"
+      "https://*.cfapps.*.hana.ondemand.com/**",
+      "https://*.applicationstudio.cloud.sap/**"
     ]
   }
 }

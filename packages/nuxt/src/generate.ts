@@ -13,8 +13,8 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
   const command = `pnpm odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --emit-mode ts --prettier`
 
   try {
-    // Pipe to capture output and avoid cluttering the terminal unless there's an error
-    execSync(command, { stdio: 'pipe' })
+    // Use shell: true to correctly resolve commands on Windows
+    execSync(command, { stdio: 'pipe', shell: true })
     logger.success(`Generated SDK for ${serviceName}`)
   }
   catch (err: any) {

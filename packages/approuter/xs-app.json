@@ -11,7 +11,7 @@
     },
     {
       "source": "^/explorer/(.*)$",
-      "target": "/explorer/$1",
+      "target": "/$1",
       "destination": "odx-explorer-ui",
       "authenticationType": "xsuaa"
     }

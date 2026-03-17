@@ -8,32 +8,38 @@ export default defineNuxtConfig({
   css: ['~/app.css'],
   ssr: false,
 
+  // Nuxt 4 & Monorepo Stability
+  future: {
+    compatibilityVersion: 4,
+  },
+  
+  experimental: {
+    appManifest: false,
+  },
+
   devtools: { enabled: false },
 
-  typescript: {
-    tsconfig: {
-      extends: './tsconfig.nuxt.json',
-    },
+  app: {
+    baseURL: '/__odx__/client/',
+    buildAssetsDir: '_nuxt',
   },
 
-  app: {
-    baseURL: '/explorer/',
+  devServer: {
+    port: 3300,
   },
+
   vite: {
     server: {
       hmr: {
         clientPort: +(process.env.PORT || 3300),
       },
       fs: {
-        allow: [
-          '../../',
-        ],
+        // Allow serving files from the entire monorepo
+        allow: ['../..'],
       },
     },
     optimizeDeps: {
-      include: [
-        'dagre',
-      ],
+      include: ['dagre'],
     },
   },
-} as any)
+})

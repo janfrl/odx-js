@@ -30,8 +30,8 @@ export default defineNitroPlugin((nitro) => {
       return
     }
 
-    // Skip validation if no auth service found (local dev)
-    if (!authService || !process.env.VCAP_SERVICES) {
+    // Skip validation in development or if no auth service found
+    if (process.env.NODE_ENV !== 'production' || !authService || !process.env.VCAP_SERVICES) {
       return
     }
 
