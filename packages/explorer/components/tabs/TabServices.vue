@@ -5,8 +5,24 @@ import { useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
 
-const { services, selectedService, config, generateService, generatingStatus, selectedEntity, globalViewMode } = useSharedODataState()
+const {
+  services,
+  selectedService,
+  config,
+  generateService,
+  generatingStatus,
+  selectedEntity,
+  globalViewMode,
+  activeTab,
+  logFilterService,
+} = useSharedODataState()
 const toast = useToast()
+
+function viewLogs(service: any) {
+  const identifier = (service.route || service.name).toLowerCase()
+  logFilterService.value = identifier
+  activeTab.value = 'logs'
+}
 
 const tabs = [
   { label: 'Data', icon: 'i-lucide-table-2', value: 'explorer' },
@@ -119,24 +135,36 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             @click.prevent="selectedService = svc"
           >
             <template #footer>
-              <div class="flex items-center gap-2">
-                <UBadge
-                  v-if="svc.version"
-                  color="neutral"
-                  variant="soft"
-                  size="sm"
-                >
-                  {{ svc.version }}
-                </UBadge>
+              <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-2">
+                  <UBadge
+                    v-if="svc.version"
+                    color="neutral"
+                    variant="soft"
+                    size="sm"
+                  >
+                    {{ svc.version }}
+                  </UBadge>
 
-                <UBadge
+                  <UBadge
+                    color="neutral"
+                    variant="soft"
+                    size="sm"
+                    class="uppercase tracking-widest text-[10px]"
+                  >
+                    {{ svc.strategy || 'proxied' }}
+                  </UBadge>
+                </div>
+
+                <UButton
+                  icon="i-lucide-activity"
                   color="neutral"
-                  variant="soft"
+                  variant="ghost"
                   size="sm"
-                  class="uppercase tracking-widest text-[10px]"
-                >
-                  {{ svc.strategy || 'proxied' }}
-                </UBadge>
+                  class="opacity-50 hover:opacity-100 transition-opacity"
+                  title="View Traffic Logs"
+                  @click.stop="viewLogs(svc)"
+                />
               </div>
             </template>
           </UPageCard>
@@ -170,6 +198,17 @@ const actionItems = computed((): DropdownMenuItem[][] => {
 
         <!-- Actions Section -->
         <div class="flex items-center justify-end gap-3 shrink-0 flex-1">
+          <UFieldGroup class="-mt-2">
+            <UButton
+              icon="i-lucide-activity"
+              color="neutral"
+              variant="subtle"
+              label="Logs"
+              title="View Traffic Logs"
+              @click="viewLogs(selectedService)"
+            />
+          </UFieldGroup>
+
           <UFieldGroup class="-mt-2">
             <!-- If offline, Regenerate is primary. If online, Metadata is primary. -->
             <UButton

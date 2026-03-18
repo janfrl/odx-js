@@ -56,6 +56,7 @@ const selectedService = ref<ODataServiceState | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
+const logFilterService = ref<string | null>(null)
 
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
@@ -263,6 +264,7 @@ export function useSharedODataState(): any {
     selectedEntity,
     generatingStatus,
     sessionHeaders,
+    logFilterService,
     previewLoading,
     previewError,
     previewData,

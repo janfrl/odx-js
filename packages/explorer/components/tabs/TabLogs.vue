@@ -2,8 +2,24 @@
 import { h, resolveComponent } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 
-const { logs, clearLogs } = useSharedODataState()
+const { logs, clearLogs, services, logFilterService } = useSharedODataState()
 const toast = useToast()
+
+const filteredLogs = computed(() => {
+  if (!logFilterService.value)
+    return logs.value
+  return logs.value.filter((l: any) => l.service === logFilterService.value)
+})
+
+const serviceOptions = computed(() => {
+  return [
+    { label: 'All Services', value: null },
+    ...services.value.map((s: any) => ({
+      label: s.name,
+      value: (s.route || s.name).toLowerCase(),
+    })),
+  ]
+})
 
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
@@ -122,15 +138,14 @@ async function runClear() {
       title="Traffic Monitor"
       description="Live request/response logs from the OData proxy."
     >
-      <UBadge
-        v-if="logs.length"
-        color="neutral"
+      <USelect
+        v-model="logFilterService"
+        :items="serviceOptions"
+        size="sm"
         variant="subtle"
-        size="md"
-        class="font-mono font-bold text-[11px] px-3"
-      >
-        {{ logs.length }} Entries
-      </UBadge>
+        class="w-40 font-bold"
+        icon="i-lucide-filter"
+      />
       <UButton
         label="Purge History"
         color="neutral"
@@ -149,7 +164,7 @@ async function runClear() {
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <UTable
             :columns="columns"
-            :data="logs"
+            :data="filteredLogs"
             row-id="id"
             class="w-full"
             :ui="{

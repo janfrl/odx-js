@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useSharedODataState } from './composables/useODataState'
 
-const { activeTab, fetchConfig, refreshLogs } = useSharedODataState()
+const { activeTab, fetchConfig, refreshLogs, logs } = useSharedODataState()
 
-const items = [
+const items = computed(() => [
   { label: 'Overview', icon: 'i-lucide-house', id: 'overview' },
   { label: 'Services', icon: 'i-lucide-database', id: 'services' },
-  { label: 'Logs', icon: 'i-lucide-terminal', id: 'logs' },
-]
+  { label: 'Logs', icon: 'i-lucide-terminal', id: 'logs', badge: logs.value.length || undefined },
+])
 
 onMounted(() => {
   fetchConfig()
@@ -30,14 +30,22 @@ onMounted(() => {
           :text="item.label"
           placement="right"
         >
-          <UButton
-            :icon="item.icon"
-            :color="activeTab === item.id ? 'primary' : 'neutral'"
-            :variant="activeTab === item.id ? 'soft' : 'ghost'"
-            size="xl"
-            :ui="{ rounded: 'rounded-xl' }"
-            @click="activeTab = item.id as any"
-          />
+          <UChip
+            :text="item.badge"
+            :show="!!item.badge"
+            size="3xl"
+            :inset="true"
+            :ui="{ base: 'ring-2 ring-primary' }"
+          >
+            <UButton
+              :icon="item.icon"
+              :color="activeTab === item.id ? 'primary' : 'neutral'"
+              :variant="activeTab === item.id ? 'soft' : 'ghost'"
+              size="xl"
+              :ui="{ rounded: 'rounded-xl' }"
+              @click="activeTab = item.id as any"
+            />
+          </UChip>
         </UTooltip>
       </aside>
 
