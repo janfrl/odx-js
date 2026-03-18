@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useEntityExplorer } from '../../composables/useEntityExplorer'
+import QueryBuilder from './QueryBuilder.vue'
 
 const {
   queryInput,
@@ -12,6 +14,7 @@ const {
 } = useEntityExplorer()
 
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+const showBuilder = ref(false)
 </script>
 
 <template>
@@ -25,18 +28,28 @@ const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
         size="md"
         variant="subtle"
       />
-      <UInput
-        v-model="queryInput"
-        placeholder="?id=... or ?$filter=..."
-        icon="i-lucide-search"
-        class="flex-1 font-mono"
-        size="md"
-        @keyup.enter="refreshEntityData"
-      >
-        <template #trailing>
-          <UKbd>Enter</UKbd>
-        </template>
-      </UInput>
+      <div class="flex-1 flex items-center gap-2">
+        <UInput
+          v-model="queryInput"
+          placeholder="?id=... or ?$filter=..."
+          icon="i-lucide-search"
+          class="flex-1 font-mono"
+          size="md"
+          @keyup.enter="refreshEntityData"
+        >
+          <template #trailing>
+            <UKbd>Enter</UKbd>
+          </template>
+        </UInput>
+        <UButton
+          :icon="showBuilder ? 'i-lucide-chevron-up' : 'i-lucide-list-filter'"
+          size="md"
+          variant="ghost"
+          color="neutral"
+          :title="showBuilder ? 'Hide Builder' : 'Open Query Builder'"
+          @click="showBuilder = !showBuilder"
+        />
+      </div>
       <UButton
         label="Execute"
         icon="i-lucide-play"
@@ -46,6 +59,9 @@ const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
         @click="refreshEntityData"
       />
     </div>
+
+    <!-- Visual Builder -->
+    <QueryBuilder v-if="showBuilder" />
 
     <!-- Actions Area -->
     <div class="px-6 py-2 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/20">

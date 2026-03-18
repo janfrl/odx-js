@@ -22,6 +22,7 @@ export function useEntityExplorer(): {
   previewData: globalThis.Ref<Record<string, any>[]>
   queryInput: globalThis.Ref<string>
   queryMethod: globalThis.Ref<string>
+  queryState: globalThis.Ref<any>
   entitySchema: globalThis.Ref<any>
   entitySchemaLoading: globalThis.Ref<boolean>
   editor: globalThis.Ref<EditorState>
@@ -29,6 +30,7 @@ export function useEntityExplorer(): {
   previewColumns: globalThis.ComputedRef<string[]>
   navigationItems: globalThis.ComputedRef<any[]>
   refreshEntityData: () => Promise<void>
+  resetQuery: () => void
   isNavigationProperty: (key: string) => boolean
   openEditor: (mode: 'view' | 'create' | 'update' | 'headers', row?: any) => void
   deleteItem: (id: any) => Promise<void>
@@ -46,6 +48,7 @@ export function useEntityExplorer(): {
     previewData,
     queryInput,
     queryMethod,
+    queryState,
     entitySchema,
     entitySchemaLoading,
     entityDataCache,
@@ -54,6 +57,77 @@ export function useEntityExplorer(): {
   const toast = useToast()
 
   let loadingTimeout: ReturnType<typeof setTimeout> | null = null
+
+  // Watch queryState and generate queryInput string
+  watch(queryState, (newState) => {
+    let q = '?'
+    const parts: string[] = []
+
+    // 1. $select
+    if (newState.select && newState.select.length > 0) {
+      parts.push(`$select=${newState.select.join(',')}`)
+    }
+
+    // 2. $expand
+    if (newState.expand && newState.expand.length > 0) {
+      parts.push(`$expand=${newState.expand.join(',')}`)
+    }
+
+    // 3. $filter
+    if (newState.filters && newState.filters.length > 0) {
+      const filterParts = newState.filters
+        .filter(f => f.field && f.operator)
+        .map((f) => {
+          let val = f.value
+          if (typeof val === 'string') {
+            val = `'${val}'`
+          }
+
+          if (f.operator === 'contains' || f.operator === 'startswith' || f.operator === 'endswith') {
+            return `${f.operator}(${f.field},${val})`
+          }
+          return `${f.field} ${f.operator} ${val}`
+        })
+
+      if (filterParts.length > 0) {
+        parts.push(`$filter=${filterParts.join(' and ')}`)
+      }
+    }
+
+    // 4. $orderby
+    if (newState.sortBy && newState.sortBy.length > 0) {
+      const orderParts = newState.sortBy
+        .filter(s => s.field)
+        .map(s => `${s.field} ${s.direction}`)
+      parts.push(`$orderby=${orderParts.join(',')}`)
+    }
+
+    // 5. $top / $skip
+    if (newState.top !== null && newState.top !== undefined) {
+      parts.push(`$top=${newState.top}`)
+    }
+    if (newState.skip !== null && newState.skip !== undefined) {
+      parts.push(`$skip=${newState.skip}`)
+    }
+
+    q += parts.join('&')
+    if (q === '?')
+      q = '?'
+
+    queryInput.value = q
+  }, { deep: true })
+
+  function resetQuery() {
+    queryState.value = {
+      filters: [],
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    }
+    queryInput.value = '?'
+  }
 
   // Loading indicator local logic
   watch(previewLoading, (isLoading: boolean) => {
@@ -375,10 +449,12 @@ export function useEntityExplorer(): {
     previewColumns,
     navigationItems,
     refreshEntityData,
+    resetQuery,
     isNavigationProperty,
     openEditor,
     deleteItem,
     clearData,
     downloadJson,
+    queryState,
   }
 }
