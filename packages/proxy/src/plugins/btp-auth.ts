@@ -1,4 +1,5 @@
 import type { XsuaaPayload } from '@bc8-odx/core'
+import process from 'node:process'
 import { parseXsuaaPolicies } from '@bc8-odx/core'
 import { defineNitroPlugin } from 'nitropack/runtime'
 import { resolveBtpDestination } from '../utils/btp-destination.ts'
@@ -22,7 +23,7 @@ export default defineNitroPlugin((nitro) => {
           userPayload = JSON.parse(atob(payloadPart))
         }
       }
-      catch (e) {
+      catch {
         // Silent in dev
       }
     }

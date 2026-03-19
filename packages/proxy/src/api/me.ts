@@ -16,7 +16,8 @@ export default defineEventHandler(async (event) => {
       try {
         userCompanies = JSON.parse(authAttr)
       }
-      catch (e) {}
+      catch {
+      }
     }
 
     return {
@@ -39,7 +40,8 @@ export default defineEventHandler(async (event) => {
         try {
           userCompanies = JSON.parse(attr.auth?.[0] || '[]')
         }
-        catch (e) {}
+        catch {
+        }
 
         return {
           Usermail: p.email || '',
@@ -50,7 +52,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     }
-    catch (e) {
+    catch {
       // Ignore parsing errors locally
     }
   }

@@ -11,6 +11,11 @@ import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { validateBtpAuth } from '../utils/auth'
 
+const RE_LEADING_SLASH = /^\//
+const RE_ENTITY_SET_MATCH = /^([^(]+)\(([^)]+)\)$/
+const RE_QUOTE_WRAP = /^'|'$/g
+const RE_TRAILING_SLASH = /\/$/
+
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
 
@@ -40,17 +45,17 @@ export default defineEventHandler(async (event) => {
 
   const fullPath = event.path || ''
   const pathOnly = fullPath.split('?')[0] || ''
-  const relativePath = pathOnly.startsWith(basePath) ? pathOnly.slice(basePath.length).replace(/^\//, '') : ''
+  const relativePath = pathOnly.startsWith(basePath) ? pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '') : ''
   const segments = relativePath.split('/').filter(Boolean)
   const serviceRoute = segments[0] || ''
   let entitySetName = segments[1] || ''
   let resourceId = ''
 
   if (entitySetName.includes('(')) {
-    const match = entitySetName.match(/^([^(]+)\(([^)]+)\)$/)
+    const match = entitySetName.match(RE_ENTITY_SET_MATCH)
     if (match) {
       entitySetName = match[1]!
-      resourceId = match[2]!.replace(/^'|'$/g, '')
+      resourceId = match[2]!.replace(RE_QUOTE_WRAP, '')
     }
   }
 
@@ -73,8 +78,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
-  const globalDest = (config.destination || '').replace(/\/$/, '')
-  let baseUrl = (matched.url || globalDest).replace(/\/$/, '')
+  const globalDest = (config.destination || '').replace(RE_TRAILING_SLASH, '')
+  let baseUrl = (matched.url || globalDest).replace(RE_TRAILING_SLASH, '')
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {

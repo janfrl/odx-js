@@ -131,7 +131,7 @@ export function useEntityExplorer(): {
     queryInput.value = q
   }, { deep: true })
 
-  function resetQuery() {
+  function resetQuery(): void {
     queryState.value = {
       filters: {
         type: 'group',

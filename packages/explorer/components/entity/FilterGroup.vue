@@ -2,7 +2,6 @@
 import type { FilterGroup, FilterRule } from '../../composables/useODataState'
 
 const props = defineProps<{
-  group: FilterGroup
   isRoot?: boolean
   properties: string[]
 }>()
@@ -10,6 +9,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'remove'): void
 }>()
+
+const group = defineModel<FilterGroup>({ required: true })
 
 const operators = [
   { label: 'Equals', value: 'eq' },
@@ -26,7 +27,7 @@ const operators = [
 const noValueOperators = ['eq null', 'ne null']
 
 function addRule() {
-  props.group.items.push({
+  group.value.items.push({
     type: 'rule',
     field: props.properties[0] || '',
     operator: 'eq',
@@ -35,7 +36,7 @@ function addRule() {
 }
 
 function addGroup() {
-  props.group.items.push({
+  group.value.items.push({
     type: 'group',
     logic: 'and',
     items: [],
@@ -43,7 +44,7 @@ function addGroup() {
 }
 
 function removeItem(index: number) {
-  props.group.items.splice(index, 1)
+  group.value.items.splice(index, 1)
 }
 
 function isGroup(item: FilterRule | FilterGroup): item is FilterGroup {
@@ -117,7 +118,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
       <!-- Nested Group -->
       <FilterGroup
         v-if="isGroup(item)"
-        :group="item"
+        v-model="group.items[index]"
         :properties="properties"
         @remove="removeItem(index)"
       />
@@ -128,7 +129,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
         class="grid grid-cols-[1fr_auto_1fr_40px] items-center gap-2 h-8"
       >
         <USelectMenu
-          v-model="item.field"
+          v-model="(group.items[index] as FilterRule).field"
           :items="properties"
           size="xs"
           placeholder="Property"
@@ -136,7 +137,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
         />
 
         <USelectMenu
-          v-model="item.operator"
+          v-model="(group.items[index] as FilterRule).operator"
           :items="operators"
           size="xs"
           class="w-32"
@@ -144,8 +145,8 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
 
         <div class="min-w-0 flex-1 h-8 flex items-center">
           <UInput
-            v-if="!noValueOperators.includes(item.operator)"
-            v-model="item.value"
+            v-if="!noValueOperators.includes((group.items[index] as FilterRule).operator)"
+            v-model="(group.items[index] as FilterRule).value"
             size="xs"
             placeholder="Value"
             class="w-full"

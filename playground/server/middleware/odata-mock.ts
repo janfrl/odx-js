@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
       await mockserver.isReady
       mockHandler = fromNodeMiddleware(mockserver.getRouter())
     }
-    catch (err: any) {
+    catch {
       // Ignored in dev
     }
   }

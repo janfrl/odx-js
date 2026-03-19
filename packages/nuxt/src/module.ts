@@ -51,6 +51,8 @@ export interface ModuleOptions {
   }
 }
 
+const RE_UNDERSCORE = /_/g
+
 export default defineNuxtModule<ModuleOptions>({
   meta: {
     name: '@bc8-odx/nuxt',
@@ -117,7 +119,7 @@ export default defineNuxtModule<ModuleOptions>({
       const headerPrefix = `${prefix}${envKey}_HEADERS_`
       for (const key in process.env) {
         if (key.startsWith(headerPrefix)) {
-          const headerName = key.slice(headerPrefix.length).replace(/_/g, '-')
+          const headerName = key.slice(headerPrefix.length).replace(RE_UNDERSCORE, '-')
           envHeadersIndividual[headerName] = process.env[key]!
         }
       }
@@ -173,7 +175,7 @@ export default defineNuxtModule<ModuleOptions>({
         const headerPrefix = `${prefix}${key}_HEADERS_`
         for (const k in process.env) {
           if (k.startsWith(headerPrefix)) {
-            const headerName = k.slice(headerPrefix.length).replace(/_/g, '-')
+            const headerName = k.slice(headerPrefix.length).replace(RE_UNDERSCORE, '-')
             envHeadersIndividual[headerName] = process.env[k]!
           }
         }
@@ -207,7 +209,7 @@ export default defineNuxtModule<ModuleOptions>({
 
     for (const key in process.env) {
       if (key.startsWith(globalHeaderPrefixIndividual)) {
-        const headerName = key.slice(globalHeaderPrefixIndividual.length).replace(/_/g, '-')
+        const headerName = key.slice(globalHeaderPrefixIndividual.length).replace(RE_UNDERSCORE, '-')
         globalHeaders[headerName] = process.env[key]!
       }
     }

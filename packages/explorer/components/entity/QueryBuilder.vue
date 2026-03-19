@@ -32,7 +32,7 @@ function removeSort(index: number) {
       </h3>
 
       <FilterGroup
-        :group="queryState.filters"
+        v-model="queryState.filters"
         :properties="properties"
         :is-root="true"
       />

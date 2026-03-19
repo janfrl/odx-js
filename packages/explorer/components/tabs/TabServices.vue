@@ -5,6 +5,8 @@ import { useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
 
+const RE_TRAILING_SLASH = /\/$/
+
 const {
   services,
   selectedService,
@@ -92,7 +94,8 @@ const actionItems = computed((): DropdownMenuItem[][] => {
 
   // External metadata link (always show if URL is external)
   if (selectedService.value.url?.startsWith('http')) {
-    const extUrl = `${selectedService.value.url.replace(/\/$/, '')}/$metadata`
+    const extUrl = `${selectedService.value.url.replace(RE_TRAILING_SLASH, '')}/$metadata`
+
     metadataGroup.push({
       label: 'External Metadata',
       icon: 'i-lucide-external-link',

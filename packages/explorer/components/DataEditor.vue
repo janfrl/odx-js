@@ -26,12 +26,14 @@ const modeConfig = computed(() => {
   }
 })
 
+const RE_LINE_COL = /\(line (\d+) column (\d+)\)/
+
 /**
  * Formats native JSON parse errors into a cleaner, human-readable string.
  */
 function formatJsonError(err: Error): string {
   const msg = err.message
-  const lineColMatch = msg.match(/\(line (\d+) column (\d+)\)/)
+  const lineColMatch = msg.match(RE_LINE_COL)
 
   if (lineColMatch) {
     const cleanMsg = msg.split(' in JSON')[0]

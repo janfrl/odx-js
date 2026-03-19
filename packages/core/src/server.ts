@@ -1,12 +1,23 @@
 import type { Association, AssociationEnd, EntityMapping, EntityProperty, NavigationProperty } from './types.ts'
 import fs from 'node:fs'
 
+const RE_XML_ATTRIBUTES = /([\w:-]+)="([^"]*)"/g
+const RE_ENTITY_TYPE_OPEN = /<[\w:]*EntityType\s/i
+const RE_ENTITY_TYPE_CLOSE = /<\/[\w:]*EntityType>/i
+const RE_PROPERTY_REF = /<[\w:]*PropertyRef\s/i
+const RE_PROPERTY = /<[\w:]*\bProperty\s/i
+const RE_NAVIGATION_PROPERTY = /<[\w:]*\bNavigationProperty\s/i
+const RE_ENTITY_SET = /<[\w:]*EntitySet\s/i
+const RE_ASSOCIATION_OPEN = /<[\w:]*Association\s/i
+const RE_ASSOCIATION_CLOSE = /<\/[\w:]*Association>/i
+const RE_END = /<[\w:]*End\s/i
+
 /**
  * Robustly extracts attributes from an XML-like tag string.
  */
 function getAttributes(tag: string): Record<string, string> {
   const attrs: Record<string, string> = {}
-  const matches = tag.matchAll(/([\w:-]+)="([^"]*)"/g)
+  const matches = tag.matchAll(RE_XML_ATTRIBUTES)
   for (const match of matches) {
     const rawKey = match[1]!
     const value = match[2]!
@@ -29,7 +40,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
     const mappings: EntityMapping[] = []
 
     const entityTypes: Record<string, { properties: EntityProperty[], navProps: NavigationProperty[] }> = {}
-    const typeBlocks = xml.split(/<[\w:]*EntityType\s/i).slice(1)
+    const typeBlocks = xml.split(RE_ENTITY_TYPE_OPEN).slice(1)
 
     for (const block of typeBlocks) {
       const tagEnd = block.indexOf('>')
@@ -41,7 +52,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
       if (!typeName)
         continue
 
-      const blockContent = block.slice(tagEnd).split(/<\/[\w:]*EntityType>/i)[0] || ''
+      const blockContent = block.slice(tagEnd).split(RE_ENTITY_TYPE_CLOSE)[0] || ''
 
       // Extract Keys
       const keyNames: string[] = []
@@ -50,7 +61,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
       const keyBlockEnd = contentLower.indexOf('</key>')
       if (keyBlockStart !== -1 && keyBlockEnd !== -1) {
         const keyBlock = blockContent.slice(keyBlockStart + 5, keyBlockEnd)
-        const krParts = keyBlock.split(/<[\w:]*PropertyRef\s/i).slice(1)
+        const krParts = keyBlock.split(RE_PROPERTY_REF).slice(1)
         for (const kr of krParts) {
           const krTagEnd = kr.indexOf('>')
           if (krTagEnd === -1)
@@ -63,7 +74,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
 
       // Extract Properties
       const properties: EntityProperty[] = []
-      const propParts = blockContent.split(/<[\w:]*\bProperty\s/i).slice(1)
+      const propParts = blockContent.split(RE_PROPERTY).slice(1)
       for (const p of propParts) {
         const pTagEnd = p.indexOf('>')
         if (pTagEnd === -1)
@@ -80,7 +91,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
 
       // Extract Navigation Properties
       const navProps: NavigationProperty[] = []
-      const navParts = blockContent.split(/<[\w:]*\bNavigationProperty\s/i).slice(1)
+      const navParts = blockContent.split(RE_NAVIGATION_PROPERTY).slice(1)
       for (const n of navParts) {
         const nTagEnd = n.indexOf('>')
         if (nTagEnd === -1)
@@ -99,7 +110,7 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
       entityTypes[typeName] = { properties, navProps }
     }
 
-    const entitySetParts = xml.split(/<[\w:]*EntitySet\s/i).slice(1)
+    const entitySetParts = xml.split(RE_ENTITY_SET).slice(1)
     for (const s of entitySetParts) {
       const sTagEnd = s.indexOf('>')
       if (sTagEnd === -1)
@@ -138,7 +149,7 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
     const xml = fs.readFileSync(edmxPath, 'utf-8')
     const associations: Association[] = []
 
-    const assocParts = xml.split(/<[\w:]*Association\s/i).slice(1)
+    const assocParts = xml.split(RE_ASSOCIATION_OPEN).slice(1)
     for (const a of assocParts) {
       const aTagEnd = a.indexOf('>')
       if (aTagEnd === -1)
@@ -148,10 +159,10 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
       if (!name)
         continue
 
-      const body = a.slice(aTagEnd).split(/<\/[\w:]*Association>/i)[0] || ''
+      const body = a.slice(aTagEnd).split(RE_ASSOCIATION_CLOSE)[0] || ''
       const ends: AssociationEnd[] = []
 
-      const endParts = body.split(/<[\w:]*End\s/i).slice(1)
+      const endParts = body.split(RE_END).slice(1)
       for (const e of endParts) {
         const eTagEnd = e.indexOf('>')
         if (eTagEnd === -1)
