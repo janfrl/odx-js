@@ -58,11 +58,11 @@ nuxt.hook('vite:extendConfig', (config) => {
 }
 
 (nuxt as any).hook('devtools:customTabs', (tabs: any[]) => {
-tabs.push({
-  name: 'odx',
-  title: 'ODX',
-  icon: 'i-lucide-box',
-  view: {
+  tabs.push({
+    name: 'odx',
+    title: 'ODX',
+    icon: 'i-lucide-cable',
+    view: {
     type: 'iframe',
     src: `${DEVTOOLS_UI_ROUTE}/`,
   },

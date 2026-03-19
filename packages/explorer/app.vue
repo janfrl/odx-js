@@ -7,7 +7,7 @@ const { activeTab, fetchConfig, refreshLogs, logs } = useSharedODataState()
 const items = computed(() => [
   { label: 'Overview', icon: 'i-lucide-house', id: 'overview' },
   { label: 'Services', icon: 'i-lucide-database', id: 'services' },
-  { label: 'Logs', icon: 'i-lucide-terminal', id: 'logs', badge: logs.value.length || undefined },
+  { label: 'Logs', icon: 'i-lucide-activity', id: 'logs', badge: logs.value.length || undefined },
 ])
 
 onMounted(() => {
@@ -54,7 +54,7 @@ onMounted(() => {
         <!-- Header -->
         <header class="h-14 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between px-6 shrink-0 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md">
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-box" class="w-5 h-5 text-primary" />
+            <UIcon name="i-lucide-cable" class="w-5 h-5 text-primary" />
             <h1 class="text-sm font-bold uppercase tracking-widest text-neutral-900 dark:text-neutral-100">
               ODX Explorer
             </h1>
