@@ -73,25 +73,39 @@ export function useEntityExplorer(): {
       parts.push(`$expand=${newState.expand.join(',')}`)
     }
 
-    // 3. $filter
-    if (newState.filters && newState.filters.length > 0) {
-      const filterParts = newState.filters
-        .filter(f => f.field && f.operator)
-        .map((f) => {
-          let val = f.value
-          if (typeof val === 'string') {
-            val = `'${val}'`
-          }
-
-          if (f.operator === 'contains' || f.operator === 'startswith' || f.operator === 'endswith') {
-            return `${f.operator}(${f.field},${val})`
-          }
-          return `${f.field} ${f.operator} ${val}`
-        })
-
-      if (filterParts.length > 0) {
-        parts.push(`$filter=${filterParts.join(' and ')}`)
+    // 3. $filter (Recursive)
+    function serializeRule(rule: any): string {
+      let val = rule.value
+      if (typeof val === 'string') {
+        val = `'${val}'`
       }
+
+      if (rule.operator === 'contains' || rule.operator === 'startswith' || rule.operator === 'endswith') {
+        return `${rule.operator}(${rule.field},${val})`
+      }
+      return `${rule.field} ${rule.operator} ${val}`
+    }
+
+    function serializeGroup(group: any): string {
+      if (!group.items || group.items.length === 0)
+        return ''
+
+      const filterParts = group.items.map((item: any) => {
+        if (item.type === 'group') {
+          const subGroup = serializeGroup(item)
+          return subGroup ? `(${subGroup})` : ''
+        }
+        return serializeRule(item)
+      }).filter(Boolean)
+
+      if (filterParts.length === 0)
+        return ''
+      return filterParts.join(` ${group.logic} `)
+    }
+
+    const filterString = serializeGroup(newState.filters)
+    if (filterString) {
+      parts.push(`$filter=${filterString}`)
     }
 
     // 4. $orderby
@@ -119,7 +133,11 @@ export function useEntityExplorer(): {
 
   function resetQuery() {
     queryState.value = {
-      filters: [],
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [],
+      },
       select: [],
       expand: [],
       sortBy: [],

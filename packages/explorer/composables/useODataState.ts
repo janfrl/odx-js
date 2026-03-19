@@ -34,8 +34,21 @@ export interface ODataLog {
   responseBody?: any
 }
 
+export interface FilterRule {
+  type: 'rule'
+  field: string
+  operator: string
+  value: any
+}
+
+export interface FilterGroup {
+  type: 'group'
+  logic: 'and' | 'or'
+  items: (FilterRule | FilterGroup)[]
+}
+
 export interface VisualQueryState {
-  filters: { field: string, operator: string, value: any }[]
+  filters: FilterGroup
   select: string[]
   expand: string[]
   sortBy: { field: string, direction: 'asc' | 'desc' }[]
@@ -99,7 +112,11 @@ const globalViewMode = ref<'explorer' | 'schema'>('explorer')
 
 function getDefaultQueryState(): VisualQueryState {
   return {
-    filters: [],
+    filters: {
+      type: 'group',
+      logic: 'and',
+      items: [],
+    },
     select: [],
     expand: [],
     sortBy: [],
