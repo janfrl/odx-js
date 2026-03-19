@@ -15,6 +15,12 @@ const isFullscreen = ref(false)
 const containerRef = ref<HTMLElement | null>(null)
 const needsInitialFit = ref(false)
 
+if (typeof document !== 'undefined') {
+  document.addEventListener('fullscreenchange', () => {
+    isFullscreen.value = !!document.fullscreenElement
+  })
+}
+
 export function useSchemaExplorer(): any {
   const { selectedService } = useSharedODataState()
   const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport, edges } = useVueFlow()
@@ -217,8 +223,39 @@ export function useSchemaExplorer(): any {
     const { x, y, zoom } = viewport.value
 
     if (!document.fullscreenElement) {
-      element.requestFullscreen().then(() => {
-        isFullscreen.value = true
+      const isSchemaVisible = !!element.offsetParent
+
+      if (isSchemaVisible) {
+        // Smart schema-only fullscreen with viewport centering
+        element.requestFullscreen().then(() => {
+          isFullscreen.value = true
+          setTimeout(() => {
+            const newWidth = element.offsetWidth
+            const newHeight = element.offsetHeight
+            const dx = (newWidth - oldWidth) / 2
+            const dy = (newHeight - oldHeight) / 2
+            setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
+          }, 100)
+        }).catch((err) => {
+          console.error(`Fullscreen failed: ${err.message}`)
+        })
+      }
+      else {
+        // Global app fallback for other tabs (user liked the global shortcut)
+        document.documentElement.requestFullscreen().then(() => {
+          isFullscreen.value = true
+        }).catch((err) => {
+          console.error(`Global fullscreen failed: ${err.message}`)
+        })
+      }
+    }
+    else {
+      // Logic for exiting fullscreen
+      const wasSchemaFullscreen = document.fullscreenElement === element
+      document.exitFullscreen()
+      isFullscreen.value = false
+
+      if (wasSchemaFullscreen) {
         setTimeout(() => {
           const newWidth = element.offsetWidth
           const newHeight = element.offsetHeight
@@ -226,20 +263,7 @@ export function useSchemaExplorer(): any {
           const dy = (newHeight - oldHeight) / 2
           setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
         }, 100)
-      }).catch((err) => {
-        console.error(`Fullscreen failed: ${err.message}`)
-      })
-    }
-    else {
-      document.exitFullscreen()
-      isFullscreen.value = false
-      setTimeout(() => {
-        const newWidth = element.offsetWidth
-        const newHeight = element.offsetHeight
-        const dx = (newWidth - oldWidth) / 2
-        const dy = (newHeight - oldHeight) / 2
-        setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
-      }, 100)
+      }
     }
   }
 

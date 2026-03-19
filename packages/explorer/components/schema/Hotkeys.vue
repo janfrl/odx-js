@@ -12,7 +12,7 @@ useEventListener('keydown', (e: KeyboardEvent) => {
     return
   }
 
-  if (e.key === 'f' || e.key === 'F') {
+  if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey) {
     toggleFullscreen()
   }
   if (e.key === 'R' && e.shiftKey) {
