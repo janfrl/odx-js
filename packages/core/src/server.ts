@@ -12,7 +12,7 @@ function getAttributes(tag: string): Record<string, string> {
     const value = match[2]!
     attrs[rawKey] = value
     const parts = rawKey.split(':')
-    const key = parts[parts.length - 1]!
+    const key = parts.at(-1)!
     attrs[key] = value
   }
   return attrs

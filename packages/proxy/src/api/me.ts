@@ -1,5 +1,5 @@
 import process from 'node:process'
-import { defineEventHandler, getHeader, getHeaders } from 'h3'
+import { defineEventHandler, getHeader } from 'h3'
 
 /**
  * Returns the current user's identity details using the official SAP security context methods.
@@ -15,7 +15,8 @@ export default defineEventHandler(async (event) => {
     if (authAttr) {
       try {
         userCompanies = JSON.parse(authAttr)
-      } catch (e) {}
+      }
+      catch (e) {}
     }
 
     return {
@@ -23,7 +24,7 @@ export default defineEventHandler(async (event) => {
       Userid: sc.getAttribute('employee_id')?.[0] || sc.getLogonName() || '',
       Usercompany: sc.getAttribute('company_id')?.[0] || '',
       Usercompanies: userCompanies,
-      _raw: sc.getTokenInfo()
+      _raw: sc.getTokenInfo(),
     }
   }
 
@@ -37,14 +38,15 @@ export default defineEventHandler(async (event) => {
         let userCompanies: any[] = []
         try {
           userCompanies = JSON.parse(attr.auth?.[0] || '[]')
-        } catch (e) {}
+        }
+        catch (e) {}
 
         return {
           Usermail: p.email || '',
           Userid: attr.employee_id?.[0] || p.user_id || p.sub || '',
           Usercompany: attr.company_id?.[0] || '',
           Usercompanies: userCompanies,
-          _raw: p
+          _raw: p,
         }
       }
     }
@@ -60,7 +62,7 @@ export default defineEventHandler(async (event) => {
       Userid: 'JDOE',
       Usercompany: 'BECHTLE',
       Usercompanies: [{ id: '1000', name: 'Bechtle AG' }],
-      _synthetic: true
+      _synthetic: true,
     }
   }
 
@@ -70,6 +72,6 @@ export default defineEventHandler(async (event) => {
     Userid: 'ANONYMOUS',
     Usercompany: '',
     Usercompanies: [],
-    _error: 'Unauthorized: Please access via Launchpad.'
+    _error: 'Unauthorized: Please access via Launchpad.',
   }
 })

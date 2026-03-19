@@ -26,7 +26,7 @@ export default defineNitroPlugin((nitro) => {
         // Silent in dev
       }
     }
-    
+
     // Fallback to user context already set in event (e.g. by /api/me synthetic user)
     if (userPayload) {
       event.context.userContext = parseXsuaaPolicies(userPayload)
@@ -42,7 +42,7 @@ export default defineNitroPlugin((nitro) => {
     if (btpTargetName || isRealCloud) {
       try {
         const destination = await resolveBtpDestination(btpTargetName || serviceName)
-        
+
         if (process.env.NODE_ENV === 'production') {
           console.warn(`[@bc8-odx/proxy] BTP Swap: Swapping user credentials for Destination "${destination.name}"`)
         }

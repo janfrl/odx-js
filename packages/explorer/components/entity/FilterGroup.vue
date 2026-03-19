@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { FilterGroup, FilterRule } from '../../composables/useODataState'
-import { computed } from 'vue'
 
 const props = defineProps<{
   group: FilterGroup
@@ -60,7 +59,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
   <div
     class="flex flex-col gap-3"
     :class="[
-      !isRoot ? 'ml-6 pl-4 border-l-2 border-neutral-200 dark:border-neutral-800' : ''
+      !isRoot ? 'ml-6 pl-4 border-l-2 border-neutral-200 dark:border-neutral-800' : '',
     ]"
   >
     <!-- Group Header -->

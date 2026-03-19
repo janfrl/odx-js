@@ -1,9 +1,9 @@
-import { createError } from 'h3'
-import { defineNitroPlugin } from 'nitropack/runtime'
-// @ts-ignore
-import { createSecurityContext, XsuaaService } from '@sap/xssec'
 // @ts-ignore
 import xsenv from '@sap/xsenv'
+// @ts-ignore
+import { createSecurityContext, XsuaaService } from '@sap/xssec'
+import { createError } from 'h3'
+import { defineNitroPlugin } from 'nitropack/runtime'
 
 /**
  * Nitro plugin to enforce SAP XSUAA authentication using the modern XsuaaService class.
@@ -47,9 +47,9 @@ export default defineNitroPlugin((nitro) => {
     }
     catch (err: any) {
       console.error('[@bc8-odx/proxy] XSUAA Validation failed:', err.message)
-      throw createError({ 
-        statusCode: err.statusCode || 401, 
-        statusMessage: 'Unauthorized: Invalid XSUAA token' 
+      throw createError({
+        statusCode: err.statusCode || 401,
+        statusMessage: 'Unauthorized: Invalid XSUAA token',
       })
     }
   })

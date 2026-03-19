@@ -1,4 +1,5 @@
-const approuter = require('@sap/approuter');
-const ar = approuter();
+const approuter = require('@sap/approuter')
 
-ar.start();
+const ar = approuter()
+
+ar.start()

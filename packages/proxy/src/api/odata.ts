@@ -204,7 +204,7 @@ export default defineEventHandler(async (event) => {
 
           if (apiFactory) {
             const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
-            const allKeys = Object.keys(api).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(api)))
+            const allKeys = [...Object.keys(api), ...Object.getOwnPropertyNames(Object.getPrototypeOf(api))]
             const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
             const entityApi = actualKey ? api[actualKey] : null
 

@@ -124,7 +124,7 @@ export function useSchemaExplorer(): any {
 
             if (targetEntitySet && targetEntitySet.name !== entity.name) {
               const edgeId = [entity.name, targetEntitySet.name, assoc.name].sort().join('-')
-              if (!newEdges.find((e: any) => e.id === edgeId)) {
+              if (!newEdges.some((e: any) => e.id === edgeId)) {
                 const isMany1 = (assoc.ends[0]?.multiplicity || '').includes('*')
                 const isMany2 = (assoc.ends[1]?.multiplicity || '').includes('*')
 
@@ -262,7 +262,7 @@ export function useSchemaExplorer(): any {
     })
 
     // 1. Relationships first (to guide Mermaid layout engine)
-    const sortedEdges = [...edges.value].sort((a, b) => {
+    const sortedEdges = edges.value.toSorted((a, b) => {
       const s1 = nameMap[a.source] || a.source
       const s2 = nameMap[b.source] || b.source
       return s1.localeCompare(s2) || (nameMap[a.target] || a.target).localeCompare(nameMap[b.target] || b.target)
@@ -285,7 +285,7 @@ export function useSchemaExplorer(): any {
     })
 
     // 2. Entities second
-    const sortedEntities = [...schemaData.value.entities].sort((a, b) => a.type.localeCompare(b.type))
+    const sortedEntities = schemaData.value.entities.toSorted((a, b) => a.type.localeCompare(b.type))
 
     sortedEntities.forEach((entity: any) => {
       mermaid += `  ${entity.type} {\n`

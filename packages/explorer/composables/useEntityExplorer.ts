@@ -199,12 +199,13 @@ export function useEntityExplorer(): {
         }
         throw new Error(statusMessage)
       }
-      
+
       const responseText = await res.text()
       let data: any
       try {
         data = JSON.parse(responseText)
-      } catch {
+      }
+      catch {
         data = { response: responseText }
       }
 
