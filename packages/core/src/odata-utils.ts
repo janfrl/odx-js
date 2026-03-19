@@ -46,13 +46,16 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   return hasProperties ? flattened : null
 }
 
+const RE_REDUNDANT_SLASHES = /([^:]\/)\/+/g
+const RE_TRAILING_SLASH = /\/$/
+
 /**
  * Sanitizes a base URL by removing redundant slashes and ensuring no trailing slash.
  */
 export function sanitizeBaseURL(url: string): string {
   if (!url)
     return ''
-  return url.replace(/([^:]\/)\/+/g, '$1').replace(/\/$/, '')
+  return url.replace(RE_REDUNDANT_SLASHES, '$1').replace(RE_TRAILING_SLASH, '')
 }
 
 /**

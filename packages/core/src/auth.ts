@@ -5,13 +5,13 @@ import { ofetch } from 'ofetch'
  * Supports both real XSUAA attributes and synthetic mock structures.
  */
 export interface XsuaaPayload {
-  user_id?: string
-  userId?: string
-  email?: string
+  'user_id'?: string
+  'userId'?: string
+  'email'?: string
   // Real XSUAA custom attributes are usually here
   'xs.user.attributes'?: Record<string, string[]>
   // Fallback for our mock structure
-  userCompanies?: Array<{
+  'userCompanies'?: Array<{
     company: string
     source: string
     [key: string]: unknown

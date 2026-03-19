@@ -1,7 +1,6 @@
 import type { H3Event } from 'h3'
 import type { Hookable } from 'hookable'
 import type { FetchOptions, FetchResponse } from 'ofetch'
-import type { UserContext } from './auth.ts'
 
 export interface ODataProxyHooks {
   'odx:proxy:request': (ctx: { event: H3Event, serviceName: string, fetchOptions: FetchOptions }) => void | Promise<void>
@@ -228,4 +227,3 @@ declare module 'h3' {
     securityContext?: any
   }
 }
-

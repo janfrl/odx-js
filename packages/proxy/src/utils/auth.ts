@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import { createRequire } from 'node:module'
+import process from 'node:process'
 import { createError, getHeader } from 'h3'
 
 const require = createRequire(import.meta.url)

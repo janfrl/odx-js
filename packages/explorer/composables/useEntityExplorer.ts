@@ -21,6 +21,8 @@ export function useEntityExplorer(): {
   previewError: globalThis.Ref<string | null>
   previewData: globalThis.Ref<Record<string, any>[]>
   queryInput: globalThis.Ref<string>
+  queryMethod: globalThis.Ref<string>
+  queryState: globalThis.Ref<any>
   entitySchema: globalThis.Ref<any>
   entitySchemaLoading: globalThis.Ref<boolean>
   editor: globalThis.Ref<EditorState>
@@ -28,6 +30,7 @@ export function useEntityExplorer(): {
   previewColumns: globalThis.ComputedRef<string[]>
   navigationItems: globalThis.ComputedRef<any[]>
   refreshEntityData: () => Promise<void>
+  resetQuery: () => void
   isNavigationProperty: (key: string) => boolean
   openEditor: (mode: 'view' | 'create' | 'update' | 'headers', row?: any) => void
   deleteItem: (id: any) => Promise<void>
@@ -44,6 +47,8 @@ export function useEntityExplorer(): {
     previewError,
     previewData,
     queryInput,
+    queryMethod,
+    queryState,
     entitySchema,
     entitySchemaLoading,
     entityDataCache,
@@ -52,6 +57,95 @@ export function useEntityExplorer(): {
   const toast = useToast()
 
   let loadingTimeout: ReturnType<typeof setTimeout> | null = null
+
+  // Watch queryState and generate queryInput string
+  watch(queryState, (newState) => {
+    let q = '?'
+    const parts: string[] = []
+
+    // 1. $select
+    if (newState.select && newState.select.length > 0) {
+      parts.push(`$select=${newState.select.join(',')}`)
+    }
+
+    // 2. $expand
+    if (newState.expand && newState.expand.length > 0) {
+      parts.push(`$expand=${newState.expand.join(',')}`)
+    }
+
+    // 3. $filter (Recursive)
+    function serializeRule(rule: any): string {
+      let val = rule.value
+      if (typeof val === 'string') {
+        val = `'${val}'`
+      }
+
+      if (rule.operator === 'contains' || rule.operator === 'startswith' || rule.operator === 'endswith') {
+        return `${rule.operator}(${rule.field},${val})`
+      }
+      return `${rule.field} ${rule.operator} ${val}`
+    }
+
+    function serializeGroup(group: any): string {
+      if (!group.items || group.items.length === 0)
+        return ''
+
+      const filterParts = group.items.map((item: any) => {
+        if (item.type === 'group') {
+          const subGroup = serializeGroup(item)
+          return subGroup ? `(${subGroup})` : ''
+        }
+        return serializeRule(item)
+      }).filter(Boolean)
+
+      if (filterParts.length === 0)
+        return ''
+      return filterParts.join(` ${group.logic} `)
+    }
+
+    const filterString = serializeGroup(newState.filters)
+    if (filterString) {
+      parts.push(`$filter=${filterString}`)
+    }
+
+    // 4. $orderby
+    if (newState.sortBy && newState.sortBy.length > 0) {
+      const orderParts = newState.sortBy
+        .filter(s => s.field)
+        .map(s => `${s.field} ${s.direction}`)
+      parts.push(`$orderby=${orderParts.join(',')}`)
+    }
+
+    // 5. $top / $skip
+    if (newState.top !== null && newState.top !== undefined) {
+      parts.push(`$top=${newState.top}`)
+    }
+    if (newState.skip !== null && newState.skip !== undefined) {
+      parts.push(`$skip=${newState.skip}`)
+    }
+
+    q += parts.join('&')
+    if (q === '?')
+      q = '?'
+
+    queryInput.value = q
+  }, { deep: true })
+
+  function resetQuery(): void {
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    }
+    queryInput.value = '?'
+  }
 
   // Loading indicator local logic
   watch(previewLoading, (isLoading: boolean) => {
@@ -85,6 +179,7 @@ export function useEntityExplorer(): {
       }
 
       const res = await fetch(urlPath, {
+        method: queryMethod.value,
         headers: {
           'Content-Type': 'application/json',
           ...sessionHeaders.value,
@@ -104,7 +199,29 @@ export function useEntityExplorer(): {
         }
         throw new Error(statusMessage)
       }
-      const data = await res.json()
+
+      const responseText = await res.text()
+      let data: any
+      try {
+        data = JSON.parse(responseText)
+      }
+      catch {
+        data = { response: responseText }
+      }
+
+      // For non-GET requests (POST, PUT, PATCH, DELETE), we show the response in the editor
+      if (queryMethod.value !== 'GET') {
+        editor.value = {
+          show: true,
+          mode: 'response',
+          json: typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+          loading: false,
+          error: null,
+          original: null,
+        }
+        previewLoading.value = false
+        return
+      }
 
       let finalData = []
       if (Array.isArray(data)) {
@@ -122,6 +239,7 @@ export function useEntityExplorer(): {
         data: [...finalData],
         error: null,
         query: queryInput.value,
+        method: queryMethod.value,
       }
     }
     catch (e: unknown) {
@@ -136,6 +254,7 @@ export function useEntityExplorer(): {
           data: [],
           error: msg,
           query: queryInput.value,
+          method: queryMethod.value,
         }
       }
     }
@@ -341,6 +460,7 @@ export function useEntityExplorer(): {
     previewError,
     previewData,
     queryInput,
+    queryMethod,
     entitySchema,
     entitySchemaLoading,
     editor,
@@ -348,10 +468,12 @@ export function useEntityExplorer(): {
     previewColumns,
     navigationItems,
     refreshEntityData,
+    resetQuery,
     isNavigationProperty,
     openEditor,
     deleteItem,
     clearData,
     downloadJson,
+    queryState,
   }
 }

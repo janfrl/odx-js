@@ -4,6 +4,12 @@ import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdm
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { resolve } from 'pathe'
 
+const RE_SCHEMA_NAMESPACE = /<Schema\s+Namespace="([^"]+)"/
+const RE_ENTITY_TYPE = /<EntityType Name="([^"]+)">/g
+const RE_ASSOCIATION = /<Association Name="([^"]+)">/g
+const RE_NAV_PROP = /<NavigationProperty Name="([^"]+)"/g
+const RE_NAME_ATTR = /"([^"]+)"/
+
 export default defineEventHandler((event) => {
   const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
@@ -47,7 +53,7 @@ export default defineEventHandler((event) => {
     const version = detectODataVersion(edmxPath)
     const entities = extractEntitiesFromEdmx(edmxPath)
     const associations = extractAssociationsFromEdmx(edmxPath)
-    const namespace = xml.match(/<Schema\s+Namespace="([^"]+)"/)?.[1] || ''
+    const namespace = xml.match(RE_SCHEMA_NAMESPACE)?.[1] || ''
 
     const result = {
       name: serviceName,
@@ -57,9 +63,9 @@ export default defineEventHandler((event) => {
       associations,
       // Basic raw schema info for the graph
       raw: {
-        entityTypes: xml.match(/<EntityType Name="([^"]+)">/g)?.map(m => m.match(/"([^"]+)"/)![1]) || [],
-        associations: xml.match(/<Association Name="([^"]+)">/g)?.map(m => m.match(/"([^"]+)"/)![1]) || [],
-        navigationProperties: xml.match(/<NavigationProperty Name="([^"]+)"/g)?.map(m => m.match(/"([^"]+)"/)![1]) || [],
+        entityTypes: xml.match(RE_ENTITY_TYPE)?.map(m => m.match(RE_NAME_ATTR)![1]) || [],
+        associations: xml.match(RE_ASSOCIATION)?.map(m => m.match(RE_NAME_ATTR)![1]) || [],
+        navigationProperties: xml.match(RE_NAV_PROP)?.map(m => m.match(RE_NAME_ATTR)![1]) || [],
       },
     }
 

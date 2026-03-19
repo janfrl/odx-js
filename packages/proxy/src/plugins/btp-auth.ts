@@ -1,4 +1,5 @@
 import type { XsuaaPayload } from '@bc8-odx/core'
+import process from 'node:process'
 import { parseXsuaaPolicies } from '@bc8-odx/core'
 import { defineNitroPlugin } from 'nitropack/runtime'
 import { resolveBtpDestination } from '../utils/btp-destination.ts'
@@ -22,11 +23,11 @@ export default defineNitroPlugin((nitro) => {
           userPayload = JSON.parse(atob(payloadPart))
         }
       }
-      catch (e) {
+      catch {
         // Silent in dev
       }
     }
-    
+
     // Fallback to user context already set in event (e.g. by /api/me synthetic user)
     if (userPayload) {
       event.context.userContext = parseXsuaaPolicies(userPayload)
@@ -42,7 +43,7 @@ export default defineNitroPlugin((nitro) => {
     if (btpTargetName || isRealCloud) {
       try {
         const destination = await resolveBtpDestination(btpTargetName || serviceName)
-        
+
         if (process.env.NODE_ENV === 'production') {
           console.warn(`[@bc8-odx/proxy] BTP Swap: Swapping user credentials for Destination "${destination.name}"`)
         }

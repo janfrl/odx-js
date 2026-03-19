@@ -11,6 +11,11 @@ import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { validateBtpAuth } from '../utils/auth'
 
+const RE_LEADING_SLASH = /^\//
+const RE_ENTITY_SET_MATCH = /^([^(]+)\(([^)]+)\)$/
+const RE_QUOTE_WRAP = /^'|'$/g
+const RE_TRAILING_SLASH = /\/$/
+
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
 
@@ -40,18 +45,27 @@ export default defineEventHandler(async (event) => {
 
   const fullPath = event.path || ''
   const pathOnly = fullPath.split('?')[0] || ''
-  const relativePath = pathOnly.startsWith(basePath) ? pathOnly.slice(basePath.length).replace(/^\//, '') : ''
+  const relativePath = pathOnly.startsWith(basePath) ? pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '') : ''
   const segments = relativePath.split('/').filter(Boolean)
   const serviceRoute = segments[0] || ''
   let entitySetName = segments[1] || ''
   let resourceId = ''
 
   if (entitySetName.includes('(')) {
-    const match = entitySetName.match(/^([^(]+)\(([^)]+)\)$/)
+    const match = entitySetName.match(RE_ENTITY_SET_MATCH)
     if (match) {
       entitySetName = match[1]!
-      resourceId = match[2]!.replace(/^'|'$/g, '')
+      resourceId = match[2]!.replace(RE_QUOTE_WRAP, '')
     }
+  }
+
+  const query = getQuery(event)
+
+  // Use 'id' from query if resourceId is empty
+  if (!resourceId && query.id) {
+    resourceId = String(query.id)
+    // Remove it from query so it's not appended twice if we use withQuery later
+    delete query.id
   }
 
   const services: ODataServiceConfig[] = config.services ?? []
@@ -64,8 +78,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
-  const globalDest = (config.destination || '').replace(/\/$/, '')
-  let baseUrl = (matched.url || globalDest).replace(/\/$/, '')
+  const globalDest = (config.destination || '').replace(RE_TRAILING_SLASH, '')
+  let baseUrl = (matched.url || globalDest).replace(RE_TRAILING_SLASH, '')
 
   const isExternal = baseUrl.startsWith('http')
   if (!isExternal) {
@@ -126,7 +140,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const query = getQuery(event)
   const fetchOptions: FetchOptions = {
     method: event.method as any,
     query,
@@ -196,7 +209,7 @@ export default defineEventHandler(async (event) => {
 
           if (apiFactory) {
             const api = (apiFactory.prototype && apiFactory.prototype.constructor) ? new (apiFactory as any)() : (apiFactory as any)()
-            const allKeys = Object.keys(api).concat(Object.getOwnPropertyNames(Object.getPrototypeOf(api)))
+            const allKeys = [...Object.keys(api), ...Object.getOwnPropertyNames(Object.getPrototypeOf(api))]
             const actualKey = allKeys.find(k => k.toLowerCase() === entitySetName.toLowerCase() || k.toLowerCase() === `${entitySetName.toLowerCase()}api`)
             const entityApi = actualKey ? api[actualKey] : null
 

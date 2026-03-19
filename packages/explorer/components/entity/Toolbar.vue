@@ -1,32 +1,55 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useEntityExplorer } from '../../composables/useEntityExplorer'
+import QueryBuilder from './QueryBuilder.vue'
 
 const {
   queryInput,
+  queryMethod,
   refreshEntityData,
   previewData,
   openEditor,
   downloadJson,
   clearData,
 } = useEntityExplorer()
+
+const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+const showBuilder = ref(false)
 </script>
 
 <template>
   <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
     <!-- Query Area -->
     <div class="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center gap-4 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md rounded-t-[inherit]">
-      <UInput
-        v-model="queryInput"
-        placeholder="?id=... or ?$filter=..."
-        icon="i-lucide-search"
-        class="flex-1 font-mono"
+      <USelect
+        v-model="queryMethod"
+        :items="methods"
+        class="font-mono min-w-24"
         size="md"
-        @keyup.enter="refreshEntityData"
-      >
-        <template #trailing>
-          <UKbd>Enter</UKbd>
-        </template>
-      </UInput>
+        variant="subtle"
+      />
+      <div class="flex-1 flex items-center gap-2">
+        <UInput
+          v-model="queryInput"
+          placeholder="?id=... or ?$filter=..."
+          icon="i-lucide-search"
+          class="flex-1 font-mono"
+          size="md"
+          @keyup.enter="refreshEntityData"
+        >
+          <template #trailing>
+            <UKbd>Enter</UKbd>
+          </template>
+        </UInput>
+        <UButton
+          :icon="showBuilder ? 'i-lucide-chevron-up' : 'i-lucide-list-filter'"
+          size="md"
+          variant="ghost"
+          color="neutral"
+          :title="showBuilder ? 'Hide Builder' : 'Open Query Builder'"
+          @click="showBuilder = !showBuilder"
+        />
+      </div>
       <UButton
         label="Execute"
         icon="i-lucide-play"
@@ -36,6 +59,9 @@ const {
         @click="refreshEntityData"
       />
     </div>
+
+    <!-- Visual Builder -->
+    <QueryBuilder v-if="showBuilder" />
 
     <!-- Actions Area -->
     <div class="px-6 py-2 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/20">

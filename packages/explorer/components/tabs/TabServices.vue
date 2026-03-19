@@ -5,8 +5,26 @@ import { useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
 
-const { services, selectedService, config, generateService, generatingStatus, selectedEntity, globalViewMode } = useSharedODataState()
+const RE_TRAILING_SLASH = /\/$/
+
+const {
+  services,
+  selectedService,
+  config,
+  generateService,
+  generatingStatus,
+  selectedEntity,
+  globalViewMode,
+  activeTab,
+  logFilterService,
+} = useSharedODataState()
 const toast = useToast()
+
+function viewLogs(service: any) {
+  const identifier = (service.route || service.name).toLowerCase()
+  logFilterService.value = identifier
+  activeTab.value = 'logs'
+}
 
 const tabs = [
   { label: 'Data', icon: 'i-lucide-table-2', value: 'explorer' },
@@ -76,7 +94,8 @@ const actionItems = computed((): DropdownMenuItem[][] => {
 
   // External metadata link (always show if URL is external)
   if (selectedService.value.url?.startsWith('http')) {
-    const extUrl = `${selectedService.value.url.replace(/\/$/, '')}/$metadata`
+    const extUrl = `${selectedService.value.url.replace(RE_TRAILING_SLASH, '')}/$metadata`
+
     metadataGroup.push({
       label: 'External Metadata',
       icon: 'i-lucide-external-link',
@@ -170,6 +189,17 @@ const actionItems = computed((): DropdownMenuItem[][] => {
 
         <!-- Actions Section -->
         <div class="flex items-center justify-end gap-3 shrink-0 flex-1">
+          <UFieldGroup class="-mt-2">
+            <UButton
+              icon="i-lucide-activity"
+              color="neutral"
+              variant="subtle"
+              label="Logs"
+              title="View Traffic Logs"
+              @click="viewLogs(selectedService)"
+            />
+          </UFieldGroup>
+
           <UFieldGroup class="-mt-2">
             <!-- If offline, Regenerate is primary. If online, Metadata is primary. -->
             <UButton

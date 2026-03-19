@@ -1,5 +1,4 @@
 import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
-import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'
@@ -57,7 +56,7 @@ export default defineEventHandler(async (event) => {
       await mockserver.isReady
       mockHandler = fromNodeMiddleware(mockserver.getRouter())
     }
-    catch (err: any) {
+    catch {
       // Ignored in dev
     }
   }

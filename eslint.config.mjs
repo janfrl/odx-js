@@ -21,8 +21,16 @@ export default antfu(
       ],
     },
   }),
-).append({
-  rules: {
-    '@typescript-eslint/unified-signatures': 'off',
+).append(
+  {
+    rules: {
+      '@typescript-eslint/unified-signatures': 'off',
+    },
   },
-})
+  {
+    files: ['**/*.md'],
+    rules: {
+      'markdown/no-missing-atx-heading-space': 'off',
+    },
+  },
+)

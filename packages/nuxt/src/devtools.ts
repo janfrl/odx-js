@@ -37,36 +37,35 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
         },
       )
     }
-// 2. Proxy the route to the local dev server using Nitro's devProxy
-nuxt.options.nitro.devProxy ||= {}
-nuxt.options.nitro.devProxy[DEVTOOLS_UI_ROUTE] = {
-  target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}/`,
-  changeOrigin: true,
-}
-
-// Also add to Vite for better HMR support
-nuxt.hook('vite:extendConfig', (config) => {
-  if (config.server) {
-    config.server.proxy ||= {}
-    config.server.proxy[DEVTOOLS_UI_ROUTE] = {
-      target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}`,
+    // 2. Proxy the route to the local dev server using Nitro's devProxy
+    nuxt.options.nitro.devProxy ||= {}
+    nuxt.options.nitro.devProxy[DEVTOOLS_UI_ROUTE] = {
+      target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}/`,
       changeOrigin: true,
-      followRedirects: true,
     }
+
+    // Also add to Vite for better HMR support
+    nuxt.hook('vite:extendConfig', (config) => {
+      if (config.server) {
+        config.server.proxy ||= {}
+        config.server.proxy[DEVTOOLS_UI_ROUTE] = {
+          target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}`,
+          changeOrigin: true,
+          followRedirects: true,
+        }
+      }
+    })
   }
-})
-}
 
-(nuxt as any).hook('devtools:customTabs', (tabs: any[]) => {
-tabs.push({
-  name: 'odx',
-  title: 'ODX',
-  icon: 'i-lucide-box',
-  view: {
-    type: 'iframe',
-    src: `${DEVTOOLS_UI_ROUTE}/`,
-  },
-})
-})
+  (nuxt as any).hook('devtools:customTabs', (tabs: any[]) => {
+    tabs.push({
+      name: 'odx',
+      title: 'ODX',
+      icon: 'i-lucide-cable',
+      view: {
+        type: 'iframe',
+        src: `${DEVTOOLS_UI_ROUTE}/`,
+      },
+    })
+  })
 }
-

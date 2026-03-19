@@ -34,9 +34,31 @@ export interface ODataLog {
   responseBody?: any
 }
 
+export interface FilterRule {
+  type: 'rule'
+  field: string
+  operator: string
+  value: any
+}
+
+export interface FilterGroup {
+  type: 'group'
+  logic: 'and' | 'or'
+  items: (FilterRule | FilterGroup)[]
+}
+
+export interface VisualQueryState {
+  filters: FilterGroup
+  select: string[]
+  expand: string[]
+  sortBy: { field: string, direction: 'asc' | 'desc' }[]
+  top: number | null
+  skip: number | null
+}
+
 export interface EditorState {
   show: boolean
-  mode: 'view' | 'create' | 'update' | 'headers'
+  mode: 'view' | 'create' | 'update' | 'headers' | 'response'
   json: string
   loading: boolean
   error: string | null
@@ -56,21 +78,52 @@ const selectedService = ref<ODataServiceState | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
+const logFilterService = ref<string | null>(null)
 
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
 const previewData = ref<Record<string, any>[]>([])
 const queryInput = ref('?')
+const queryMethod = ref('GET')
+const queryState = ref<VisualQueryState>({
+  filters: [],
+  select: [],
+  expand: [],
+  sortBy: [],
+  top: null,
+  skip: null,
+})
 const entitySchema = ref<any>(null)
 const entitySchemaLoading = ref(false)
 
 // Per-entity cache for data and query state
-const entityDataCache = ref<Record<string, { data: any[], error: string | null, query: string }>>({})
+const entityDataCache = ref<Record<string, {
+  data: any[]
+  error: string | null
+  query: string
+  method: string
+  queryState: VisualQueryState
+}>>({})
 
 const initializedServices = ref<Set<string>>(new Set())
 const schemaFocusedServices = ref<Set<string>>(new Set())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 const globalViewMode = ref<'explorer' | 'schema'>('explorer')
+
+function getDefaultQueryState(): VisualQueryState {
+  return {
+    filters: {
+      type: 'group',
+      logic: 'and',
+      items: [],
+    },
+    select: [],
+    expand: [],
+    sortBy: [],
+    top: null,
+    skip: null,
+  }
+}
 
 // GLOBAL SYNC LOGIC (Persists across unmounts)
 
@@ -80,6 +133,8 @@ watch(selectedService, async (newSvc) => {
   previewData.value = []
   previewError.value = null
   queryInput.value = '?'
+  queryMethod.value = 'GET'
+  queryState.value = getDefaultQueryState()
   entitySchema.value = null
 
   if (newSvc) {
@@ -118,17 +173,23 @@ watch(selectedEntity, (newEntity) => {
       previewData.value = [...cache.data]
       previewError.value = cache.error
       queryInput.value = cache.query
+      queryMethod.value = cache.method || 'GET'
+      queryState.value = cache.queryState ? JSON.parse(JSON.stringify(cache.queryState)) : getDefaultQueryState()
     }
     else {
       previewData.value = []
       previewError.value = null
       queryInput.value = '?'
+      queryMethod.value = 'GET'
+      queryState.value = getDefaultQueryState()
     }
   }
   else {
     previewData.value = []
     previewError.value = null
     queryInput.value = '?'
+    queryMethod.value = 'GET'
+    queryState.value = getDefaultQueryState()
   }
 })
 
@@ -258,10 +319,13 @@ export function useSharedODataState(): any {
     selectedEntity,
     generatingStatus,
     sessionHeaders,
+    logFilterService,
     previewLoading,
     previewError,
     previewData,
     queryInput,
+    queryMethod,
+    queryState,
     entitySchema,
     entitySchemaLoading,
     entityDataCache,
