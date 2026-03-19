@@ -63,7 +63,7 @@ function getRowData(row: any): Record<string, any> {
         class="min-w-max"
         :ui="{
           thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
-          th: 'text-[11px] font-bold uppercase tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
+          th: 'text-[11px] font-bold tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
         }"
       >
         <!-- Hide the built-in empty slot when showing our own centered message -->
