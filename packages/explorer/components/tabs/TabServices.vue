@@ -135,36 +135,24 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             @click.prevent="selectedService = svc"
           >
             <template #footer>
-              <div class="flex items-center justify-between w-full">
-                <div class="flex items-center gap-2">
-                  <UBadge
-                    v-if="svc.version"
-                    color="neutral"
-                    variant="soft"
-                    size="sm"
-                  >
-                    {{ svc.version }}
-                  </UBadge>
-
-                  <UBadge
-                    color="neutral"
-                    variant="soft"
-                    size="sm"
-                    class="uppercase tracking-widest text-[10px]"
-                  >
-                    {{ svc.strategy || 'proxied' }}
-                  </UBadge>
-                </div>
-
-                <UButton
-                  icon="i-lucide-activity"
+              <div class="flex items-center gap-2">
+                <UBadge
+                  v-if="svc.version"
                   color="neutral"
-                  variant="ghost"
+                  variant="soft"
                   size="sm"
-                  class="opacity-50 hover:opacity-100 transition-opacity"
-                  title="View Traffic Logs"
-                  @click.stop="viewLogs(svc)"
-                />
+                >
+                  {{ svc.version }}
+                </UBadge>
+
+                <UBadge
+                  color="neutral"
+                  variant="soft"
+                  size="sm"
+                  class="uppercase tracking-widest text-[10px]"
+                >
+                  {{ svc.strategy || 'proxied' }}
+                </UBadge>
               </div>
             </template>
           </UPageCard>
