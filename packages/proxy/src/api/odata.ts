@@ -172,7 +172,6 @@ export default defineEventHandler(async (event) => {
     }, config.devtools?.maxLogs)
   }
 
-
   let capturedBody: unknown = null
   if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
     capturedBody = await readBody(event).catch(() => null)

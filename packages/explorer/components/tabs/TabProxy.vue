@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
-import TabHeader from '../TabHeader.vue'
 
 const { logs, useCORSBridge } = useSharedODataState()
 
@@ -34,8 +33,10 @@ const labelColors: Record<string, any> = {
 }
 
 function getLabelColor(label: string, status?: string) {
-  if (status === 'error') return 'error'
-  if (status === 'success') return 'success'
+  if (status === 'error')
+    return 'error'
+  if (status === 'success')
+    return 'success'
   return labelColors[label] || 'neutral'
 }
 
@@ -57,15 +58,21 @@ const identityFields = computed(() => {
 
 <template>
   <div class="h-full flex flex-col overflow-hidden font-sans">
-    <TabHeader
-      title="Proxy Engine"
-      description="Introspect the active security context and request lifecycle."
-    />
+    <div class="flex-1 overflow-hidden p-6 space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
+        <!-- Sidebar Info & Settings -->
+        <div class="lg:col-span-1 flex flex-col gap-8 overflow-auto custom-scrollbar pr-2">
+          <!-- Integrated Header -->
+          <header class="flex flex-col gap-1.5 px-1 shrink-0">
+            <h1 class="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+              Proxy Engine
+            </h1>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              Introspect the active security context and request lifecycle.
+            </p>
+          </header>
 
-    <div class="flex-1 overflow-hidden p-6 pt-0 space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-        <!-- Identity Card -->
-        <div class="lg:col-span-1 flex flex-col gap-6 overflow-auto custom-scrollbar pr-2">
+          <!-- Identity Card -->
           <UPageCard
             title="Active Identity"
             description="The current security principal resolved by the proxy."
@@ -181,21 +188,21 @@ const identityFields = computed(() => {
             <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
               <div v-for="(entry, idx) in latestTrace" :key="idx" class="relative flex items-start gap-6 group">
                 <!-- Dot -->
-                <div 
+                <div
                   class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-white dark:ring-black transition-colors duration-500"
                   :class="[
-                    entry.status === 'success' ? 'bg-success-500 ring-success-50 dark:ring-success-950/30' :
-                    entry.status === 'error' ? 'bg-error-500 ring-error-50 dark:ring-error-950/30' :
-                    'bg-neutral-300 dark:bg-neutral-700 ring-white dark:ring-black'
+                    entry.status === 'success' ? 'bg-success-500 ring-success-50 dark:ring-success-950/30'
+                    : entry.status === 'error' ? 'bg-error-500 ring-error-50 dark:ring-error-950/30'
+                      : 'bg-neutral-300 dark:bg-neutral-700 ring-white dark:ring-black',
                   ]"
                 />
 
                 <div class="ml-10 flex-1">
                   <div class="flex items-center gap-2 mb-1">
-                    <UBadge 
-                      :color="getLabelColor(entry.label, entry.status)" 
-                      variant="soft" 
-                      size="sm" 
+                    <UBadge
+                      :color="getLabelColor(entry.label, entry.status)"
+                      variant="soft"
+                      size="sm"
                       class="text-[9px] uppercase font-black tracking-tighter px-1.5"
                     >
                       {{ entry.label }}
@@ -205,12 +212,12 @@ const identityFields = computed(() => {
                       <span v-if="idx > 0 && entry.delta > 0" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
                     </span>
                   </div>
-                  <p 
+                  <p
                     class="text-sm leading-relaxed font-semibold"
                     :class="[
-                      entry.status === 'error' ? 'text-error-600 dark:text-error-400' :
-                      entry.status === 'success' ? 'text-success-600 dark:text-success-400' :
-                      'text-neutral-700 dark:text-neutral-300'
+                      entry.status === 'error' ? 'text-error-600 dark:text-error-400'
+                      : entry.status === 'success' ? 'text-success-600 dark:text-success-400'
+                        : 'text-neutral-700 dark:text-neutral-300',
                     ]"
                   >
                     {{ entry.message }}
