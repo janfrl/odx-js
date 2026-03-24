@@ -2,8 +2,13 @@
 import { h, resolveComponent } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 
-const { logs, clearLogs, services, logFilterService } = useSharedODataState()
+const { logs, clearLogs, services, logFilterService, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
+
+function viewProxyTrace(id: string) {
+  selectedTraceLogId.value = id
+  activeTab.value = 'proxy'
+}
 
 const filteredLogs = computed(() => {
   if (!logFilterService.value)
@@ -193,93 +198,73 @@ async function runClear() {
                 class="px-6 py-8 border-b border-neutral-100 dark:border-neutral-800/50 cursor-default"
                 @click.stop
               >
-                <div class="grid grid-cols-1 xl:grid-cols-5 gap-10 max-w-full overflow-hidden">
-                  <!-- Left: Request Info & Payloads (3/5 columns) -->
-                  <div class="xl:col-span-3 space-y-8 min-w-0">
-                    <!-- URL Section -->
-                    <div class="space-y-3">
+                <div class="space-y-8 max-w-full overflow-hidden">
+                  <!-- URL & Actions Header -->
+                  <div class="space-y-3">
+                    <div class="flex items-center justify-between">
                       <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2">
                         <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 opacity-70" /> Request Details
                       </h3>
-                      <div class="text-[12px] font-mono text-neutral-600 dark:text-neutral-300 break-all bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex items-center gap-3">
-                        <span class="font-black px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800" :class="Number(row.original.status || 0) < 400 ? 'text-green-500' : 'text-red-500'">{{ row.original.method }}</span>
-                        <span class="truncate">{{ row.original.targetUrl || 'Internal Mock' }}</span>
-                      </div>
+                      
+                      <UButton
+                        v-if="row.original.proxyTrace?.length"
+                        label="View Proxy Trace"
+                        icon="i-lucide-cable"
+                        size="xs"
+                        variant="soft"
+                        color="primary"
+                        class="font-bold px-3"
+                        @click="viewProxyTrace(row.original.id)"
+                      />
                     </div>
-
-                    <!-- Payload Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch w-full">
-                      <!-- Request Column -->
-                      <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
-                        <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
-                          <UIcon name="i-lucide-upload" class="w-3.5 h-3.5 opacity-70" /> Request Payload
-                        </h3>
-
-                        <div class="flex flex-col gap-3 min-w-0 flex-1">
-                          <!-- Headers -->
-                          <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="shrink-0 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-1.5 overflow-hidden">
-                            <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex justify-between gap-4 min-w-0">
-                              <span class="font-bold text-neutral-700 dark:text-neutral-500 shrink-0">{{ key }}:</span>
-                              <span class="text-neutral-500 dark:text-neutral-400 truncate" :title="val">{{ val }}</span>
-                            </div>
-                          </div>
-
-                          <!-- Body -->
-                          <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-80 custom-scrollbar text-neutral-600 dark:text-neutral-300 whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
-
-                          <div v-else class="flex-1 min-h-24 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
-                            <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-neutral-400 dark:text-neutral-600 opacity-50" />
-                            <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">No request body</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Response Column -->
-                      <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
-                        <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
-                          <UIcon name="i-lucide-download" class="w-3.5 h-3.5 opacity-70" /> Response Payload
-                        </h3>
-
-                        <div class="flex flex-col gap-3 min-w-0 flex-1">
-                          <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-80 custom-scrollbar text-neutral-600 dark:text-neutral-300 whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
-
-                          <div v-else class="flex-1 min-h-24 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
-                            <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-neutral-400 dark:text-neutral-600 opacity-50" />
-                            <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">No response body</span>
-                          </div>
-                        </div>
-                      </div>
+                    
+                    <div class="text-[12px] font-mono text-neutral-600 dark:text-neutral-300 break-all bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex items-center gap-3">
+                      <span class="font-black px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800" :class="Number(row.original.status || 0) < 400 ? 'text-green-500' : 'text-red-500'">{{ row.original.method }}</span>
+                      <span class="truncate">{{ row.original.targetUrl || 'Internal Mock' }}</span>
                     </div>
                   </div>
 
-                  <!-- Right: Proxy Trace (2/5 columns) -->
-                  <div class="xl:col-span-2 flex flex-col gap-3 min-w-0">
-                    <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2">
-                      <UIcon name="i-lucide-cable" class="w-3.5 h-3.5 opacity-70" /> Internal Proxy Trace
-                    </h3>
+                  <!-- Payload Grid -->
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch w-full">
+                    <!-- Request Column -->
+                    <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
+                      <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
+                        <UIcon name="i-lucide-upload" class="w-3.5 h-3.5 opacity-70" /> Request Payload
+                      </h3>
 
-                    <div v-if="row.original.proxyTrace?.length" class="flex-1 space-y-2 overflow-auto max-h-[500px] pr-2 custom-scrollbar">
-                      <div
-                        v-for="(trace, tIdx) in row.original.proxyTrace"
-                        :key="tIdx"
-                        class="flex flex-col gap-1.5 text-[11px] font-mono bg-neutral-50 dark:bg-neutral-900/50 p-3 rounded-xl border border-neutral-200/50 dark:border-neutral-800/50"
-                      >
-                        <div class="flex items-center justify-between">
-                          <UBadge color="neutral" variant="soft" size="sm" class="text-[9px] uppercase font-black px-1.5 shrink-0">
-                            {{ trace.label }}
-                          </UBadge>
-                          <span class="text-neutral-400 text-[10px]">{{ new Date(trace.timestamp).toLocaleTimeString() }}</span>
+                      <div class="flex flex-col gap-3 min-w-0 flex-1">
+                        <!-- Headers -->
+                        <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="shrink-0 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm space-y-1.5 overflow-hidden">
+                          <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex justify-between gap-4 min-w-0">
+                            <span class="font-bold text-neutral-700 dark:text-neutral-500 shrink-0">{{ key }}:</span>
+                            <span class="text-neutral-500 dark:text-neutral-400 truncate" :title="val">{{ val }}</span>
+                          </div>
                         </div>
-                        <p class="text-neutral-700 dark:text-neutral-300 font-bold leading-snug">
-                          {{ trace.message }}
-                        </p>
-                        <div v-if="trace.details" class="mt-1 opacity-50 text-[9px] uppercase font-bold italic">
-                          Details attached
+
+                        <!-- Body -->
+                        <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300 whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
+
+                        <div v-else class="flex-1 min-h-24 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
+                          <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-neutral-400 dark:text-neutral-600 opacity-50" />
+                          <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">No request body</span>
                         </div>
                       </div>
                     </div>
-                    <div v-else class="flex-1 flex flex-col items-center justify-center bg-neutral-50/30 dark:bg-neutral-950/20 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/50 p-6 text-center italic text-neutral-400 text-[11px]">
-                      No trace available for this request.
+
+                    <!-- Response Column -->
+                    <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
+                      <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2 shrink-0">
+                        <UIcon name="i-lucide-download" class="w-3.5 h-3.5 opacity-70" /> Response Payload
+                      </h3>
+
+                      <div class="flex flex-col gap-3 min-w-0 flex-1">
+                        <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-auto max-h-104 custom-scrollbar text-neutral-600 dark:text-neutral-300 whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
+
+                        <div v-else class="flex-1 min-h-24 flex flex-col items-center justify-center bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl border-2 border-dashed border-neutral-200 dark:border-neutral-800/80 shadow-sm p-6 text-center">
+                          <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-neutral-400 dark:text-neutral-600 opacity-50" />
+                          <span class="text-[11px] font-medium text-neutral-500 dark:text-neutral-400">No response body</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

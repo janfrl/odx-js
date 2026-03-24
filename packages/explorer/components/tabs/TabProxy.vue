@@ -2,24 +2,45 @@
 import { computed } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 
-const { logs, useCORSBridge } = useSharedODataState()
+const { logs, useCORSBridge, selectedTraceLogId } = useSharedODataState()
 
 // Fetch current identity data
 const { data: me } = await useFetch<any>('/__odx__/me')
 
 // Get the trace of the absolute latest request that went through the proxy
-const latestRequest = computed(() => {
+const latestLiveRequest = computed(() => {
   return logs.value.find(l => l.proxyTrace && l.proxyTrace.length > 0)
 })
 
+// Current request being viewed (either selected or latest live)
+const activeRequest = computed(() => {
+  if (selectedTraceLogId.value) {
+    return logs.value.find(l => l.id === selectedTraceLogId.value) || latestLiveRequest.value
+  }
+  return latestLiveRequest.value
+})
+
+const isViewingHistorical = computed(() => {
+  return selectedTraceLogId.value && activeRequest.value?.id === selectedTraceLogId.value
+})
+
 const latestTrace = computed(() => {
-  const trace = latestRequest.value?.proxyTrace || []
+  const trace = activeRequest.value?.proxyTrace || []
   return trace.map((entry, idx) => {
     const prev = trace[idx - 1]
     const delta = prev ? entry.duration - prev.duration : entry.duration
     return { ...entry, delta }
   })
 })
+
+const expandedEntries = ref<Set<number>>(new Set())
+
+function toggleEntry(idx: number) {
+  if (expandedEntries.value.has(idx))
+    expandedEntries.value.delete(idx)
+  else
+    expandedEntries.value.add(idx)
+}
 
 const labelColors: Record<string, any> = {
   Request: 'neutral',
@@ -29,6 +50,7 @@ const labelColors: Record<string, any> = {
   Hooks: 'indigo',
   Proxy: 'primary',
   Data: 'teal',
+  Rules: 'blue',
   Response: 'success',
 }
 
@@ -168,12 +190,30 @@ const identityFields = computed(() => {
         <div class="lg:col-span-2 flex flex-col min-h-0 bg-white dark:bg-black border border-neutral-200/70 dark:border-neutral-800/70 rounded-2xl shadow-sm overflow-hidden">
           <div class="px-6 py-4 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/20">
             <div class="flex items-center gap-3">
-              <div class="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+              <div 
+                class="w-2 h-2 rounded-full transition-colors duration-500" 
+                :class="[isViewingHistorical ? 'bg-amber-500' : 'bg-primary-500 animate-pulse']" 
+              />
               <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900 dark:text-neutral-100">
-                Live Proxy Telemetry
+                {{ isViewingHistorical ? 'Historical Trace' : 'Live Proxy Telemetry' }}
               </h3>
             </div>
-            <span class="text-[10px] font-mono text-neutral-400">Showing trace for latest request</span>
+            
+            <div class="flex items-center gap-4">
+              <UButton
+                v-if="isViewingHistorical"
+                label="Return to Live"
+                icon="i-lucide-zap"
+                size="xs"
+                variant="ghost"
+                color="primary"
+                class="font-bold uppercase tracking-tighter"
+                @click="selectedTraceLogId = null"
+              />
+              <span class="text-[10px] font-mono text-neutral-400">
+                {{ isViewingHistorical ? `Log ID: ${selectedTraceLogId}` : 'Showing latest request' }}
+              </span>
+            </div>
           </div>
 
           <div class="flex-1 overflow-auto custom-scrollbar p-6">
@@ -190,10 +230,15 @@ const identityFields = computed(() => {
             </div>
 
             <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
-              <div v-for="(entry, idx) in latestTrace" :key="idx" class="relative flex items-start gap-6 group">
+              <div 
+                v-for="(entry, idx) in latestTrace" 
+                :key="idx" 
+                class="relative flex items-start gap-6 group cursor-pointer"
+                @click="toggleEntry(idx)"
+              >
                 <!-- Dot -->
                 <div
-                  class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-white dark:ring-black transition-colors duration-500"
+                  class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-white dark:ring-black transition-colors duration-500 z-10"
                   :class="[
                     entry.status === 'success' ? 'bg-success-500 ring-success-50 dark:ring-success-950/30'
                     : entry.status === 'error' ? 'bg-error-500 ring-error-50 dark:ring-error-950/30'
@@ -201,20 +246,28 @@ const identityFields = computed(() => {
                   ]"
                 />
 
-                <div class="ml-10 flex-1">
-                  <div class="flex items-center gap-2 mb-1">
-                    <UBadge
-                      :color="getLabelColor(entry.label, entry.status)"
-                      variant="soft"
-                      size="sm"
-                      class="text-[9px] uppercase font-black tracking-tighter px-1.5"
-                    >
-                      {{ entry.label }}
-                    </UBadge>
-                    <span class="text-[10px] font-mono text-neutral-400">
-                      {{ formatTime(entry.timestamp) }}
-                      <span v-if="idx > 0 && entry.delta > 0" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
-                    </span>
+                <div class="ml-10 flex-1 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900/50 -my-2 py-2 px-3 rounded-xl transition-colors">
+                  <div class="flex items-center justify-between gap-2 mb-1">
+                    <div class="flex items-center gap-2">
+                      <UBadge
+                        :color="getLabelColor(entry.label, entry.status)"
+                        variant="soft"
+                        size="sm"
+                        class="text-[9px] uppercase font-black tracking-tighter px-1.5"
+                      >
+                        {{ entry.label }}
+                      </UBadge>
+                      <span class="text-[10px] font-mono text-neutral-400">
+                        {{ formatTime(entry.timestamp) }}
+                        <span v-if="idx > 0 && entry.delta > 0" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
+                      </span>
+                    </div>
+                    <UIcon 
+                      v-if="entry.details"
+                      name="i-lucide-chevron-down" 
+                      class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200"
+                      :class="[expandedEntries.has(idx) ? 'rotate-180' : '']"
+                    />
                   </div>
                   <p
                     class="text-sm leading-relaxed font-semibold"
@@ -226,7 +279,12 @@ const identityFields = computed(() => {
                   >
                     {{ entry.message }}
                   </p>
-                  <div v-if="entry.details" class="mt-3 bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-3 border border-neutral-200/50 dark:border-neutral-800/50">
+                  
+                  <div 
+                    v-if="entry.details && expandedEntries.has(idx)" 
+                    class="mt-3 bg-white dark:bg-neutral-950 rounded-lg p-3 border border-neutral-200/50 dark:border-neutral-800 shadow-inner overflow-hidden"
+                    @click.stop
+                  >
                     <pre class="text-[11px] font-mono text-neutral-500 overflow-auto custom-scrollbar">{{ JSON.stringify(entry.details, null, 2) }}</pre>
                   </div>
                 </div>

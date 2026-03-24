@@ -42,115 +42,6 @@ export default defineEventHandler(async (event) => {
   const segments = relativePath.split('/').filter(Boolean)
   const serviceRoute = segments[0] || ''
 
-  addTrace('Request', `${event.method} ${relativePath}`, { fullPath })
-
-  // Enforce BTP Authentication
-  if (process.env.NODE_ENV === 'production') {
-    addTrace('Security', 'Validating BTP Authentication...')
-    await validateBtpAuth(event)
-    if (event.context.securityContext) {
-      addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() }, 'success')
-    }
-  }
-
-  // Retrieve runtime hooks:
-  // 1. Explicitly passed in config (for tests)
-  // 2. Injected via middleware (for Nuxt app)
-  // 3. From Nitro app instance (fallback)
-  const nitroApp = (event.context as any).nitroApp
-  const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
-
-  if (!config) {
-    throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
-  }
-
-  // Robustly handle self-signed certificates globally for the process if disabled in config
-  if (config.rejectUnauthorized === false) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-  }
-
-  const buildDir = config.buildDir ?? ''
-
-  let entitySetName = segments[1] || ''
-  let resourceId = ''
-
-  if (entitySetName.includes('(')) {
-    const match = entitySetName.match(RE_ENTITY_SET_MATCH)
-    if (match) {
-      entitySetName = match[1]!
-      resourceId = match[2]!.replace(RE_QUOTE_WRAP, '')
-    }
-  }
-
-  const query = getQuery(event)
-
-  // Use 'id' from query if resourceId is empty
-  if (!resourceId && query.id) {
-    resourceId = String(query.id)
-    // Remove it from query so it's not appended twice if we use withQuery later
-    delete query.id
-  }
-
-  const services: ODataServiceConfig[] = config.services ?? []
-  const matched = services.find(svc =>
-    svc.name.toLowerCase() === serviceRoute.toLowerCase()
-    || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
-  )
-
-  if (!matched) {
-    throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
-  }
-
-  const isDirect = matched.strategy === 'direct'
-
-  // --- START PROXY ENGINE LOGIC ---
-  if (!isDirect) {
-    // 1. Enforce BTP Authentication
-    addTrace('Security', 'Validating BTP Authentication...')
-    await validateBtpAuth(event)
-    if (event.context.securityContext) {
-      addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() })
-    }
-  }
-  else {
-    addTrace('Proxy', 'Service strategy is "direct". Bypassing Security and Hooks (CORS Bridge Mode).')
-  }
-
-  const globalDest = (config.destination || '').replace(RE_TRAILING_SLASH, '')
-  let baseUrl = (matched.url || globalDest).replace(RE_TRAILING_SLASH, '')
-
-  const isExternal = baseUrl.startsWith('http')
-  if (!isExternal) {
-    // Standard SAP path for non-external services
-    baseUrl = `/sap/opu/odata/sap/${matched.name}`
-  }
-
-  const incomingHeaders = getHeaders(event)
-  const headersToForward: Record<string, string> = {}
-
-  const skipHeaders = ['host', 'connection', 'content-length', 'content-type', 'accept', 'accept-encoding', 'cookie']
-  for (const [key, value] of Object.entries(incomingHeaders)) {
-    if (value && !skipHeaders.includes(key.toLowerCase())) {
-      headersToForward[key] = value
-    }
-  }
-
-  const customHeaders: Record<string, string> = {
-    ...config.headers,
-    ...matched.headers,
-    ...headersToForward,
-  }
-
-  const auth = matched.auth || config.auth || {}
-  if (!isDirect) {
-    if (auth.bearerToken && !customHeaders.authorization) {
-      customHeaders.authorization = `Bearer ${auth.bearerToken}`
-    }
-    else if (auth.username && auth.password && !customHeaders.authorization) {
-      customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
-    }
-  }
-
   const logRequest = (status: number, responseBody?: unknown, requestBody?: unknown, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
     const totalDuration = Date.now() - startTime
     addTrace('Response', `Request finished with status ${status}`, { duration: `${totalDuration}ms` }, status < 400 ? 'success' : 'error')
@@ -160,9 +51,9 @@ export default defineEventHandler(async (event) => {
       timestamp: Date.now(),
       method: event.method || 'GET',
       url: fullPath,
-      targetUrl: targetUrl || baseUrl,
+      targetUrl: targetUrl || '',
       service: serviceRoute,
-      entitySet: entitySetName,
+      entitySet: segments[1] || '',
       status,
       duration: totalDuration,
       requestBody,
@@ -173,53 +64,151 @@ export default defineEventHandler(async (event) => {
   }
 
   let capturedBody: unknown = null
-  if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
-    capturedBody = await readBody(event).catch(() => null)
-    if (capturedBody && typeof capturedBody === 'string') {
-      try {
-        capturedBody = JSON.parse(capturedBody)
-      }
-      catch {
-      }
-    }
-  }
-
-  const fetchOptions: FetchOptions = {
-    method: event.method as any,
-    query,
-    body: capturedBody as any,
-    headers: {
-      'content-type': 'application/json',
-      'accept': 'application/json',
-      ...customHeaders,
-    },
-    onResponse({ response }: { response: FetchResponse<any> }) {
-      if (!isDirect && hooks?.callHook) {
-        hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
-        hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
-      }
-    },
-  }
-
-  if (config.rejectUnauthorized === false) {
-    fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
-  }
-
-  // TRIGGER REQUEST HOOKS (Only if not direct)
-  if (!isDirect && hooks) {
-    if (typeof hooks.callHook === 'function') {
-      addTrace('Hooks', 'Executing global request hooks...')
-      await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
-      addTrace('Hooks', `Executing service request hooks for "${matched.name}"...`)
-      await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
-    }
-  }
-
-  // Update headers from hooks if they were modified
-  const finalHeaders = { ...fetchOptions.headers as Record<string, string> }
+  let baseUrl = ''
 
   try {
-    if (isExternal && buildDir && matched.name !== 'TestService') {
+    addTrace('Request', `${event.method} ${relativePath}`, { fullPath })
+
+    // Enforce BTP Authentication
+    if (process.env.NODE_ENV === 'production') {
+      addTrace('Security', 'Validating BTP Authentication...')
+      await validateBtpAuth(event)
+      if (event.context.securityContext) {
+        addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() }, 'success')
+      }
+    }
+
+    // Retrieve runtime hooks:
+    const nitroApp = (event.context as any).nitroApp
+    const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
+
+    if (!config) {
+      throw createError({ statusCode: 500, message: '[@bc8-odx/proxy] Proxy configuration missing in context' })
+    }
+
+    // Robustly handle self-signed certificates globally for the process if disabled in config
+    if (config.rejectUnauthorized === false) {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    }
+
+    const buildDir = config.buildDir ?? ''
+    let entitySetName = segments[1] || ''
+    let resourceId = ''
+
+    if (entitySetName.includes('(')) {
+      const match = entitySetName.match(RE_ENTITY_SET_MATCH)
+      if (match) {
+        entitySetName = match[1]!
+        resourceId = match[2]!.replace(RE_QUOTE_WRAP, '')
+      }
+    }
+
+    const query = getQuery(event)
+
+    // Use 'id' from query if resourceId is empty
+    if (!resourceId && query.id) {
+      resourceId = String(query.id)
+      delete query.id
+    }
+
+    const services: ODataServiceConfig[] = config.services ?? []
+    const matched = services.find(svc =>
+      svc.name.toLowerCase() === serviceRoute.toLowerCase()
+      || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
+    )
+
+    if (!matched) {
+      throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
+    }
+
+    const isDirect = matched.strategy === 'direct'
+
+    // --- START PROXY ENGINE LOGIC ---
+    if (isDirect) {
+      addTrace('Proxy', 'Service strategy is "direct". Bypassing Security and Hooks (CORS Bridge Mode).')
+    }
+
+    const globalDest = (config.destination || '').replace(RE_TRAILING_SLASH, '')
+    baseUrl = (matched.url || globalDest).replace(RE_TRAILING_SLASH, '')
+
+    const isExternal = baseUrl.startsWith('http')
+    if (!isExternal) {
+      // Standard SAP path for non-external services
+      baseUrl = `/sap/opu/odata/sap/${matched.name}`
+    }
+
+    const incomingHeaders = getHeaders(event)
+    const headersToForward: Record<string, string> = {}
+
+    const skipHeaders = ['host', 'connection', 'content-length', 'content-type', 'accept', 'accept-encoding', 'cookie']
+    for (const [key, value] of Object.entries(incomingHeaders)) {
+      if (value && !skipHeaders.includes(key.toLowerCase())) {
+        headersToForward[key] = value
+      }
+    }
+
+    const customHeaders: Record<string, string> = {
+      ...config.headers,
+      ...matched.headers,
+      ...headersToForward,
+    }
+
+    const auth = matched.auth || config.auth || {}
+    if (!isDirect) {
+      if (auth.bearerToken && !customHeaders.authorization) {
+        customHeaders.authorization = `Bearer ${auth.bearerToken}`
+      }
+      else if (auth.username && auth.password && !customHeaders.authorization) {
+        customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+      }
+    }
+
+    if (['POST', 'PATCH', 'PUT'].includes(event.method)) {
+      capturedBody = await readBody(event).catch(() => null)
+      if (capturedBody && typeof capturedBody === 'string') {
+        try {
+          capturedBody = JSON.parse(capturedBody)
+        }
+        catch {
+        }
+      }
+    }
+
+    const fetchOptions: FetchOptions = {
+      method: event.method as any,
+      query,
+      body: capturedBody as any,
+      headers: {
+        'content-type': 'application/json',
+        'accept': 'application/json',
+        ...customHeaders,
+      },
+      onResponse({ response }: { response: FetchResponse<any> }) {
+        if (!isDirect && hooks?.callHook) {
+          hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
+          hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
+        }
+      },
+    }
+
+    if (config.rejectUnauthorized === false) {
+      fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
+    }
+
+    // TRIGGER REQUEST HOOKS (Only if not direct)
+    if (!isDirect && hooks) {
+      if (typeof hooks.callHook === 'function') {
+        addTrace('Hooks', 'Executing global request hooks...')
+        await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
+        addTrace('Hooks', `Executing service request hooks for "${matched.name}"...`)
+        await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
+      }
+    }
+
+    // Update headers from hooks if they were modified
+    const finalHeaders = { ...fetchOptions.headers as Record<string, string> }
+
+    if (!isDirect && isExternal && buildDir && matched.name !== 'TestService') {
       const sdkDir = join(buildDir, 'odx', 'generated', matched.name)
       if (fs.existsSync(sdkDir)) {
         const { createJiti } = await import('jiti')
@@ -299,22 +288,11 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    let requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
-    let fullTargetUrl = withQuery(requestUrl, query)
-
-    if (requestUrl.startsWith('/')) {
-      try {
-        const origin = getRequestURL(event).origin
-        requestUrl = origin + requestUrl
-        fullTargetUrl = origin + fullTargetUrl
-      }
-      catch {
-      }
-    }
+    const requestUrl = `${baseUrl}/${entitySetName}${resourceId ? `(${resourceId})` : ''}`
+    const fullTargetUrl = withQuery(requestUrl, query)
 
     addTrace('Proxy', `Forwarding request to: ${fullTargetUrl}`)
 
-    // Pass final headers to fetchWithCsrf
     fetchOptions.headers = finalHeaders
     const response = await fetchWithCsrf(requestUrl, fetchOptions)
 
@@ -326,17 +304,10 @@ export default defineEventHandler(async (event) => {
   }
   catch (err: any) {
     const error = err as { response?: { status?: number }, message: string }
-    const q = getQuery(event)
-    let errorUrl = withQuery(baseUrl, q)
-    if (errorUrl.startsWith('/')) {
-      try {
-        const origin = getRequestURL(event).origin
-        errorUrl = origin + errorUrl
-      }
-      catch {
-      }
-    }
-    logRequest(error.response?.status || 500, { error: error.message }, capturedBody, errorUrl)
+    const status = error.response?.status || 500
+    
+    // Log trace even on failure
+    logRequest(status, { error: error.message }, capturedBody, baseUrl)
     throw err
   }
 })

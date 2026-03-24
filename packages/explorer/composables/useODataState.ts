@@ -90,6 +90,7 @@ const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
 const logFilterService = ref<string | null>(null)
 const useCORSBridge = ref(true)
+const selectedTraceLogId = ref<string | null>(null)
 
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
@@ -332,6 +333,7 @@ export function useSharedODataState(): any {
     sessionHeaders,
     logFilterService,
     useCORSBridge,
+    selectedTraceLogId,
     previewLoading,
     previewError,
     previewData,
