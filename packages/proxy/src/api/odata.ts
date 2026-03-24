@@ -20,20 +20,38 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const trace: ProxyTraceEntry[] = []
 
-  const addTrace = (label: string, message: string, details?: any): void => {
-    trace.push({ timestamp: Date.now(), label, message, details })
+  const addTrace = (label: string, message: string, details?: any, status: 'success' | 'error' | 'info' = 'info'): void => {
+    trace.push({
+      timestamp: Date.now(),
+      duration: Date.now() - startTime,
+      label,
+      message,
+      details,
+      status,
+    })
   }
 
   event.context.proxyTrace = addTrace
 
-  // Enforce BTP Authentication
-  addTrace('Security', 'Validating BTP Authentication...')
-  await validateBtpAuth(event)
-  if (event.context.securityContext) {
-    addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() })
-  }
-
   const config = event.context.odataConfig as ODataProxyConfig
+
+  const fullPath = event.path || ''
+  const pathOnly = fullPath.split('?')[0] || ''
+  const basePath = config.basePath || '/api/odx'
+  const relativePath = pathOnly.startsWith(basePath) ? pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '') : ''
+  const segments = relativePath.split('/').filter(Boolean)
+  const serviceRoute = segments[0] || ''
+
+  addTrace('Request', `${event.method} ${relativePath}`, { fullPath })
+
+  // Enforce BTP Authentication
+  if (process.env.NODE_ENV === 'production') {
+    addTrace('Security', 'Validating BTP Authentication...')
+    await validateBtpAuth(event)
+    if (event.context.securityContext) {
+      addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() }, 'success')
+    }
+  }
 
   // Retrieve runtime hooks:
   // 1. Explicitly passed in config (for tests)
@@ -51,14 +69,8 @@ export default defineEventHandler(async (event) => {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
   }
 
-  const basePath = config.basePath || '/api/odx'
   const buildDir = config.buildDir ?? ''
 
-  const fullPath = event.path || ''
-  const pathOnly = fullPath.split('?')[0] || ''
-  const relativePath = pathOnly.startsWith(basePath) ? pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '') : ''
-  const segments = relativePath.split('/').filter(Boolean)
-  const serviceRoute = segments[0] || ''
   let entitySetName = segments[1] || ''
   let resourceId = ''
 
@@ -140,6 +152,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const logRequest = (status: number, responseBody?: unknown, requestBody?: unknown, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
+    const totalDuration = Date.now() - startTime
+    addTrace('Response', `Request finished with status ${status}`, { duration: `${totalDuration}ms` }, status < 400 ? 'success' : 'error')
+
     addODataLog({
       id: Math.random().toString(36).substring(7),
       timestamp: Date.now(),
@@ -149,13 +164,14 @@ export default defineEventHandler(async (event) => {
       service: serviceRoute,
       entitySet: entitySetName,
       status,
-      duration: Date.now() - startTime,
+      duration: totalDuration,
       requestBody,
       requestHeaders,
       responseBody: flattenOData(responseBody),
-      proxyTrace: isDirect ? [] : [...trace],
+      proxyTrace: [...trace],
     }, config.devtools?.maxLogs)
   }
+
 
   let capturedBody: unknown = null
   if (['POST', 'PATCH', 'PUT'].includes(event.method)) {

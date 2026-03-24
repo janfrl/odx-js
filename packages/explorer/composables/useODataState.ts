@@ -21,9 +21,11 @@ export interface ODataConfig {
 
 export interface ProxyTraceEntry {
   timestamp: number
+  duration: number
   label: string
   message: string
   details?: any
+  status?: 'success' | 'error' | 'info'
 }
 
 export interface ODataLog {

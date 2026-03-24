@@ -9,10 +9,40 @@ const { logs, useCORSBridge } = useSharedODataState()
 const { data: me } = await useFetch<any>('/__odx__/me')
 
 // Get the trace of the absolute latest request that went through the proxy
-const latestTrace = computed(() => {
-  const latestWithTrace = logs.value.find(l => l.proxyTrace && l.proxyTrace.length > 0)
-  return latestWithTrace?.proxyTrace || []
+const latestRequest = computed(() => {
+  return logs.value.find(l => l.proxyTrace && l.proxyTrace.length > 0)
 })
+
+const latestTrace = computed(() => {
+  const trace = latestRequest.value?.proxyTrace || []
+  return trace.map((entry, idx) => {
+    const prev = trace[idx - 1]
+    const delta = prev ? entry.duration - prev.duration : entry.duration
+    return { ...entry, delta }
+  })
+})
+
+const labelColors: Record<string, any> = {
+  Request: 'neutral',
+  Security: 'amber',
+  Auth: 'orange',
+  BTP: 'purple',
+  Hooks: 'indigo',
+  Proxy: 'primary',
+  Data: 'teal',
+  Response: 'success',
+}
+
+function getLabelColor(label: string, status?: string) {
+  if (status === 'error') return 'error'
+  if (status === 'success') return 'success'
+  return labelColors[label] || 'neutral'
+}
+
+function formatTime(ts: number) {
+  const d = new Date(ts)
+  return `${d.toLocaleTimeString([], { hour12: false })}.${String(d.getMilliseconds()).padStart(3, '0')}`
+}
 
 const identityFields = computed(() => {
   if (!me.value)
@@ -151,20 +181,42 @@ const identityFields = computed(() => {
             <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
               <div v-for="(entry, idx) in latestTrace" :key="idx" class="relative flex items-start gap-6 group">
                 <!-- Dot -->
-                <div class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-white dark:ring-black bg-neutral-300 dark:bg-neutral-700 group-last:bg-primary-500 group-last:ring-primary-100 dark:group-last:ring-primary-900/30" />
+                <div 
+                  class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-white dark:ring-black transition-colors duration-500"
+                  :class="[
+                    entry.status === 'success' ? 'bg-success-500 ring-success-50 dark:ring-success-950/30' :
+                    entry.status === 'error' ? 'bg-error-500 ring-error-50 dark:ring-error-950/30' :
+                    'bg-neutral-300 dark:bg-neutral-700 ring-white dark:ring-black'
+                  ]"
+                />
 
                 <div class="ml-10 flex-1">
                   <div class="flex items-center gap-2 mb-1">
-                    <UBadge color="neutral" variant="soft" size="sm" class="text-[9px] uppercase font-black tracking-tighter px-1.5">
+                    <UBadge 
+                      :color="getLabelColor(entry.label, entry.status)" 
+                      variant="soft" 
+                      size="sm" 
+                      class="text-[9px] uppercase font-black tracking-tighter px-1.5"
+                    >
                       {{ entry.label }}
                     </UBadge>
-                    <span class="text-[10px] font-mono text-neutral-400">{{ new Date(entry.timestamp).toLocaleTimeString() }}</span>
+                    <span class="text-[10px] font-mono text-neutral-400">
+                      {{ formatTime(entry.timestamp) }}
+                      <span v-if="idx > 0 && entry.delta > 0" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
+                    </span>
                   </div>
-                  <p class="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed font-semibold">
+                  <p 
+                    class="text-sm leading-relaxed font-semibold"
+                    :class="[
+                      entry.status === 'error' ? 'text-error-600 dark:text-error-400' :
+                      entry.status === 'success' ? 'text-success-600 dark:text-success-400' :
+                      'text-neutral-700 dark:text-neutral-300'
+                    ]"
+                  >
                     {{ entry.message }}
                   </p>
                   <div v-if="entry.details" class="mt-3 bg-neutral-50 dark:bg-neutral-900/50 rounded-lg p-3 border border-neutral-200/50 dark:border-neutral-800/50">
-                    <pre class="text-[11px] font-mono text-neutral-500 overflow-auto">{{ JSON.stringify(entry.details, null, 2) }}</pre>
+                    <pre class="text-[11px] font-mono text-neutral-500 overflow-auto custom-scrollbar">{{ JSON.stringify(entry.details, null, 2) }}</pre>
                   </div>
                 </div>
               </div>

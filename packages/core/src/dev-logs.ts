@@ -1,9 +1,11 @@
 // Simple in-memory log storage for development
 export interface ProxyTraceEntry {
   timestamp: number
+  duration: number // ms since start of request
   label: string
   message: string
   details?: any
+  status?: 'success' | 'error' | 'info'
 }
 
 export interface ODataLog {
