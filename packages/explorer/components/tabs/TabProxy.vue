@@ -177,11 +177,15 @@ const identityFields = computed(() => {
           </div>
 
           <div class="flex-1 overflow-auto custom-scrollbar p-6">
-            <div v-if="!latestTrace.length" class="h-full flex flex-col items-center justify-center opacity-40 italic text-neutral-500">
-              <UIcon name="i-lucide-activity" class="w-12 h-12 mb-4 opacity-20" />
-              <p>No telemetry data recorded yet.</p>
-              <p class="text-[10px] mt-1 uppercase tracking-widest">
-                Execute a request to see the lifecycle trace.
+            <div v-if="!latestTrace.length" class="h-full flex flex-col items-center justify-center text-center">
+              <div class="w-16 h-16 rounded-2xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+                <UIcon name="i-lucide-activity" class="text-neutral-400 w-8 h-8" />
+              </div>
+              <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+                No telemetry data
+              </h3>
+              <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-64 leading-relaxed">
+                Execute an OData request to see the internal proxy lifecycle trace.
               </p>
             </div>
 
