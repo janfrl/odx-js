@@ -1,8 +1,9 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
+import https from 'node:https'
 import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
-import { resolve } from 'pathe'
+import { dirname, resolve } from 'pathe'
 
 const RE_SCHEMA_NAMESPACE = /<Schema\s+Namespace="([^"]+)"/
 const RE_ENTITY_TYPE = /<EntityType Name="([^"]+)">/g
@@ -10,7 +11,20 @@ const RE_ASSOCIATION = /<Association Name="([^"]+)">/g
 const RE_NAV_PROP = /<NavigationProperty Name="([^"]+)"/g
 const RE_NAME_ATTR = /"([^"]+)"/
 
-export default defineEventHandler((event) => {
+async function downloadEdmx(url: string, rejectUnauthorized: boolean): Promise<string> {
+  return new Promise((resolve, reject) => {
+    https.get(url, { rejectUnauthorized }, (res) => {
+      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+        return reject(new Error(`Failed to fetch metadata: ${res.statusCode}`))
+      }
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => resolve(data))
+    }).on('error', reject)
+  })
+}
+
+export default defineEventHandler(async (event) => {
   const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
@@ -32,6 +46,27 @@ export default defineEventHandler((event) => {
 
   if (svc.url.startsWith('http')) {
     edmxPath = resolve(buildDir, 'odx/temp', `${svc.name}.edmx`)
+
+    // ROBUSTNESS: If local cache is missing, try to fetch it LIVE
+    if (!fs.existsSync(edmxPath)) {
+      try {
+        const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
+        const xml = await downloadEdmx(metadataUrl, config.rejectUnauthorized !== false)
+        
+        // Ensure directory exists
+        if (!fs.existsSync(dirname(edmxPath))) {
+          fs.mkdirSync(dirname(edmxPath), { recursive: true })
+        }
+        
+        fs.writeFileSync(edmxPath, xml)
+      }
+      catch (err: any) {
+        throw createError({ 
+          statusCode: 500, 
+          message: `Local EDMX missing and live fetch failed for ${serviceName}: ${err.message}` 
+        })
+      }
+    }
   }
   else {
     edmxPath = resolve(config.rootDir, svc.url)

@@ -49,6 +49,7 @@ export function useEntityExplorer(): {
     queryInput,
     queryMethod,
     queryState,
+    useCORSBridge,
     entitySchema,
     entitySchemaLoading,
     entityDataCache,
@@ -170,9 +171,21 @@ export function useEntityExplorer(): {
     previewLoading.value = true
     previewError.value = null
     try {
-      const route = selectedService.value.route || selectedService.value.name.toLowerCase()
+      const isDirect = selectedService.value.strategy === 'direct'
+      let urlPath = ''
 
-      let urlPath = `${config.value.basePath}/${route}/${selectedEntity.value}`
+      if (isDirect && !useCORSBridge.value) {
+        // True Direct Mode: Browser -> OData Service (Only if user explicitly opted-out of bridge)
+        const baseUrl = selectedService.value.url?.replace(/\/$/, '')
+        urlPath = `${baseUrl}/${selectedEntity.value}`
+      }
+      else {
+        // Proxied Mode: Browser -> Nitro -> OData Service
+        // This is the default even for 'direct' services to avoid CORS issues in dev.
+        const route = selectedService.value.route || selectedService.value.name.toLowerCase()
+        urlPath = `${config.value.basePath}/${route}/${selectedEntity.value}`
+      }
+
       if (queryInput.value && queryInput.value !== '?') {
         const q = queryInput.value.startsWith('?') ? queryInput.value : `?${queryInput.value}`
         urlPath += q

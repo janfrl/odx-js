@@ -1,4 +1,11 @@
 // Simple in-memory log storage for development
+export interface ProxyTraceEntry {
+  timestamp: number
+  label: string
+  message: string
+  details?: any
+}
+
 export interface ODataLog {
   id: string
   timestamp: number
@@ -12,6 +19,7 @@ export interface ODataLog {
   requestBody?: any
   requestHeaders?: Record<string, string>
   responseBody?: any
+  proxyTrace?: ProxyTraceEntry[]
 }
 
 const DEFAULT_MAX_LOGS = 100

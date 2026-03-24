@@ -19,6 +19,13 @@ export interface ODataConfig {
   versions: { node: string, module: string }
 }
 
+export interface ProxyTraceEntry {
+  timestamp: number
+  label: string
+  message: string
+  details?: any
+}
+
 export interface ODataLog {
   id: string
   timestamp: number
@@ -32,6 +39,7 @@ export interface ODataLog {
   requestBody?: any
   requestHeaders?: Record<string, string>
   responseBody?: any
+  proxyTrace?: ProxyTraceEntry[]
 }
 
 export interface FilterRule {
@@ -79,6 +87,7 @@ const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
 const logFilterService = ref<string | null>(null)
+const useCORSBridge = ref(true)
 
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
@@ -320,6 +329,7 @@ export function useSharedODataState(): any {
     generatingStatus,
     sessionHeaders,
     logFilterService,
+    useCORSBridge,
     previewLoading,
     previewError,
     previewData,

@@ -7,6 +7,7 @@ const { activeTab, fetchConfig, refreshLogs, logs } = useSharedODataState()
 const items = computed(() => [
   { label: 'Overview', icon: 'i-lucide-house', id: 'overview' },
   { label: 'Services', icon: 'i-lucide-database', id: 'services' },
+  { label: 'Proxy', icon: 'i-lucide-cable', id: 'proxy' },
   { label: 'Logs', icon: 'i-lucide-activity', id: 'logs', badge: logs.value.length || undefined },
 ])
 
@@ -69,6 +70,7 @@ onMounted(() => {
           <div class="h-full flex flex-col overflow-hidden">
             <TabsTabOverview v-show="activeTab === 'overview'" />
             <TabsTabServices v-show="activeTab === 'services'" />
+            <TabsTabProxy v-show="activeTab === 'proxy'" />
             <TabsTabLogs v-show="activeTab === 'logs'" />
           </div>
         </main>

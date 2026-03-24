@@ -12,19 +12,22 @@ export default defineNitroPlugin((nitro) => {
   nitro.hooks.hook('odx:proxy:request', async ({ event, serviceName, fetchOptions }) => {
     const authHeader = event.headers.get('authorization')
     const config = event.context.odataConfig
+    const addTrace = event.context.proxyTrace
 
     // 1. Resolve User Identity (Real JWT or Synthetic from Context)
     let userPayload: XsuaaPayload | null = null
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
+      addTrace?.('Auth', 'Extracting User Identity from Bearer Token')
       try {
         const payloadPart = authHeader.split(' ')[1]!.split('.')[1]
         if (payloadPart) {
           userPayload = JSON.parse(atob(payloadPart))
+          addTrace?.('Auth', `Identity resolved for user: ${userPayload?.email || 'Unknown'}`)
         }
       }
       catch {
-        // Silent in dev
+        addTrace?.('Auth', 'Failed to decode Bearer Token', { header: authHeader })
       }
     }
 
@@ -34,15 +37,16 @@ export default defineNitroPlugin((nitro) => {
     }
 
     // 2. Resolve Technical User credentials via BTP Destination
-    // Strategy: ONLY attempt if explicitly requested via 'destination' property in config
-    // OR if we are in a real Cloud Environment (VCAP_SERVICES in process.env)
     const matched = config?.services?.find(s => s.name === serviceName)
     const btpTargetName = matched?.destination
     const isRealCloud = !!process.env.VCAP_SERVICES
 
     if (btpTargetName || isRealCloud) {
+      const target = btpTargetName || serviceName
+      addTrace?.('BTP', `Resolving BTP Destination: "${target}"`)
       try {
-        const destination = await resolveBtpDestination(btpTargetName || serviceName)
+        const destination = await resolveBtpDestination(target)
+        addTrace?.('BTP', `Destination resolved to: ${destination.url}`, { destination: destination.name })
 
         if (process.env.NODE_ENV === 'production') {
           console.warn(`[@bc8-odx/proxy] BTP Swap: Swapping user credentials for Destination "${destination.name}"`)
@@ -51,6 +55,7 @@ export default defineNitroPlugin((nitro) => {
         fetchOptions.baseURL = destination.url
 
         if (destination.user && destination.password) {
+          addTrace?.('BTP', 'Injecting technical user credentials (Basic Auth)')
           const credentials = btoa(`${destination.user}:${destination.password}`)
           fetchOptions.headers = {
             ...fetchOptions.headers,
@@ -59,6 +64,7 @@ export default defineNitroPlugin((nitro) => {
         }
       }
       catch (err) {
+        addTrace?.('BTP', 'Destination resolution failed', { error: (err as Error).message })
         if (btpTargetName || isRealCloud) {
           console.error(`[@bc8-odx/proxy] Destination Error for ${serviceName}:`, err)
         }

@@ -1,4 +1,4 @@
-import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig, ODataServiceConfig, ProxyTraceEntry } from '@bc8-odx/core'
 import type { FetchOptions, FetchResponse } from 'ofetch'
 import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
@@ -18,9 +18,20 @@ const RE_TRAILING_SLASH = /\/$/
 
 export default defineEventHandler(async (event) => {
   const startTime = Date.now()
+  const trace: ProxyTraceEntry[] = []
+
+  const addTrace = (label: string, message: string, details?: any) => {
+    trace.push({ timestamp: Date.now(), label, message, details })
+  }
+
+  event.context.proxyTrace = addTrace
 
   // Enforce BTP Authentication
+  addTrace('Security', 'Validating BTP Authentication...')
   await validateBtpAuth(event)
+  if (event.context.securityContext) {
+    addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() })
+  }
 
   const config = event.context.odataConfig as ODataProxyConfig
 
@@ -78,6 +89,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: `Unknown service "${serviceRoute}"` })
   }
 
+  const isDirect = matched.strategy === 'direct'
+
+  // --- START PROXY ENGINE LOGIC ---
+  if (!isDirect) {
+    // 1. Enforce BTP Authentication
+    addTrace('Security', 'Validating BTP Authentication...')
+    await validateBtpAuth(event)
+    if (event.context.securityContext) {
+      addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() })
+    }
+  }
+  else {
+    addTrace('Proxy', 'Service strategy is "direct". Bypassing Security and Hooks (CORS Bridge Mode).')
+  }
+
   const globalDest = (config.destination || '').replace(RE_TRAILING_SLASH, '')
   let baseUrl = (matched.url || globalDest).replace(RE_TRAILING_SLASH, '')
 
@@ -104,11 +130,13 @@ export default defineEventHandler(async (event) => {
   }
 
   const auth = matched.auth || config.auth || {}
-  if (auth.bearerToken && !customHeaders.authorization) {
-    customHeaders.authorization = `Bearer ${auth.bearerToken}`
-  }
-  else if (auth.username && auth.password && !customHeaders.authorization) {
-    customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+  if (!isDirect) {
+    if (auth.bearerToken && !customHeaders.authorization) {
+      customHeaders.authorization = `Bearer ${auth.bearerToken}`
+    }
+    else if (auth.username && auth.password && !customHeaders.authorization) {
+      customHeaders.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+    }
   }
 
   const logRequest = (status: number, responseBody?: unknown, requestBody?: unknown, targetUrl?: string, requestHeaders?: Record<string, string>): void => {
@@ -125,6 +153,7 @@ export default defineEventHandler(async (event) => {
       requestBody,
       requestHeaders,
       responseBody: flattenOData(responseBody),
+      proxyTrace: isDirect ? [] : [...trace],
     }, config.devtools?.maxLogs)
   }
 
@@ -150,7 +179,7 @@ export default defineEventHandler(async (event) => {
       ...customHeaders,
     },
     onResponse({ response }: { response: FetchResponse<any> }) {
-      if (hooks?.callHook) {
+      if (!isDirect && hooks?.callHook) {
         hooks.callHook('odx:proxy:response', { event, serviceName: matched.name, response })
         hooks.callHook(`odx:proxy:response:${matched.name}`, { event, serviceName: matched.name, response })
       }
@@ -161,10 +190,12 @@ export default defineEventHandler(async (event) => {
     fetchOptions.agent = new https.Agent({ rejectUnauthorized: false })
   }
 
-  // TRIGGER REQUEST HOOKS (Now unified before either path is taken)
-  if (hooks) {
+  // TRIGGER REQUEST HOOKS (Only if not direct)
+  if (!isDirect && hooks) {
     if (typeof hooks.callHook === 'function') {
+      addTrace('Hooks', 'Executing global request hooks...')
       await hooks.callHook('odx:proxy:request', { event, serviceName: matched.name, fetchOptions })
+      addTrace('Hooks', `Executing service request hooks for "${matched.name}"...`)
       await hooks.callHook(`odx:proxy:request:${matched.name}`, { event, serviceName: matched.name, fetchOptions })
     }
   }
@@ -266,11 +297,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    addTrace('Proxy', `Forwarding request to: ${fullTargetUrl}`)
+
     // Pass final headers to fetchWithCsrf
     fetchOptions.headers = finalHeaders
     const response = await fetchWithCsrf(requestUrl, fetchOptions)
 
     const data = response as Record<string, any>
+    addTrace('Data', 'Flattening OData response structure')
     const finalData = data?.d?.results || data?.d || data
     logRequest(200, finalData, capturedBody, fullTargetUrl)
     return finalData
