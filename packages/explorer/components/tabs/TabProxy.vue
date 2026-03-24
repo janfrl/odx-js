@@ -15,7 +15,8 @@ const latestTrace = computed(() => {
 })
 
 const identityFields = computed(() => {
-  if (!me.value) return []
+  if (!me.value)
+    return []
   return [
     { label: 'Email', value: me.value.Usermail, icon: 'i-lucide-mail' },
     { label: 'User ID', value: me.value.Userid, icon: 'i-lucide-user' },
@@ -81,11 +82,15 @@ const identityFields = computed(() => {
             <div class="mt-4 space-y-3">
               <div class="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                 <span class="text-xs text-neutral-500">Auth Driver</span>
-                <UBadge color="primary" variant="soft" size="sm">XSUAA / BTP</UBadge>
+                <UBadge color="primary" variant="soft" size="sm">
+                  XSUAA / BTP
+                </UBadge>
               </div>
               <div class="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                 <span class="text-xs text-neutral-500">Transport</span>
-                <UBadge color="neutral" variant="soft" size="sm">Nitro / H3</UBadge>
+                <UBadge color="neutral" variant="soft" size="sm">
+                  Nitro / H3
+                </UBadge>
               </div>
               <div class="flex items-center justify-between py-2 border-b border-neutral-100 dark:border-neutral-800">
                 <span class="text-xs text-neutral-500">Mock Mode</span>
@@ -114,7 +119,7 @@ const identityFields = computed(() => {
 
               <div class="p-3 bg-primary-50 dark:bg-primary-950/20 rounded-lg border border-primary-100 dark:border-primary-900/30">
                 <p class="text-[10px] text-primary-700 dark:text-primary-400 leading-relaxed italic">
-                  <span class="font-bold uppercase">Pro Tip:</span> 
+                  <span class="font-bold uppercase">Pro Tip:</span>
                   Turn this OFF to verify if your OData server correctly allows direct requests from your production domain.
                 </p>
               </div>
@@ -138,14 +143,16 @@ const identityFields = computed(() => {
             <div v-if="!latestTrace.length" class="h-full flex flex-col items-center justify-center opacity-40 italic text-neutral-500">
               <UIcon name="i-lucide-activity" class="w-12 h-12 mb-4 opacity-20" />
               <p>No telemetry data recorded yet.</p>
-              <p class="text-[10px] mt-1 uppercase tracking-widest">Execute a request to see the lifecycle trace.</p>
+              <p class="text-[10px] mt-1 uppercase tracking-widest">
+                Execute a request to see the lifecycle trace.
+              </p>
             </div>
 
             <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
               <div v-for="(entry, idx) in latestTrace" :key="idx" class="relative flex items-start gap-6 group">
                 <!-- Dot -->
                 <div class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-white dark:ring-black bg-neutral-300 dark:bg-neutral-700 group-last:bg-primary-500 group-last:ring-primary-100 dark:group-last:ring-primary-900/30" />
-                
+
                 <div class="ml-10 flex-1">
                   <div class="flex items-center gap-2 mb-1">
                     <UBadge color="neutral" variant="soft" size="sm" class="text-[9px] uppercase font-black tracking-tighter px-1.5">

@@ -256,14 +256,16 @@ async function runClear() {
                     <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2">
                       <UIcon name="i-lucide-cable" class="w-3.5 h-3.5 opacity-70" /> Internal Proxy Trace
                     </h3>
-                    
+
                     <div class="space-y-2">
-                      <div 
-                        v-for="(trace, tIdx) in row.original.proxyTrace" 
+                      <div
+                        v-for="(trace, tIdx) in row.original.proxyTrace"
                         :key="tIdx"
                         class="flex items-center gap-4 text-[11px] font-mono bg-neutral-50 dark:bg-neutral-900/50 p-3 rounded-lg border border-neutral-200/50 dark:border-neutral-800/50"
                       >
-                        <UBadge color="neutral" variant="soft" size="sm" class="text-[9px] uppercase font-black px-1.5 shrink-0">{{ trace.label }}</UBadge>
+                        <UBadge color="neutral" variant="soft" size="sm" class="text-[9px] uppercase font-black px-1.5 shrink-0">
+                          {{ trace.label }}
+                        </UBadge>
                         <span class="text-neutral-700 dark:text-neutral-300 font-bold whitespace-nowrap">{{ new Date(trace.timestamp).toLocaleTimeString() }}</span>
                         <span class="text-neutral-500 dark:text-neutral-400 truncate">{{ trace.message }}</span>
                         <span v-if="trace.details" class="ml-auto text-[9px] opacity-50 px-1.5 py-0.5 border border-neutral-300 dark:border-neutral-700 rounded uppercase">Details attached</span>

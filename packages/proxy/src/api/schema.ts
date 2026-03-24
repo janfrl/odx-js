@@ -52,18 +52,18 @@ export default defineEventHandler(async (event) => {
       try {
         const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
         const xml = await downloadEdmx(metadataUrl, config.rejectUnauthorized !== false)
-        
+
         // Ensure directory exists
         if (!fs.existsSync(dirname(edmxPath))) {
           fs.mkdirSync(dirname(edmxPath), { recursive: true })
         }
-        
+
         fs.writeFileSync(edmxPath, xml)
       }
       catch (err: any) {
-        throw createError({ 
-          statusCode: 500, 
-          message: `Local EDMX missing and live fetch failed for ${serviceName}: ${err.message}` 
+        throw createError({
+          statusCode: 500,
+          message: `Local EDMX missing and live fetch failed for ${serviceName}: ${err.message}`,
         })
       }
     }
