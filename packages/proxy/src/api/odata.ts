@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   const startTime = Date.now()
   const trace: ProxyTraceEntry[] = []
 
-  const addTrace = (label: string, message: string, details?: any) => {
+  const addTrace = (label: string, message: string, details?: any): void => {
     trace.push({ timestamp: Date.now(), label, message, details })
   }
 

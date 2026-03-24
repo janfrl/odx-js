@@ -12,6 +12,7 @@ const editor = ref<EditorState>({
 })
 
 const showLoadingIndicator = ref(false)
+const RE_TRAILING_SLASH = /\/$/
 
 export function useEntityExplorer(): {
   selectedService: globalThis.Ref<any>
@@ -176,7 +177,7 @@ export function useEntityExplorer(): {
 
       if (isDirect && !useCORSBridge.value) {
         // True Direct Mode: Browser -> OData Service (Only if user explicitly opted-out of bridge)
-        const baseUrl = selectedService.value.url?.replace(/\/$/, '')
+        const baseUrl = selectedService.value.url?.replace(RE_TRAILING_SLASH, '')
         urlPath = `${baseUrl}/${selectedEntity.value}`
       }
       else {
