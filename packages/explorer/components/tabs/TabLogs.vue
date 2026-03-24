@@ -205,7 +205,7 @@ async function runClear() {
                       <h3 class="text-[10px] font-bold text-neutral-900 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2">
                         <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 opacity-70" /> Request Details
                       </h3>
-                      
+
                       <UButton
                         v-if="row.original.proxyTrace?.length"
                         label="View Proxy Trace"
@@ -217,7 +217,7 @@ async function runClear() {
                         @click="viewProxyTrace(row.original.id)"
                       />
                     </div>
-                    
+
                     <div class="text-[12px] font-mono text-neutral-600 dark:text-neutral-300 break-all bg-white dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex items-center gap-3">
                       <span class="font-black px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800" :class="Number(row.original.status || 0) < 400 ? 'text-green-500' : 'text-red-500'">{{ row.original.method }}</span>
                       <span class="truncate">{{ row.original.targetUrl || 'Internal Mock' }}</span>

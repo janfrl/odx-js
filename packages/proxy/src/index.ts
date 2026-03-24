@@ -2,6 +2,7 @@ import type { ODataProxyConfig } from '@bc8-odx/core'
 import { defineEventHandler } from 'h3'
 import odataHandler from './api/odata'
 
+export { odataGuard } from './utils/rules'
 export { addODataLog, clearODataLogs, createODataClient, fetchWithCsrf, getODataLogs } from '@bc8-odx/core'
 
 /**

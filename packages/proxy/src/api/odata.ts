@@ -6,7 +6,7 @@ import https from 'node:https'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { addODataLog, fetchWithCsrf, flattenOData } from '@bc8-odx/core'
-import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
+import { createError, defineEventHandler, getHeaders, getQuery, readBody } from 'h3'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { validateBtpAuth } from '../utils/auth'
@@ -305,7 +305,7 @@ export default defineEventHandler(async (event) => {
   catch (err: any) {
     const error = err as { response?: { status?: number }, message: string }
     const status = error.response?.status || 500
-    
+
     // Log trace even on failure
     logRequest(status, { error: error.message }, capturedBody, baseUrl)
     throw err

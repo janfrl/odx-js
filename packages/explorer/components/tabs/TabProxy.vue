@@ -190,15 +190,15 @@ const identityFields = computed(() => {
         <div class="lg:col-span-2 flex flex-col min-h-0 bg-white dark:bg-black border border-neutral-200/70 dark:border-neutral-800/70 rounded-2xl shadow-sm overflow-hidden">
           <div class="px-6 py-4 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/20">
             <div class="flex items-center gap-3">
-              <div 
-                class="w-2 h-2 rounded-full transition-colors duration-500" 
-                :class="[isViewingHistorical ? 'bg-amber-500' : 'bg-primary-500 animate-pulse']" 
+              <div
+                class="w-2 h-2 rounded-full transition-colors duration-500"
+                :class="[isViewingHistorical ? 'bg-amber-500' : 'bg-primary-500 animate-pulse']"
               />
               <h3 class="text-xs font-bold uppercase tracking-widest text-neutral-900 dark:text-neutral-100">
                 {{ isViewingHistorical ? 'Historical Trace' : 'Live Proxy Telemetry' }}
               </h3>
             </div>
-            
+
             <div class="flex items-center gap-4">
               <UButton
                 v-if="isViewingHistorical"
@@ -230,9 +230,9 @@ const identityFields = computed(() => {
             </div>
 
             <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
-              <div 
-                v-for="(entry, idx) in latestTrace" 
-                :key="idx" 
+              <div
+                v-for="(entry, idx) in latestTrace"
+                :key="idx"
                 class="relative flex items-start gap-6 group cursor-pointer"
                 @click="toggleEntry(idx)"
               >
@@ -262,9 +262,9 @@ const identityFields = computed(() => {
                         <span v-if="idx > 0 && entry.delta > 0" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
                       </span>
                     </div>
-                    <UIcon 
+                    <UIcon
                       v-if="entry.details"
-                      name="i-lucide-chevron-down" 
+                      name="i-lucide-chevron-down"
                       class="w-3.5 h-3.5 text-neutral-400 transition-transform duration-200"
                       :class="[expandedEntries.has(idx) ? 'rotate-180' : '']"
                     />
@@ -279,9 +279,9 @@ const identityFields = computed(() => {
                   >
                     {{ entry.message }}
                   </p>
-                  
-                  <div 
-                    v-if="entry.details && expandedEntries.has(idx)" 
+
+                  <div
+                    v-if="entry.details && expandedEntries.has(idx)"
                     class="mt-3 bg-white dark:bg-neutral-950 rounded-lg p-3 border border-neutral-200/50 dark:border-neutral-800 shadow-inner overflow-hidden"
                     @click.stop
                   >
