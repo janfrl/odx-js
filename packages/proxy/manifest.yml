@@ -6,7 +6,6 @@ applications:
       - nodejs_buildpack
     command: node .output/server/index.mjs
     services:
-      - genericodataproxy-xsuaa
-      - genericodataproxy-destination
-      - genericodataproxy-connectivity
-      - genericodataproxy-config
+      - odx-xsuaa
+      - odx-destination
+      - odx-connectivity
