@@ -1,72 +1,68 @@
-import type { XsuaaPayload } from '@bc8-odx/core'
 import process from 'node:process'
-import { parseXsuaaPolicies } from '@bc8-odx/core'
 import { defineNitroPlugin } from 'nitropack/runtime'
-import { resolveBtpDestination } from '../utils/btp-destination.ts'
+import { resolveBtpDestination } from '../utils/btp-destination'
 
 /**
- * Nitro plugin to handle SAP BTP authentication and destination resolution.
- * Supports synthetic authentication for local development via config/env.
+ * Nitro plugin to handle SAP BTP destination resolution and principal propagation.
+ * Detects BTP environments and automatically manages user token exchange
+ * and connectivity service headers for OnPremise targets.
  */
 export default defineNitroPlugin((nitro) => {
   nitro.hooks.hook('odx:proxy:request', async ({ event, serviceName, fetchOptions }) => {
     const authHeader = event.headers.get('authorization')
     const config = event.context.odataConfig
     const addTrace = event.context.proxyTrace
+    const isRealCloud = !!process.env.VCAP_SERVICES
 
-    // 1. Resolve User Identity (Real JWT or Synthetic from Context)
-    let userPayload: XsuaaPayload | null = null
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      addTrace?.('Auth', 'Extracting User Identity from Bearer Token')
-      try {
-        const payloadPart = authHeader.split(' ')[1]!.split('.')[1]
-        if (payloadPart) {
-          userPayload = JSON.parse(atob(payloadPart))
-          addTrace?.('Auth', `Identity resolved for user: ${userPayload?.email || 'Unknown'}`)
-        }
-      }
-      catch {
-        addTrace?.('Auth', 'Failed to decode Bearer Token', { header: authHeader })
-      }
-    }
-
-    // Fallback to user context already set in event (e.g. by /api/me synthetic user)
-    if (userPayload) {
-      event.context.userContext = parseXsuaaPolicies(userPayload)
-    }
-
-    // 2. Resolve Technical User credentials via BTP Destination
     const matched = config?.services?.find(s => s.name === serviceName)
     const btpTargetName = matched?.destination
-    const isRealCloud = !!process.env.VCAP_SERVICES
 
     if (btpTargetName || isRealCloud) {
       const target = btpTargetName || serviceName
       addTrace?.('BTP', `Resolving BTP Destination: "${target}"`)
-      try {
-        const destination = await resolveBtpDestination(target)
-        addTrace?.('BTP', `Destination resolved to: ${destination.url}`, { destination: destination.name })
 
-        if (process.env.NODE_ENV === 'production') {
-          console.warn(`[@bc8-odx/proxy] BTP Swap: Swapping user credentials for Destination "${destination.name}"`)
-        }
+      try {
+        // Resolve destination, passing the user's JWT for principal propagation
+        const destination = await resolveBtpDestination(target, authHeader || undefined)
+        addTrace?.('BTP', `Destination resolved: ${destination.url} (${destination.proxyType || 'Internet'})`)
 
         fetchOptions.baseURL = destination.url
 
-        if (destination.user && destination.password) {
-          addTrace?.('BTP', 'Injecting technical user credentials (Basic Auth)')
-          const credentials = btoa(`${destination.user}:${destination.password}`)
-          fetchOptions.headers = {
-            ...fetchOptions.headers,
-            Authorization: `Basic ${credentials}`,
-          }
+        const headers = { ...(fetchOptions.headers as Record<string, string>) }
+
+        // 1. Handle Authentication (SAML Bearer or Basic)
+        if (destination.authTokens?.[0]) {
+          addTrace?.('BTP', 'Injecting SAML Bearer token (Principal Propagation)')
+          headers.Authorization = `Bearer ${destination.authTokens[0].value}`
         }
+        else if (destination.user && destination.password) {
+          addTrace?.('BTP', 'Injecting Technical User credentials (Basic Auth)')
+          headers.Authorization = `Basic ${btoa(`${destination.user}:${destination.password}`)}`
+        }
+
+        // 2. Handle Connectivity Service (OnPremise)
+        if (destination.proxyType === 'OnPremise' && destination.connectivity) {
+          addTrace?.('BTP', 'Attaching SAP Connectivity Service headers')
+
+          // These headers are required by the BTP Connectivity Proxy
+          headers['SAP-Connectivity-Authentication'] = `Bearer ${destination.connectivity.token}`
+
+          if (destination.connectivity.userToken) {
+            headers['Proxy-Authorization'] = `Bearer ${destination.connectivity.userToken}`
+          }
+
+          // Note: In a production Cloud Foundry environment, the connectivity proxy
+          // usually requires an HTTP proxy agent. Since ofetch is environment-agnostic,
+          // we assume the environment (Nitro/Node) handles the actual SOCKS5/Proxy tunnel
+          // via process.env.http_proxy or a custom agent if configured.
+        }
+
+        fetchOptions.headers = headers
       }
       catch (err) {
-        addTrace?.('BTP', 'Destination resolution failed', { error: (err as Error).message })
-        if (btpTargetName || isRealCloud) {
-          console.error(`[@bc8-odx/proxy] Destination Error for ${serviceName}:`, err)
+        addTrace?.('BTP', 'Destination resolution failed', { error: (err as Error).message }, 'error')
+        if (process.env.NODE_ENV === 'production') {
+          console.error(`[@bc8-odx/proxy] BTP Destination Error [${serviceName}]:`, err)
         }
       }
     }
