@@ -13,13 +13,19 @@ export interface BtpDestination {
   user?: string
   password?: string
   authTokens?: Array<{ value: string }>
+  proxyType?: 'Internet' | 'OnPremise'
+  connectivity?: {
+    host: string
+    port: number
+    token: string
+    userToken?: string
+  }
 }
 
-// In-memory cache to prevent redundant BTP API calls and improve performance
 const destinationCache = new Map<string, BtpDestination>()
 
 /**
- * Loads VCAP_SERVICES from the environment (production) or local default-env.json (development).
+ * Loads VCAP_SERVICES from the environment or local default-env.json.
  */
 function getVcapServices(): any {
   if (process.env.VCAP_SERVICES) {
@@ -33,29 +39,55 @@ function getVcapServices(): any {
       return defaultEnv.VCAP_SERVICES || {}
     }
   }
-  catch (err) {
-    console.warn('[@bc8-odx/proxy] Could not read local default-env.json:', err)
+  catch {
+    // Silent fail
   }
 
   return {}
 }
 
 /**
- * Resolves technical user credentials and target URL from the SAP BTP Destination Service.
- * Uses an internal cache to minimize latency.
+ * Fetches an XSUAA token for service-to-service communication.
  */
-export async function resolveBtpDestination(serviceName: string): Promise<BtpDestination> {
-  if (destinationCache.has(serviceName)) {
-    return destinationCache.get(serviceName)!
+async function fetchXsuaaToken(credentials: any, grantType: string = 'client_credentials', userToken?: string): Promise<string> {
+  const { clientid, clientsecret, url } = credentials
+  const auth = Buffer.from(`${clientid}:${clientsecret}`).toString('base64')
+
+  const body = new URLSearchParams({ grant_type: grantType })
+  if (userToken) {
+    body.append('assertion', userToken.replace('Bearer ', ''))
+  }
+
+  const res = await ofetch<{ access_token: string }>(`${url}/oauth/token`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  })
+
+  return res.access_token
+}
+
+/**
+ * Resolves technical user credentials and target URL from the SAP BTP Destination Service.
+ * Supports Principal Propagation via userToken exchange and Connectivity Service for OnPremise targets.
+ */
+export async function resolveBtpDestination(serviceName: string, userToken?: string): Promise<BtpDestination> {
+  const cacheKey = `${serviceName}:${userToken ? 'user' : 'technical'}`
+  if (destinationCache.has(cacheKey)) {
+    return destinationCache.get(cacheKey)!
   }
 
   const vcap = getVcapServices()
   const destService = vcap.destination?.[0]
   const xsuaaService = vcap.xsuaa?.[0]
+  const connectivityService = vcap.connectivity?.[0]
 
   if (!destService?.credentials || !xsuaaService?.credentials) {
     if (process.env.NODE_ENV === 'production') {
-      console.warn(`[@bc8-odx/proxy] No BTP Service bindings found. Falling back to mock for "${serviceName}"`)
+      console.warn(`[@bc8-odx/proxy] No BTP Service bindings found for "${serviceName}"`)
     }
     return {
       name: serviceName,
@@ -66,21 +98,24 @@ export async function resolveBtpDestination(serviceName: string): Promise<BtpDes
   }
 
   try {
-    const { clientid, clientsecret, url: xsuaaUrl } = xsuaaService.credentials
     const { uri: destApiUrl } = destService.credentials
 
-    const auth = Buffer.from(`${clientid}:${clientsecret}`).toString('base64')
-    const tokenRes = await ofetch<{ access_token: string }>(`${xsuaaUrl}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({ grant_type: 'client_credentials' }),
-    })
+    // 1. Get Access Token for Destination API
+    // If userToken is provided, we might need a token exchange, but usually
+    // the Destination API itself is called with a client_credentials token.
+    const destAccessToken = await fetchXsuaaToken(xsuaaService.credentials)
+
+    // 2. Fetch Destination Configuration
+    const destHeaders: Record<string, string> = {
+      Authorization: `Bearer ${destAccessToken}`,
+    }
+
+    if (userToken) {
+      destHeaders['X-user-token'] = userToken.replace('Bearer ', '')
+    }
 
     const destData = await ofetch<any>(`${destApiUrl}/destination-configuration/v1/destinations/${serviceName}`, {
-      headers: { Authorization: `Bearer ${tokenRes.access_token}` },
+      headers: destHeaders,
     })
 
     const config = destData.destinationConfiguration
@@ -92,9 +127,23 @@ export async function resolveBtpDestination(serviceName: string): Promise<BtpDes
       user: config.User,
       password: config.Password,
       authTokens: authTokens?.map((t: any) => ({ value: t.value })),
+      proxyType: config.ProxyType,
     }
 
-    destinationCache.set(serviceName, resolvedDestination)
+    // 3. Handle OnPremise Connectivity
+    if (config.ProxyType === 'OnPremise' && connectivityService) {
+      const connCreds = connectivityService.credentials
+      const connToken = await fetchXsuaaToken(connCreds)
+
+      resolvedDestination.connectivity = {
+        host: connCreds.onpremise_proxy_host || 'connectivityproxy.internal.cf.eu10.hana.ondemand.com',
+        port: Number.parseInt(connCreds.onpremise_proxy_port || '20003'),
+        token: connToken,
+        userToken: userToken?.replace('Bearer ', ''),
+      }
+    }
+
+    destinationCache.set(cacheKey, resolvedDestination)
     return resolvedDestination
   }
   catch (err: any) {
