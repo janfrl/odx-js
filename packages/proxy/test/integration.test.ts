@@ -31,6 +31,16 @@ describe('proxy integration', () => {
           url: backendUrl,
           strategy: 'proxied',
         },
+        {
+          name: 'MockService',
+          url: '', // Results in relative /sap/opu/odata/sap/MockService
+          strategy: 'proxied',
+        },
+        {
+          name: 'DirectService',
+          url: backendUrl,
+          strategy: 'direct',
+        },
       ],
       basePath: '/api/odx',
       buildDir: '',
@@ -108,5 +118,20 @@ describe('proxy integration', () => {
 
     const received = response.receivedHeaders
     expect(received['x-custom-test']).toBe('it-works')
+  })
+
+  it('handles relative (mock) service URLs by prepending origin', async () => {
+    const response = await ofetch(`${proxyUrl}/api/odx/MockService/Products`)
+    expect(Array.isArray(response)).toBe(true)
+    expect(response[0].Name).toBe('Mock Product')
+  })
+
+  it('bypasses hooks when using strategy: direct', async () => {
+    const requestSpy = vi.fn()
+    hooks.hook('odx:proxy:request', requestSpy)
+
+    await ofetch(`${proxyUrl}/api/odx/DirectService/Products`)
+
+    expect(requestSpy).not.toHaveBeenCalled()
   })
 })
