@@ -14,18 +14,18 @@
   "dependencies": {
     "@bc8-odx/core": "workspace:*",
     "@sap/xsenv": "^6.1.0",
-    "@sap/xssec": "^4.12.2",
-    "h3": "^1.15.0",
-    "hookable": "^5.5.3",
-    "nitropack": "^2.10.3",
-    "ofetch": "^1.4.1",
+    "@sap/xssec": "^4.13.0",
+    "h3": "^1.15.10",
+    "hookable": "^6.1.0",
+    "nitropack": "^2.13.2",
+    "ofetch": "^1.5.1",
     "pathe": "^2.0.3",
-    "ufo": "^1.5.4"
+    "ufo": "^1.6.3"
   },
   "devDependencies": {
     "@bc8-odx/nuxt": "workspace:*",
-    "get-port-please": "^3.1.2",
+    "get-port-please": "^3.2.0",
     "listhen": "^1.9.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.1"
   }
 }

@@ -6,6 +6,6 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@sap/approuter": "^21.0.0"
+    "@sap/approuter": "^21.1.0"
   }
 }

@@ -9,7 +9,7 @@
   },
   "main": "./src/index.ts",
   "dependencies": {
-    "hookable": "^5.5.3",
-    "ofetch": "^1.4.1"
+    "hookable": "^6.1.0",
+    "ofetch": "^1.5.1"
   }
 }
