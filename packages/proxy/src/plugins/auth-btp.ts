@@ -1,7 +1,6 @@
 import process from 'node:process'
 // @ts-expect-error - No type definitions for @sap/xsenv
 import xsenv from '@sap/xsenv'
-// @ts-expect-error - No type definitions for @sap/xssec
 import { createSecurityContext, XsuaaService } from '@sap/xssec'
 import { createError } from 'h3'
 import { defineNitroPlugin } from 'nitropack/runtime'

@@ -223,7 +223,6 @@ declare module 'h3' {
   interface H3EventContext {
     odataConfig: ODataProxyConfig
     odataAuth?: string
-    userContext?: LegacyUserContext
     securityContext?: any
   }
 }

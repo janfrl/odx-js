@@ -14,7 +14,7 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
 
   try {
     // Use shell: true to correctly resolve commands on Windows
-    execSync(command, { stdio: 'pipe', shell: true })
+    execSync(command, { stdio: 'pipe' })
     logger.success(`Generated SDK for ${serviceName}`)
   }
   catch (err: any) {

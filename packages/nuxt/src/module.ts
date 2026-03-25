@@ -22,10 +22,12 @@ export interface ODataServiceConfig {
   route?: string
   icon?: string
   strategy?: 'proxied' | 'direct'
+  destination?: string
   auth?: {
     username?: string
     password?: string
     bearerToken?: string
+    mockUserCompanies?: Array<{ company: string, source: string }>
   }
   headers?: Record<string, string>
 }
@@ -38,6 +40,7 @@ export interface ModuleOptions {
     username?: string
     password?: string
     bearerToken?: string
+    mockUserCompanies?: Array<{ company: string, source: string }>
   }
   headers?: Record<string, string>
   rejectUnauthorized?: boolean
