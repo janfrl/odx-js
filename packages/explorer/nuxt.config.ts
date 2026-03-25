@@ -38,8 +38,5 @@ export default defineNuxtConfig({
         allow: ['../..'],
       },
     },
-    optimizeDeps: {
-      include: ['dagre'],
-    },
   },
 })
