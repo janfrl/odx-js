@@ -6,7 +6,7 @@ import https from 'node:https'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { addODataLog, fetchWithCsrf, flattenOData } from '@bc8-odx/core'
-import { createError, defineEventHandler, getHeaders, getQuery, readBody } from 'h3'
+import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL, readBody } from 'h3'
 import { join } from 'pathe'
 import { withQuery } from 'ufo'
 import { validateBtpAuth } from '../utils/auth'
@@ -135,6 +135,10 @@ export default defineEventHandler(async (event) => {
     if (!isExternal) {
       // Standard SAP path for non-external services
       baseUrl = `/sap/opu/odata/sap/${matched.name}`
+
+      // Prepend the current origin if baseUrl is relative (important for ofetch in server-side)
+      const url = getRequestURL(event)
+      baseUrl = `${url.protocol}//${url.host}${baseUrl}`
     }
 
     const incomingHeaders = getHeaders(event)
