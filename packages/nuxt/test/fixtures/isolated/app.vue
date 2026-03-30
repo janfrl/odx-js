@@ -6,10 +6,10 @@ const { data } = await useOData('NorthwindIsolated').entitySet('Categories').lis
 
 <template>
   <div>
-    <div v-if="data.value && data.value.length > 0" id="result">
-      First Category: {{ data.value[0].CategoryName }}
+    <div v-if="data && data.length > 0" id="result">
+      First Category: {{ data[0].CategoryName }}
     </div>
-    <div v-else-if="data && data.value" id="empty-data">
+    <div v-else-if="data" id="empty-data">
       Data is empty array
     </div>
     <div v-else id="empty">

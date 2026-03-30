@@ -1,70 +1,156 @@
+import { Buffer } from 'node:buffer'
 import process from 'node:process'
-import { defineNitroPlugin } from 'nitropack/runtime'
+import { defineNitroPlugin, useRuntimeConfig } from 'nitropack/runtime'
 import { resolveBtpDestination } from '../utils/btp-destination'
 
+const RE_QUERY_SPLIT = /\?/
+const RE_LEADING_SLASH = /^\//
+
 /**
- * Nitro plugin to handle SAP BTP destination resolution and principal propagation.
- * Detects BTP environments and automatically manages user token exchange
- * and connectivity service headers for OnPremise targets.
+ * Nitro plugin to resolve proxy targets for OData services.
+ * Handles BTP destinations, absolute URLs, and local mock services.
+ * Stores result in event.context.proxyTarget for subsequent proxying.
  */
 export default defineNitroPlugin((nitro) => {
-  nitro.hooks.hook('odx:proxy:request', async ({ event, serviceName, fetchOptions }) => {
-    const authHeader = event.headers.get('authorization')
-    const config = event.context.odataConfig
-    const addTrace = event.context.proxyTrace
+  nitro.hooks.hook('request', async (event): Promise<void> => {
+    const runtimeConfig = useRuntimeConfig(event)
+    const config = runtimeConfig.odata as any
+
+    if (!config) {
+      return
+    }
+
+    // Initialize telemetry trace array
+    const startTime = Date.now()
+    const trace: any[] = []
+    event.context.proxyTrace = trace
+
+    const addTrace = (label: string, message: string, details?: any, status: 'success' | 'error' | 'info' = 'info'): void => {
+      trace.push({
+        timestamp: Date.now(),
+        duration: Date.now() - startTime,
+        label,
+        message,
+        details,
+        status,
+      })
+    }
+
+    // Inject config into event context for other handlers/plugins
+    event.context.odataConfig = config
+
+    const basePath = config.basePath || '/api/odx'
+    if (!event.path.startsWith(basePath)) {
+      return
+    }
+
+    const pathOnly = event.path.split(RE_QUERY_SPLIT)[0] || ''
+    const relativePath = pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '')
+    const segments = relativePath.split('/').filter(Boolean)
+    const serviceRoute = segments[0]
+
+    if (!serviceRoute) {
+      return
+    }
+
+    const matched = config.services?.find((s: any) =>
+      s.name.toLowerCase() === serviceRoute.toLowerCase()
+      || (s.route && s.route.toLowerCase() === serviceRoute.toLowerCase()),
+    )
+
+    if (!matched) {
+      addTrace('Proxy', `Unknown service route: ${serviceRoute}`, { path: event.path }, 'error')
+      return
+    }
+
     const isRealCloud = !!process.env.VCAP_SERVICES
+    const hasDestination = !!matched.destination
+    const hasAbsoluteUrl = matched.url?.startsWith('http')
+    const isDirect = matched.strategy === 'direct'
 
-    const matched = config?.services?.find(s => s.name === serviceName)
-    const btpTargetName = matched?.destination
+    // 1. Resolve Absolute URL (Prioritized)
+    if (hasAbsoluteUrl) {
+      addTrace('Proxy', `Using absolute URL for ${matched.name}`, { url: matched.url })
+      const auth = matched.auth || {}
+      let authHeaderValue = ''
 
-    if (btpTargetName || isRealCloud) {
-      const target = btpTargetName || serviceName
-      addTrace?.('BTP', `Resolving BTP Destination: "${target}"`)
+      // Only apply auth if not using 'direct' strategy (CORS Bridge Mode)
+      if (!isDirect) {
+        if (auth.bearerToken) {
+          addTrace('Auth', 'Using Bearer Token')
+          authHeaderValue = `Bearer ${auth.bearerToken}`
+        }
+        else if (auth.username && auth.password) {
+          addTrace('Auth', 'Using Basic Auth')
+          authHeaderValue = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+        }
+      }
+      else {
+        addTrace('Proxy', 'Strategy is "direct", skipping auth')
+      }
 
+      event.context.proxyTarget = {
+        url: matched.url,
+        authHeader: authHeaderValue,
+        isRelative: false,
+        strategy: matched.strategy,
+      }
+      return
+    }
+
+    // 2. Resolve BTP Destination (if explicitly configured or in cloud)
+    if (!isDirect && (hasDestination || isRealCloud)) {
+      const btpTargetName = matched.destination || matched.name
+      addTrace('BTP', `Resolving BTP Destination: ${btpTargetName}`)
       try {
-        // Resolve destination, passing the user's JWT for principal propagation
-        const destination = await resolveBtpDestination(target, authHeader || undefined)
-        addTrace?.('BTP', `Destination resolved: ${destination.url} (${destination.proxyType || 'Internet'})`)
+        const authHeader = event.headers.get('authorization')
+        const destination = await resolveBtpDestination(btpTargetName, authHeader || undefined)
 
-        fetchOptions.baseURL = destination.url
-
-        const headers = { ...(fetchOptions.headers as Record<string, string>) }
-
-        // 1. Handle Authentication (SAML Bearer or Basic)
+        let authHeaderValue = ''
         if (destination.authTokens?.[0]) {
-          addTrace?.('BTP', 'Injecting SAML Bearer token (Principal Propagation)')
-          headers.Authorization = `Bearer ${destination.authTokens[0].value}`
+          addTrace('BTP', 'Principal Propagation: Using SAML Bearer token')
+          authHeaderValue = `Bearer ${destination.authTokens[0].value}`
         }
         else if (destination.user && destination.password) {
-          addTrace?.('BTP', 'Injecting Technical User credentials (Basic Auth)')
-          headers.Authorization = `Basic ${btoa(`${destination.user}:${destination.password}`)}`
+          addTrace('BTP', 'Technical User: Using Basic Auth')
+          authHeaderValue = `Basic ${Buffer.from(`${destination.user}:${destination.password}`).toString('base64')}`
         }
 
-        // 2. Handle Connectivity Service (OnPremise)
-        if (destination.proxyType === 'OnPremise' && destination.connectivity) {
-          addTrace?.('BTP', 'Attaching SAP Connectivity Service headers')
+        addTrace('BTP', `Destination resolved to: ${destination.url}`, { proxyType: destination.proxyType || 'Internet' }, 'success')
 
-          // These headers are required by the BTP Connectivity Proxy
-          headers['SAP-Connectivity-Authentication'] = `Bearer ${destination.connectivity.token}`
-
-          if (destination.connectivity.userToken) {
-            headers['Proxy-Authorization'] = `Bearer ${destination.connectivity.userToken}`
-          }
-
-          // Note: In a production Cloud Foundry environment, the connectivity proxy
-          // usually requires an HTTP proxy agent. Since ofetch is environment-agnostic,
-          // we assume the environment (Nitro/Node) handles the actual SOCKS5/Proxy tunnel
-          // via process.env.http_proxy or a custom agent if configured.
+        event.context.proxyTarget = {
+          url: destination.url,
+          authHeader: authHeaderValue,
+          isRelative: false,
+          strategy: matched.strategy,
         }
-
-        fetchOptions.headers = headers
+        return
       }
-      catch (err) {
-        addTrace?.('BTP', 'Destination resolution failed', { error: (err as Error).message }, 'error')
+      catch (err: any) {
+        addTrace('BTP', `Failed to resolve destination: ${err.message}`, { error: err }, 'error')
         if (process.env.NODE_ENV === 'production') {
-          console.error(`[@bc8-odx/proxy] BTP Destination Error [${serviceName}]:`, err)
+          console.error(`[@bc8-odx/proxy] BTP Destination Error [${matched.name}]:`, err.message)
         }
       }
+    }
+
+    // 3. Fallback to Local Mock Service (Relative Standard SAP Path)
+    addTrace('Proxy', `Routing to local mock for ${matched.name}`, { path: `/sap/opu/odata/sap` })
+
+    const auth = matched.auth || {}
+    let authHeaderValue = ''
+    if (auth.bearerToken) {
+      authHeaderValue = `Bearer ${auth.bearerToken}`
+    }
+    else if (auth.username && auth.password) {
+      authHeaderValue = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+    }
+
+    event.context.proxyTarget = {
+      url: '/sap/opu/odata/sap',
+      authHeader: authHeaderValue,
+      isRelative: true,
+      strategy: matched.strategy,
     }
   })
 })

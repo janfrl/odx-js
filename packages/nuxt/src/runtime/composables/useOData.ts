@@ -1,6 +1,6 @@
 import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
 import { useFetch } from '#imports'
-import { $odata, stringifyQuery } from '@bc8-odx/core'
+import { $odata, flattenOData, stringifyQuery } from '@bc8-odx/core'
 import { useODataBasePath } from './useODataBasePath'
 
 /**
@@ -40,12 +40,20 @@ export function useOData(service?: string): any {
 
     return {
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
-        return useFetch(fullPath, { ...(options as any), query: stringifyQuery(query || {}) }) as unknown as ODataAsyncDataPromise<TModel[]>
+        return useFetch(fullPath, {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+          transform: (data: any) => flattenOData(data),
+        }) as unknown as ODataAsyncDataPromise<TModel[]>
       },
 
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return useFetch(itemPath, { ...(options as any), query: stringifyQuery(query || {}) }) as unknown as ODataAsyncDataPromise<TModel>
+        return useFetch(itemPath, {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+          transform: (data: any) => flattenOData(data),
+        }) as unknown as ODataAsyncDataPromise<TModel>
       },
 
       create: (body: Partial<TModel>): Promise<TModel> =>

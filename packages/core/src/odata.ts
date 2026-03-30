@@ -1,4 +1,5 @@
 import type { FetchOptions } from 'ofetch'
+import { flattenOData } from './odata-utils'
 
 export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils.ts'
 
@@ -13,10 +14,11 @@ export async function $odata<T = unknown>(
   options: FetchOptions<'json'> & { entitySet?: string } = {},
 ): Promise<T> {
   const path = options.entitySet ? `${service}/${options.entitySet}` : service
-  return client<T>(path, {
+  const res = await client<T>(path, {
     method,
     query: options.query,
     body: options.body,
     headers: options.headers,
   })
+  return flattenOData(res) as T
 }

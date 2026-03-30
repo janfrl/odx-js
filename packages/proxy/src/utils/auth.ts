@@ -3,22 +3,41 @@ import { createRequire } from 'node:module'
 import process from 'node:process'
 import { createError, getHeader } from 'h3'
 
-const require = createRequire(import.meta.url)
-const xsenv = require('@sap/xsenv')
-const { createSecurityContext, XsuaaService } = require('@sap/xssec')
+// Lazy load BTP dependencies only when needed and in production
+let authService: any = null
+let btpModulesLoaded = false
 
-// Load environment (e.g. from VCAP_SERVICES)
-xsenv.loadEnv()
+function initBtpModules(): void {
+  if (btpModulesLoaded)
+    return
 
-let xsuaaCredentials: any = null
-try {
-  xsuaaCredentials = xsenv.getServices({ xsuaa: { tag: 'xsuaa' } }).xsuaa
+  try {
+    const require = createRequire(import.meta.url)
+    const xsenv = require('@sap/xsenv')
+    const { XsuaaService } = require('@sap/xssec')
+
+    // Load environment (e.g. from VCAP_SERVICES)
+    xsenv.loadEnv()
+
+    let xsuaaCredentials: any = null
+    try {
+      xsuaaCredentials = xsenv.getServices({ xsuaa: { tag: 'xsuaa' } }).xsuaa
+    }
+    catch {
+      // Silent fail if no XSUAA is bound
+    }
+
+    if (xsuaaCredentials) {
+      authService = new XsuaaService(xsuaaCredentials)
+    }
+  }
+  catch (err: any) {
+    console.warn('[@bc8-odx/proxy] Failed to initialize SAP BTP security modules:', err.message)
+  }
+  finally {
+    btpModulesLoaded = true
+  }
 }
-catch {
-  // Silent fail if no XSUAA is bound (e.g. local dev without environment)
-}
-
-const authService = xsuaaCredentials ? new XsuaaService(xsuaaCredentials) : null
 
 /**
  * Validates the JWT token in the Authorization header.
@@ -36,11 +55,17 @@ export async function validateBtpAuth(event: H3Event): Promise<void> {
     return // No token, no validation (dedicated mode)
   }
 
+  // Ensure modules are initialized
+  initBtpModules()
+
   if (!authService) {
     return
   }
 
   try {
+    const require = createRequire(import.meta.url)
+    const { createSecurityContext } = require('@sap/xssec')
+
     const secContext = await createSecurityContext([authService], {
       // @sap/xssec expects the raw request object (Node.js incoming message)
       req: event.node.req,

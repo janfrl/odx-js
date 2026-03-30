@@ -248,8 +248,11 @@ export function useSharedODataState(): any {
       const res = await fetch('/__odx__/logs')
       if (res.ok) {
         const data = (await res.json()) as ODataLog[]
-        // Only update if number of logs changed or it was empty
-        if (data.length !== logs.value.length || logs.value.length === 0) {
+        // Update if length changed OR if the latest log ID is different
+        const hasChanged = data.length !== logs.value.length
+          || (data.length > 0 && logs.value.length > 0 && data[0].id !== logs.value[0].id)
+
+        if (hasChanged) {
           logs.value = data
         }
       }

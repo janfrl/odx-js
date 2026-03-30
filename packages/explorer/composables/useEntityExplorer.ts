@@ -1,4 +1,5 @@
-import type { EditorState, EntityMapping } from './useODataState'
+import type { EditorState } from './useODataState'
+import { flattenOData } from '@bc8-odx/core'
 import { computed, ref, watch } from 'vue'
 import { useSharedODataState } from './useODataState'
 
@@ -237,14 +238,7 @@ export function useEntityExplorer(): {
         return
       }
 
-      let finalData = []
-      if (Array.isArray(data)) {
-        finalData = data
-      }
-      else if (data && typeof data === 'object') {
-        finalData = data.value || data.results || [data]
-      }
-
+      const finalData = flattenOData(data)
       previewData.value = finalData
 
       // Update cache
@@ -254,6 +248,7 @@ export function useEntityExplorer(): {
         error: null,
         query: queryInput.value,
         method: queryMethod.value,
+        queryState: JSON.parse(JSON.stringify(queryState.value)),
       }
     }
     catch (e: unknown) {

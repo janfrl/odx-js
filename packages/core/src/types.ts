@@ -182,6 +182,7 @@ export interface ODataProxyConfig {
   mode: string
   hooks?: Hookable<ODataProxyHooks>
   devtools?: {
+    enabled?: boolean
     maxLogs?: number
   }
 }

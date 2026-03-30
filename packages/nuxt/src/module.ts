@@ -229,6 +229,7 @@ export default defineNuxtModule<ModuleOptions>({
       buildDir: nuxt.options.buildDir,
       rootDir: nuxt.options.rootDir,
       devtools: {
+        enabled: options.devtools?.enabled !== false,
         maxLogs: options.devtools?.maxLogs ?? 100,
       },
     }
