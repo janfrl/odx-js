@@ -196,6 +196,7 @@ export function useEntityExplorer(): {
       const res = await fetch(urlPath, {
         method: queryMethod.value,
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
           ...sessionHeaders.value,
         },
@@ -239,12 +240,13 @@ export function useEntityExplorer(): {
       }
 
       const finalData = flattenOData(data)
-      previewData.value = finalData
+      const dataArray = Array.isArray(finalData) ? finalData : (finalData ? [finalData] : [])
+      previewData.value = dataArray
 
       // Update cache
       const cacheKey = `${selectedService.value.name}:${selectedEntity.value}`
       entityDataCache.value[cacheKey] = {
-        data: [...finalData],
+        data: [...dataArray],
         error: null,
         query: queryInput.value,
         method: queryMethod.value,
@@ -307,7 +309,7 @@ export function useEntityExplorer(): {
     const edmxEntity = currentEntitySchema.value
 
     if (!edmxEntity) {
-      if (previewData.value.length > 0) {
+      if (previewData.value && previewData.value.length > 0) {
         return Object.keys(previewData.value[0] || {}).filter(k => k !== '__metadata')
       }
       return []
@@ -433,7 +435,7 @@ export function useEntityExplorer(): {
   }
 
   function downloadJson(): void {
-    if (previewData.value.length === 0) {
+    if (!previewData.value || previewData.value.length === 0) {
       return
     }
     const blob = new Blob([JSON.stringify(previewData.value, null, 2)], { type: 'application/json' })

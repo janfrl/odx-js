@@ -136,13 +136,16 @@ function getRowData(row: any): Record<string, any> {
           <!-- Empty State (No Data) -->
           <template v-else>
             <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
-              <UIcon name="i-lucide-database-zap" class="text-neutral-400 w-8 h-8" />
+              <UIcon :name="previewData === null ? 'i-lucide-database-zap' : 'i-lucide-search-x'" class="text-neutral-400 w-8 h-8" />
             </div>
             <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
-              No data loaded yet
+              {{ previewData === null ? 'No data loaded yet' : 'No records found' }}
             </h3>
             <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
-              Modify query parameters and click Execute to fetch records from the OData service.
+              {{ previewData === null
+                ? 'Modify query parameters and click Execute to fetch records from the OData service.'
+                : 'The OData service returned 0 items for the current query configuration.'
+              }}
             </p>
           </template>
         </div>

@@ -48,7 +48,7 @@ export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof 
       const hasDestination = !!matched.destination
       const hasAbsoluteUrl = matched.url?.startsWith('http')
       const isDirect = matched.strategy === 'direct'
-      const proxyMode = matched.proxyMode || config.defaultProxyMode || 'stream'
+      const proxyMode = matched.proxyMode || config.defaultProxyMode
 
       if (hasAbsoluteUrl) {
         const auth = matched.auth || {}

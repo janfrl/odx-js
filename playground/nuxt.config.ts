@@ -18,6 +18,7 @@ export default defineNuxtConfig({
   css: ['~/app.css'],
 
   odata: {
+    defaultProxyMode: 'stream',
     services: [
       {
         name: 'V2Service',

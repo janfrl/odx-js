@@ -22,6 +22,7 @@ export interface ODataServiceConfig {
   route?: string
   icon?: string
   strategy?: 'proxied' | 'direct'
+  proxyMode?: 'stream' | 'buffer'
   destination?: string
   auth?: {
     username?: string
@@ -35,6 +36,7 @@ export interface ODataServiceConfig {
 export interface ModuleOptions {
   mode?: 'sdk'
   basePath?: string
+  defaultProxyMode?: 'stream' | 'buffer'
   destination?: string
   auth?: {
     username?: string

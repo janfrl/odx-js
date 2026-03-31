@@ -104,7 +104,7 @@ const selectedTraceLogId = ref<string | null>(null)
 
 const previewLoading = ref(false)
 const previewError = ref<string | null>(null)
-const previewData = ref<Record<string, any>[]>([])
+const previewData = ref<Record<string, any>[] | null>(null)
 const queryInput = ref('?')
 const queryMethod = ref('GET')
 const queryState = ref<VisualQueryState>({
@@ -152,7 +152,7 @@ function getDefaultQueryState(): VisualQueryState {
 // 1. Service Change: Reset everything and fetch new schema
 watch(selectedService, async (newSvc) => {
   selectedEntity.value = null
-  previewData.value = []
+  previewData.value = null
   previewError.value = null
   queryInput.value = '?'
   queryMethod.value = 'GET'
@@ -199,7 +199,7 @@ watch(selectedEntity, (newEntity) => {
       queryState.value = cache.queryState ? JSON.parse(JSON.stringify(cache.queryState)) : getDefaultQueryState()
     }
     else {
-      previewData.value = []
+      previewData.value = null
       previewError.value = null
       queryInput.value = '?'
       queryMethod.value = 'GET'
@@ -207,7 +207,7 @@ watch(selectedEntity, (newEntity) => {
     }
   }
   else {
-    previewData.value = []
+    previewData.value = null
     previewError.value = null
     queryInput.value = '?'
     queryMethod.value = 'GET'

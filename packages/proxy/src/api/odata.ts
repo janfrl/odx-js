@@ -139,8 +139,10 @@ export default defineEventHandler(async (event): Promise<any> => {
     }
 
     // 5. Proxy Execution (Hybrid Mode)
-    // We use buffering mode (ofetch) if explicitly requested or devtools are enabled.
-    const useBufferMode = targetConfig.proxyMode === 'buffer' || useDevTools
+    // We use buffering mode (ofetch) if explicitly requested OR if no mode is set and devtools are enabled.
+    // Explicit 'stream' mode ALWAYS bypasses buffering, even in dev.
+    const mode = targetConfig.proxyMode || (useDevTools ? 'buffer' : 'stream')
+    const useBufferMode = mode === 'buffer'
 
     if (useBufferMode) {
       let requestBody: any = null
