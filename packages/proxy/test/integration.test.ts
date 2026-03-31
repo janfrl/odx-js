@@ -43,6 +43,15 @@ describe('proxy integration', () => {
           url: backendUrl,
           strategy: 'direct',
         },
+        {
+          name: 'OverrideService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          headers: {
+            'x-priority-test': 'config-default',
+          },
+        },
       ],
       basePath: '/api/odx',
       buildDir: '',
@@ -136,5 +145,19 @@ describe('proxy integration', () => {
     await ofetch(`${proxyUrl}/api/odx/DirectService/Products`)
 
     expect(requestSpy).not.toHaveBeenCalled()
+  })
+
+  it('allows client headers to override service configuration defaults', async () => {
+    // 1. Check if default from config is applied
+    const resDefault = await ofetch(`${proxyUrl}/api/odx/OverrideService/HeaderEcho`)
+    expect(resDefault.receivedHeaders['x-priority-test']).toBe('config-default')
+
+    // 2. Check if client override works
+    const resOverride = await ofetch(`${proxyUrl}/api/odx/OverrideService/HeaderEcho`, {
+      headers: {
+        'x-priority-test': 'client-override',
+      },
+    })
+    expect(resOverride.receivedHeaders['x-priority-test']).toBe('client-override')
   })
 })

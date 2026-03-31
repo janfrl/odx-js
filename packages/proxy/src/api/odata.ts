@@ -94,10 +94,20 @@ export default defineEventHandler(async (event): Promise<any> => {
     const incomingHeaders = getHeaders(event)
     const serviceHeaders = matched?.headers || {}
 
-    // Merge headers: Incoming < Service Config < Auth < Hooks
-    finalHeaders = {
-      ...incomingHeaders,
-      ...serviceHeaders,
+    // Merge headers: Service Config (Defaults) < Incoming (Overrides)
+    // We normalize keys to lowercase during merge to prevent duplicates
+    finalHeaders = {}
+
+    // 1. Apply Service Config Headers as defaults
+    for (const [key, value] of Object.entries(serviceHeaders)) {
+      finalHeaders[key.toLowerCase()] = value
+    }
+
+    // 2. Apply Incoming Headers (overrides defaults)
+    for (const [key, value] of Object.entries(incomingHeaders)) {
+      if (value !== undefined && value !== null) {
+        finalHeaders[key.toLowerCase()] = String(value)
+      }
     }
 
     // Remove restricted headers that should not be forwarded
