@@ -3,11 +3,21 @@ import { computed, ref, watch } from 'vue'
 
 export interface ODataServiceState {
   name: string
+  url?: string
   route?: string
   entities?: EntityMapping[]
   isGenerated?: boolean
   version?: 'v2' | 'v4' | null
   strategy?: 'proxied' | 'direct'
+  proxyMode?: 'stream' | 'buffer'
+  destination?: string
+  auth?: {
+    username?: string
+    password?: string
+    bearerToken?: string
+    mockUserCompanies?: Array<{ company: string, source: string }>
+  }
+  headers?: Record<string, string>
   health?: 'online' | 'offline' | 'checking'
 }
 

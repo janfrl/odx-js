@@ -158,23 +158,18 @@ function close() {
 <template>
   <USlideover
     v-model:open="editor.show"
-    :title="modeConfig.title"
     :description="editor.mode === 'headers' ? 'Session Configuration' : selectedEntity"
     :ui="{ body: 'bg-neutral-50/50 dark:bg-neutral-950/40' }"
   >
+    <template #title>
+      <div class="flex items-center gap-2">
+        <UIcon :name="modeConfig.icon" class="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+        <span>{{ modeConfig.title }}</span>
+      </div>
+    </template>
+
     <template #body>
       <div class="flex flex-col h-full py-2">
-        <!-- Visual Context Header (inside body since we removed custom header) -->
-        <div class="mb-4 flex items-center gap-3 px-1">
-          <div class="flex items-center justify-center w-10 h-10 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 shrink-0">
-            <UIcon :name="modeConfig.icon" class="w-5 h-5" />
-          </div>
-          <div class="flex flex-col min-w-0">
-            <span class="font-bold text-sm text-neutral-900 dark:text-white truncate">{{ modeConfig.title }}</span>
-            <span class="text-[10px] font-medium text-neutral-500 dark:text-neutral-400 truncate tracking-wider uppercase">{{ editor.mode === 'headers' ? 'Session' : selectedEntity }}</span>
-          </div>
-        </div>
-
         <div class="flex-1 relative flex flex-col min-h-0 bg-white dark:bg-neutral-900 rounded-xl ring-1 ring-neutral-200 dark:ring-neutral-800 shadow-sm focus-within:ring-2 focus-within:ring-neutral-300 dark:focus-within:ring-neutral-700 transition-all overflow-hidden">
           <div class="px-4 py-2.5 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 shrink-0">
             <div class="flex items-center gap-2">

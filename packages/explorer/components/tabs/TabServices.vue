@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
+import ServiceSettings from '../ServiceSettings.vue'
 
 const RE_TRAILING_SLASH = /\/$/
 
+const showSettings = ref(false)
 const {
   services,
   selectedService,
@@ -191,6 +193,17 @@ const actionItems = computed((): DropdownMenuItem[][] => {
         <div class="flex items-center justify-end gap-3 shrink-0 flex-1">
           <UFieldGroup class="-mt-2">
             <UButton
+              icon="i-lucide-settings"
+              color="neutral"
+              variant="subtle"
+              label="Settings"
+              title="Service Configuration"
+              @click="showSettings = true"
+            />
+          </UFieldGroup>
+
+          <UFieldGroup class="-mt-2">
+            <UButton
               icon="i-lucide-activity"
               color="neutral"
               variant="subtle"
@@ -247,6 +260,8 @@ const actionItems = computed((): DropdownMenuItem[][] => {
         <EntityExplorer v-show="globalViewMode === 'explorer'" />
         <SchemaExplorer v-show="globalViewMode === 'schema'" />
       </div>
+
+      <ServiceSettings v-model:open="showSettings" />
     </div>
   </div>
 </template>
