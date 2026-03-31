@@ -13,7 +13,10 @@ function viewProxyTrace(id: string) {
 const filteredLogs = computed(() => {
   if (!logFilterService.value)
     return logs.value
-  return logs.value.filter((l: any) => l.service === logFilterService.value)
+  return logs.value.filter((l: any) => {
+    if (!l.service) return false
+    return l.service.toLowerCase() === logFilterService.value.toLowerCase()
+  })
 })
 
 const serviceOptions = computed(() => {

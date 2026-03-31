@@ -225,7 +225,7 @@ export default defineEventHandler(async (event): Promise<any> => {
         service: serviceName,
         entitySet: segments[1] || '',
         status: 200,
-        duration: 0, // Duration is not easily measurable in streaming mode here
+        duration: Date.now() - startTime,
         requestHeaders: finalHeaders,
         responseBody: '[Streamed Response - Body not captured]',
         proxyTrace: [...trace],
