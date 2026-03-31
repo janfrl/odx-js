@@ -31,6 +31,7 @@ const serviceOptions = computed(() => {
 
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')
+const UIcon = resolveComponent('UIcon')
 
 function safeStringify(data: any): string {
   if (!data)
@@ -67,16 +68,19 @@ const columns = [
     header: 'Status',
     accessorKey: 'status',
     cell: ({ row }: any) => {
+      const isPending = row.original.isPending
       return h('div', {
         onClick: () => row.toggleExpanded(),
         class: 'px-6 py-4 cursor-pointer flex items-center h-full w-full',
       }, [
-        h(UBadge, {
-          color: Number(row.original.status || 0) < 400 ? 'success' : 'error',
-          variant: 'soft',
-          size: 'md',
-          class: 'font-black min-w-12 justify-center',
-        }, () => row.original.status || '???'),
+        isPending
+          ? h(UIcon, { name: 'i-lucide-loader-2', class: 'animate-spin w-5 h-5 text-primary opacity-50' })
+          : h(UBadge, {
+            color: Number(row.original.status || 0) < 400 ? 'success' : 'error',
+            variant: 'soft',
+            size: 'md',
+            class: 'font-black min-w-12 justify-center',
+          }, () => row.original.status || '???'),
       ])
     },
   },
@@ -115,12 +119,17 @@ const columns = [
     header: 'Duration',
     accessorKey: 'duration',
     cell: ({ row }: any) => {
+      const isPending = row.original.isPending
       return h('div', {
         onClick: () => row.toggleExpanded(),
         class: 'px-6 py-4 cursor-pointer tabular-nums text-neutral-500 flex items-center justify-end h-full w-full',
       }, [
-        h('span', { class: 'font-bold text-sm' }, row.original.duration),
-        h('span', { class: 'text-[10px] ml-1 text-neutral-400 dark:text-neutral-600 uppercase font-sans font-black' }, 'ms'),
+        isPending
+          ? h('span', { class: 'animate-pulse font-bold' }, '...')
+          : h('div', { class: 'flex items-center' }, [
+            h('span', { class: 'font-bold text-sm' }, row.original.duration),
+            h('span', { class: 'text-[10px] ml-1 text-neutral-400 dark:text-neutral-600 uppercase font-sans font-black' }, 'ms'),
+          ]),
       ])
     },
   },

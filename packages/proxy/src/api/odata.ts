@@ -1,5 +1,5 @@
 import process from 'node:process'
-import { addODataLog, flattenOData } from '@bc8-odx/core'
+import { addODataLog, flattenOData, updateODataLog } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, getRequestURL, proxyRequest, readBody } from 'h3'
 import { ofetch } from 'ofetch'
 import { validateBtpAuth } from '../utils/auth'
@@ -95,22 +95,17 @@ export default defineEventHandler(async (event): Promise<any> => {
     const serviceHeaders = matched?.headers || {}
 
     // Merge headers: Service Config (Defaults) < Incoming (Overrides)
-    // We normalize keys to lowercase during merge to prevent duplicates
     finalHeaders = {}
-
-    // 1. Apply Service Config Headers as defaults
     for (const [key, value] of Object.entries(serviceHeaders)) {
       finalHeaders[key.toLowerCase()] = value
     }
-
-    // 2. Apply Incoming Headers (overrides defaults)
     for (const [key, value] of Object.entries(incomingHeaders)) {
       if (value !== undefined && value !== null) {
         finalHeaders[key.toLowerCase()] = String(value)
       }
     }
 
-    // Remove restricted headers that should not be forwarded
+    // Remove restricted headers
     const restrictedHeaders = ['host', 'connection', 'content-length', 'content-encoding', 'transfer-encoding']
     for (const h of restrictedHeaders) {
       delete finalHeaders[h]
@@ -139,17 +134,36 @@ export default defineEventHandler(async (event): Promise<any> => {
     }
 
     // 5. Proxy Execution (Hybrid Mode)
-    // We use buffering mode (ofetch) if explicitly requested OR if no mode is set and devtools are enabled.
-    // Explicit 'stream' mode ALWAYS bypasses buffering, even in dev.
     const mode = targetConfig.proxyMode || (useDevTools ? 'buffer' : 'stream')
     const useBufferMode = mode === 'buffer'
 
-    if (useBufferMode) {
+    // Create a unique log entry immediately if devtools are enabled
+    const logId = Math.random().toString(36).substring(7)
+    if (useDevTools) {
       let requestBody: any = null
       if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
         requestBody = await readBody(event).catch(() => null)
       }
 
+      addODataLog({
+        id: logId,
+        timestamp: Date.now(),
+        method: event.method,
+        url: event.path,
+        targetUrl,
+        service: serviceName,
+        entitySet: segments[1] || '',
+        status: 0, // Pending
+        duration: 0,
+        isPending: true,
+        requestBody,
+        requestHeaders: finalHeaders,
+        responseBody: useBufferMode ? null : '[Streamed Response - Body not captured]',
+        proxyTrace: trace,
+      }, config.devtools?.maxLogs)
+    }
+
+    if (useBufferMode) {
       try {
         const responseData = await ofetch(targetUrl, {
           method: event.method as any,
@@ -158,7 +172,7 @@ export default defineEventHandler(async (event): Promise<any> => {
             'Content-Type': 'application/json',
             ...finalHeaders,
           },
-          body: requestBody,
+          body: event.method !== 'GET' ? await readBody(event).catch(() => null) : null,
           onResponse({ response }) {
             if (hooks?.callHook && !isDirect) {
               hooks.callHook('odx:proxy:response', { event, serviceName, response })
@@ -169,25 +183,16 @@ export default defineEventHandler(async (event): Promise<any> => {
         addTrace('Response', `Request successful (${event.method} ${event.path})`, { status: 200 }, 'success')
 
         if (useDevTools) {
-          addODataLog({
-            id: Math.random().toString(36).substring(7),
-            timestamp: Date.now(),
-            method: event.method,
-            url: event.path,
-            targetUrl,
-            service: serviceName,
-            entitySet: segments[1] || '',
+          updateODataLog(logId, {
             status: 200,
             duration: Date.now() - startTime,
-            requestBody,
-            requestHeaders: finalHeaders,
+            isPending: false,
             responseBody: flattenOData(responseData),
             proxyTrace: [...trace],
-          }, config.devtools?.maxLogs)
+          })
         }
 
         // Return raw response. SDK/Explorer handles flattening.
-        // This ensures identical payload structure between stream and buffer mode.
         return responseData
       }
       catch (err: any) {
@@ -195,41 +200,29 @@ export default defineEventHandler(async (event): Promise<any> => {
         addTrace('Response', `Backend request failed with status ${status}`, { error: err.message }, 'error')
 
         if (useDevTools) {
-          addODataLog({
-            id: Math.random().toString(36).substring(7),
-            timestamp: Date.now(),
-            method: event.method,
-            url: event.path,
-            targetUrl,
-            service: serviceName,
+          updateODataLog(logId, {
             status,
             duration: Date.now() - startTime,
-            requestBody,
+            isPending: false,
             responseBody: { error: err.message },
             proxyTrace: [...trace],
-          }, config.devtools?.maxLogs)
+          })
         }
         throw err
       }
     }
 
     // PRODUCTION/STREAMING: High performance streaming via httpxy
-    // In this mode, we cannot capture the response body for devtools.
+    // Track duration until the response is fully sent
     if (useDevTools) {
-      addODataLog({
-        id: Math.random().toString(36).substring(7),
-        timestamp: Date.now(),
-        method: event.method,
-        url: event.path,
-        targetUrl,
-        service: serviceName,
-        entitySet: segments[1] || '',
-        status: 200,
-        duration: Date.now() - startTime,
-        requestHeaders: finalHeaders,
-        responseBody: '[Streamed Response - Body not captured]',
-        proxyTrace: [...trace],
-      }, config.devtools?.maxLogs)
+      event.node.res.on('finish', () => {
+        updateODataLog(logId, {
+          status: event.node.res.statusCode,
+          duration: Date.now() - startTime,
+          isPending: false,
+          proxyTrace: [...trace],
+        })
+      })
     }
 
     return proxyRequest(event, targetUrl, {
@@ -244,6 +237,8 @@ export default defineEventHandler(async (event): Promise<any> => {
     const message = err.statusMessage || err.message || 'Internal Proxy Error'
 
     if (useDevTools) {
+      // Find if we already created a log for this request (might have failed before proxy execution)
+      // If not created yet, we should probably add it here as failed.
       addODataLog({
         id: Math.random().toString(36).substring(7),
         timestamp: Date.now(),
@@ -254,6 +249,7 @@ export default defineEventHandler(async (event): Promise<any> => {
         entitySet: segments[1] || '',
         status,
         duration: Date.now() - startTime,
+        isPending: false,
         responseBody: { error: message },
         proxyTrace: [...trace],
       }, config?.devtools?.maxLogs)

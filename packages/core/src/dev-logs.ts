@@ -18,6 +18,7 @@ export interface ODataLog {
   entitySet?: string
   status?: number
   duration?: number
+  isPending?: boolean
   requestBody?: any
   requestHeaders?: Record<string, string>
   responseBody?: any
@@ -31,6 +32,16 @@ export function addODataLog(log: ODataLog, maxLogs = DEFAULT_MAX_LOGS): void {
   logs.unshift(log)
   if (logs.length > maxLogs) {
     logs.pop()
+  }
+}
+
+/**
+ * Updates an existing OData log entry by its ID.
+ */
+export function updateODataLog(id: string, updates: Partial<ODataLog>): void {
+  const index = logs.findIndex(l => l.id === id)
+  if (index !== -1) {
+    logs[index] = { ...logs[index], ...updates }
   }
 }
 
