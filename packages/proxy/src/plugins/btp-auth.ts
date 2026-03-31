@@ -67,10 +67,11 @@ export default defineNitroPlugin((nitro) => {
     const hasDestination = !!matched.destination
     const hasAbsoluteUrl = matched.url?.startsWith('http')
     const isDirect = matched.strategy === 'direct'
+    const proxyMode = matched.proxyMode || config.defaultProxyMode || 'stream'
 
     // 1. Resolve Absolute URL (Prioritized)
     if (hasAbsoluteUrl) {
-      addTrace('Proxy', `Using absolute URL for ${matched.name}`, { url: matched.url })
+      addTrace('Proxy', `Using absolute URL for ${matched.name} (Mode: ${proxyMode})`, { url: matched.url })
       const auth = matched.auth || {}
       let authHeaderValue = ''
 
@@ -94,6 +95,7 @@ export default defineNitroPlugin((nitro) => {
         authHeader: authHeaderValue,
         isRelative: false,
         strategy: matched.strategy,
+        proxyMode,
       }
       return
     }
@@ -101,7 +103,7 @@ export default defineNitroPlugin((nitro) => {
     // 2. Resolve BTP Destination (if explicitly configured or in cloud)
     if (!isDirect && (hasDestination || isRealCloud)) {
       const btpTargetName = matched.destination || matched.name
-      addTrace('BTP', `Resolving BTP Destination: ${btpTargetName}`)
+      addTrace('BTP', `Resolving BTP Destination: ${btpTargetName} (Mode: ${proxyMode})`)
       try {
         const authHeader = event.headers.get('authorization')
         const destination = await resolveBtpDestination(btpTargetName, authHeader || undefined)
@@ -123,6 +125,7 @@ export default defineNitroPlugin((nitro) => {
           authHeader: authHeaderValue,
           isRelative: false,
           strategy: matched.strategy,
+          proxyMode,
         }
         return
       }
@@ -135,7 +138,7 @@ export default defineNitroPlugin((nitro) => {
     }
 
     // 3. Fallback to Local Mock Service (Relative Standard SAP Path)
-    addTrace('Proxy', `Routing to local mock for ${matched.name}`, { path: `/sap/opu/odata/sap` })
+    addTrace('Proxy', `Routing to local mock for ${matched.name} (Mode: ${proxyMode})`, { path: `/sap/opu/odata/sap` })
 
     const auth = matched.auth || {}
     let authHeaderValue = ''
@@ -151,6 +154,7 @@ export default defineNitroPlugin((nitro) => {
       authHeader: authHeaderValue,
       isRelative: true,
       strategy: matched.strategy,
+      proxyMode,
     }
   })
 })

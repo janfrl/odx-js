@@ -10,16 +10,17 @@ describe('nuxt ODX Module Integration', async () => {
   it('proxies basic GET requests correctly to the destination', async () => {
     const response = (await $fetch('/api/odx/TestService/TestItems')) as any
     expect(response).toBeDefined()
-    expect(Array.isArray(response)).toBe(true)
-    expect(response[0].Title).toBe('Test Item 1')
+    expect(response.d.results).toBeDefined()
+    expect(Array.isArray(response.d.results)).toBe(true)
+    expect(response.d.results[0].Title).toBe('Test Item 1')
   })
 
   it('passes OData query parameters unaltered through the proxy', async () => {
     const response = (await $fetch('/api/odx/TestService/TestItems', {
       query: { $top: 1, $skip: 1 },
     })) as any
-    expect(response).toHaveLength(1)
-    expect(response[0].Title).toBe('Test Item 2')
+    expect(response.d.results).toHaveLength(1)
+    expect(response.d.results[0].Title).toBe('Test Item 2')
   })
 
   it('handles target server errors gracefully', async () => {

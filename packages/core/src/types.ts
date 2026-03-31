@@ -35,6 +35,7 @@ export interface ODataServiceConfig {
   route?: string
   icon?: string
   strategy?: 'proxied' | 'direct'
+  proxyMode?: 'stream' | 'buffer'
   destination?: string
   auth?: {
     username?: string
@@ -180,6 +181,7 @@ export interface ODataProxyConfig {
   }
   basePath: string
   mode: string
+  defaultProxyMode?: 'stream' | 'buffer'
   hooks?: Hookable<ODataProxyHooks>
   devtools?: {
     enabled?: boolean
@@ -194,8 +196,9 @@ export interface ODataPublicConfig {
 }
 
 export interface ModuleOptions {
-  mode?: 'sdk'
   basePath?: string
+  mode?: 'sdk'
+  defaultProxyMode?: 'stream' | 'buffer'
   destination?: string
   auth?: {
     username?: string

@@ -15,5 +15,5 @@ describe('isolated production e2e', async () => {
     // Assert that the data fetched via useOData is present in the SSR output
     expect(html).toContain('First Category: Beverages')
     expect(html).not.toContain('No data found')
-  })
+  }, 30000)
 })

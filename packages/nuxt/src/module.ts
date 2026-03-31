@@ -113,6 +113,7 @@ export default defineNuxtModule<ModuleOptions>({
       const envDest = process.env[`${prefix}${envKey}_DESTINATION`]
       const envIcon = process.env[`${prefix}${envKey}_ICON`]
       const envStrategy = process.env[`${prefix}${envKey}_STRATEGY`] as 'proxied' | 'direct' | undefined
+      const envProxyMode = process.env[`${prefix}${envKey}_PROXY_MODE`] as 'stream' | 'buffer' | undefined
       const envUser = process.env[`${prefix}${envKey}_AUTH_USERNAME`]
       const envPass = process.env[`${prefix}${envKey}_AUTH_PASSWORD`]
       const envToken = process.env[`${prefix}${envKey}_AUTH_BEARER_TOKEN`]
@@ -134,6 +135,7 @@ export default defineNuxtModule<ModuleOptions>({
         destination: envDest || s.destination,
         icon: envIcon || s.icon,
         strategy: envStrategy || s.strategy || 'proxied',
+        proxyMode: envProxyMode || s.proxyMode,
         auth: {
           username: envUser || s.auth?.username,
           password: envPass || s.auth?.password,
@@ -220,6 +222,7 @@ export default defineNuxtModule<ModuleOptions>({
     const odataConfig: ODataProxyConfig = {
       basePath,
       mode: options.mode ?? 'sdk',
+      defaultProxyMode: options.defaultProxyMode ?? 'stream',
       destination: options.destination ?? '',
       auth: globalAuth,
       headers: stringifyHeaders(globalHeaders),

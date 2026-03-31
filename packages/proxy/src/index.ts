@@ -44,12 +44,11 @@ export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof 
     )
 
     if (matched) {
-      // Respect strategy: direct - don't set proxyTarget, odataHandler will handle it or pass through
-      // Actually, odataHandler expects proxyTarget.
       const isRealCloud = !!process.env.VCAP_SERVICES
       const hasDestination = !!matched.destination
       const hasAbsoluteUrl = matched.url?.startsWith('http')
       const isDirect = matched.strategy === 'direct'
+      const proxyMode = matched.proxyMode || config.defaultProxyMode || 'stream'
 
       if (hasAbsoluteUrl) {
         const auth = matched.auth || {}
@@ -67,6 +66,7 @@ export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof 
           authHeader: authHeaderValue,
           isRelative: false,
           strategy: matched.strategy,
+          proxyMode,
         }
       }
       else if (!isDirect && (hasDestination || isRealCloud)) {
@@ -86,11 +86,18 @@ export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof 
             authHeader: authHeaderValue,
             isRelative: false,
             strategy: matched.strategy,
+            proxyMode,
           }
         }
         catch {
           // Fallback for tests if BTP resolution fails
-          event.context.proxyTarget = { url: '/sap/opu/odata/sap', authHeader: '', isRelative: true, strategy: matched.strategy }
+          event.context.proxyTarget = {
+            url: '/sap/opu/odata/sap',
+            authHeader: '',
+            isRelative: true,
+            strategy: matched.strategy,
+            proxyMode,
+          }
         }
       }
       else {
@@ -108,6 +115,7 @@ export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof 
           authHeader: authHeaderValue,
           isRelative: !matched.url?.startsWith('http'),
           strategy: matched.strategy,
+          proxyMode,
         }
       }
     }

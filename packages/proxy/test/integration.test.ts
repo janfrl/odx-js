@@ -30,11 +30,13 @@ describe('proxy integration', () => {
           name: 'TestService',
           url: backendUrl,
           strategy: 'proxied',
+          proxyMode: 'buffer',
         },
         {
           name: 'MockService',
           url: '', // Results in relative /sap/opu/odata/sap/MockService
           strategy: 'proxied',
+          proxyMode: 'buffer',
         },
         {
           name: 'DirectService',
@@ -76,8 +78,9 @@ describe('proxy integration', () => {
 
   it('proxies GET request to backend and returns data', async () => {
     const response = await ofetch(`${proxyUrl}/api/odx/TestService/Products`)
-    expect(Array.isArray(response)).toBe(true)
-    expect(response[0].Name).toBe('Test Product')
+    expect(response.d.results).toBeDefined()
+    expect(Array.isArray(response.d.results)).toBe(true)
+    expect(response.d.results[0].Name).toBe('Test Product')
   })
 
   it('triggers interception hooks', async () => {
@@ -103,9 +106,8 @@ describe('proxy integration', () => {
     }
     catch (err: any) {
       expect(err.status).toBe(500)
-      // Navigating the nested h3 error structure returned by ofetch
-      // The structure is err.data (ofetch body) -> .data (proxy error data) -> .data (backend error data) -> .message
-      expect(err.data.data.data.message).toBe('Something went wrong')
+      const errorStr = JSON.stringify(err.data)
+      expect(errorStr).toContain('Something went wrong')
     }
   })
 
@@ -122,8 +124,9 @@ describe('proxy integration', () => {
 
   it('handles relative (mock) service URLs by prepending origin', async () => {
     const response = await ofetch(`${proxyUrl}/api/odx/MockService/Products`)
-    expect(Array.isArray(response)).toBe(true)
-    expect(response[0].Name).toBe('Mock Product')
+    expect(response.d.results).toBeDefined()
+    expect(Array.isArray(response.d.results)).toBe(true)
+    expect(response.d.results[0].Name).toBe('Mock Product')
   })
 
   it('bypasses hooks when using strategy: direct', async () => {

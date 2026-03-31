@@ -10,8 +10,8 @@ const RE_LEADING_SLASH = /^\//
 
 /**
  * Handles incoming OData requests by proxying them to the resolved target destination.
- * Utilizes httpxy (via h3's proxyRequest) for native stream piping in production
- * and buffers for logging in development/devtools mode.
+ * Utilizes httpxy (via h3's proxyRequest) for native stream piping
+ * or ofetch for buffering and response interception based on configuration.
  *
  * @param {import('h3').H3Event} event - The incoming H3 event.
  */
@@ -129,9 +129,8 @@ export default defineEventHandler(async (event): Promise<any> => {
     }
 
     // 5. Proxy Execution (Hybrid Mode)
-    // We use buffering mode (ofetch) if hooks are present or devtools are enabled.
-    // This allows response interception and logging.
-    const useBufferMode = (hooks && !isDirect) || useDevTools
+    // We use buffering mode (ofetch) if explicitly requested or devtools are enabled.
+    const useBufferMode = targetConfig.proxyMode === 'buffer' || useDevTools
 
     if (useBufferMode) {
       let requestBody: any = null
@@ -175,8 +174,9 @@ export default defineEventHandler(async (event): Promise<any> => {
           }, config.devtools?.maxLogs)
         }
 
-        // Return the flattened response for consistency with SDK expectations
-        return flattenOData(responseData)
+        // Return raw response. SDK/Explorer handles flattening.
+        // This ensures identical payload structure between stream and buffer mode.
+        return responseData
       }
       catch (err: any) {
         const status = err.response?.status || 500
@@ -201,7 +201,25 @@ export default defineEventHandler(async (event): Promise<any> => {
       }
     }
 
-    // Production: High performance streaming via httpxy (for raw proxying without interception)
+    // PRODUCTION/STREAMING: High performance streaming via httpxy
+    // In this mode, we cannot capture the response body for devtools.
+    if (useDevTools) {
+      addODataLog({
+        id: Math.random().toString(36).substring(7),
+        timestamp: Date.now(),
+        method: event.method,
+        url: event.path,
+        targetUrl,
+        service: serviceName,
+        entitySet: segments[1] || '',
+        status: 200,
+        duration: 0, // Duration is not easily measurable in streaming mode here
+        requestHeaders: finalHeaders,
+        responseBody: '[Streamed Response - Body not captured]',
+        proxyTrace: [...trace],
+      }, config.devtools?.maxLogs)
+    }
+
     return proxyRequest(event, targetUrl, {
       headers: finalHeaders,
       cookieDomainRewrite: {
@@ -210,7 +228,6 @@ export default defineEventHandler(async (event): Promise<any> => {
     })
   }
   catch (err: any) {
-    // Catch-all for errors occurring before or outside the ofetch block (e.g. policy violations in hooks)
     const status = err.statusCode || err.status || 500
     const message = err.statusMessage || err.message || 'Internal Proxy Error'
 
