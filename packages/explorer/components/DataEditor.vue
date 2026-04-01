@@ -159,7 +159,7 @@ function close() {
   <USlideover
     v-model:open="editor.show"
     :description="editor.mode === 'headers' ? 'Session Configuration' : selectedEntity"
-    :ui="{ body: 'bg-default/50' }"
+    :ui="{ body: 'bg-neutral-50 dark:bg-neutral-950' }"
   >
     <template #title>
       <div class="flex items-center gap-2">
