@@ -159,22 +159,22 @@ function close() {
   <USlideover
     v-model:open="editor.show"
     :description="editor.mode === 'headers' ? 'Session Configuration' : selectedEntity"
-    :ui="{ body: 'bg-neutral-50/50 dark:bg-neutral-950/40' }"
+    :ui="{ body: 'bg-default/50' }"
   >
     <template #title>
       <div class="flex items-center gap-2">
-        <UIcon :name="modeConfig.icon" class="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+        <UIcon :name="modeConfig.icon" class="w-5 h-5 text-muted" />
         <span>{{ modeConfig.title }}</span>
       </div>
     </template>
 
     <template #body>
       <div class="flex flex-col h-full py-2">
-        <div class="flex-1 relative flex flex-col min-h-0 bg-white dark:bg-neutral-900 rounded-xl ring-1 ring-neutral-200 dark:ring-neutral-800 shadow-sm focus-within:ring-2 focus-within:ring-neutral-300 dark:focus-within:ring-neutral-700 transition-all overflow-hidden">
-          <div class="px-4 py-2.5 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 shrink-0">
+        <div class="flex-1 relative flex flex-col min-h-0 bg-default rounded-xl ring-1 ring-default shadow-sm focus-within:ring-2 focus-within:ring-primary transition-all overflow-hidden">
+          <div class="px-4 py-2.5 flex items-center justify-between border-b border-default bg-default/50 shrink-0">
             <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-terminal" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
-              <span class="text-xs font-semibold text-neutral-600 dark:text-neutral-300 font-mono tracking-tight">payload.json</span>
+              <UIcon name="i-lucide-terminal" class="w-4 h-4 text-muted" />
+              <span class="text-xs font-semibold text-toned font-mono tracking-tight">payload.json</span>
             </div>
             <div class="flex items-center gap-2">
               <UBadge color="neutral" variant="soft" size="sm" class="font-mono">

@@ -26,7 +26,7 @@ const runtimeItems = computed(() => [
       description="Configuration details and runtime status of the SAP OData module."
     />
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-0 pb-8 lg:pb-12 bg-neutral-50/30 dark:bg-neutral-950/30">
+    <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-0 pb-8 lg:pb-12 bg-default/30">
       <div class="w-full space-y-12 pt-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <UPageCard
@@ -40,17 +40,17 @@ const runtimeItems = computed(() => [
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 pt-2">
           <section>
-            <h3 class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2.5 mb-4">
-              <UIcon name="i-lucide-sliders-horizontal" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <h3 class="text-xs font-semibold text-muted uppercase tracking-widest flex items-center gap-2.5 mb-4">
+              <UIcon name="i-lucide-sliders-horizontal" class="w-4 h-4 text-muted" />
               Configuration
             </h3>
-            <div class="border-y border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800">
+            <div class="border-y border-default divide-y divide-default">
               <div v-for="item in configItems" :key="item.id" class="py-3.5 flex justify-between items-center">
-                <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">{{ item.label }}</span>
+                <span class="text-sm font-medium text-toned">{{ item.label }}</span>
                 <UBadge v-if="item.type === 'badge'" :color="item.value ? 'success' : 'neutral'" variant="subtle" size="sm">
                   {{ item.value ? 'Enabled' : 'Disabled' }}
                 </UBadge>
-                <code v-else-if="item.type === 'code'" class="text-[11px] font-mono text-neutral-900 dark:text-neutral-300 bg-neutral-200/50 dark:bg-neutral-800/50 px-2 py-1 rounded">
+                <code v-else-if="item.type === 'code'" class="text-[11px] font-mono text-default bg-muted px-2 py-1 rounded">
                   {{ item.value }}
                 </code>
               </div>
@@ -58,15 +58,15 @@ const runtimeItems = computed(() => [
           </section>
 
           <section>
-            <h3 class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest flex items-center gap-2.5 mb-4">
-              <UIcon name="i-lucide-terminal" class="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+            <h3 class="text-xs font-semibold text-muted uppercase tracking-widest flex items-center gap-2.5 mb-4">
+              <UIcon name="i-lucide-terminal" class="w-4 h-4 text-muted" />
               Runtime
             </h3>
-            <div class="border-y border-neutral-200 dark:border-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-800">
+            <div class="border-y border-default divide-y divide-default">
               <div v-for="item in runtimeItems" :key="item.id" class="py-3.5 flex justify-between items-center">
-                <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">{{ item.label }}</span>
-                <code v-if="item.type === 'code'" class="text-[11px] font-mono text-neutral-900 dark:text-neutral-300 bg-neutral-200/50 dark:bg-neutral-800/50 px-2 py-1 rounded">{{ item.value }}</code>
-                <span v-else class="text-sm font-medium text-neutral-900 dark:text-neutral-200">{{ item.value }}</span>
+                <span class="text-sm font-medium text-toned">{{ item.label }}</span>
+                <code v-if="item.type === 'code'" class="text-[11px] font-mono text-default bg-muted px-2 py-1 rounded">{{ item.value }}</code>
+                <span v-else class="text-sm font-medium text-default">{{ item.value }}</span>
               </div>
             </div>
           </section>

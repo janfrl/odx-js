@@ -18,9 +18,9 @@ const showBuilder = ref(false)
 </script>
 
 <template>
-  <div class="flex flex-col shrink-0 bg-white dark:bg-zinc-950 rounded-t-[inherit] overflow-hidden">
+  <div class="flex flex-col shrink-0 bg-default rounded-t-[inherit] overflow-hidden">
     <!-- Query Area -->
-    <div class="p-4 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center gap-4 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md rounded-t-[inherit]">
+    <div class="p-4 border-b border-default/50 flex items-center gap-4 bg-default/80 backdrop-blur-md rounded-t-[inherit]">
       <USelect
         v-model="queryMethod"
         :items="methods"
@@ -64,9 +64,9 @@ const showBuilder = ref(false)
     <QueryBuilder v-if="showBuilder" />
 
     <!-- Actions Area -->
-    <div class="px-6 py-2 border-b border-neutral-200/50 dark:border-neutral-800/50 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/20">
+    <div class="px-6 py-2 border-b border-default/50 flex items-center justify-between bg-muted/50">
       <div class="flex items-center gap-4">
-        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
           {{ previewData?.length || 0 }} Results
         </span>
         <USeparator orientation="vertical" class="h-4" />
