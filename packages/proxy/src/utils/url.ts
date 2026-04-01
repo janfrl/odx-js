@@ -4,6 +4,7 @@ import { getRequestURL } from 'h3'
 const RE_QUERY_SPLIT = /\?/
 const RE_TRAILING_SLASH = /\/$/
 const RE_LEADING_SLASH = /^\//
+const RE_DOUBLE_SLASHES = /([^:]\/)\/+/g
 
 /**
  * Parsed information about a proxied OData request.
@@ -60,7 +61,7 @@ export function resolveTargetUrl(
 
   targetUrl += `/${requestInfo.odataPath}${requestInfo.query}`
   // Ensure no double slashes (except after protocol)
-  targetUrl = targetUrl.replace(/([^:]\/)\/+/g, '$1')
+  targetUrl = targetUrl.replace(RE_DOUBLE_SLASHES, '$1')
 
   if (targetUrl.startsWith('/')) {
     const url = getRequestURL(event)
@@ -69,4 +70,3 @@ export function resolveTargetUrl(
 
   return targetUrl
 }
-
