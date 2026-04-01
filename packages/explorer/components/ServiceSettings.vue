@@ -37,7 +37,7 @@ const headerCount = computed(() => {
   <USlideover
     v-model:open="isOpen"
     :description="service?.name"
-    :ui="{ body: 'bg-default/50' }"
+    :ui="{ body: 'bg-muted' }"
   >
     <template #title>
       <div class="flex items-center gap-2">

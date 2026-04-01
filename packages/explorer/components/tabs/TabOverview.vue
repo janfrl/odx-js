@@ -26,7 +26,7 @@ const runtimeItems = computed(() => [
       description="Configuration details and runtime status of the SAP OData module."
     />
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-0 pb-8 lg:pb-12 bg-default/30">
+    <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-0 pb-8 lg:pb-12 bg-transparent">
       <div class="w-full space-y-12 pt-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <UPageCard

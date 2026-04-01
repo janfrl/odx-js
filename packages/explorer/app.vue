@@ -22,9 +22,9 @@ onMounted(() => {
 
 <template>
   <UApp>
-    <div class="h-screen flex overflow-hidden font-sans bg-default">
+    <div class="h-screen flex overflow-hidden font-sans bg-neutral-50 dark:bg-neutral-950">
       <!-- Sidebar -->
-      <aside class="w-16 border-r border-default flex flex-col items-center p-3 gap-4 bg-default shrink-0">
+      <aside class="w-16 border-r border-default flex flex-col items-center p-3 gap-4 bg-default/50 shrink-0">
         <UTooltip
           v-for="item in items"
           :key="item.id"
