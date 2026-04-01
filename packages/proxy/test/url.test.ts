@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
 import { createEvent } from 'h3'
+import { describe, expect, it } from 'vitest'
 import { parseODataRequest, resolveTargetUrl } from '../src/utils/url'
 
-describe('OData URL Utilities', () => {
+describe('oData URL Utilities', () => {
   describe('parseODataRequest', () => {
     it('correctly parses a simple OData request', () => {
       const event = { path: '/api/odx/TestService/Products' } as any
@@ -41,7 +41,7 @@ describe('OData URL Utilities', () => {
         serviceName: 'TestService',
         odataPath: 'Products',
         query: '',
-        segments: ['TestService', 'Products']
+        segments: ['TestService', 'Products'],
       }
       const targetBase = 'https://sapes5.sapdevcenter.com/sap/opu/odata/sap/TEST_SERVICE'
 
@@ -56,7 +56,7 @@ describe('OData URL Utilities', () => {
         serviceName: 'v2',
         odataPath: 'Suppliers',
         query: '',
-        segments: ['v2', 'Suppliers']
+        segments: ['v2', 'Suppliers'],
       }
       const targetBase = '/sap/opu/odata/sap'
       const technicalName = 'V2Service'
@@ -69,20 +69,18 @@ describe('OData URL Utilities', () => {
       expect(result).toBe('http://localhost:3000/sap/opu/odata/sap/V2Service/Suppliers')
     })
 
-
     it('prevents double slashes in the resolved URL', () => {
       const event = createMockEvent()
       const requestInfo = {
         serviceName: 'V2Service',
         odataPath: 'Products',
         query: '',
-        segments: ['V2Service', 'Products']
+        segments: ['V2Service', 'Products'],
       }
       const targetBase = '/sap/opu/odata/sap/' // Trailing slash
 
       const result = resolveTargetUrl(event, targetBase, requestInfo, true, 'V2Service')
       expect(result).toBe('http://localhost:3000/sap/opu/odata/sap/V2Service/Products')
     })
-
   })
 })

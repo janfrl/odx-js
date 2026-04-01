@@ -100,4 +100,3 @@ export async function resolveProxyTarget(event: H3Event, config: ODataProxyConfi
     proxyMode,
   }
 }
-
