@@ -14,7 +14,8 @@ const filteredLogs = computed(() => {
   if (!logFilterService.value)
     return logs.value
   return logs.value.filter((l: any) => {
-    if (!l.service) return false
+    if (!l.service)
+      return false
     return l.service.toLowerCase() === logFilterService.value.toLowerCase()
   })
 })
@@ -76,11 +77,11 @@ const columns = [
         isPending
           ? h(UIcon, { name: 'i-lucide-loader-2', class: 'animate-spin w-5 h-5 text-primary opacity-50' })
           : h(UBadge, {
-            color: Number(row.original.status || 0) < 400 ? 'success' : 'error',
-            variant: 'soft',
-            size: 'md',
-            class: 'font-black min-w-12 justify-center',
-          }, () => row.original.status || '???'),
+              color: Number(row.original.status || 0) < 400 ? 'success' : 'error',
+              variant: 'soft',
+              size: 'md',
+              class: 'font-black min-w-12 justify-center',
+            }, () => row.original.status || '???'),
       ])
     },
   },
@@ -127,9 +128,9 @@ const columns = [
         isPending
           ? h('span', { class: 'animate-pulse font-bold' }, '...')
           : h('div', { class: 'flex items-center' }, [
-            h('span', { class: 'font-bold text-sm' }, row.original.duration),
-            h('span', { class: 'text-[10px] ml-1 text-neutral-400 dark:text-neutral-600 uppercase font-sans font-black' }, 'ms'),
-          ]),
+              h('span', { class: 'font-bold text-sm' }, row.original.duration),
+              h('span', { class: 'text-[10px] ml-1 text-neutral-400 dark:text-neutral-600 uppercase font-sans font-black' }, 'ms'),
+            ]),
       ])
     },
   },

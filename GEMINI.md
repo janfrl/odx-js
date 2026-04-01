@@ -1,21 +1,22 @@
-# Nuxt SAP OData Module
+# Nuxt SAP OData Module (ODX)
 
-This project is a Nuxt module designed to integrate SAP OData services into Nuxt applications. It provides automated type generation, a server-side proxy for OData requests, and a comprehensive DevTools UI for exploration and debugging.
+This project is a modern Nuxt module (ODX - OData Developer Experience) designed for seamless integration of SAP OData services into Nuxt applications. It provides automated type generation, a server-side proxy for OData requests (supporting BTP destinations), and a comprehensive DevTools UI for schema exploration and request debugging.
 
 ## Project Overview
 
-- **Core Technology:** Nuxt 4, TypeScript, h3, Nitro.
-- **Architecture:** Monorepo using `pnpm` workspaces.
+- **Core Technology:** Nuxt 4, TypeScript, h3, Nitro, `odata2ts`.
+- **Architecture:** Monorepo managed with `pnpm` workspaces.
 - **Packages:**
-    - `packages/core`: Shared OData types and low-level utilities (e.g., `$odata`, entity set interfaces).
-    - `packages/proxy`: Server handlers for proxying OData requests, fetching schemas from EDMX, and managing development logs.
-    - `packages/nuxt`: The main Nuxt module (`ODX (OData Developer Experience)`) that handles configuration, type generation via `odata2ts`, and DevTools registration.
-    - `packages/explorer`: Source code for the custom DevTools UI (built with Nuxt UI and Vue).
+    - `packages/core`: Shared OData types, utilities, and low-level OData client (`$odata`).
+    - `packages/proxy`: Server-side handlers for proxying OData requests. Includes support for BTP destinations via `@sap-cloud-sdk/connectivity`.
+    - `packages/nuxt`: The main Nuxt module that handles configuration, type generation during the `prepare:types` hook, and DevTools integration.
+    - `packages/explorer`: A dedicated Nuxt application that serves as the DevTools UI for exploring OData schemas and inspecting request logs.
+    - `packages/approuter`: (Optional) SAP AppRouter configuration for deployment in SAP BTP.
 - **Key Features:**
-    - **OData Proxy:** Nitro server handlers (`packages/proxy/src/api/odata.ts`) manage authentication and proxy requests to SAP backends.
-    - **Type Generation:** Automatically generates TypeScript models from EDMX files during the `prepare:types` hook using `odata2ts`.
-    - **Composables:** Provides `useOData` for type-safe data fetching in the client-side code.
-    - **DevTools Integration:** Custom explorer for inspecting service schemas, viewing request logs, and exploring entity data.
+    - **OData Proxy:** Nitro server handlers manage authentication (Basic, Bearer, BTP Destinations) and proxy requests to SAP backends.
+    - **Type Generation:** Automatically generates TypeScript models and interfaces from EDMX metadata files during development (`prepare:types` hook) or build time.
+    - **Type-Safe Composables:** Provides `useOData` for fully typed data fetching in the client-side code, leveraging the generated models.
+    - **DevTools Integration:** Custom explorer accessible within Nuxt DevTools for inspecting service schemas, viewing live request logs, and exploring entity data.
 
 ## Building and Running
 
@@ -28,13 +29,13 @@ This project is a Nuxt module designed to integrate SAP OData services into Nuxt
     ```bash
     pnpm run dev:prepare
     ```
-3.  **Start development mode:** (Runs the playground with the module)
+3.  **Start development mode:** (Runs the playground with the module and the explorer UI)
     ```bash
     pnpm run dev
     ```
 
 ### Testing and Linting
-- **Run tests:**
+- **Run all tests:**
     ```bash
     pnpm run test
     ```
@@ -52,7 +53,11 @@ This project is a Nuxt module designed to integrate SAP OData services into Nuxt
     ```
 
 ### Production Build
-- **Build the module:**
+- **Build the entire project (including MTA for BTP):**
+    ```bash
+    pnpm run build
+    ```
+- **Prepare the module for publishing:**
     ```bash
     pnpm run prepack
     ```
@@ -60,11 +65,14 @@ This project is a Nuxt module designed to integrate SAP OData services into Nuxt
 ## Development Conventions
 
 - **Monorepo Structure:** Internal packages use the `@bc8-odx` scope (e.g., `@bc8-odx/core`).
-- **OData Strategy:** Services can be `proxied` (default) or `direct`. Proxied requests go through the Nitro server handler.
-- **Type Safety:** The module uses a virtual type registry (`ODataServiceRegistry`) that is augmented during build time based on the configured services.
-- **Environment Variables:** Configuration can be overridden or extended using environment variables prefixed with `NUXT_ODATA_SERVICES_` (e.g., `NUXT_ODATA_SERVICES_V2SERVICE_URL`).
-- **Code Style:** Uses `@antfu/eslint-config` for consistent linting across the monorepo.
-- **Testing:** Uses Vitest and `@nuxt/test-utils` for unit and integration testing.
+- **OData Strategy:** Services can be configured as `proxied` (default, routes through Nitro) or `direct` (direct browser-to-backend calls).
+- **Environment Overrides:** Configuration for services can be dynamically overridden using environment variables prefixed with `NUXT_ODATA_SERVICES_<SERVICE_NAME>_` (e.g., `NUXT_ODATA_SERVICES_V2SERVICE_URL`).
+- **Code Style:** Strictly adheres to `@antfu/eslint-config`.
+- **Testing:** Uses Vitest and `@nuxt/test-utils` for both unit tests and e2e integration tests. Integration tests for the proxy and module often use the `playground` or `test/fixtures/basic`.
+- **Type Safety:** The module augments the `ODataServiceRegistry` interface in `@bc8-odx/core` with service-specific types during the `prepare:types` hook.
 
----
-Repo: https://github.com/janfrl/odx-js
+## Deployment (SAP BTP)
+
+- The project includes an `mta.yaml` for building and deploying to SAP BTP.
+- The `packages/approuter` provides the entry point for BTP managed approuter or standalone approuter scenarios.
+- Deployment can be triggered via `pnpm run deploy` if the Cloud Foundry CLI and MTA plugin are installed.

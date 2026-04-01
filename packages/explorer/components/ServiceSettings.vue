@@ -10,7 +10,7 @@ const emit = defineEmits(['update:open'])
 
 const isOpen = computed({
   get: () => props.open,
-  set: (value) => emit('update:open', value),
+  set: value => emit('update:open', value),
 })
 
 const { selectedService } = useSharedODataState()
@@ -144,14 +144,22 @@ const headerCount = computed(() => {
             <table class="w-full text-left text-[10px] border-collapse">
               <thead class="bg-neutral-50 dark:bg-neutral-800/50">
                 <tr>
-                  <th class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wider">Key</th>
-                  <th class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wider">Value</th>
+                  <th class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wider">
+                    Key
+                  </th>
+                  <th class="px-4 py-2 border-b border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 font-bold uppercase tracking-wider">
+                    Value
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-neutral-100 dark:divide-neutral-800">
                 <tr v-for="(value, key) in service.headers" :key="key" class="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors">
-                  <td class="px-4 py-2.5 font-mono font-bold text-neutral-700 dark:text-neutral-300 whitespace-nowrap">{{ key }}</td>
-                  <td class="px-4 py-2.5 font-mono text-neutral-500 dark:text-neutral-400 break-all">{{ value }}</td>
+                  <td class="px-4 py-2.5 font-mono font-bold text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                    {{ key }}
+                  </td>
+                  <td class="px-4 py-2.5 font-mono text-neutral-500 dark:text-neutral-400 break-all">
+                    {{ value }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -160,7 +168,9 @@ const headerCount = computed(() => {
       </div>
       <div v-else class="flex flex-col items-center justify-center h-full text-neutral-500 py-12">
         <UIcon name="i-lucide-alert-circle" class="w-12 h-12 mb-4 opacity-10" />
-        <p class="text-sm font-medium">No service selected</p>
+        <p class="text-sm font-medium">
+          No service selected
+        </p>
       </div>
     </template>
   </USlideover>
