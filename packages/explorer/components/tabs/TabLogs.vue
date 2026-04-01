@@ -176,7 +176,7 @@ async function runClear() {
 
     <div class="flex-1 flex flex-col min-h-0 relative px-6 pt-2 pb-0">
       <div
-        class="flex-1 flex flex-col min-h-0 border-t border-x border-default rounded-t-2xl bg-default shadow-sm overflow-hidden isolate"
+        class="flex-1 flex flex-col min-h-0 border-t border-x border-default rounded-t-2xl bg-default/50 shadow-sm overflow-hidden isolate"
         style="transform: translateZ(0);"
       >
         <div class="flex-1 overflow-auto custom-scrollbar relative">
@@ -186,7 +186,7 @@ async function runClear() {
             row-id="id"
             class="w-full"
             :ui="{
-              thead: 'bg-default/50 sticky top-0 z-30',
+              thead: 'bg-default/10 sticky top-0 z-30',
               th: 'text-[11px] font-bold uppercase tracking-widest text-muted border-b border-default py-4 px-6',
               td: 'p-0 font-mono text-toned',
               tbody: 'divide-y divide-default [&>tr:hover]:bg-primary-500/5 [&>tr[data-expanded=true]]:bg-muted [&>tr]:transition-colors [&>tr]:group',

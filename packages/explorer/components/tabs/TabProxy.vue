@@ -240,9 +240,9 @@ const identityFields = computed(() => {
                 <div
                   class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full transition-colors duration-500 z-10"
                   :class="[
-                    entry.status === 'success' ? 'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]'
-                    : entry.status === 'error' ? 'bg-error-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
-                      : 'bg-muted-400 dark:bg-muted-600',
+                    entry.status === 'success' ? 'bg-success-500'
+                    : entry.status === 'error' ? 'bg-error-500'
+                      : 'bg-neutral-400 dark:bg-neutral-600',
                   ]"
                 />
 

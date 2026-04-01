@@ -251,7 +251,11 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             size="sm"
             color="neutral"
             class="w-48"
-            :ui="{ list: 'bg-muted', indicator: 'bg-default shadow-sm ring-1 ring-default', trigger: 'text-muted font-semibold transition-colors data-[state=active]:text-highlighted' }"
+            :ui="{
+              list: 'bg-neutral-100 dark:bg-default',
+              indicator: 'bg-white dark:bg-accented shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600',
+              trigger: 'text-muted font-semibold transition-colors data-[state=active]:text-highlighted',
+            }"
           />
         </div>
       </div>

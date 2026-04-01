@@ -18,9 +18,9 @@ const showBuilder = ref(false)
 </script>
 
 <template>
-  <div class="flex flex-col shrink-0 bg-default rounded-t-[inherit] overflow-hidden">
+  <div class="flex flex-col shrink-0 bg-transparent rounded-t-[inherit] overflow-hidden">
     <!-- Query Area -->
-    <div class="p-4 border-b border-default/50 flex items-center gap-4 bg-default/80 backdrop-blur-md rounded-t-[inherit]">
+    <div class="p-4 border-b border-default/50 flex items-center gap-4 bg-transparent backdrop-blur-md rounded-t-[inherit]">
       <USelect
         v-model="queryMethod"
         :items="methods"
