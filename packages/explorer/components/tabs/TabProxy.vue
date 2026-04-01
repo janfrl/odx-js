@@ -238,11 +238,11 @@ const identityFields = computed(() => {
               >
                 <!-- Dot -->
                 <div
-                  class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full ring-4 ring-default transition-colors duration-500 z-10"
+                  class="absolute left-5 -translate-x-1/2 mt-1.5 w-2 h-2 rounded-full transition-colors duration-500 z-10"
                   :class="[
-                    entry.status === 'success' ? 'bg-success-500 ring-success-50 dark:ring-success-950/30'
-                    : entry.status === 'error' ? 'bg-error-500 ring-error-50 dark:ring-error-950/30'
-                      : 'bg-muted-300 dark:bg-muted-700 ring-default',
+                    entry.status === 'success' ? 'bg-success-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]'
+                    : entry.status === 'error' ? 'bg-error-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                      : 'bg-muted-400 dark:bg-muted-600',
                   ]"
                 />
 

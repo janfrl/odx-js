@@ -62,7 +62,7 @@ function getRowData(row: any): Record<string, any> {
         :data="previewData?.length ? previewData : []"
         class="min-w-max"
         :ui="{
-          thead: 'bg-muted/80 sticky top-0 z-30 backdrop-blur-sm',
+          thead: 'bg-default/50 sticky top-0 z-30 backdrop-blur-sm',
           th: 'text-[11px] font-bold tracking-widest text-muted border-b border-default py-4 px-6',
         }"
       >

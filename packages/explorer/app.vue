@@ -53,7 +53,7 @@ onMounted(() => {
       <!-- Main Container -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <!-- Header -->
-        <header class="h-14 border-b border-default flex items-center justify-between px-6 shrink-0 bg-default/80 backdrop-blur-md">
+        <header class="h-14 border-b border-default flex items-center justify-between px-6 shrink-0 bg-default/50 backdrop-blur-md">
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-cable" class="w-5 h-5 text-primary" />
             <h1 class="text-sm font-bold uppercase tracking-widest text-default">

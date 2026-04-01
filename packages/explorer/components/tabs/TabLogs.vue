@@ -186,7 +186,7 @@ async function runClear() {
             row-id="id"
             class="w-full"
             :ui="{
-              thead: 'bg-muted sticky top-0 z-30',
+              thead: 'bg-default/50 sticky top-0 z-30',
               th: 'text-[11px] font-bold uppercase tracking-widest text-muted border-b border-default py-4 px-6',
               td: 'p-0 font-mono text-toned',
               tbody: 'divide-y divide-default [&>tr:hover]:bg-primary-500/5 [&>tr[data-expanded=true]]:bg-muted [&>tr]:transition-colors [&>tr]:group',
