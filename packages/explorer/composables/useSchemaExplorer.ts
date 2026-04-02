@@ -1,7 +1,9 @@
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
+import { markRaw, nextTick, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
+import { useSharedODataState } from './useODataState'
 
 const elk = new ELK()
 
@@ -307,7 +309,7 @@ export function useSchemaExplorer(): any {
     })
 
     // 2. Entities second
-    const sortedEntities = schemaData.value.entities.toSorted((a, b) => a.type.localeCompare(b.type))
+    const sortedEntities = schemaData.value.entities.toSorted((a: any, b: any) => a.type.localeCompare(b.type))
 
     sortedEntities.forEach((entity: any) => {
       mermaid += `  ${entity.type} {\n`

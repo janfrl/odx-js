@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('ofetch', async () => {
   const actual = await vi.importActual('ofetch') as any
-  const mockOfetch = vi.fn()
+  const mockOfetch = vi.fn() as any
   mockOfetch.create = actual.ofetch.create
   mockOfetch.raw = vi.fn()
   return { ofetch: mockOfetch }

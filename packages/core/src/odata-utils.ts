@@ -71,7 +71,7 @@ export function sanitizeBaseURL(url: string): string {
 /**
  * Merges multiple header initializers into a plain record.
  */
-export function mergeHeaders(...headers: (HeadersInit | undefined)[]): Record<string, string> {
+export function mergeHeaders(...headers: (HeadersInit | Record<string, any> | undefined)[]): Record<string, string> {
   const merged: Record<string, string> = {}
   for (const h of headers) {
     if (!h)

@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "paths": {
-      "#imports": [".nuxt/imports.d.ts"],
+      "#imports": ["./.nuxt/imports.d.ts"],
       "@bc8-odx/core": ["../../../../core/src/index.ts"],
       "@bc8-odx/core/server": ["../../../../core/src/server.ts"],
       "@bc8-odx/proxy": ["../../../../proxy/src/index.ts"]

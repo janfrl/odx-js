@@ -1,6 +1,8 @@
-import type { EditorState } from './useODataState'
+import type { EntityMapping } from '@bc8-odx/core'
+import type { EditorState, VisualQueryState } from './useODataState'
 import { flattenOData } from '@bc8-odx/core'
 import { computed, ref, watch } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
 import { useSharedODataState } from './useODataState'
 
 const editor = ref<EditorState>({
@@ -16,21 +18,21 @@ const showLoadingIndicator = ref(false)
 const RE_TRAILING_SLASH = /\/$/
 
 export function useEntityExplorer(): {
-  selectedService: globalThis.Ref<any>
-  selectedEntity: globalThis.Ref<string | null>
-  previewLoading: globalThis.Ref<boolean>
-  showLoadingIndicator: globalThis.Ref<boolean>
-  previewError: globalThis.Ref<string | null>
-  previewData: globalThis.Ref<Record<string, any>[]>
-  queryInput: globalThis.Ref<string>
-  queryMethod: globalThis.Ref<string>
-  queryState: globalThis.Ref<any>
-  entitySchema: globalThis.Ref<any>
-  entitySchemaLoading: globalThis.Ref<boolean>
-  editor: globalThis.Ref<EditorState>
-  currentEntitySchema: globalThis.ComputedRef<any>
-  previewColumns: globalThis.ComputedRef<string[]>
-  navigationItems: globalThis.ComputedRef<any[]>
+  selectedService: Ref<any>
+  selectedEntity: Ref<string | null>
+  previewLoading: Ref<boolean>
+  showLoadingIndicator: Ref<boolean>
+  previewError: Ref<string | null>
+  previewData: Ref<Record<string, any>[] | null>
+  queryInput: Ref<string>
+  queryMethod: Ref<string>
+  queryState: Ref<VisualQueryState>
+  entitySchema: Ref<any>
+  entitySchemaLoading: Ref<boolean>
+  editor: Ref<EditorState>
+  currentEntitySchema: ComputedRef<any>
+  previewColumns: ComputedRef<string[]>
+  navigationItems: ComputedRef<any[]>
   refreshEntityData: () => Promise<void>
   resetQuery: () => void
   isNavigationProperty: (key: string) => boolean
@@ -266,6 +268,7 @@ export function useEntityExplorer(): {
           error: msg,
           query: queryInput.value,
           method: queryMethod.value,
+          queryState: JSON.parse(JSON.stringify(queryState.value)),
         }
       }
     }

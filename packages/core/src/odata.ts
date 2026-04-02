@@ -1,7 +1,7 @@
 import type { FetchOptions } from 'ofetch'
 import { flattenOData } from './odata-utils'
 
-export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils.ts'
+export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
 
 /**
  * Low-level OData utility.
