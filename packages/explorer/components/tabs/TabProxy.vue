@@ -83,7 +83,7 @@ const identityFields = computed(() => {
     <div class="flex-1 overflow-hidden p-6 space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 h-full">
         <!-- Sidebar Info & Settings -->
-        <div class="lg:col-span-1 flex flex-col gap-8 overflow-auto custom-scrollbar px-1 pr-2">
+        <div class="lg:col-span-1 flex flex-col gap-8 overflow-auto custom-scrollbar p-1">
           <!-- Integrated Header -->
           <header class="flex flex-col gap-1.5 px-1 shrink-0">
             <h1 class="text-xl font-bold text-highlighted tracking-tight">
