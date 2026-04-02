@@ -1,8 +1,7 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
@@ -11,12 +10,5 @@
       "~/*": ["./*"]
     },
     "strict": true
-  },
-  "include": [
-    "**/*",
-    "app.vue",
-    "components",
-    "composables",
-    "test"
-  ]
+  }
 }
