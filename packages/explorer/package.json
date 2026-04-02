@@ -16,6 +16,9 @@
     "shiki": "^4.0.2"
   },
   "devDependencies": {
-    "@nuxt/ui": "^4.6.0"
+    "@nuxt/test-utils": "^4.0.0",
+    "@nuxt/ui": "^4.6.0",
+    "@vue/test-utils": "^2.4.6",
+    "vitest": "^4.1.1"
   }
 }
