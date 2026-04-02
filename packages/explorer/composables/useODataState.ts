@@ -1,4 +1,5 @@
 import type { EntityMapping } from '@bc8-odx/core'
+import type { ComputedRef, Ref } from 'vue'
 import { computed, ref, watch } from 'vue'
 
 export interface ODataServiceState {
@@ -19,6 +20,7 @@ export interface ODataServiceState {
   }
   headers?: Record<string, string>
   health?: 'online' | 'offline' | 'checking'
+  icon?: string
 }
 
 export interface ODataConfig {
@@ -107,14 +109,7 @@ const previewError = ref<string | null>(null)
 const previewData = ref<Record<string, any>[] | null>(null)
 const queryInput = ref('?')
 const queryMethod = ref('GET')
-const queryState = ref<VisualQueryState>({
-  filters: [],
-  select: [],
-  expand: [],
-  sortBy: [],
-  top: null,
-  skip: null,
-})
+const queryState = ref<VisualQueryState>(getDefaultQueryState())
 const entitySchema = ref<any>(null)
 const entitySchemaLoading = ref(false)
 
@@ -215,7 +210,45 @@ watch(selectedEntity, (newEntity) => {
   }
 })
 
-export function useSharedODataState(): any {
+export interface SharedODataState {
+  activeTab: Ref<string>
+  logs: Ref<ODataLog[]>
+  config: Ref<ODataConfig>
+  services: ComputedRef<ODataServiceState[]>
+  selectedService: Ref<ODataServiceState | null>
+  selectedEntity: Ref<string | null>
+  generatingStatus: Ref<Record<string, boolean>>
+  sessionHeaders: Ref<Record<string, string>>
+  logFilterService: Ref<string | null>
+  useCORSBridge: Ref<boolean>
+  selectedTraceLogId: Ref<string | null>
+  previewLoading: Ref<boolean>
+  previewError: Ref<string | null>
+  previewData: Ref<Record<string, any>[] | null>
+  queryInput: Ref<string>
+  queryMethod: Ref<string>
+  queryState: Ref<VisualQueryState>
+  entitySchema: Ref<any>
+  entitySchemaLoading: Ref<boolean>
+  entityDataCache: Ref<Record<string, {
+    data: any[]
+    error: string | null
+    query: string
+    method: string
+    queryState: VisualQueryState
+  }>>
+  globalViewMode: Ref<'explorer' | 'schema'>
+  initializedServices: Ref<Set<string>>
+  schemaFocusedServices: Ref<Set<string>>
+  lastSelectedServiceForGraph: Ref<string | null>
+  fetchConfig: () => Promise<void>
+  refreshLogs: () => Promise<void>
+  generateService: (name: string) => Promise<void>
+  clearLogs: () => Promise<void>
+  clearEntityMockData: (service: string, entitySet: string) => Promise<void>
+}
+
+export function useSharedODataState(): SharedODataState {
   async function fetchConfig(): Promise<void> {
     try {
       const res = await fetch('/__odx__/config')
@@ -243,7 +276,8 @@ export function useSharedODataState(): any {
       })
 
       if (selectedService.value) {
-        const updated = data.services.find(s => s.name === selectedService.value?.name)
+        const currentService = selectedService.value
+        const updated = data.services.find(s => s.name === currentService.name)
         if (updated) {
           selectedService.value = updated
         }

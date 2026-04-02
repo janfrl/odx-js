@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { h, resolveComponent } from 'vue'
-import { useSharedODataState } from '../../composables/useODataState'
-
 const { logs, clearLogs, services, logFilterService, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
 
@@ -13,10 +10,11 @@ function viewProxyTrace(id: string) {
 const filteredLogs = computed(() => {
   if (!logFilterService.value)
     return logs.value
+  const filter = logFilterService.value.toLowerCase()
   return logs.value.filter((l: any) => {
     if (!l.service)
       return false
-    return l.service.toLowerCase() === logFilterService.value.toLowerCase()
+    return l.service.toLowerCase() === filter
   })
 })
 
@@ -55,9 +53,9 @@ const columns = [
         onClick: () => row.toggleExpanded(),
       }, [
         h(UButton, {
-          color: 'neutral' as const,
-          variant: 'ghost' as const,
-          size: 'sm' as const,
+          color: 'neutral',
+          variant: 'ghost',
+          size: 'sm',
           icon: row.getIsExpanded() ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right',
           class: 'pointer-events-none text-neutral-400',
         }),

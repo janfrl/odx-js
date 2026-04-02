@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import type { ODataLog, ProxyTraceEntry } from '../../composables/useODataState'
+import { computed, ref } from 'vue'
 import { useSharedODataState } from '../../composables/useODataState'
 
 const { logs, useCORSBridge, selectedTraceLogId } = useSharedODataState()
@@ -9,13 +10,13 @@ const { data: me } = await useFetch<any>('/__odx__/me')
 
 // Get the trace of the absolute latest request that went through the proxy
 const latestLiveRequest = computed(() => {
-  return logs.value.find(l => l.proxyTrace && l.proxyTrace.length > 0)
+  return logs.value.find((l: ODataLog) => l.proxyTrace && l.proxyTrace.length > 0)
 })
 
 // Current request being viewed (either selected or latest live)
 const activeRequest = computed(() => {
   if (selectedTraceLogId.value) {
-    return logs.value.find(l => l.id === selectedTraceLogId.value) || latestLiveRequest.value
+    return logs.value.find((l: ODataLog) => l.id === selectedTraceLogId.value) || latestLiveRequest.value
   }
   return latestLiveRequest.value
 })
@@ -26,9 +27,9 @@ const isViewingHistorical = computed(() => {
 
 const latestTrace = computed(() => {
   const trace = activeRequest.value?.proxyTrace || []
-  return trace.map((entry, idx) => {
+  return trace.map((entry: ProxyTraceEntry, idx: number) => {
     const prev = trace[idx - 1]
-    const delta = prev ? entry.duration - prev.duration : entry.duration
+    const delta = prev ? Number(entry.duration) - Number(prev.duration) : Number(entry.duration)
     return { ...entry, delta }
   })
 })
@@ -42,7 +43,7 @@ function toggleEntry(idx: number) {
     expandedEntries.value.add(idx)
 }
 
-const labelColors: Record<string, any> = {
+const labelColors: Record<string, string> = {
   Request: 'neutral',
   Security: 'amber',
   Auth: 'orange',
@@ -62,7 +63,7 @@ function getLabelColor(label: string, status?: string) {
   return labelColors[label] || 'neutral'
 }
 
-function formatTime(ts: number) {
+function formatTime(ts: number | string) {
   const d = new Date(ts)
   return `${d.toLocaleTimeString([], { hour12: false })}.${String(d.getMilliseconds()).padStart(3, '0')}`
 }
@@ -229,7 +230,7 @@ const identityFields = computed(() => {
               </p>
             </div>
 
-            <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
+            <div v-else class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-neutral-200 dark:before:via-neutral-800 before:to-transparent">
               <div
                 v-for="(entry, idx) in latestTrace"
                 :key="idx"
