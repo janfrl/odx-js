@@ -15,7 +15,7 @@ const configItems = computed(() => [
 
 const runtimeItems = computed(() => [
   { id: 'node', label: 'Node.js', type: 'code', value: config.value.versions?.node || 'unknown' },
-  { id: 'module', label: 'Module', type: 'code', value: `v${config.value.versions?.module || '1.0.0'}` },
+  { id: 'module', label: 'Module', type: 'code', value: `v${config.value.versions?.module}` },
 ])
 </script>
 

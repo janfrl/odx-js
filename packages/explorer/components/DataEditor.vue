@@ -158,7 +158,7 @@ function close() {
 <template>
   <USlideover
     v-model:open="editor.show"
-    :description="editor.mode === 'headers' ? 'Session Configuration' : selectedEntity"
+    :description="(editor.mode === 'headers' ? 'Session Configuration' : selectedEntity) ?? undefined"
     :ui="{ body: 'bg-neutral-50 dark:bg-neutral-950' }"
   >
     <template #title>
