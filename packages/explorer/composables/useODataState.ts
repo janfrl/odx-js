@@ -1,22 +1,14 @@
 import type { EntityMapping } from '@bc8-odx/core'
-import type { ComputedRef, Ref } from 'vue'
-import { computed, ref, watch } from 'vue'
 
 export interface ODataServiceState {
   name: string
-  url?: string
-  route?: string
-  entities?: EntityMapping[]
-  isGenerated?: boolean
-  version?: 'v2' | 'v4' | null
-  strategy?: 'proxied' | 'direct'
-  proxyMode?: 'stream' | 'buffer'
-  destination?: string
-  auth?: {
-    username?: string
-    password?: string
-    bearerToken?: string
-    mockUserCompanies?: Array<{ company: string, source: string }>
+  url: string
+  route: string
+  strategy: 'proxied' | 'direct'
+  entities: EntityMapping[]
+  config: {
+    headers?: Record<string, string>
+    auth?: any
   }
   headers?: Record<string, string>
   health?: 'online' | 'offline' | 'checking'
@@ -25,52 +17,38 @@ export interface ODataServiceState {
 
 export interface ODataConfig {
   basePath: string
-  mode: string
-  services: ODataServiceState[]
-  forwardAuthHeader: boolean
-  versions: { node: string, module: string }
+  services: any[]
+  versions?: {
+    node: string
+    module: string
+  }
 }
 
 export interface ProxyTraceEntry {
-  timestamp: number
-  duration: number
   label: string
-  message: string
+  duration: number | string
+  status?: number
+  timestamp?: number
   details?: any
-  status?: 'success' | 'error' | 'info'
 }
 
 export interface ODataLog {
   id: string
-  timestamp: number
+  timestamp: string
   method: string
-  url: string
-  targetUrl?: string
   service: string
-  entitySet?: string
-  status?: number
-  duration?: number
-  requestBody?: any
-  requestHeaders?: Record<string, string>
-  responseBody?: any
+  path: string
+  status: number
+  duration: number
   proxyTrace?: ProxyTraceEntry[]
 }
 
-export interface FilterRule {
-  type: 'rule'
-  field: string
-  operator: string
-  value: any
-}
-
-export interface FilterGroup {
-  type: 'group'
-  logic: 'and' | 'or'
-  items: (FilterRule | FilterGroup)[]
-}
-
 export interface VisualQueryState {
-  filters: FilterGroup
+  filters: {
+    type: 'group'
+    logic: 'and' | 'or'
+    items: any[]
+  }
   select: string[]
   expand: string[]
   sortBy: { field: string, direction: 'asc' | 'desc' }[]
@@ -84,48 +62,8 @@ export interface EditorState {
   json: string
   loading: boolean
   error: string | null
-  original: Record<string, unknown> | null
+  original: any
 }
-
-const config = ref<ODataConfig>({
-  basePath: '/api/odx',
-  mode: 'sdk',
-  services: [],
-  forwardAuthHeader: true,
-  versions: { node: '', module: '1.0.0' },
-})
-const activeTab = ref('services')
-const logs = ref<ODataLog[]>([])
-const selectedService = ref<ODataServiceState | null>(null)
-const selectedEntity = ref<string | null>(null)
-const generatingStatus = ref<Record<string, boolean>>({})
-const sessionHeaders = ref<Record<string, string>>({})
-const logFilterService = ref<string | null>(null)
-const useCORSBridge = ref(true)
-const selectedTraceLogId = ref<string | null>(null)
-
-const previewLoading = ref(false)
-const previewError = ref<string | null>(null)
-const previewData = ref<Record<string, any>[] | null>(null)
-const queryInput = ref('?')
-const queryMethod = ref('GET')
-const queryState = ref<VisualQueryState>(getDefaultQueryState())
-const entitySchema = ref<any>(null)
-const entitySchemaLoading = ref(false)
-
-// Per-entity cache for data and query state
-const entityDataCache = ref<Record<string, {
-  data: any[]
-  error: string | null
-  query: string
-  method: string
-  queryState: VisualQueryState
-}>>({})
-
-const initializedServices = ref<Set<string>>(new Set())
-const schemaFocusedServices = ref<Set<string>>(new Set())
-const lastSelectedServiceForGraph = ref<string | null>(null)
-const globalViewMode = ref<'explorer' | 'schema'>('explorer')
 
 function getDefaultQueryState(): VisualQueryState {
   return {
@@ -142,73 +80,42 @@ function getDefaultQueryState(): VisualQueryState {
   }
 }
 
-// GLOBAL SYNC LOGIC (Persists across unmounts)
+// Global Singleton state
+const activeTab = ref('overview')
+const logs = ref<ODataLog[]>([])
+const config = ref<ODataConfig>({ basePath: '/__odx__', services: [] })
+const selectedService = ref<ODataServiceState | null>(null)
+const selectedEntity = ref<string | null>(null)
+const generatingStatus = ref<Record<string, boolean>>({})
+const sessionHeaders = ref<Record<string, string>>({})
+const logFilterService = ref<string | null>(null)
+const useCORSBridge = ref(true)
+const selectedTraceLogId = ref<string | null>(null)
+const globalViewMode = ref<'explorer' | 'schema'>('explorer')
 
-// 1. Service Change: Reset everything and fetch new schema
-watch(selectedService, async (newSvc) => {
-  selectedEntity.value = null
-  previewData.value = null
-  previewError.value = null
-  queryInput.value = '?'
-  queryMethod.value = 'GET'
-  queryState.value = getDefaultQueryState()
-  entitySchema.value = null
+// Entity Preview state
+const previewLoading = ref(false)
+const previewError = ref<string | null>(null)
+const previewData = ref<Record<string, any>[] | null>(null)
+const queryInput = ref('?')
+const queryMethod = ref('GET')
+const queryState = ref<VisualQueryState>(getDefaultQueryState())
+const entitySchema = ref<any>(null)
+const entitySchemaLoading = ref(false)
 
-  if (newSvc) {
-    const svcInConfig = config.value.services.find(s => s.name === newSvc.name)
-    entitySchemaLoading.value = true
-    try {
-      const res = await fetch(`/__odx__/schema?service=${newSvc.name}`)
-      if (res.ok) {
-        entitySchema.value = await res.json()
-        if (svcInConfig)
-          svcInConfig.health = 'online'
-      }
-      else {
-        if (svcInConfig)
-          svcInConfig.health = 'offline'
-      }
-    }
-    catch (e) {
-      console.error('[SharedState] Failed to fetch schema:', e)
-      if (svcInConfig)
-        svcInConfig.health = 'offline'
-    }
-    finally {
-      entitySchemaLoading.value = false
-    }
-  }
-})
+// Cache for entity data to avoid reloading when switching entities
+const entityDataCache = ref<Record<string, {
+  data: any[]
+  error: string | null
+  query: string
+  method: string
+  queryState: VisualQueryState
+}>>({})
 
-// 2. Entity Change: Restore from cache or reset
-watch(selectedEntity, (newEntity) => {
-  if (newEntity && selectedService.value) {
-    const cacheKey = `${selectedService.value.name}:${newEntity}`
-    const cache = entityDataCache.value[cacheKey]
-
-    if (cache) {
-      previewData.value = [...cache.data]
-      previewError.value = cache.error
-      queryInput.value = cache.query
-      queryMethod.value = cache.method || 'GET'
-      queryState.value = cache.queryState ? JSON.parse(JSON.stringify(cache.queryState)) : getDefaultQueryState()
-    }
-    else {
-      previewData.value = null
-      previewError.value = null
-      queryInput.value = '?'
-      queryMethod.value = 'GET'
-      queryState.value = getDefaultQueryState()
-    }
-  }
-  else {
-    previewData.value = null
-    previewError.value = null
-    queryInput.value = '?'
-    queryMethod.value = 'GET'
-    queryState.value = getDefaultQueryState()
-  }
-})
+// Schema Explorer state
+const initializedServices = ref(new Set<string>())
+const schemaFocusedServices = ref(new Set<string>())
+const lastSelectedServiceForGraph = ref<string | null>(null)
 
 export interface SharedODataState {
   activeTab: Ref<string>
@@ -252,38 +159,12 @@ export function useSharedODataState(): SharedODataState {
   async function fetchConfig(): Promise<void> {
     try {
       const res = await fetch('/__odx__/config')
-      const data = (await res.json()) as ODataConfig
-
-      // Initialize with 'online' or keep previous health if available
-      data.services = data.services.map((s) => {
-        const existing = config.value.services.find(ex => ex.name === s.name)
-        return { ...s, health: existing?.health || 'online' }
-      })
-
-      config.value = data
-
-      // Kick off background health checks via schema fetch
-      data.services.forEach((svc) => {
-        fetch(`/__odx__/schema?service=${svc.name}`).then((r) => {
-          const s = config.value.services.find(x => x.name === svc.name)
-          if (s)
-            s.health = r.ok ? 'online' : 'offline'
-        }).catch(() => {
-          const s = config.value.services.find(x => x.name === svc.name)
-          if (s)
-            s.health = 'offline'
-        })
-      })
-
-      if (selectedService.value) {
-        const currentService = selectedService.value
-        const updated = data.services.find(s => s.name === currentService.name)
-        if (updated) {
-          selectedService.value = updated
-        }
+      if (res.ok) {
+        config.value = await res.json()
       }
     }
-    catch {
+    catch (e) {
+      console.error('[ODataState] Failed to fetch config', e)
     }
   }
 
@@ -291,59 +172,42 @@ export function useSharedODataState(): SharedODataState {
     try {
       const res = await fetch('/__odx__/logs')
       if (res.ok) {
-        const data = (await res.json()) as ODataLog[]
-        // Update if length changed OR if the latest log ID is different
-        const hasChanged = data.length !== logs.value.length
-          || (data.length > 0 && logs.value.length > 0 && data[0].id !== logs.value[0].id)
-
-        if (hasChanged) {
-          logs.value = data
-        }
+        logs.value = await res.json()
       }
     }
-    catch {
+    catch (e) {
+      console.error('[ODataState] Failed to refresh logs', e)
     }
   }
 
-  async function generateService(name: string): Promise<void> {
-    generatingStatus.value[name] = true
-    const start = Date.now()
-    try {
-      const res = await fetch(`/__odx__/generate?service=${name}`)
-
-      let data: any
-      const text = await res.text()
-      try {
-        data = JSON.parse(text)
+  const services = computed(() => {
+    const data = config.value.services || []
+    return data.map((s: any) => {
+      return {
+        ...s,
+        health: s.health || 'checking',
       }
-      catch {
-        throw new Error(`Server returned invalid response: ${text.slice(0, 100)}...`)
-      }
+    })
+  })
 
-      if (!res.ok) {
-        throw new Error(data.statusMessage || data.message || `Generation failed with status ${res.status}`)
-      }
-
-      const elapsed = Date.now() - start
-      if (elapsed < 800) {
-        await new Promise(resolve => setTimeout(resolve, 800 - elapsed))
-      }
-
-      if (data.success) {
-        initializedServices.value.delete(name)
-        schemaFocusedServices.value.delete(name)
-        // Clear entity cache for this service
-        for (const key in entityDataCache.value) {
-          if (key.startsWith(`${name}:`)) {
-            delete entityDataCache.value[key]
-          }
-        }
-        await fetchConfig()
+  watch(config, (data) => {
+    if (selectedService.value) {
+      const currentService = selectedService.value
+      const updated = data.services.find((s: any) => s.name === currentService.name)
+      if (updated) {
+        selectedService.value = updated
       }
     }
-    catch (err: any) {
-      console.error('[@bc8-odx/explorer] Generate failed:', err)
-      throw err
+  }, { deep: true })
+
+  async function generateService(name: string): Promise<void> {
+    generatingStatus.value[name] = true
+    try {
+      await fetch(`/__odx__/generate?service=${name}`)
+      await fetchConfig()
+    }
+    catch (e) {
+      console.error(`[ODataState] Failed to generate types for ${name}`, e)
     }
     finally {
       generatingStatus.value[name] = false
@@ -355,7 +219,8 @@ export function useSharedODataState(): SharedODataState {
       await fetch('/__odx__/logs', { method: 'DELETE' })
       logs.value = []
     }
-    catch {
+    catch (e) {
+      console.error('[ODataState] Failed to clear logs', e)
     }
   }
 
@@ -363,11 +228,11 @@ export function useSharedODataState(): SharedODataState {
     try {
       await fetch(`/__odx__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
     }
-    catch {
+    catch (e) {
+      console.error(`[ODataState] Failed to clear mock data for ${entitySet}`, e)
+      throw e
     }
   }
-
-  const services = computed(() => config.value.services || [])
 
   return {
     activeTab,
@@ -401,3 +266,25 @@ export function useSharedODataState(): SharedODataState {
     clearEntityMockData,
   }
 }
+
+// Watch for selectedEntity changes to update the entitySchema
+watch(selectedEntity, async (newEntity) => {
+  if (!newEntity || !selectedService.value) {
+    entitySchema.value = null
+    return
+  }
+
+  entitySchemaLoading.value = true
+  try {
+    const res = await fetch(`/__odx__/schema?service=${selectedService.value.name}`)
+    if (res.ok) {
+      entitySchema.value = await res.json()
+    }
+  }
+  catch (e) {
+    console.error(`[ODataState] Failed to fetch schema for ${newEntity}`, e)
+  }
+  finally {
+    entitySchemaLoading.value = false
+  }
+})

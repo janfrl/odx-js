@@ -1,9 +1,6 @@
 import type { EntityMapping } from '@bc8-odx/core'
-import type { EditorState, VisualQueryState } from './useODataState'
+import type { EditorState } from './useODataState'
 import { flattenOData } from '@bc8-odx/core'
-import { computed, ref, watch } from 'vue'
-import type { ComputedRef, Ref } from 'vue'
-import { useSharedODataState } from './useODataState'
 
 const editor = ref<EditorState>({
   show: false,
@@ -17,7 +14,7 @@ const editor = ref<EditorState>({
 const showLoadingIndicator = ref(false)
 const RE_TRAILING_SLASH = /\/$/
 
-export function useEntityExplorer(): {
+export interface EntityExplorer {
   selectedService: Ref<any>
   selectedEntity: Ref<string | null>
   previewLoading: Ref<boolean>
@@ -40,7 +37,9 @@ export function useEntityExplorer(): {
   deleteItem: (id: any) => Promise<void>
   clearData: () => Promise<void>
   downloadJson: () => void
-} {
+}
+
+export function useEntityExplorer(): EntityExplorer {
   const {
     selectedService,
     selectedEntity,
@@ -277,7 +276,7 @@ export function useEntityExplorer(): {
     }
   }
 
-  const currentEntitySchema = computed((): any => {
+  const currentEntitySchema = computed(() => {
     const entityName = selectedEntity.value
     if (!entitySchema.value || !entityName) {
       return null
@@ -308,7 +307,7 @@ export function useEntityExplorer(): {
     ) || null
   })
 
-  const previewColumns = computed((): string[] => {
+  const previewColumns = computed(() => {
     const edmxEntity = currentEntitySchema.value
 
     if (!edmxEntity) {
@@ -450,7 +449,7 @@ export function useEntityExplorer(): {
     URL.revokeObjectURL(url)
   }
 
-  const navigationItems = computed((): any[] => {
+  const navigationItems = computed(() => {
     if (!selectedService.value?.entities)
       return []
 
