@@ -151,8 +151,10 @@ export function useEntityExplorer(): EntityExplorer {
     queryInput.value = '?'
   }
 
-  // Loading indicator local logic
-  watch(previewLoading, (isLoading: boolean) => {
+  // Loading indicator local logic: debounce showing the overlay to prevent flickering on fast requests
+  watch([previewLoading, entitySchemaLoading], ([pLoading, eLoading]) => {
+    const isLoading = pLoading || eLoading
+
     if (loadingTimeout) {
       clearTimeout(loadingTimeout)
     }
