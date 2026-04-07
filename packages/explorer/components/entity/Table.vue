@@ -57,7 +57,7 @@ function getRowData(row: any): Record<string, any> {
         so the HEADERS are visible. We just pass an empty data array.
       -->
       <UTable
-        v-if="tableColumns.length > 1 && !previewLoading"
+        v-if="tableColumns.length > 1"
         :columns="tableColumns"
         :data="previewData?.length ? previewData : []"
         class="min-w-max"
@@ -108,7 +108,7 @@ function getRowData(row: any): Record<string, any> {
         (the viewport) rather than the table's scrollable width.
       -->
       <div
-        v-if="(!previewData?.length || previewError) && tableColumns.length > 1 && !previewLoading"
+        v-if="(!previewData?.length || previewError) && tableColumns.length > 1"
         class="absolute inset-0 top-14 flex items-center justify-center pointer-events-none"
       >
         <div class="flex flex-col items-center justify-center p-12 text-center pointer-events-auto">
@@ -153,7 +153,7 @@ function getRowData(row: any): Record<string, any> {
 
       <!-- Full-table Empty State (Only if Schema/Columns missing) -->
       <div
-        v-if="tableColumns.length <= 1 && !previewLoading && !entitySchemaLoading"
+        v-if="tableColumns.length <= 1 && !entitySchemaLoading"
         class="p-32 flex flex-col items-center justify-center opacity-40 italic text-muted"
       >
         <UIcon name="i-lucide-search-x" class="w-12 h-12 mb-4 opacity-20" />
