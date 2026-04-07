@@ -287,7 +287,7 @@ async function runClear() {
                       <div v-if="getRowTab(row.original.id) === 'payloads'" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- Request Column -->
                         <div class="flex flex-col gap-3 min-w-0">
-                          <div class="flex items-center justify-between">
+                          <div class="flex items-center justify-between h-8">
                             <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
                               <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Body
                             </h3>
@@ -311,7 +311,7 @@ async function runClear() {
 
                         <!-- Response Column -->
                         <div class="flex flex-col gap-3 min-w-0">
-                          <div class="flex items-center justify-between">
+                          <div class="flex items-center justify-between h-8">
                             <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
                               <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Response Body
                             </h3>
