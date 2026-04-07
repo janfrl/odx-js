@@ -23,8 +23,7 @@ const {
 const toast = useToast()
 
 function viewLogs(service: any) {
-  const identifier = (service.route || service.name).toLowerCase()
-  logFilterService.value = identifier
+  logFilterService.value = service.name.toLowerCase()
   activeTab.value = 'logs'
 }
 
