@@ -293,15 +293,35 @@ export function useSharedODataState(): SharedODataState {
   }
 }
 
-// Watch for selectedEntity changes to update the entitySchema
+// Watch for selectedEntity changes to update the entitySchema and restore cached data
 watch(selectedEntity, async (newEntity) => {
+  const { updateServiceHealth } = useSharedODataState()
+
   if (!newEntity || !selectedService.value) {
     entitySchema.value = null
+    previewData.value = null
+    previewError.value = null
     return
   }
 
-  const { updateServiceHealth } = useSharedODataState()
   const svcName = selectedService.value.name
+  const cacheKey = `${svcName}:${newEntity}`
+  const cached = entityDataCache.value[cacheKey]
+
+  if (cached) {
+    previewData.value = cached.data
+    previewError.value = cached.error
+    queryInput.value = cached.query
+    queryMethod.value = cached.method
+    queryState.value = JSON.parse(JSON.stringify(cached.queryState))
+  }
+  else {
+    previewData.value = null
+    previewError.value = null
+    queryMethod.value = 'GET'
+    queryInput.value = '?'
+    queryState.value = getDefaultQueryState()
+  }
 
   entitySchemaLoading.value = true
   try {
