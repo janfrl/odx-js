@@ -24,7 +24,7 @@ const tableColumns = computed<any[]>(() => {
       size: 140,
       minSize: 140,
       maxSize: 140,
-      class: 'sticky left-0 bg-neutral-50 dark:bg-neutral-900 z-20 shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]',
+      class: 'sticky left-0 bg-muted z-20 shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.1)]',
     },
     ...cols.map((c: string) => ({
       id: c,
@@ -44,7 +44,7 @@ function getRowData(row: any): Record<string, any> {
     <!-- Loading Indicator (Full Overlay) -->
     <div
       v-if="showLoadingIndicator || entitySchemaLoading"
-      class="absolute inset-0 z-20 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-[1px]"
+      class="absolute inset-0 z-20 flex items-center justify-center bg-default/50 backdrop-blur-[1px]"
     >
       <UIcon name="i-lucide-refresh-cw" class="animate-spin w-10 h-10 text-primary" />
     </div>
@@ -62,8 +62,8 @@ function getRowData(row: any): Record<string, any> {
         :data="previewData?.length ? previewData : []"
         class="min-w-max"
         :ui="{
-          thead: 'bg-neutral-50/80 dark:bg-neutral-900/80 sticky top-0 z-30 backdrop-blur-sm',
-          th: 'text-[11px] font-bold tracking-widest text-neutral-500 border-b border-neutral-200 dark:border-neutral-800 py-4 px-6',
+          thead: 'bg-default/10 sticky top-0 z-30 backdrop-blur-sm',
+          th: 'text-[11px] font-bold tracking-widest text-muted border-b border-default py-4 px-6',
         }"
       >
         <!-- Hide the built-in empty slot when showing our own centered message -->
@@ -94,7 +94,7 @@ function getRowData(row: any): Record<string, any> {
                 <span class="opacity-20 italic text-[11px]">{{ isNavigationProperty(col.id) ? 'not expanded' : '-' }}</span>
               </template>
               <template v-else>
-                <span class="font-mono text-[13px] text-neutral-700 dark:text-neutral-300">{{ getValue() }}</span>
+                <span class="font-mono text-[13px] text-toned">{{ getValue() }}</span>
               </template>
             </div>
           </template>
@@ -114,13 +114,13 @@ function getRowData(row: any): Record<string, any> {
         <div class="flex flex-col items-center justify-center p-12 text-center pointer-events-auto">
           <!-- Error State -->
           <template v-if="previewError">
-            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
+            <div class="w-16 h-16 rounded-2xl bg-default border border-default flex items-center justify-center mb-6 shadow-sm">
               <UIcon name="i-lucide-triangle-alert" class="text-error-500 w-8 h-8" />
             </div>
-            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-default">
               Request Failed
             </h3>
-            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-lg leading-relaxed mb-8 font-mono">
+            <p class="text-[12px] text-muted max-w-lg leading-relaxed mb-8 font-mono">
               {{ previewError }}
             </p>
             <UButton
@@ -135,13 +135,13 @@ function getRowData(row: any): Record<string, any> {
 
           <!-- Empty State (No Data) -->
           <template v-else>
-            <div class="w-16 h-16 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center mb-6 shadow-sm">
-              <UIcon :name="previewData === null ? 'i-lucide-database-zap' : 'i-lucide-search-x'" class="text-neutral-400 w-8 h-8" />
+            <div class="w-16 h-16 rounded-2xl bg-default border border-default flex items-center justify-center mb-6 shadow-sm">
+              <UIcon :name="previewData === null ? 'i-lucide-database-zap' : 'i-lucide-search-x'" class="text-muted w-8 h-8" />
             </div>
-            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-neutral-900 dark:text-neutral-100">
+            <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-default">
               {{ previewData === null ? 'No data loaded yet' : 'No records found' }}
             </h3>
-            <p class="text-[12px] text-neutral-500 dark:text-neutral-400 max-w-70 leading-relaxed">
+            <p class="text-[12px] text-muted max-w-70 leading-relaxed">
               {{ previewData === null
                 ? 'Modify query parameters and click Execute to fetch records from the OData service.'
                 : 'The OData service returned 0 items for the current query configuration.'
@@ -154,7 +154,7 @@ function getRowData(row: any): Record<string, any> {
       <!-- Full-table Empty State (Only if Schema/Columns missing) -->
       <div
         v-if="tableColumns.length <= 1 && !previewLoading && !entitySchemaLoading"
-        class="p-32 flex flex-col items-center justify-center opacity-40 italic text-neutral-500"
+        class="p-32 flex flex-col items-center justify-center opacity-40 italic text-muted"
       >
         <UIcon name="i-lucide-search-x" class="w-12 h-12 mb-4 opacity-20" />
         <p class="text-base uppercase tracking-[0.2em]">

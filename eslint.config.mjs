@@ -8,6 +8,9 @@ export default antfu(
     pnpm: {
       yaml: false,
     },
+    ignores: [
+      '.claude/skills/**',
+    ],
   },
   createConfigForNuxt({
     features: {

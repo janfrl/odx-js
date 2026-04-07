@@ -13,7 +13,7 @@ useSchemaExplorer()
     <div class="flex-1 flex flex-col min-h-0 relative px-6 pb-0">
       <!-- Unified Content Block -->
       <div
-        class="flex-1 flex flex-col min-h-0 overflow-hidden bg-neutral-50 dark:bg-black border-t border-x border-neutral-200/70 dark:border-neutral-800/70 rounded-t-2xl shadow-xl transition-all"
+        class="flex-1 flex flex-col min-h-0 overflow-hidden bg-default/50 border-t border-x border-default/70 rounded-t-2xl shadow-xl transition-all"
       >
         <SchemaGraph>
           <SchemaControls />

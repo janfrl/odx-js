@@ -24,7 +24,7 @@ onMounted(() => {
   <UApp>
     <div class="h-screen flex overflow-hidden font-sans bg-neutral-50 dark:bg-neutral-950">
       <!-- Sidebar -->
-      <aside class="w-16 border-r border-neutral-200/70 dark:border-neutral-800/70 flex flex-col items-center p-3 gap-4 bg-white dark:bg-neutral-900/50 shrink-0">
+      <aside class="w-16 border-r border-default flex flex-col items-center p-3 gap-4 bg-default/50 shrink-0">
         <UTooltip
           v-for="item in items"
           :key="item.id"
@@ -53,10 +53,10 @@ onMounted(() => {
       <!-- Main Container -->
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <!-- Header -->
-        <header class="h-14 border-b border-neutral-200/70 dark:border-neutral-800/70 flex items-center justify-between px-6 shrink-0 bg-white/80 dark:bg-neutral-900/40 backdrop-blur-md">
+        <header class="h-14 border-b border-default flex items-center justify-between px-6 shrink-0 bg-default/50 backdrop-blur-md">
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-cable" class="w-5 h-5 text-primary" />
-            <h1 class="text-sm font-bold uppercase tracking-widest text-neutral-900 dark:text-neutral-100">
+            <h1 class="text-sm font-bold uppercase tracking-widest text-default">
               ODX Explorer
             </h1>
           </div>

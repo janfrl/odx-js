@@ -1,9 +1,8 @@
+import type { Association, AssociationEnd, EntityMapping, NavigationProperty } from '@bc8-odx/core'
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
-import { markRaw, nextTick, ref, watch } from 'vue'
 import SchemaNode from '../components/SchemaNode.vue'
-import { useSharedODataState } from './useODataState'
 
 const elk = new ELK()
 
@@ -21,7 +20,22 @@ if (typeof document !== 'undefined') {
   })
 }
 
-export function useSchemaExplorer(): any {
+export interface SchemaExplorer {
+  selectedService: Ref<any>
+  containerRef: Ref<HTMLElement | null>
+  loading: Ref<boolean>
+  isReady: Ref<boolean>
+  isFullscreen: Ref<boolean>
+  nodeTypes: NodeTypesObject
+  fetchSchema: (serviceName: string) => Promise<void>
+  generateGraph: (autoFit?: boolean) => Promise<void>
+  resetGraph: () => void
+  copyMermaid: () => void
+  toggleFullscreen: () => void
+  fitToScreen: () => void
+}
+
+export function useSchemaExplorer(): SchemaExplorer {
   const { selectedService } = useSharedODataState()
   const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport, edges } = useVueFlow()
   const toast = useToast()
@@ -31,9 +45,12 @@ export function useSchemaExplorer(): any {
   }
 
   // Watch for service changes
-  watch(selectedService, (newSvc) => {
+  watch(selectedService, (newSvc, oldSvc) => {
     if (newSvc) {
-      fetchSchema(newSvc.name)
+      // Only fetch if the actual service changed, not just its health status
+      if (newSvc.name !== oldSvc?.name) {
+        fetchSchema(newSvc.name)
+      }
     }
     else {
       schemaData.value = null
@@ -75,17 +92,25 @@ export function useSchemaExplorer(): any {
   async function fetchSchema(serviceName: string): Promise<void> {
     if (loading.value)
       return
+
+    const { updateServiceHealth } = useSharedODataState()
+
     loading.value = true
     isReady.value = false
     try {
       const res = await fetch(`/__odx__/schema?service=${serviceName}`)
       if (res.ok) {
         schemaData.value = await res.json()
+        updateServiceHealth(serviceName, 'online')
         await generateGraph(true)
+      }
+      else {
+        updateServiceHealth(serviceName, 'offline')
       }
     }
     catch (e) {
       console.error('[SchemaExplorer] Failed to fetch schema', e)
+      updateServiceHealth(serviceName, 'offline')
     }
     finally {
       loading.value = false
@@ -105,7 +130,7 @@ export function useSchemaExplorer(): any {
     }
 
     // 1. Create nodes for each EntitySet
-    schemaData.value.entities.forEach((entity: any) => {
+    schemaData.value.entities.forEach((entity: EntityMapping) => {
       newNodes.push({
         id: entity.name,
         type: 'schema',
@@ -115,18 +140,18 @@ export function useSchemaExplorer(): any {
     })
 
     // 2. Create edges by resolving relationships
-    schemaData.value.entities.forEach((entity: any) => {
-      entity.navigationProperties?.forEach((nav: any) => {
-        const assoc = schemaData.value.associations?.find((a: any) =>
+    schemaData.value.entities.forEach((entity: EntityMapping) => {
+      entity.navigationProperties?.forEach((nav: NavigationProperty) => {
+        const assoc = schemaData.value.associations?.find((a: Association) =>
           a.name === nav.relationship || `${schemaData.value.namespace}.${a.name}` === nav.relationship,
         )
 
         if (assoc) {
-          const targetEnd = assoc.ends.find((e: any) => e.role === nav.toRole)
+          const targetEnd = assoc.ends.find((e: AssociationEnd) => e.role === nav.toRole)
           const targetTypeName = targetEnd?.type.split('.').pop()
 
           if (targetTypeName) {
-            const targetEntitySet = schemaData.value.entities.find((e: any) => e.type === targetTypeName)
+            const targetEntitySet = schemaData.value.entities.find((e: EntityMapping) => e.type === targetTypeName)
 
             if (targetEntitySet && targetEntitySet.name !== entity.name) {
               const edgeId = [entity.name, targetEntitySet.name, assoc.name].sort().join('-')
@@ -236,7 +261,7 @@ export function useSchemaExplorer(): any {
             const dy = (newHeight - oldHeight) / 2
             setViewport({ x: x + dx, y: y + dy, zoom }, { duration: 0 })
           }, 100)
-        }).catch((err) => {
+        }).catch((err: any) => {
           console.error(`Fullscreen failed: ${err.message}`)
         })
       }
@@ -244,7 +269,7 @@ export function useSchemaExplorer(): any {
         // Global app fallback for other tabs (user liked the global shortcut)
         document.documentElement.requestFullscreen().then(() => {
           isFullscreen.value = true
-        }).catch((err) => {
+        }).catch((err: any) => {
           console.error(`Global fullscreen failed: ${err.message}`)
         })
       }
@@ -281,12 +306,12 @@ export function useSchemaExplorer(): any {
     let mermaid = 'erDiagram\n'
 
     const nameMap: Record<string, string> = {}
-    schemaData.value.entities.forEach((entity: any) => {
+    schemaData.value.entities.forEach((entity: EntityMapping) => {
       nameMap[entity.name] = entity.type
     })
 
     // 1. Relationships first (to guide Mermaid layout engine)
-    const sortedEdges = edges.value.toSorted((a, b) => {
+    const sortedEdges = edges.value.toSorted((a: any, b: any) => {
       const s1 = nameMap[a.source] || a.source
       const s2 = nameMap[b.source] || b.source
       return s1.localeCompare(s2) || (nameMap[a.target] || a.target).localeCompare(nameMap[b.target] || b.target)
@@ -309,9 +334,9 @@ export function useSchemaExplorer(): any {
     })
 
     // 2. Entities second
-    const sortedEntities = schemaData.value.entities.toSorted((a, b) => a.type.localeCompare(b.type))
+    const sortedEntities = schemaData.value.entities.toSorted((a: EntityMapping, b: EntityMapping) => a.type.localeCompare(b.type))
 
-    sortedEntities.forEach((entity: any) => {
+    sortedEntities.forEach((entity: EntityMapping) => {
       mermaid += `  ${entity.type} {\n`
       entity.properties?.forEach((prop: any) => {
         let type = prop.type.split('.').pop() || prop.type

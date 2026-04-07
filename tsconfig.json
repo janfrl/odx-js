@@ -2,13 +2,12 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
-      "@bc8-odx/core": ["packages/core/src/index.ts"],
-      "@bc8-odx/core/server": ["packages/core/src/server.ts"],
-      "@bc8-odx/proxy": ["packages/proxy/src/index.ts"]
+      "@bc8-odx/core": ["./packages/core/src/index.ts"],
+      "@bc8-odx/core/server": ["./packages/core/src/server.ts"],
+      "@bc8-odx/proxy": ["./packages/proxy/src/index.ts"]
     },
     "strict": true,
     "skipLibCheck": true
@@ -16,6 +15,8 @@
   "exclude": [
     "dist",
     "node_modules",
-    "playground"
+    "playground",
+    "docs",
+    "packages/explorer"
   ]
 }

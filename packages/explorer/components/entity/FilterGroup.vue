@@ -60,7 +60,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
   <div
     class="flex flex-col gap-3"
     :class="[
-      !isRoot ? 'ml-6 pl-4 border-l-2 border-neutral-200 dark:border-neutral-800' : '',
+      !isRoot ? 'ml-6 pl-4 border-l-2 border-default' : '',
     ]"
   >
     <!-- Group Header -->
@@ -106,7 +106,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
     </div>
 
     <!-- Items -->
-    <div v-if="group.items.length === 0" class="text-[11px] text-neutral-500 italic ml-2">
+    <div v-if="group.items.length === 0" class="text-[11px] text-muted italic ml-2">
       No rules in this group
     </div>
 
@@ -151,7 +151,7 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
             placeholder="Value"
             class="w-full"
           />
-          <div v-else class="w-full h-8 bg-neutral-100/50 dark:bg-neutral-800/50 rounded-md border border-neutral-200/50 dark:border-neutral-700/50" />
+          <div v-else class="w-full h-8 bg-muted/50 rounded-md border border-default/50" />
         </div>
 
         <div class="flex justify-end">

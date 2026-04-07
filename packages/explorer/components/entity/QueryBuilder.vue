@@ -23,10 +23,10 @@ function removeSort(index: number) {
 </script>
 
 <template>
-  <div class="p-4 bg-neutral-50 dark:bg-neutral-900/50 border-b border-neutral-200/50 dark:border-neutral-800/50 space-y-8">
+  <div class="p-4 bg-muted/50 border-b border-default/50 space-y-8">
     <!-- Filters Section -->
     <div class="space-y-4">
-      <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2">
+      <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
         <UIcon name="i-lucide-filter" class="w-3 h-3" />
         Filter Logic
       </h3>
@@ -42,12 +42,12 @@ function removeSort(index: number) {
       <!-- Row 1: Select & Sorting -->
       <div class="space-y-3">
         <div class="flex items-center h-8">
-          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2">
+          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
             <UIcon name="i-lucide-check-square" class="w-3.5 h-3.5" />
             Field Selection ($select)
           </h3>
         </div>
-        <div class="min-h-[32px]">
+        <div class="min-h-8">
           <USelectMenu
             v-model="queryState.select"
             :items="properties"
@@ -61,7 +61,7 @@ function removeSort(index: number) {
 
       <div class="space-y-3">
         <div class="flex items-center justify-between h-8">
-          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2">
+          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
             <UIcon name="i-lucide-arrow-up-narrow-wide" class="w-3.5 h-3.5" />
             Ordering ($orderby)
           </h3>
@@ -75,8 +75,8 @@ function removeSort(index: number) {
           />
         </div>
 
-        <div class="min-h-[32px] space-y-2">
-          <div v-if="queryState.sortBy.length === 0" class="text-[11px] text-neutral-500 italic px-1 h-8 flex items-center">
+        <div class="min-h-8 space-y-2">
+          <div v-if="queryState.sortBy.length === 0" class="text-[11px] text-muted italic px-1 h-8 flex items-center">
             Default order
           </div>
 
@@ -99,7 +99,7 @@ function removeSort(index: number) {
                 size="xs"
                 variant="ghost"
                 color="neutral"
-                class="opacity-50 hover:!text-error-500 hover:!opacity-100 transition-all"
+                class="opacity-50 hover:text-error-500! hover:opacity-100! transition-all"
                 @click="removeSort(index)"
               />
             </div>
@@ -110,12 +110,12 @@ function removeSort(index: number) {
       <!-- Row 2: Expand & Pagination -->
       <div class="space-y-3">
         <div class="flex items-center h-8">
-          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2">
+          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
             <UIcon name="i-lucide-external-link" class="w-3.5 h-3.5" />
             Data Expansion ($expand)
           </h3>
         </div>
-        <div class="min-h-[32px]">
+        <div class="min-h-8">
           <USelectMenu
             v-model="queryState.expand"
             :items="navigationProperties"
@@ -129,12 +129,12 @@ function removeSort(index: number) {
 
       <div class="space-y-3">
         <div class="flex items-center h-8">
-          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-400 flex items-center gap-2">
+          <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-muted flex items-center gap-2">
             <UIcon name="i-lucide-list-ordered" class="w-3.5 h-3.5" />
             Pagination ($top, $skip)
           </h3>
         </div>
-        <div class="grid grid-cols-2 gap-4 min-h-[32px]">
+        <div class="grid grid-cols-2 gap-4 min-h-8">
           <UInput v-model="queryState.top" type="number" size="xs" placeholder="Limit ($top)" icon="i-lucide-hash" />
           <UInput v-model="queryState.skip" type="number" size="xs" placeholder="Offset ($skip)" icon="i-lucide-step-forward" />
         </div>

@@ -1,5 +1,5 @@
-import { useNitroApp, useRuntimeConfig } from '#imports'
 import { defineEventHandler, getHeader } from 'h3'
+import { useNitroApp, useRuntimeConfig } from 'nitropack/runtime'
 import { generateODataTypes } from '../generate'
 
 export default defineEventHandler((event) => {

@@ -21,7 +21,7 @@ const {
   <div class="absolute inset-0 pointer-events-none z-50">
     <!-- Top Right: Export Actions -->
     <div class="absolute top-6 right-6 pointer-events-auto">
-      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-default shadow-lg ring-1 ring-default rounded-lg overflow-hidden">
         <UButton
           icon="i-lucide-clipboard"
           color="neutral"
@@ -36,7 +36,7 @@ const {
     <!-- Bottom Right: View & Layout Controls -->
     <div class="absolute bottom-6 right-6 pointer-events-auto flex flex-col gap-3">
       <!-- Layout Calculation -->
-      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-default shadow-lg ring-1 ring-default rounded-lg overflow-hidden">
         <UButton
           icon="i-lucide-rotate-ccw"
           color="neutral"
@@ -49,7 +49,7 @@ const {
       </div>
 
       <!-- Navigation -->
-      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-default shadow-lg ring-1 ring-default rounded-lg overflow-hidden">
         <UButton
           icon="i-lucide-plus"
           color="neutral"
@@ -58,7 +58,7 @@ const {
           title="Zoom In (+)"
           @click="zoomIn()"
         />
-        <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
+        <div class="h-px bg-default/50" />
         <UButton
           icon="i-lucide-minus"
           color="neutral"
@@ -70,7 +70,7 @@ const {
       </div>
 
       <!-- View Modes -->
-      <div class="flex flex-col bg-white dark:bg-neutral-900 shadow-lg ring-1 ring-neutral-200 dark:ring-neutral-700 rounded-lg overflow-hidden">
+      <div class="flex flex-col bg-default shadow-lg ring-1 ring-default rounded-lg overflow-hidden">
         <UButton
           icon="i-lucide-focus"
           color="neutral"
@@ -79,7 +79,7 @@ const {
           title="Fit to Screen (R)"
           @click="fitToScreen"
         />
-        <div class="h-px bg-neutral-200/50 dark:bg-neutral-800/50" />
+        <div class="h-px bg-default/50" />
         <UButton
           :icon="isFullscreen ? 'i-lucide-minimize' : 'i-lucide-maximize'"
           color="neutral"

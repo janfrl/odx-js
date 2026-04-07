@@ -10,12 +10,12 @@ defineProps<{
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
       <header class="flex flex-col gap-1.5">
         <div class="flex items-center gap-3">
-          <h1 class="text-xl font-bold text-neutral-900 dark:text-white tracking-tight">
+          <h1 class="text-xl font-bold text-highlighted tracking-tight">
             {{ title }}
           </h1>
           <slot name="title-extra" />
         </div>
-        <p v-if="description" class="text-sm text-neutral-500 dark:text-neutral-400">
+        <p v-if="description" class="text-sm text-muted">
           {{ description }}
         </p>
       </header>

@@ -1,169 +1,77 @@
 import process from 'node:process'
-import { addODataLog, flattenOData, updateODataLog } from '@bc8-odx/core'
-import { createError, defineEventHandler, getHeaders, getRequestURL, proxyRequest, readBody } from 'h3'
+import { flattenOData } from '@bc8-odx/core'
+import { createError, defineEventHandler, getHeaders, proxyRequest, readBody } from 'h3'
 import { ofetch } from 'ofetch'
 import { validateBtpAuth } from '../utils/auth'
-
-const RE_QUERY_SPLIT = /\?/
-const RE_TRAILING_SLASH = /\/$/
-const RE_LEADING_SLASH = /^\//
+import { prepareProxyHeaders } from '../utils/headers'
+import { DevToolsTracer } from '../utils/trace'
+import { parseODataRequest, resolveTargetUrl } from '../utils/url'
 
 /**
  * Handles incoming OData requests by proxying them to the resolved target destination.
- * Utilizes httpxy (via h3's proxyRequest) for native stream piping
- * or ofetch for buffering and response interception based on configuration.
- *
- * @param {import('h3').H3Event} event - The incoming H3 event.
+ * Supports both streaming (high performance) and buffering (for DevTools/interception).
  */
 export default defineEventHandler(async (event): Promise<any> => {
-  const startTime = Date.now()
-  const trace = event.context.proxyTrace || []
-  const addTrace = (label: string, message: string, details?: any, status: 'success' | 'error' | 'info' = 'info'): void => {
-    trace.push({
-      timestamp: Date.now(),
-      duration: Date.now() - startTime,
-      label,
-      message,
-      details,
-      status,
+  const tracer = new DevToolsTracer(event)
+  const config = event.context.odataConfig
+  const targetConfig = event.context.proxyTarget
+
+  if (!targetConfig) {
+    tracer.addTrace('Proxy', 'Proxy target configuration missing', null, 'error')
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Proxy target configuration is missing in event context.',
     })
   }
 
-  // Expose trace function for external utilities (like ODataGuard)
-  event.context.proxyTrace = addTrace
-
-  const config = event.context.odataConfig
-  const useDevTools = config?.devtools?.enabled && process.env.NODE_ENV !== 'production'
-
-  let serviceName = 'unknown'
-  let targetUrl = ''
-  let finalHeaders: Record<string, string> = {}
-  let segments: string[] = []
-
   try {
-    // 1. Enforce BTP Authentication in production environments
+    // 1. Security Validation (Production Only)
     if (process.env.NODE_ENV === 'production') {
-      addTrace('Security', 'Validating BTP Authentication...')
+      tracer.addTrace('Security', 'Validating BTP Authentication...')
       await validateBtpAuth(event)
       if (event.context.securityContext) {
-        addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() }, 'success')
+        tracer.addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() }, 'success')
       }
     }
 
-    // 2. Extract Target Configuration
-    const targetConfig = event.context.proxyTarget
-    if (!targetConfig) {
-      addTrace('Proxy', 'Proxy target configuration missing', null, 'error')
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Proxy target configuration is missing in event context.',
-      })
-    }
-
-    const basePath = config?.basePath || '/api/odx'
-    const pathOnly = event.path.split(RE_QUERY_SPLIT)[0] || ''
-    const relativePath = pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '')
-    segments = relativePath.split('/').filter(Boolean)
-    const serviceRoute = segments[0] || ''
-
-    // segments[0] is the service name (route), everything else is the OData resource
-    const odataPath = segments.slice(1).join('/')
-    const query = event.path.includes('?') ? `?${event.path.split(RE_QUERY_SPLIT)[1]}` : ''
-
+    // 2. Request Parsing & URL Resolution
+    const request = parseODataRequest(event, config?.basePath)
     const matched = config?.services?.find((svc: any) =>
-      svc.name.toLowerCase() === serviceRoute.toLowerCase()
-      || (svc.route && svc.route.toLowerCase() === serviceRoute.toLowerCase()),
+      svc.name.toLowerCase() === request.serviceName.toLowerCase()
+      || (svc.route && svc.route.toLowerCase() === request.serviceName.toLowerCase()),
     )
-    serviceName = matched?.name || serviceRoute
+    const serviceName = matched?.name || request.serviceName
+    const targetUrl = resolveTargetUrl(event, targetConfig.url, request, targetConfig.isRelative, serviceName)
 
-    // 3. Construct Target URL
-    targetUrl = targetConfig.url.replace(RE_TRAILING_SLASH, '')
-    if (targetConfig.isRelative) {
-      targetUrl += `/${serviceName}`
-    }
-    targetUrl += `/${odataPath}${query}`
+    tracer.addTrace('Proxy', `Forwarding request to: ${targetUrl}`)
 
-    if (targetUrl.startsWith('/')) {
-      const url = getRequestURL(event)
-      targetUrl = `${url.protocol}//${url.host}${targetUrl}`
-    }
+    // 3. Header Preparation
+    const finalHeaders = prepareProxyHeaders(getHeaders(event), matched?.headers, targetConfig.authHeader)
 
-    addTrace('Proxy', `Forwarding request to: ${targetUrl}`)
-
-    // 4. Prepare Headers & Execute Hooks
-    const incomingHeaders = getHeaders(event)
-    const serviceHeaders = matched?.headers || {}
-
-    // Merge headers: Service Config (Defaults) < Incoming (Overrides)
-    finalHeaders = {}
-    for (const [key, value] of Object.entries(serviceHeaders)) {
-      finalHeaders[key.toLowerCase()] = value
-    }
-    for (const [key, value] of Object.entries(incomingHeaders)) {
-      if (value !== undefined && value !== null) {
-        finalHeaders[key.toLowerCase()] = String(value)
-      }
-    }
-
-    // Remove restricted headers
-    const restrictedHeaders = ['host', 'connection', 'content-length', 'content-encoding', 'transfer-encoding']
-    for (const h of restrictedHeaders) {
-      delete finalHeaders[h]
-    }
-
-    if (targetConfig.authHeader) {
-      finalHeaders.Authorization = targetConfig.authHeader
-    }
-
+    // 4. Hook Execution
     const nitroApp = (event.context as any).nitroApp
     const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
     const isDirect = targetConfig.strategy === 'direct'
 
     if (hooks && !isDirect) {
-      addTrace('Hooks', 'Executing proxy request hooks...')
-      const fetchOptions = {
-        method: event.method,
-        headers: { ...finalHeaders },
-      }
+      tracer.addTrace('Hooks', 'Executing proxy request hooks...')
+      const fetchOptions = { method: event.method, headers: { ...finalHeaders } }
       await hooks.callHook('odx:proxy:request', { event, serviceName, fetchOptions })
       await hooks.callHook(`odx:proxy:request:${serviceName}`, { event, serviceName, fetchOptions })
-
-      if (fetchOptions.headers) {
-        Object.assign(finalHeaders, fetchOptions.headers)
-      }
+      Object.assign(finalHeaders, fetchOptions.headers || {})
     }
 
-    // 5. Proxy Execution (Hybrid Mode)
-    const mode = targetConfig.proxyMode || (useDevTools ? 'buffer' : 'stream')
-    const useBufferMode = mode === 'buffer'
-
-    // Create a unique log entry immediately if devtools are enabled
-    const logId = Math.random().toString(36).substring(7)
-    if (useDevTools) {
-      let requestBody: any = null
-      if (['POST', 'PUT', 'PATCH'].includes(event.method)) {
-        requestBody = await readBody(event).catch(() => null)
-      }
-
-      addODataLog({
-        id: logId,
-        timestamp: Date.now(),
-        method: event.method,
-        url: event.path,
-        targetUrl,
-        service: serviceName,
-        entitySet: segments[1] || '',
-        status: 0, // Pending
-        duration: 0,
-        isPending: true,
-        requestBody,
-        requestHeaders: finalHeaders,
-        responseBody: useBufferMode ? null : '[Streamed Response - Body not captured]',
-        proxyTrace: trace,
-      }, config.devtools?.maxLogs)
+    // 5. DevTools Logging Initialization
+    let requestBody: any = null
+    if (tracer.enabled && ['POST', 'PUT', 'PATCH'].includes(event.method)) {
+      requestBody = await readBody(event).catch(() => null)
     }
+    tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, finalHeaders)
 
-    if (useBufferMode) {
+    // 6. Proxy Execution (Hybrid Mode)
+    const mode = targetConfig.proxyMode || (tracer.enabled ? 'buffer' : 'stream')
+
+    if (mode === 'buffer') {
       try {
         const responseData = await ofetch(targetUrl, {
           method: event.method as any,
@@ -172,7 +80,7 @@ export default defineEventHandler(async (event): Promise<any> => {
             'Content-Type': 'application/json',
             ...finalHeaders,
           },
-          body: event.method !== 'GET' ? await readBody(event).catch(() => null) : null,
+          body: event.method !== 'GET' ? (requestBody || await readBody(event).catch(() => null)) : null,
           onResponse({ response }) {
             if (hooks?.callHook && !isDirect) {
               hooks.callHook('odx:proxy:response', { event, serviceName, response })
@@ -180,81 +88,29 @@ export default defineEventHandler(async (event): Promise<any> => {
           },
         })
 
-        addTrace('Response', `Request successful (${event.method} ${event.path})`, { status: 200 }, 'success')
-
-        if (useDevTools) {
-          updateODataLog(logId, {
-            status: 200,
-            duration: Date.now() - startTime,
-            isPending: false,
-            responseBody: flattenOData(responseData),
-            proxyTrace: [...trace],
-          })
-        }
-
-        // Return raw response. SDK/Explorer handles flattening.
+        tracer.addTrace('Response', 'Request successful', { status: 200 }, 'success')
+        tracer.updateLog(200, flattenOData(responseData))
         return responseData
       }
       catch (err: any) {
         const status = err.response?.status || 500
-        addTrace('Response', `Backend request failed with status ${status}`, { error: err.message }, 'error')
-
-        if (useDevTools) {
-          updateODataLog(logId, {
-            status,
-            duration: Date.now() - startTime,
-            isPending: false,
-            responseBody: { error: err.message },
-            proxyTrace: [...trace],
-          })
-        }
+        tracer.addTrace('Response', `Backend request failed with status ${status}`, { error: err.message }, 'error')
+        tracer.updateLog(status, { error: err.message })
         throw err
       }
     }
 
-    // PRODUCTION/STREAMING: High performance streaming via httpxy
-    // Track duration until the response is fully sent
-    if (useDevTools) {
-      event.node.res.on('finish', () => {
-        updateODataLog(logId, {
-          status: event.node.res.statusCode,
-          duration: Date.now() - startTime,
-          isPending: false,
-          proxyTrace: [...trace],
-        })
-      })
-    }
-
+    // High Performance Streaming
+    tracer.registerStreamFinish(event)
     return proxyRequest(event, targetUrl, {
       headers: finalHeaders,
-      cookieDomainRewrite: {
-        '*': '',
-      },
+      cookieDomainRewrite: { '*': '' },
     })
   }
   catch (err: any) {
     const status = err.statusCode || err.status || 500
     const message = err.statusMessage || err.message || 'Internal Proxy Error'
-
-    if (useDevTools) {
-      // Find if we already created a log for this request (might have failed before proxy execution)
-      // If not created yet, we should probably add it here as failed.
-      addODataLog({
-        id: Math.random().toString(36).substring(7),
-        timestamp: Date.now(),
-        method: event.method,
-        url: event.path,
-        targetUrl: targetUrl || 'N/A',
-        service: serviceName,
-        entitySet: segments[1] || '',
-        status,
-        duration: Date.now() - startTime,
-        isPending: false,
-        responseBody: { error: message },
-        proxyTrace: [...trace],
-      }, config?.devtools?.maxLogs)
-    }
-
+    tracer.updateLog(status, { error: message })
     throw err
   }
 })

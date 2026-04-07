@@ -7,11 +7,17 @@ globalThis.fetch = vi.fn()
 describe('explorer State Composable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    const { config, logs, selectedService, selectedEntity } = useSharedODataState()
+    config.value = { basePath: '/__odx__', services: [] }
+    logs.value = []
+    selectedService.value = null
+    selectedEntity.value = null
   })
 
   it('fetches config correctly', async () => {
     const mockConfig = { basePath: '/api', mode: 'sdk', services: [] }
     ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
       json: async () => mockConfig,
     })
 

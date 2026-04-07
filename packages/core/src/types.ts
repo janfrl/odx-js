@@ -22,6 +22,17 @@ export interface NavigationProperty {
   toRole: string
 }
 
+export interface AssociationEnd {
+  type: string
+  role: string
+  multiplicity: string
+}
+
+export interface Association {
+  name: string
+  ends: AssociationEnd[]
+}
+
 export interface EntityMapping {
   name: string
   type: string

@@ -136,7 +136,7 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             :icon="svc.icon || 'i-lucide-database'"
             variant="subtle"
             to="#"
-            :ui="{ leadingIcon: svc.health === 'offline' ? 'text-error' : 'text-primary' }"
+            :ui="{ leadingIcon: svc.health === 'offline' ? 'text-error' : (svc.health === 'online' ? 'text-primary' : 'text-neutral-500') }"
             @click.prevent="selectedService = svc"
           >
             <template #footer>
@@ -179,11 +179,19 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             @click="selectedService = null; selectedEntity = null"
           />
           <div class="min-w-0">
-            <h2 class="text-lg font-bold text-neutral-900 dark:text-neutral-100 truncate flex items-center gap-2">
+            <h2 class="text-lg font-bold text-default truncate flex items-center gap-2">
               {{ selectedService.name }}
-              <div v-if="selectedService.health === 'offline'" class="w-2.5 h-2.5 rounded-full bg-error-500 animate-pulse" title="Service unreachable" />
+              <div
+                class="w-2.5 h-2.5 rounded-full"
+                :class="{
+                  'bg-success-500': selectedService.health === 'online',
+                  'bg-error-500 animate-pulse': selectedService.health === 'offline',
+                  'bg-neutral-400': selectedService.health === 'checking',
+                }"
+                :title="`Service ${selectedService.health}`"
+              />
             </h2>
-            <div class="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+            <div class="text-xs font-mono text-muted truncate">
               {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
             </div>
           </div>
@@ -251,7 +259,11 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             size="sm"
             color="neutral"
             class="w-48"
-            :ui="{ list: 'bg-neutral-100 dark:bg-neutral-900', indicator: 'bg-white dark:bg-neutral-700 shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600', trigger: 'text-neutral-500 dark:text-neutral-400 font-semibold transition-colors data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white' }"
+            :ui="{
+              list: 'bg-neutral-100 dark:bg-default',
+              indicator: 'bg-white dark:bg-accented shadow-sm ring-1 ring-neutral-200 dark:ring-neutral-600',
+              trigger: 'text-muted font-semibold transition-colors data-[state=active]:text-highlighted',
+            }"
           />
         </div>
       </div>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { NodeProps } from '@vue-flow/core'
 import { Handle, Position } from '@vue-flow/core'
-import { computed } from 'vue'
 
 interface EntityData {
   entity: {
@@ -44,21 +43,21 @@ const entityIcon = computed(() => {
 </script>
 
 <template>
-  <div class="schema-node border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900 shadow-xl ring-1 ring-neutral-200 dark:ring-neutral-700 overflow-hidden min-w-48 transition-all duration-200">
+  <div class="schema-node border border-default rounded-lg bg-default shadow-xl ring-1 ring-default overflow-hidden min-w-48 transition-all duration-200">
     <!-- Header (Solid Zone) -->
-    <div class="px-3.5 py-2.5 bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-2.5">
-      <UIcon :name="entityIcon" class="text-neutral-500 dark:text-neutral-400 w-4 h-4" />
-      <span class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+    <div class="px-3.5 py-2.5 bg-muted border-b border-default flex items-center gap-2.5">
+      <UIcon :name="entityIcon" class="text-muted w-4 h-4" />
+      <span class="text-sm font-semibold text-default truncate">
         {{ data.entity.name }}
       </span>
     </div>
 
     <!-- Body (Solid Zone) -->
-    <div class="py-1.5 bg-white dark:bg-neutral-900">
+    <div class="py-1.5 bg-default">
       <div
         v-for="prop in data.entity.properties"
         :key="prop.name"
-        class="px-3.5 py-1 flex items-center justify-between gap-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 group transition-colors"
+        class="px-3.5 py-1 flex items-center justify-between gap-4 hover:bg-muted group transition-colors"
       >
         <div class="flex items-center gap-2 overflow-hidden">
           <UIcon
@@ -68,11 +67,11 @@ const entityIcon = computed(() => {
             title="Primary Key"
           />
           <div v-else class="w-3" />
-          <span class="text-[11px] font-mono truncate text-neutral-600 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-white transition-colors">
+          <span class="text-[11px] font-mono truncate text-toned group-hover:text-highlighted transition-colors">
             {{ prop.name }}
           </span>
         </div>
-        <span class="text-[10px] font-mono text-neutral-400 dark:text-neutral-500 italic shrink-0 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors">
+        <span class="text-[10px] font-mono text-muted italic shrink-0 group-hover:text-toned transition-colors">
           {{ prop.type.split('.').pop() }}
         </span>
       </div>
@@ -83,7 +82,3 @@ const entityIcon = computed(() => {
     <Handle type="source" :position="Position.Right" class="opacity-0! pointer-events-none!" />
   </div>
 </template>
-
-<style scoped>
-/* Scoped styles removed in favor of Tailwind classes for consistency */
-</style>
