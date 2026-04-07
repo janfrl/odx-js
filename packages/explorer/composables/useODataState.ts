@@ -117,6 +117,8 @@ const initializedServices = ref(new Set<string>())
 const schemaFocusedServices = ref(new Set<string>())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 
+const serviceHealthOverrides = ref<Record<string, 'online' | 'offline' | 'checking'>>({})
+
 export interface SharedODataState {
   activeTab: Ref<string>
   logs: Ref<ODataLog[]>
@@ -153,14 +155,37 @@ export interface SharedODataState {
   generateService: (name: string) => Promise<void>
   clearLogs: () => Promise<void>
   clearEntityMockData: (service: string, entitySet: string) => Promise<void>
+  updateServiceHealth: (name: string, health: 'online' | 'offline' | 'checking') => void
 }
 
 export function useSharedODataState(): SharedODataState {
+  function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking') {
+    serviceHealthOverrides.value[name] = health
+    // Ensure selectedService ref is updated if it's the one being changed
+    if (selectedService.value && selectedService.value.name === name) {
+      selectedService.value = { ...selectedService.value, health }
+    }
+  }
+
+  async function checkServiceHealth(name: string): Promise<void> {
+    try {
+      const res = await fetch(`/__odx__/schema?service=${name}`)
+      updateServiceHealth(name, res.ok ? 'online' : 'offline')
+    }
+    catch {
+      updateServiceHealth(name, 'offline')
+    }
+  }
+
   async function fetchConfig(): Promise<void> {
     try {
       const res = await fetch('/__odx__/config')
       if (res.ok) {
         config.value = await res.json()
+        // Trigger background health checks for all services
+        config.value.services?.forEach((s: any) => {
+          checkServiceHealth(s.name)
+        })
       }
     }
     catch (e) {
@@ -185,7 +210,7 @@ export function useSharedODataState(): SharedODataState {
     return data.map((s: any) => {
       return {
         ...s,
-        health: s.health || 'checking',
+        health: serviceHealthOverrides.value[s.name] || s.health || 'checking',
       }
     })
   })
@@ -264,6 +289,7 @@ export function useSharedODataState(): SharedODataState {
     generateService,
     clearLogs,
     clearEntityMockData,
+    updateServiceHealth,
   }
 }
 
@@ -274,15 +300,23 @@ watch(selectedEntity, async (newEntity) => {
     return
   }
 
+  const { updateServiceHealth } = useSharedODataState()
+  const svcName = selectedService.value.name
+
   entitySchemaLoading.value = true
   try {
-    const res = await fetch(`/__odx__/schema?service=${selectedService.value.name}`)
+    const res = await fetch(`/__odx__/schema?service=${svcName}`)
     if (res.ok) {
       entitySchema.value = await res.json()
+      updateServiceHealth(svcName, 'online')
+    }
+    else {
+      updateServiceHealth(svcName, 'offline')
     }
   }
   catch (e) {
     console.error(`[ODataState] Failed to fetch schema for ${newEntity}`, e)
+    updateServiceHealth(svcName, 'offline')
   }
   finally {
     entitySchemaLoading.value = false

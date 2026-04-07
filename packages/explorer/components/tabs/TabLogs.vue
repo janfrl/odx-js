@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { UBadge, UButton, UIcon } from '#components'
+
 const { logs, clearLogs, services, logFilterService, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
 
@@ -27,10 +29,6 @@ const serviceOptions = computed(() => {
     })),
   ]
 })
-
-const UButton = resolveComponent('UButton')
-const UBadge = resolveComponent('UBadge')
-const UIcon = resolveComponent('UIcon')
 
 function safeStringify(data: any): string {
   if (!data)

@@ -171,6 +171,10 @@ export function useEntityExplorer(): EntityExplorer {
     if (!selectedService.value || !selectedEntity.value) {
       return
     }
+
+    const { updateServiceHealth } = useSharedODataState()
+    const svcName = selectedService.value.name
+
     previewLoading.value = true
     previewError.value = null
     try {
@@ -203,6 +207,10 @@ export function useEntityExplorer(): EntityExplorer {
         },
       })
       if (!res.ok) {
+        if (res.status >= 500) {
+          updateServiceHealth(svcName, 'offline')
+        }
+
         const errorText = await res.text().catch(() => '')
         let statusMessage = res.statusText || `Server Error ${res.status}`
         try {
@@ -217,6 +225,7 @@ export function useEntityExplorer(): EntityExplorer {
         throw new Error(statusMessage)
       }
 
+      updateServiceHealth(svcName, 'online')
       const responseText = await res.text()
       let data: any
       try {

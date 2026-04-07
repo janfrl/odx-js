@@ -45,9 +45,12 @@ export function useSchemaExplorer(): SchemaExplorer {
   }
 
   // Watch for service changes
-  watch(selectedService, (newSvc) => {
+  watch(selectedService, (newSvc, oldSvc) => {
     if (newSvc) {
-      fetchSchema(newSvc.name)
+      // Only fetch if the actual service changed, not just its health status
+      if (newSvc.name !== oldSvc?.name) {
+        fetchSchema(newSvc.name)
+      }
     }
     else {
       schemaData.value = null
@@ -89,17 +92,25 @@ export function useSchemaExplorer(): SchemaExplorer {
   async function fetchSchema(serviceName: string): Promise<void> {
     if (loading.value)
       return
+
+    const { updateServiceHealth } = useSharedODataState()
+
     loading.value = true
     isReady.value = false
     try {
       const res = await fetch(`/__odx__/schema?service=${serviceName}`)
       if (res.ok) {
         schemaData.value = await res.json()
+        updateServiceHealth(serviceName, 'online')
         await generateGraph(true)
+      }
+      else {
+        updateServiceHealth(serviceName, 'offline')
       }
     }
     catch (e) {
       console.error('[SchemaExplorer] Failed to fetch schema', e)
+      updateServiceHealth(serviceName, 'offline')
     }
     finally {
       loading.value = false
