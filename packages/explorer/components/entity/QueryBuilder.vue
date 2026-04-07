@@ -47,7 +47,7 @@ function removeSort(index: number) {
             Field Selection ($select)
           </h3>
         </div>
-        <div class="min-h-[32px]">
+        <div class="min-h-8">
           <USelectMenu
             v-model="queryState.select"
             :items="properties"
@@ -75,7 +75,7 @@ function removeSort(index: number) {
           />
         </div>
 
-        <div class="min-h-[32px] space-y-2">
+        <div class="min-h-8 space-y-2">
           <div v-if="queryState.sortBy.length === 0" class="text-[11px] text-muted italic px-1 h-8 flex items-center">
             Default order
           </div>
@@ -99,7 +99,7 @@ function removeSort(index: number) {
                 size="xs"
                 variant="ghost"
                 color="neutral"
-                class="opacity-50 hover:!text-error-500 hover:!opacity-100 transition-all"
+                class="opacity-50 hover:text-error-500! hover:opacity-100! transition-all"
                 @click="removeSort(index)"
               />
             </div>
@@ -115,7 +115,7 @@ function removeSort(index: number) {
             Data Expansion ($expand)
           </h3>
         </div>
-        <div class="min-h-[32px]">
+        <div class="min-h-8">
           <USelectMenu
             v-model="queryState.expand"
             :items="navigationProperties"
@@ -134,7 +134,7 @@ function removeSort(index: number) {
             Pagination ($top, $skip)
           </h3>
         </div>
-        <div class="grid grid-cols-2 gap-4 min-h-[32px]">
+        <div class="grid grid-cols-2 gap-4 min-h-8">
           <UInput v-model="queryState.top" type="number" size="xs" placeholder="Limit ($top)" icon="i-lucide-hash" />
           <UInput v-model="queryState.skip" type="number" size="xs" placeholder="Offset ($skip)" icon="i-lucide-step-forward" />
         </div>
