@@ -159,7 +159,7 @@ export interface SharedODataState {
 }
 
 export function useSharedODataState(): SharedODataState {
-  function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking') {
+  function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking'): void {
     serviceHealthOverrides.value[name] = health
     // Ensure selectedService ref is updated if it's the one being changed
     if (selectedService.value && selectedService.value.name === name) {
