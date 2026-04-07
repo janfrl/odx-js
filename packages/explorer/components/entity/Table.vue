@@ -43,7 +43,7 @@ function getRowData(row: any): Record<string, any> {
   <div class="flex-1 min-h-0 relative flex flex-col overflow-hidden">
     <!-- Loading Indicator (Full Overlay) -->
     <div
-      v-if="showLoadingIndicator || entitySchemaLoading"
+      v-if="showLoadingIndicator"
       class="absolute inset-0 z-20 flex items-center justify-center bg-default/50 backdrop-blur-[1px]"
     >
       <UIcon name="i-lucide-refresh-cw" class="animate-spin w-10 h-10 text-primary" />
