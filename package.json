@@ -35,8 +35,7 @@
     "bump": "tsx scripts/bump.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:run": "vitest run",
+    "test": "vitest run",
     "test:unit": "vitest run packages/core packages/proxy packages/explorer",
     "test:watch": "vitest watch"
   },
