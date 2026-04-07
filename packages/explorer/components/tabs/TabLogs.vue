@@ -39,7 +39,8 @@ const filteredLogs = computed(() => {
   return logs.value.filter((l: any) => {
     if (!l.service)
       return false
-    return l.service.toLowerCase() === filter
+    const svcName = l.service.toLowerCase()
+    return svcName === filter || services.value.find(s => s.name.toLowerCase() === svcName && s.route?.toLowerCase() === filter)
   })
 })
 
@@ -48,7 +49,7 @@ const serviceOptions = computed(() => {
     { label: 'All Services', value: null },
     ...services.value.map((s: any) => ({
       label: s.name,
-      value: (s.route || s.name).toLowerCase(),
+      value: s.name.toLowerCase(),
     })),
   ]
 })
