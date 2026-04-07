@@ -302,8 +302,8 @@ async function runClear() {
                               @click="copyToClipboard(safeStringify(row.original.requestBody))"
                             />
                           </div>
-                          <pre v-if="row.original.requestBody && Object.keys(row.original.requestBody).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default overflow-auto max-h-120 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
-                          <div v-else class="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
+                          <pre v-if="row.original.requestBody && Object.keys(row.original.requestBody).length > 0" class="flex-1 text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default overflow-auto max-h-120 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
+                          <div v-else class="flex-1 min-h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
                             <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-muted opacity-30" />
                             <span class="text-[10px] font-medium text-muted uppercase">No body</span>
                           </div>
@@ -326,12 +326,12 @@ async function runClear() {
                               @click="copyToClipboard(safeStringify(row.original.responseBody))"
                             />
                           </div>
-                          <pre v-if="row.original.responseBody && row.original.responseBody !== '[Streamed Response]'" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default overflow-auto max-h-120 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
-                          <div v-else-if="row.original.responseBody === '[Streamed Response]'" class="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
+                          <pre v-if="row.original.responseBody && row.original.responseBody !== '[Streamed Response]'" class="flex-1 text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default overflow-auto max-h-120 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
+                          <div v-else-if="row.original.responseBody === '[Streamed Response]'" class="flex-1 min-h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
                             <UIcon name="i-lucide-radio" class="w-6 h-6 mb-2 text-primary opacity-50 animate-pulse" />
                             <span class="text-[10px] font-medium text-muted uppercase">Streamed Content</span>
                           </div>
-                          <div v-else class="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
+                          <div v-else class="flex-1 min-h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
                             <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-muted opacity-30" />
                             <span class="text-[10px] font-medium text-muted uppercase">No body</span>
                           </div>
