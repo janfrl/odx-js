@@ -4,9 +4,32 @@ import { UBadge, UButton, UIcon } from '#components'
 const { logs, clearLogs, services, logFilterService, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
 
+const activeRowTabs = ref<Record<string, string>>({})
+
+function getRowTab(id: string) {
+  return activeRowTabs.value[id] || 'payloads'
+}
+
+function getRowTabs(row: any) {
+  return [
+    { label: 'Payloads', icon: 'i-lucide-box', value: 'payloads' },
+    { label: 'Headers', icon: 'i-lucide-list', value: 'headers' },
+  ]
+}
+
 function viewProxyTrace(id: string) {
   selectedTraceLogId.value = id
   activeTab.value = 'proxy'
+}
+
+function copyToClipboard(text: string) {
+  navigator.clipboard.writeText(text)
+  toast.add({
+    title: 'Copied to clipboard',
+    icon: 'i-lucide-copy',
+    color: 'success',
+    size: 'xs',
+  })
 }
 
 const filteredLogs = computed(() => {
@@ -204,74 +227,130 @@ async function runClear() {
 
             <template #expanded="{ row }">
               <div
-                class="px-6 py-8 border-b border-default cursor-default"
+                class="px-6 py-6 border-b border-default cursor-default bg-muted/20"
                 @click.stop
               >
-                <div class="space-y-8 max-w-full overflow-hidden">
-                  <!-- URL & Actions Header -->
-                  <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                      <h3 class="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center gap-2">
-                        <UIcon name="i-lucide-globe" class="w-3.5 h-3.5 opacity-70" /> Request Details
-                      </h3>
-
-                      <UButton
-                        v-if="row.original.proxyTrace?.length"
-                        label="View Proxy Trace"
-                        icon="i-lucide-cable"
-                        size="xs"
+                <div class="space-y-6">
+                  <!-- URL & Quick Actions -->
+                  <div class="flex items-center justify-between gap-4">
+                    <div class="flex-1 flex items-center gap-3 bg-default px-4 py-2.5 rounded-xl border border-default shadow-sm min-w-0">
+                      <UBadge
+                        :color="Number(row.original.status || 0) < 400 ? 'success' : 'error'"
                         variant="soft"
-                        color="primary"
-                        class="font-bold px-3"
-                        @click="viewProxyTrace(row.original.id)"
+                        size="sm"
+                        class="font-black font-mono shrink-0"
+                      >
+                        {{ row.original.status || '???' }}
+                      </UBadge>
+                      <span class="font-black px-2 py-0.5 rounded bg-muted text-[11px] font-mono shrink-0 uppercase tracking-widest opacity-70">{{ row.original.method }}</span>
+                      <span class="text-[12px] font-mono text-toned truncate">{{ row.original.targetUrl || 'Internal Mock' }}</span>
+                      <UButton
+                        icon="i-lucide-copy"
+                        variant="ghost"
+                        color="neutral"
+                        size="xs"
+                        class="ml-auto"
+                        @click="copyToClipboard(row.original.targetUrl || '')"
                       />
                     </div>
 
-                    <div class="text-[12px] font-mono text-toned break-all bg-default p-4 rounded-xl border border-default shadow-sm flex items-center gap-3">
-                      <span class="font-black px-2 py-0.5 rounded bg-muted" :class="Number(row.original.status || 0) < 400 ? 'text-green-500' : 'text-red-500'">{{ row.original.method }}</span>
-                      <span class="truncate">{{ row.original.targetUrl || 'Internal Mock' }}</span>
+                    <div class="flex items-center gap-4 shrink-0">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-muted tabular-nums">{{ new Date(row.original.timestamp).toLocaleString() }}</span>
+                      <UButton
+                        v-if="row.original.proxyTrace?.length"
+                        label="Proxy Trace"
+                        icon="i-lucide-cable"
+                        size="sm"
+                        variant="subtle"
+                        color="primary"
+                        class="font-bold"
+                        @click="viewProxyTrace(row.original.id)"
+                      />
                     </div>
                   </div>
 
-                  <!-- Payload Grid -->
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch w-full">
-                    <!-- Request Column -->
-                    <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
-                      <h3 class="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center gap-2 shrink-0">
-                        <UIcon name="i-lucide-upload" class="w-3.5 h-3.5 opacity-70" /> Request Payload
-                      </h3>
+                  <!-- Tabbed Details -->
+                  <div class="bg-default rounded-2xl border border-default shadow-sm overflow-hidden flex flex-col">
+                    <div class="px-4 py-2 border-b border-default bg-default/50 flex items-center justify-between">
+                      <UTabs
+                        :model-value="getRowTab(row.original.id)"
+                        :items="getRowTabs(row.original)"
+                        size="sm"
+                        variant="subtle"
+                        class="w-fit"
+                        @update:model-value="v => activeRowTabs[row.original.id] = v"
+                      />
+                    </div>
 
-                      <div class="flex flex-col gap-3 min-w-0 flex-1">
-                        <!-- Headers -->
-                        <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="shrink-0 text-[11px] font-mono bg-default p-4 rounded-xl border border-default shadow-sm space-y-1.5 overflow-hidden">
-                          <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex justify-between gap-4 min-w-0">
-                            <span class="font-bold text-toned shrink-0">{{ key }}:</span>
-                            <span class="text-muted truncate" :title="val">{{ val }}</span>
+                    <div class="p-6">
+                      <!-- Payloads Tab (Side-by-side) -->
+                      <div v-if="getRowTab(row.original.id) === 'payloads'" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Request Column -->
+                        <div class="flex flex-col gap-3 min-w-0">
+                          <div class="flex items-center justify-between">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
+                              <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Body
+                            </h3>
+                            <UButton
+                              v-if="row.original.requestBody && Object.keys(row.original.requestBody).length > 0"
+                              icon="i-lucide-copy"
+                              variant="ghost"
+                              color="neutral"
+                              size="xs"
+                              label="Copy JSON"
+                              class="font-bold opacity-50 hover:opacity-100"
+                              @click="copyToClipboard(safeStringify(row.original.requestBody))"
+                            />
+                          </div>
+                          <pre v-if="row.original.requestBody && Object.keys(row.original.requestBody).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default overflow-auto max-h-120 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
+                          <div v-else class="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
+                            <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-muted opacity-30" />
+                            <span class="text-[10px] font-medium text-muted uppercase">No body</span>
                           </div>
                         </div>
 
-                        <!-- Body -->
-                        <pre v-if="row.original.requestBody" class="flex-1 text-[11px] font-mono bg-default p-4 rounded-xl border border-default shadow-sm overflow-auto max-h-104 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.requestBody) }}</pre>
-
-                        <div v-else class="flex-1 min-h-24 flex flex-col items-center justify-center bg-muted rounded-xl border-2 border-dashed border-default shadow-sm p-6 text-center">
-                          <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-muted opacity-50" />
-                          <span class="text-[11px] font-medium text-muted">No request body</span>
+                        <!-- Response Column -->
+                        <div class="flex flex-col gap-3 min-w-0">
+                          <div class="flex items-center justify-between">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
+                              <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Response Body
+                            </h3>
+                            <UButton
+                              v-if="row.original.responseBody && row.original.responseBody !== '[Streamed Response]'"
+                              icon="i-lucide-copy"
+                              variant="ghost"
+                              color="neutral"
+                              size="xs"
+                              label="Copy JSON"
+                              class="font-bold opacity-50 hover:opacity-100"
+                              @click="copyToClipboard(safeStringify(row.original.responseBody))"
+                            />
+                          </div>
+                          <pre v-if="row.original.responseBody && row.original.responseBody !== '[Streamed Response]'" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default overflow-auto max-h-120 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
+                          <div v-else-if="row.original.responseBody === '[Streamed Response]'" class="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
+                            <UIcon name="i-lucide-radio" class="w-6 h-6 mb-2 text-primary opacity-50 animate-pulse" />
+                            <span class="text-[10px] font-medium text-muted uppercase">Streamed Content</span>
+                          </div>
+                          <div v-else class="h-32 flex flex-col items-center justify-center bg-muted/20 rounded-xl border border-dashed border-default p-6 text-center">
+                            <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-muted opacity-30" />
+                            <span class="text-[10px] font-medium text-muted uppercase">No body</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- Response Column -->
-                    <div class="flex flex-col gap-3 min-w-0 overflow-hidden h-full">
-                      <h3 class="text-[10px] font-bold text-muted uppercase tracking-widest flex items-center gap-2 shrink-0">
-                        <UIcon name="i-lucide-download" class="w-3.5 h-3.5 opacity-70" /> Response Payload
-                      </h3>
-
-                      <div class="flex flex-col gap-3 min-w-0 flex-1">
-                        <pre v-if="row.original.responseBody" class="flex-1 text-[11px] font-mono bg-default p-4 rounded-xl border border-default shadow-sm overflow-auto max-h-104 custom-scrollbar text-toned whitespace-pre">{{ safeStringify(row.original.responseBody) }}</pre>
-
-                        <div v-else class="flex-1 min-h-24 flex flex-col items-center justify-center bg-muted rounded-xl border-2 border-dashed border-default shadow-sm p-6 text-center">
-                          <UIcon name="i-lucide-file-x-2" class="w-6 h-6 mb-2 text-muted opacity-50" />
-                          <span class="text-[11px] font-medium text-muted">No response body</span>
+                      <!-- Headers Tab -->
+                      <div v-if="getRowTab(row.original.id) === 'headers'" class="space-y-6">
+                        <div class="space-y-3">
+                          <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
+                            <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Headers
+                          </h3>
+                          <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default space-y-2">
+                            <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex items-start gap-4">
+                              <span class="font-bold text-toned shrink-0 min-w-32">{{ key }}:</span>
+                              <span class="text-muted break-all">{{ val }}</span>
+                            </div>
+                          </div>
+                          <p v-else class="text-xs text-muted italic p-4 bg-muted/20 rounded-xl border border-dashed border-default">No request headers recorded</p>
                         </div>
                       </div>
                     </div>
