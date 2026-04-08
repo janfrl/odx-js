@@ -234,7 +234,7 @@ async function runClear() {
                 <div class="p-6 space-y-6 min-w-0">
                   <!-- URL & Quick Actions -->
                   <div class="flex flex-wrap items-center gap-4">
-                    <div class="flex-1 flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm min-w-0">
+                    <div class="flex-1 basis-[400px] flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm min-w-0">
                       <UBadge
                         :color="Number(row.original.status || 0) < 400 ? 'success' : 'error'"
                         variant="soft"
@@ -244,7 +244,12 @@ async function runClear() {
                         {{ row.original.status || '???' }}
                       </UBadge>
                       <span class="font-black px-2 py-0.5 rounded bg-muted text-[11px] font-mono shrink-0 uppercase tracking-widest opacity-70">{{ row.original.method }}</span>
-                      <span class="text-[12px] font-mono text-toned truncate">{{ row.original.targetUrl || 'Internal Mock' }}</span>
+                      <span
+                        class="text-[12px] font-mono text-toned truncate cursor-help"
+                        :title="row.original.targetUrl || 'Internal Mock'"
+                      >
+                        {{ row.original.targetUrl || 'Internal Mock' }}
+                      </span>
                       <UButton
                         icon="i-lucide-copy"
                         variant="ghost"
