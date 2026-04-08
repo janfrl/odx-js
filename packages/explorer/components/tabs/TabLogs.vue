@@ -255,18 +255,24 @@ async function runClear() {
                       />
                     </div>
 
-                    <div class="flex items-center gap-4 shrink-0">
-                      <span class="text-[10px] font-black uppercase tracking-widest text-muted tabular-nums">{{ new Date(row.original.timestamp).toLocaleString() }}</span>
-                      <UButton
-                        v-if="row.original.proxyTrace?.length"
-                        label="Proxy Trace"
-                        icon="i-lucide-cable"
-                        size="sm"
-                        variant="subtle"
-                        color="primary"
-                        class="font-bold"
-                        @click="viewProxyTrace(row.original.id)"
-                      />
+                    <div class="flex items-center gap-3 bg-default px-4 py-2 rounded-xl border border-default shadow-sm shrink-0">
+                      <div class="flex items-center gap-2 text-muted px-1">
+                        <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 opacity-60" />
+                        <span class="text-[12px] font-bold tabular-nums whitespace-nowrap">{{ new Date(row.original.timestamp).toLocaleString() }}</span>
+                      </div>
+
+                      <template v-if="row.original.proxyTrace?.length">
+                        <div class="w-px h-4 bg-muted mx-1" />
+                        <UButton
+                          label="Proxy Trace"
+                          icon="i-lucide-cable"
+                          size="sm"
+                          variant="ghost"
+                          color="primary"
+                          class="font-bold -my-1"
+                          @click="viewProxyTrace(row.original.id)"
+                        />
+                      </template>
                     </div>
                   </div>
 
