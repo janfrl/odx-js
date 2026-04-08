@@ -250,7 +250,7 @@ async function runClear() {
                       </UBadge>
                       <span class="font-black px-2 py-0.5 rounded bg-muted text-[11px] font-mono shrink-0 uppercase tracking-widest opacity-70">{{ row.original.method }}</span>
                       <span
-                        class="text-[12px] font-mono text-toned truncate cursor-help"
+                        class="text-[12px] font-mono text-toned truncate"
                         :title="row.original.targetUrl || 'Internal Mock'"
                       >
                         {{ row.original.targetUrl || 'Internal Mock' }}
@@ -369,7 +369,9 @@ async function runClear() {
                               <span class="text-muted break-all min-w-0">{{ val }}</span>
                             </div>
                           </div>
-                          <p v-else class="text-xs text-muted italic p-4 bg-muted/20 rounded-xl border border-dashed border-default">No request headers recorded</p>
+                          <p v-else class="text-xs text-muted italic p-4 bg-muted/20 rounded-xl border border-dashed border-default">
+                            No request headers recorded
+                          </p>
                         </div>
                       </div>
                     </div>
