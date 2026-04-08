@@ -233,8 +233,8 @@ async function runClear() {
               >
                 <div class="space-y-6">
                   <!-- URL & Quick Actions -->
-                  <div class="flex flex-wrap items-center justify-between gap-4">
-                    <div class="flex-1 flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm min-w-0">
+                  <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex-1 min-w-[400px] flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm">
                       <UBadge
                         :color="Number(row.original.status || 0) < 400 ? 'success' : 'error'"
                         variant="soft"
@@ -255,7 +255,7 @@ async function runClear() {
                       />
                     </div>
 
-                    <div class="flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm shrink-0">
+                    <div class="flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm shrink-0 ml-auto">
                       <div class="flex items-center gap-2 text-muted px-1">
                         <UIcon name="i-lucide-clock" class="w-3.5 h-3.5 opacity-60" />
                         <span class="text-[12px] font-bold tabular-nums whitespace-nowrap">{{ new Date(row.original.timestamp).toLocaleString() }}</span>
