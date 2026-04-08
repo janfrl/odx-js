@@ -4,6 +4,7 @@ import { UBadge, UButton, UIcon } from '#components'
 const { logs, clearLogs, services, logFilterService, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
 
+const expanded = ref<Record<string, boolean>>({})
 const activeRowTabs = ref<Record<string, string>>({})
 
 function getRowTab(id: string) {
@@ -201,9 +202,13 @@ async function runClear() {
       >
         <div class="flex-1 overflow-auto custom-scrollbar relative">
           <UTable
+            v-model:expanded="expanded"
             :columns="columns"
             :data="filteredLogs"
             row-id="id"
+            :get-row-id="(row) => String(row.id)"
+            :expanded-options="{ autoResetExpanded: false }"
+            :auto-reset-all="false"
             class="w-full"
             :ui="{
               thead: 'bg-default/10 sticky top-0 z-30',
