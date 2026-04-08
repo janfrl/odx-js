@@ -72,13 +72,18 @@ export function useOData(service?: string): any {
   }
 
   const createServiceProxy = (serviceName: string): ODataService => {
-    return new Proxy({} as any, {
+    const rootMethods = createMethods(serviceName)
+    return new Proxy(rootMethods as any, {
       get(target, prop) {
         if (prop === 'entitySet') {
           return (name: string) => createMethods(serviceName, name)
         }
 
         if (typeof prop === 'symbol' || prop === 'toJSON' || prop === 'then') {
+          return undefined
+        }
+
+        if (prop in target) {
           return target[prop]
         }
 

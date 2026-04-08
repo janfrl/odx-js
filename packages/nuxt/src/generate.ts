@@ -1,4 +1,4 @@
-import type { EntityMapping, ODataProxyConfig } from '@bc8-odx/core'
+import type { EntityMapping, ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
 import type { Nuxt } from '@nuxt/schema'
 import { Buffer } from 'node:buffer'
 import { execSync } from 'node:child_process'
@@ -29,6 +29,61 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
 }
 
 /**
+ * Downloads metadata from a remote OData service.
+ */
+export async function downloadMetadata(svc: ODataServiceConfig, config: ODataProxyConfig): Promise<string> {
+  const metadataUrl = svc.url!.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
+  const auth = svc.auth || config.auth || {}
+  const headers: Record<string, string> = {}
+
+  if (auth.bearerToken) {
+    headers.Authorization = `Bearer ${auth.bearerToken}`
+  }
+  else if (auth.username && auth.password) {
+    headers.Authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+  }
+
+  return new Promise<string>((resolve, reject) => {
+    https.get(metadataUrl, { headers, rejectUnauthorized: config.rejectUnauthorized }, (res) => {
+      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300))
+        return reject(new Error(`Status: ${res.statusCode}`))
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => resolve(data))
+    }).on('error', reject)
+  })
+}
+
+/**
+ * Generates the virtual d.ts content for the OData service registry.
+ */
+export function generateRegistryDts(
+  serviceEntities: Record<string, EntityMapping[]>,
+  serviceModelFiles: Record<string, string>,
+): string {
+  const indexDtsLines = ['import type { ODataServiceRegistry, ODataService } from "@bc8-odx/core"']
+
+  for (const [svcName, modelFile] of Object.entries(serviceModelFiles)) {
+    indexDtsLines.push(`import * as ${svcName}Models from "./${svcName}/${modelFile}"`)
+  }
+
+  indexDtsLines.push('\ndeclare module "@bc8-odx/core" {')
+  indexDtsLines.push('  interface ODataServiceRegistry {')
+  for (const [svcName, entities] of Object.entries(serviceEntities)) {
+    const entityNames = entities.map(e => e.name)
+    const entityUnion = entityNames.length > 0 ? entityNames.map(e => `"${e}"`).join(' | ') : 'string'
+    const modelMapping = serviceModelFiles[svcName]
+      ? `{ ${entities.map(e => `"${e.name}": ${svcName}Models.${e.type}`).join(', ')} }`
+      : 'Record<string, any>'
+    indexDtsLines.push(`    ${svcName}: ODataService<${entityUnion}, ${modelMapping}>`)
+  }
+  indexDtsLines.push('  }')
+  indexDtsLines.push('}')
+
+  return indexDtsLines.join('\n')
+}
+
+/**
  * Sets up the 'prepare:types' hook for automated type generation and augmentation of the service registry.
  */
 export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void {
@@ -55,28 +110,10 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
 
       // Handle remote metadata (HTTPS)
       if (svc.url.startsWith('http')) {
-        const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
         const tempFile = join(tempDir, `${svc.name}.edmx`)
 
         try {
-          const auth = svc.auth || config.auth || {}
-          const headers: Record<string, string> = {}
-          if (auth.bearerToken) {
-            headers.Authorization = `Bearer ${auth.bearerToken}`
-          }
-          else if (auth.username && auth.password) {
-            headers.Authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
-          }
-
-          const xml = await new Promise<string>((resolve, reject) => {
-            https.get(metadataUrl, { headers, rejectUnauthorized: config.rejectUnauthorized }, (res) => {
-              if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300))
-                return reject(new Error(`Status: ${res.statusCode}`))
-              let data = ''
-              res.on('data', chunk => data += chunk)
-              res.on('end', () => resolve(data))
-            }).on('error', reject)
-          })
+          const xml = await downloadMetadata(svc, config)
           fs.writeFileSync(tempFile, xml)
           inputPath = tempFile
         }
@@ -111,28 +148,10 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
       }
     }
 
-    // Generate virtual d.ts for the service registry
     const indexDtsPath = join(outRoot, 'index.d.ts')
-    const indexDtsLines = ['import type { ODataServiceRegistry, ODataService } from "@bc8-odx/core"']
+    const indexDtsContent = generateRegistryDts(serviceEntities, serviceModelFiles)
 
-    for (const [svcName, modelFile] of Object.entries(serviceModelFiles)) {
-      indexDtsLines.push(`import * as ${svcName}Models from "./${svcName}/${modelFile}"`)
-    }
-
-    indexDtsLines.push('\ndeclare module "@bc8-odx/core" {')
-    indexDtsLines.push('  interface ODataServiceRegistry {')
-    for (const [svcName, entities] of Object.entries(serviceEntities)) {
-      const entityNames = entities.map(e => e.name)
-      const entityUnion = entityNames.length > 0 ? entityNames.map(e => `"${e}"`).join(' | ') : 'string'
-      const modelMapping = serviceModelFiles[svcName]
-        ? `{ ${entities.map(e => `"${e.name}": ${svcName}Models.${e.type}`).join(', ')} }`
-        : 'Record<string, any>'
-      indexDtsLines.push(`    ${svcName}: ODataService<${entityUnion}, ${modelMapping}>`)
-    }
-    indexDtsLines.push('  }')
-    indexDtsLines.push('}')
-
-    fs.writeFileSync(indexDtsPath, indexDtsLines.join('\n'))
+    fs.writeFileSync(indexDtsPath, indexDtsContent)
     references.push({ path: indexDtsPath })
   })
 }
