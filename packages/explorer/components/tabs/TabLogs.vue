@@ -299,7 +299,7 @@ async function runClear() {
                       <div v-if="getRowTab(row.original.id) === 'payloads'" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- Request Column -->
                         <div class="flex flex-col gap-3 min-w-0">
-                          <div class="flex items-center justify-between h-8">
+                          <div class="flex items-center justify-between h-4">
                             <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
                               <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Body
                             </h3>
@@ -323,7 +323,7 @@ async function runClear() {
 
                         <!-- Response Column -->
                         <div class="flex flex-col gap-3 min-w-0">
-                          <div class="flex items-center justify-between h-8">
+                          <div class="flex items-center justify-between h-4">
                             <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
                               <UIcon name="i-lucide-download" class="w-3.5 h-3.5" /> Response Body
                             </h3>
@@ -353,9 +353,11 @@ async function runClear() {
                       <!-- Headers Tab -->
                       <div v-if="getRowTab(row.original.id) === 'headers'" class="space-y-6 min-w-0">
                         <div class="space-y-3 min-w-0">
-                          <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
-                            <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Headers
-                          </h3>
+                          <div class="flex items-center justify-between h-4">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
+                              <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Headers
+                            </h3>
+                          </div>
                           <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default space-y-2 max-h-120 overflow-auto custom-scrollbar">
                             <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="grid grid-cols-[140px_1fr] gap-4 items-start min-w-0">
                               <span class="font-bold text-toned truncate" :title="key">{{ key }}:</span>
