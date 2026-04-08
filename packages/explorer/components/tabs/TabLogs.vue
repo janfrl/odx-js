@@ -228,13 +228,13 @@ async function runClear() {
 
             <template #expanded="{ row }">
               <div
-                class="px-6 py-6 border-b border-default cursor-default bg-muted/20"
+                class="border-b border-default cursor-default bg-muted/20 w-0 min-w-full overflow-hidden"
                 @click.stop
               >
-                <div class="space-y-6">
+                <div class="p-6 space-y-6 min-w-0">
                   <!-- URL & Quick Actions -->
                   <div class="flex flex-wrap items-center gap-4">
-                    <div class="flex-1 min-w-[400px] flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm">
+                    <div class="flex-1 flex items-center gap-3 bg-default px-4 h-10 rounded-xl border border-default shadow-sm min-w-0">
                       <UBadge
                         :color="Number(row.original.status || 0) < 400 ? 'success' : 'error'"
                         variant="soft"
@@ -277,7 +277,7 @@ async function runClear() {
                   </div>
 
                   <!-- Tabbed Details -->
-                  <div class="bg-default rounded-2xl border border-default shadow-sm overflow-hidden flex flex-col">
+                  <div class="bg-default rounded-2xl border border-default shadow-sm overflow-hidden flex flex-col min-w-0">
                     <div class="px-4 py-2 border-b border-default bg-default/50 flex items-center justify-between">
                       <UTabs
                         :model-value="getRowTab(row.original.id)"
@@ -289,7 +289,7 @@ async function runClear() {
                       />
                     </div>
 
-                    <div class="p-6">
+                    <div class="p-6 min-w-0 overflow-hidden">
                       <!-- Payloads Tab (Side-by-side) -->
                       <div v-if="getRowTab(row.original.id) === 'payloads'" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <!-- Request Column -->
@@ -346,15 +346,15 @@ async function runClear() {
                       </div>
 
                       <!-- Headers Tab -->
-                      <div v-if="getRowTab(row.original.id) === 'headers'" class="space-y-6">
-                        <div class="space-y-3">
+                      <div v-if="getRowTab(row.original.id) === 'headers'" class="space-y-6 min-w-0">
+                        <div class="space-y-3 min-w-0">
                           <h3 class="text-[10px] font-black uppercase tracking-widest text-muted flex items-center gap-2">
                             <UIcon name="i-lucide-upload" class="w-3.5 h-3.5" /> Request Headers
                           </h3>
-                          <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default space-y-2">
-                            <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="flex items-start gap-4">
-                              <span class="font-bold text-toned shrink-0 min-w-32">{{ key }}:</span>
-                              <span class="text-muted break-all">{{ val }}</span>
+                          <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default space-y-2 max-h-120 overflow-auto custom-scrollbar">
+                            <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="grid grid-cols-[140px_1fr] gap-4 items-start min-w-0">
+                              <span class="font-bold text-toned truncate" :title="key">{{ key }}:</span>
+                              <span class="text-muted break-all min-w-0">{{ val }}</span>
                             </div>
                           </div>
                           <p v-else class="text-xs text-muted italic p-4 bg-muted/20 rounded-xl border border-dashed border-default">No request headers recorded</p>
