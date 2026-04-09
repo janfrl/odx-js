@@ -11,7 +11,7 @@ function getRowTab(id: string) {
   return activeRowTabs.value[id] || 'payloads'
 }
 
-function getRowTabs(row: any) {
+function getRowTabs() {
   return [
     { label: 'Payloads', icon: 'i-lucide-box', value: 'payloads' },
     { label: 'Headers', icon: 'i-lucide-list', value: 'headers' },

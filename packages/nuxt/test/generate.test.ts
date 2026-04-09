@@ -1,7 +1,8 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { downloadMetadata, generateRegistryDts } from '../src/generate'
-import https from 'node:https'
+import { Buffer } from 'node:buffer'
 import { EventEmitter } from 'node:events'
+import https from 'node:https'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { downloadMetadata, generateRegistryDts } from '../src/generate'
 
 vi.mock('node:https')
 
@@ -14,7 +15,7 @@ describe('type Generation Logic', () => {
     it('sets Bearer token header when provided', async () => {
       const svc = { name: 'Test', url: 'https://example.com/odata' }
       const config = { auth: { bearerToken: 'test-token' } } as any
-      
+
       const mockRequest = new EventEmitter() as any
       vi.mocked(https.get).mockImplementation((url, options, callback) => {
         const res = new EventEmitter() as any
@@ -26,25 +27,25 @@ describe('type Generation Logic', () => {
       })
 
       const result = await downloadMetadata(svc, config)
-      
+
       expect(result).toBe('<xml>metadata</xml>')
       expect(https.get).toHaveBeenCalledWith(
         'https://example.com/odata/$metadata',
         expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' }
+          headers: { Authorization: 'Bearer test-token' },
         }),
-        expect.any(Function)
+        expect.any(Function),
       )
     })
 
     it('sets Basic auth header when username/password provided', async () => {
-      const svc = { 
-        name: 'Test', 
+      const svc = {
+        name: 'Test',
         url: 'https://example.com/odata/',
-        auth: { username: 'user', password: 'pwd' } 
+        auth: { username: 'user', password: 'pwd' },
       }
       const config = {} as any
-      
+
       const mockRequest = new EventEmitter() as any
       vi.mocked(https.get).mockImplementation((url, options, callback) => {
         const res = new EventEmitter() as any
@@ -56,14 +57,14 @@ describe('type Generation Logic', () => {
       })
 
       await downloadMetadata(svc, config)
-      
+
       const expectedBasic = `Basic ${Buffer.from('user:pwd').toString('base64')}`
       expect(https.get).toHaveBeenCalledWith(
         'https://example.com/odata/$metadata',
         expect.objectContaining({
-          headers: { Authorization: expectedBasic }
+          headers: { Authorization: expectedBasic },
         }),
-        expect.any(Function)
+        expect.any(Function),
       )
     })
 
@@ -85,15 +86,15 @@ describe('type Generation Logic', () => {
       const serviceEntities = {
         Svc1: [
           { name: 'Products', type: 'Product', properties: [], navigationProperties: [] },
-          { name: 'Categories', type: 'Category', properties: [], navigationProperties: [] }
+          { name: 'Categories', type: 'Category', properties: [], navigationProperties: [] },
         ],
         Svc2: [
-          { name: 'Orders', type: 'Order', properties: [], navigationProperties: [] }
-        ]
+          { name: 'Orders', type: 'Order', properties: [], navigationProperties: [] },
+        ],
       }
       const serviceModelFiles = {
         Svc1: 'Svc1Model',
-        Svc2: 'Svc2Model'
+        Svc2: 'Svc2Model',
       }
 
       const result = generateRegistryDts(serviceEntities, serviceModelFiles)
@@ -106,7 +107,7 @@ describe('type Generation Logic', () => {
 
     it('handles services without model files', () => {
       const serviceEntities = {
-        SvcEmpty: [{ name: 'Items', type: 'Item', properties: [], navigationProperties: [] }]
+        SvcEmpty: [{ name: 'Items', type: 'Item', properties: [], navigationProperties: [] }],
       }
       const serviceModelFiles = {}
 
@@ -114,18 +115,18 @@ describe('type Generation Logic', () => {
 
       expect(result).toContain('SvcEmpty: ODataService<"Items", Record<string, any>>')
     })
-    
+
     it('handles services without entities', () => {
-        const serviceEntities = {
-          SvcNoEntities: []
-        }
-        const serviceModelFiles = {
-            SvcNoEntities: 'Model'
-        }
-  
-        const result = generateRegistryDts(serviceEntities, serviceModelFiles)
-  
-        expect(result).toContain('SvcNoEntities: ODataService<string, {  }>')
-      })
+      const serviceEntities = {
+        SvcNoEntities: [],
+      }
+      const serviceModelFiles = {
+        SvcNoEntities: 'Model',
+      }
+
+      const result = generateRegistryDts(serviceEntities, serviceModelFiles)
+
+      expect(result).toContain('SvcNoEntities: ODataService<string, {  }>')
+    })
   })
 })

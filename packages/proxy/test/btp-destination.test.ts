@@ -1,8 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { resolveBtpDestination } from '../src/utils/btp-destination'
-import { ofetch } from 'ofetch'
 import fs from 'node:fs'
-import path from 'node:path'
+import { ofetch } from 'ofetch'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { resolveBtpDestination } from '../src/utils/btp-destination'
 
 vi.mock('ofetch', () => ({
   ofetch: vi.fn(),
@@ -30,9 +29,9 @@ describe('btp Destination Resolution', () => {
 
   it('returns mock destination when no VCAP_SERVICES are present', async () => {
     vi.mocked(fs.existsSync).mockReturnValue(false)
-    
+
     const result = await resolveBtpDestination('MockService')
-    
+
     expect(result.user).toBe('TECHNICAL_USER')
     expect(result.url).toBe('/sap/opu/odata/sap')
   })
@@ -40,7 +39,7 @@ describe('btp Destination Resolution', () => {
   it('resolves a standard internet destination', async () => {
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: 'https://dest.api' } }],
-      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }]
+      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
     })
 
     vi.mocked(ofetch)
@@ -50,9 +49,9 @@ describe('btp Destination Resolution', () => {
           URL: 'https://backend.com',
           User: 'backend-user',
           Password: 'backend-password',
-          ProxyType: 'Internet'
+          ProxyType: 'Internet',
         },
-        authTokens: [{ value: 'auth-token-123' }]
+        authTokens: [{ value: 'auth-token-123' }],
       })
 
     const result = await resolveBtpDestination('RealService')
@@ -60,7 +59,7 @@ describe('btp Destination Resolution', () => {
     expect(result.url).toBe('https://backend.com')
     expect(result.user).toBe('backend-user')
     expect(result.authTokens?.[0].value).toBe('auth-token-123')
-    
+
     expect(ofetch).toHaveBeenCalledWith('https://uaa.api/oauth/token', expect.anything())
     expect(ofetch).toHaveBeenCalledWith('https://dest.api/destination-configuration/v1/destinations/RealService', expect.anything())
   })
@@ -69,13 +68,13 @@ describe('btp Destination Resolution', () => {
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: 'https://dest.api' } }],
       xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
-      connectivity: [{ credentials: { 
-        onpremise_proxy_host: 'proxy.host', 
+      connectivity: [{ credentials: {
+        onpremise_proxy_host: 'proxy.host',
         onpremise_proxy_port: '1234',
         url: 'https://conn-uaa.api',
         clientid: 'conn-id',
-        clientsecret: 'conn-sec'
-      } }]
+        clientsecret: 'conn-sec',
+      } }],
     })
 
     vi.mocked(ofetch)
@@ -83,8 +82,8 @@ describe('btp Destination Resolution', () => {
       .mockResolvedValueOnce({ // Destination configuration
         destinationConfiguration: {
           URL: 'http://onpremise:8000',
-          ProxyType: 'OnPremise'
-        }
+          ProxyType: 'OnPremise',
+        },
       })
       .mockResolvedValueOnce({ access_token: 'conn-token' }) // Connectivity XSUAA
 
@@ -100,13 +99,13 @@ describe('btp Destination Resolution', () => {
   it('supports principal propagation via user token', async () => {
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: 'https://dest.api' } }],
-      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }]
+      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
     })
 
     vi.mocked(ofetch)
       .mockResolvedValueOnce({ access_token: 'dest-token' })
-      .mockResolvedValueOnce({ 
-        destinationConfiguration: { URL: 'https://backend' } 
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://backend' },
       })
 
     await resolveBtpDestination('PropService', 'Bearer user-jwt-123')
@@ -115,9 +114,9 @@ describe('btp Destination Resolution', () => {
       expect.stringContaining('/destinations/PropService'),
       expect.objectContaining({
         headers: expect.objectContaining({
-          'X-user-token': 'user-jwt-123'
-        })
-      })
+          'X-user-token': 'user-jwt-123',
+        }),
+      }),
     )
   })
 })

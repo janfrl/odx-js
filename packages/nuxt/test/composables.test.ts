@@ -1,6 +1,6 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { useOData } from '../src/runtime/composables/useOData'
 import * as core from '@bc8-odx/core'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { useOData } from '../src/runtime/composables/useOData'
 
 // Mock Nuxt-specific imports
 vi.mock('#imports', () => ({
@@ -10,7 +10,7 @@ vi.mock('#imports', () => ({
       odata: {
         basePath: '/api/odx',
         services: [
-          { name: 'DirectService', url: 'https://external.com/odata', strategy: 'direct' }
+          { name: 'DirectService', url: 'https://external.com/odata', strategy: 'direct' },
         ],
       },
     },
@@ -34,11 +34,11 @@ describe('useOData Composable', () => {
     globalThis.$fetch = vi.fn() as any
   })
 
-  describe('Key Formatting', () => {
+  describe('key Formatting', () => {
     it('formats single keys correctly', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').get('abc') as any
-      expect(result.url).toBe("/api/odx/MyService/Products('abc')")
+      expect(result.url).toBe('/api/odx/MyService/Products(\'abc\')')
     })
 
     it('formats numeric keys without quotes', () => {
@@ -50,11 +50,11 @@ describe('useOData Composable', () => {
     it('formats composite keys correctly', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Items').get({ ID: 1, Type: 'A' }) as any
-      expect(result.url).toBe("/api/odx/MyService/Items(ID=1,Type='A')")
+      expect(result.url).toBe('/api/odx/MyService/Items(ID=1,Type=\'A\')')
     })
   })
 
-  describe('URL Construction', () => {
+  describe('uRL Construction', () => {
     it('constructs list URLs correctly for proxied services', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').list() as any
@@ -67,52 +67,52 @@ describe('useOData Composable', () => {
       const result = api.entitySet('Products').list() as any
       expect(result.url).toBe('https://external.com/odata/Products')
     })
-    
+
     it('handles service calls without entity sets (service root)', () => {
-        const api = useOData('MyService')
-        const result = (api as any).list()
-        expect(result.url).toBe('/api/odx/MyService')
+      const api = useOData('MyService')
+      const result = (api as any).list()
+      expect(result.url).toBe('/api/odx/MyService')
     })
   })
 
-  describe('Mutations ($odata)', () => {
+  describe('mutations ($odata)', () => {
     it('calls $odata for create (POST)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').create({ Name: 'New Product' })
-      
+
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/MyService/Products',
         'POST',
-        { body: { Name: 'New Product' } }
+        { body: { Name: 'New Product' } },
       )
     })
 
     it('calls $odata for update (PATCH)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').update(1, { Name: 'Updated' })
-      
+
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/MyService/Products(1)',
         'PATCH',
-        { body: { Name: 'Updated' } }
+        { body: { Name: 'Updated' } },
       )
     })
 
     it('calls $odata for remove (DELETE)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').remove('key1')
-      
+
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
-        "/api/odx/MyService/Products('key1')",
-        'DELETE'
+        '/api/odx/MyService/Products(\'key1\')',
+        'DELETE',
       )
     })
   })
 
-  describe('Proxy Behavior', () => {
+  describe('proxy Behavior', () => {
     it('supports dot notation for entity sets', () => {
       const api = useOData('MyService')
       const result = (api as any).Products.list()
@@ -126,13 +126,13 @@ describe('useOData Composable', () => {
     })
 
     it('ignores internal symbols and properties in proxy', () => {
-        const odx = useOData() as any
-        expect(odx.toJSON).toBeUndefined()
-        expect(odx.then).toBeUndefined()
-        
-        const service = useOData('Svc') as any
-        expect(service.toJSON).toBeUndefined()
-        expect(service.then).toBeUndefined()
+      const odx = useOData() as any
+      expect(odx.toJSON).toBeUndefined()
+      expect(odx.then).toBeUndefined()
+
+      const service = useOData('Svc') as any
+      expect(service.toJSON).toBeUndefined()
+      expect(service.then).toBeUndefined()
     })
   })
 })
