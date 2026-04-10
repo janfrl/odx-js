@@ -38,6 +38,24 @@ describe('proxy rules', () => {
           ],
         },
         {
+          name: 'DenyMethodService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          rules: [
+            { type: 'denyMethods', value: ['DELETE'] },
+          ],
+        },
+        {
+          name: 'HeaderPolicyService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          rules: [
+            { type: 'denyIfHeader', value: { name: 'x-forbidden', value: 'true' } },
+          ],
+        },
+        {
           name: 'HeaderService',
           url: backendUrl,
           strategy: 'proxied',
@@ -53,6 +71,16 @@ describe('proxy rules', () => {
           proxyMode: 'buffer',
           rules: [
             { type: 'rewritePath', value: { pattern: '/OldPath', replacement: '/Products' } },
+          ],
+        },
+        {
+          name: 'XsuaaService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          rules: [
+            { type: 'requireScope', value: 'Admin' },
+            { type: 'requireAttribute', value: { name: 'CostCenter', value: '1000' } },
           ],
         },
         {
@@ -86,7 +114,7 @@ describe('proxy rules', () => {
     ])
   }, 20000)
 
-  it('allows GET but denies POST on RestrictedService', async () => {
+  it('allows GET but denies POST on RestrictedService (allowOnlyMethods)', async () => {
     const getRes = await ofetch(`${proxyUrl}/api/odx/RestrictedService/Products`)
     expect(getRes).toBeDefined()
 
@@ -103,7 +131,35 @@ describe('proxy rules', () => {
     }
   })
 
-  it('denies access to paths containing Restricted keywords', async () => {
+  it('denies DELETE on DenyMethodService (denyMethods)', async () => {
+    try {
+      await ofetch(`${proxyUrl}/api/odx/DenyMethodService/Products`, {
+        method: 'DELETE',
+      })
+      expect.fail('Should have denied DELETE')
+    }
+    catch (err: any) {
+      expect(err.status).toBe(405)
+    }
+  })
+
+  it('denies access based on headers (denyIfHeader)', async () => {
+    try {
+      await ofetch(`${proxyUrl}/api/odx/HeaderPolicyService/Products`, {
+        headers: { 'x-forbidden': 'true' },
+      })
+      expect.fail('Should have denied due to header')
+    }
+    catch (err: any) {
+      expect(err.status).toBe(403)
+    }
+
+    // Should allow if header is missing or different
+    const res = await ofetch(`${proxyUrl}/api/odx/HeaderPolicyService/Products`)
+    expect(res).toBeDefined()
+  })
+
+  it('denies access to paths containing Restricted keywords (denyIfPathIncludes)', async () => {
     try {
       await ofetch(`${proxyUrl}/api/odx/RestrictedService/SensitiveData`)
       expect.fail('Should have denied /SensitiveData')
@@ -113,16 +169,80 @@ describe('proxy rules', () => {
     }
   })
 
-  it('injects headers correctly from rules', async () => {
+  it('injects headers correctly from rules (injectHeader)', async () => {
     const res = await ofetch(`${proxyUrl}/api/odx/HeaderService/HeaderEcho`)
     expect(res.receivedHeaders['x-injected']).toBe('secret-key')
   })
 
-  it('rewrites paths correctly before forwarding', async () => {
-    // Calling /OldPath should be rewritten to /Products and return dummy products
+  it('rewrites paths correctly before forwarding (rewritePath)', async () => {
     const res = await ofetch(`${proxyUrl}/api/odx/RewriteService/OldPath`)
     expect(res.d.results).toBeDefined()
     expect(res.d.results[0].Name).toBe('Test Product')
+  })
+
+  describe('XSUAA Security Rules', () => {
+    it('denies access if scope is missing (requireScope)', async () => {
+      // Mock missing scope
+      hooks.hookOnce('odx:proxy:request:XsuaaService', ({ event }) => {
+        event.context.securityContext = {
+          checkLocalScope: () => false,
+          getAttribute: () => '1000',
+        }
+      })
+
+      try {
+        await ofetch(`${proxyUrl}/api/odx/XsuaaService/Products`)
+        expect.fail('Should have denied due to missing scope')
+      }
+      catch (err: any) {
+        expect(err.status).toBe(403)
+      }
+    })
+
+    it('denies access if attribute does not match (requireAttribute)', async () => {
+      // Mock wrong attribute
+      hooks.hookOnce('odx:proxy:request:XsuaaService', ({ event }) => {
+        event.context.securityContext = {
+          checkLocalScope: () => true,
+          getAttribute: (name: string) => name === 'CostCenter' ? '9999' : null,
+        }
+      })
+
+      try {
+        await ofetch(`${proxyUrl}/api/odx/XsuaaService/Products`)
+        expect.fail('Should have denied due to wrong attribute')
+      }
+      catch (err: any) {
+        expect(err.status).toBe(403)
+      }
+    })
+
+    it('allows access if all security conditions are met', async () => {
+      hooks.hookOnce('odx:proxy:request:XsuaaService', ({ event }) => {
+        event.context.securityContext = {
+          checkLocalScope: (s: string) => s === 'Admin',
+          getAttribute: (name: string) => name === 'CostCenter' ? '1000' : null,
+        }
+      })
+
+      const res = await ofetch(`${proxyUrl}/api/odx/XsuaaService/Products`)
+      expect(res).toBeDefined()
+    })
+  })
+
+  it('supports custom validation rules (validate)', async () => {
+    hooks.hookOnce('odx:proxy:request:HookService', (ctx: any) => {
+      odataGuard(ctx).validate('TimeCheck', () => false, 'Test failure')
+    })
+
+    try {
+      await ofetch(`${proxyUrl}/api/odx/HookService/Products`)
+      expect.fail('Should have failed validation')
+    }
+    catch (err: any) {
+      expect(err.status).toBe(403)
+      expect(err.statusMessage).toContain('Test failure')
+    }
   })
 
   it('allows programmatic rules via Nitro hooks', async () => {
@@ -137,5 +257,14 @@ describe('proxy rules', () => {
     catch (err: any) {
       expect(err.status).toBe(403)
     }
+  })
+
+  it('records info traces without blocking (info)', async () => {
+    hooks.hookOnce('odx:proxy:request:HookService', (ctx: any) => {
+      odataGuard(ctx).info('Processing request', { timestamp: Date.now() })
+    })
+
+    const res = await ofetch(`${proxyUrl}/api/odx/HookService/Products`)
+    expect(res).toBeDefined()
   })
 })

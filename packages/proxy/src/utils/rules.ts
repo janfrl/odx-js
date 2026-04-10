@@ -67,8 +67,6 @@ export class ODataGuard {
 
     const secContext = this.ctx.event.context.securityContext
     if (!secContext) {
-      // In non-production or if no auth is present, we might skip or fail depending on config.
-      // For now, if we REQUIRE a scope, we expect a security context.
       if (process.env.NODE_ENV === 'production') {
         const message = 'Security context missing. Authentication required.'
         this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT' }, 'error')
@@ -98,7 +96,9 @@ export class ODataGuard {
     const secContext = this.ctx.event.context.securityContext
     if (!secContext) {
       if (process.env.NODE_ENV === 'production') {
-        throw createError({ statusCode: 401, statusMessage: 'Security context missing' })
+        const message = 'Security context missing. Authentication required.'
+        this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT' }, 'error')
+        throw createError({ statusCode: 401, statusMessage: message })
       }
       return this
     }

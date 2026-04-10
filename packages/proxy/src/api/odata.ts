@@ -59,19 +59,19 @@ export default defineEventHandler(async (event): Promise<any> => {
       const hookCtx = { event, serviceName, fetchOptions, url: targetUrl }
       const guard = odataGuard(hookCtx)
 
-      // A. Declarative Rules (from nuxt.config.ts)
+      // A. Programmatic Hooks (Nitro Plugins)
+      if (hooks) {
+        tracer.addTrace('Hooks', 'Executing proxy request hooks...')
+        await hooks.callHook('odx:proxy:request', hookCtx)
+        await hooks.callHook(`odx:proxy:request:${serviceName}`, hookCtx)
+      }
+
+      // B. Declarative Rules (from nuxt.config.ts)
       if (matched?.rules) {
         tracer.addTrace('Rules', 'Applying declarative configuration rules...')
         for (const rule of matched.rules) {
           guard.applyRule(rule)
         }
-      }
-
-      // B. Programmatic Hooks (Nitro Plugins)
-      if (hooks) {
-        tracer.addTrace('Hooks', 'Executing proxy request hooks...')
-        await hooks.callHook('odx:proxy:request', hookCtx)
-        await hooks.callHook(`odx:proxy:request:${serviceName}`, hookCtx)
       }
 
       // Sync changes back from Guard/Hooks
