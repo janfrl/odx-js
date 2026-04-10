@@ -40,6 +40,15 @@ export interface EntityMapping {
   navigationProperties: NavigationProperty[]
 }
 
+export interface ODataRule {
+  /** The type of rule to apply (e.g., 'allowOnlyMethods', 'requireScope'). */
+  type: 'allowOnlyMethods' | 'denyMethods' | 'requireScope' | 'requireAttribute' | 'denyPath' | 'denyIfHeader' | 'injectHeader' | 'rewritePath' | 'validate' | (string & {})
+  /** The value for the rule (e.g., ['GET', 'POST'], 'Admin', '/$metadata'). */
+  value: any
+  /** Optional custom error message when the rule fails. */
+  reason?: string
+}
+
 export interface ODataServiceConfig {
   name: string
   url: string
@@ -55,6 +64,7 @@ export interface ODataServiceConfig {
     mockUserCompanies?: Array<{ company: string, source: string }>
   }
   headers?: Record<string, string>
+  rules?: ODataRule[]
 }
 
 /**
