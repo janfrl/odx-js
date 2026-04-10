@@ -180,7 +180,7 @@ describe('proxy rules', () => {
     expect(res.d.results[0].Name).toBe('Test Product')
   })
 
-  describe('XSUAA Security Rules', () => {
+  describe('xsuaa Security Rules', () => {
     it('denies access if scope is missing (requireScope)', async () => {
       // Mock missing scope
       hooks.hookOnce('odx:proxy:request:XsuaaService', ({ event }) => {
