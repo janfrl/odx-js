@@ -49,7 +49,14 @@ export default defineEventHandler(async (event): Promise<any> => {
     // 3. Header Preparation
     const finalHeaders = prepareProxyHeaders(getHeaders(event), matched?.headers, targetConfig.authHeader)
 
-    // 4. Rule & Hook Execution
+    // 4. DevTools Logging Initialization
+    let requestBody: any = null
+    if (tracer.enabled && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
+      requestBody = await readBody(event).catch(() => null)
+    }
+    tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, finalHeaders)
+
+    // 5. Rule & Hook Execution
     const isDirect = targetConfig.strategy === 'direct'
     const fetchOptions: any = { method: event.method, headers: { ...finalHeaders } }
     const nitroApp = (event.context as any).nitroApp
@@ -78,13 +85,6 @@ export default defineEventHandler(async (event): Promise<any> => {
       Object.assign(finalHeaders, fetchOptions.headers || {})
       targetUrl = hookCtx.url || targetUrl
     }
-
-    // 5. DevTools Logging Initialization
-    let requestBody: any = null
-    if (tracer.enabled && ['POST', 'PUT', 'PATCH'].includes(event.method)) {
-      requestBody = await readBody(event).catch(() => null)
-    }
-    tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, finalHeaders)
 
     // 6. Proxy Execution (Hybrid Mode)
     const mode = targetConfig.proxyMode || (tracer.enabled ? 'buffer' : 'stream')
