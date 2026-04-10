@@ -233,6 +233,7 @@ export interface ModuleOptions {
   services?: ODataServiceConfig[]
   buildDir?: string
   rootDir?: string
+  btpConfigService?: string
   devtools?: {
     enabled?: boolean
     maxLogs?: number

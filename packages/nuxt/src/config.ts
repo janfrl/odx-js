@@ -6,10 +6,30 @@ const RE_UNDERSCORE = /_/g
 const ENV_PREFIX = 'NUXT_ODATA_SERVICES_'
 
 /**
+ * Extracts OData configuration from SAP BTP User-Provided Services.
+ */
+function getBtpServiceConfig(serviceName?: string): Record<string, any> {
+  if (!process.env.VCAP_SERVICES)
+    return {}
+
+  try {
+    const vcap = JSON.parse(process.env.VCAP_SERVICES)
+    const name = serviceName || 'odx-config'
+    const service = vcap['user-provided']?.find((s: any) => s.name === name)
+    return service?.credentials?.services || {}
+  }
+  catch {
+    return {}
+  }
+}
+
+/**
  * Resolves and merges module options with environment variables.
  */
 export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): ODataProxyConfig {
   const logger = useLogger('@bc8-odx/nuxt')
+
+  const btpOverrides = getBtpServiceConfig(options.btpConfigService)
 
   const parseEnvJson = (envValue: string | undefined): Record<string, string> => {
     if (!envValue)
@@ -33,8 +53,9 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     return result
   }
 
-  // 1. Resolve Services (explicitly configured + discovered from env)
+  // 1. Resolve Services (explicitly configured + discovered from env + BTP Overrides)
   const services: ODataServiceConfig[] = (options.services || []).map((s: ODataServiceConfig) => {
+    const btpOverride = btpOverrides[s.name] || {}
     const envKey = s.name.toUpperCase()
     const envHeadersJson = parseEnvJson(process.env[`${ENV_PREFIX}${envKey}_HEADERS`])
     const envHeadersIndividual: Record<string, string> = {}
@@ -48,22 +69,25 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
 
     return {
       ...s,
-      url: process.env[`${ENV_PREFIX}${envKey}_URL`] || s.url,
-      name: process.env[`${ENV_PREFIX}${envKey}_NAME`] || s.name,
-      destination: process.env[`${ENV_PREFIX}${envKey}_DESTINATION`] || s.destination,
-      icon: process.env[`${ENV_PREFIX}${envKey}_ICON`] || s.icon,
-      strategy: (process.env[`${ENV_PREFIX}${envKey}_STRATEGY`] as any) || s.strategy || 'proxied',
-      proxyMode: (process.env[`${ENV_PREFIX}${envKey}_PROXY_MODE`] as any) || s.proxyMode,
+      ...btpOverride,
+      url: process.env[`${ENV_PREFIX}${envKey}_URL`] || btpOverride.url || s.url,
+      name: process.env[`${ENV_PREFIX}${envKey}_NAME`] || btpOverride.name || s.name,
+      destination: process.env[`${ENV_PREFIX}${envKey}_DESTINATION`] || btpOverride.destination || s.destination,
+      icon: process.env[`${ENV_PREFIX}${envKey}_ICON`] || btpOverride.icon || s.icon,
+      strategy: (process.env[`${ENV_PREFIX}${envKey}_STRATEGY`] as any) || btpOverride.strategy || s.strategy || 'proxied',
+      proxyMode: (process.env[`${ENV_PREFIX}${envKey}_PROXY_MODE`] as any) || btpOverride.proxyMode || s.proxyMode,
       auth: {
-        username: process.env[`${ENV_PREFIX}${envKey}_AUTH_USERNAME`] || s.auth?.username,
-        password: process.env[`${ENV_PREFIX}${envKey}_AUTH_PASSWORD`] || s.auth?.password,
-        bearerToken: process.env[`${ENV_PREFIX}${envKey}_AUTH_BEARER_TOKEN`] || s.auth?.bearerToken,
+        username: process.env[`${ENV_PREFIX}${envKey}_AUTH_USERNAME`] || btpOverride.auth?.username || s.auth?.username,
+        password: process.env[`${ENV_PREFIX}${envKey}_AUTH_PASSWORD`] || btpOverride.auth?.password || s.auth?.password,
+        bearerToken: process.env[`${ENV_PREFIX}${envKey}_AUTH_BEARER_TOKEN`] || btpOverride.auth?.bearerToken || s.auth?.bearerToken,
       },
       headers: stringifyHeaders({
         ...s.headers,
+        ...btpOverride.headers,
         ...envHeadersJson,
         ...envHeadersIndividual,
       }),
+      rules: btpOverride.rules || s.rules,
     }
   })
 
