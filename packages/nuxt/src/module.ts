@@ -1,4 +1,4 @@
-import type { ODataProxyConfig, ODataPublicConfig } from '@bc8-odx/core'
+import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig } from '@bc8-odx/core'
 import type { NitroConfig } from 'nitropack'
 import {
   addImportsDir,
@@ -9,46 +9,6 @@ import {
 import { resolveModuleConfig } from './config'
 import { setupDevToolsUI } from './devtools'
 import { setupTypeGeneration } from './generate'
-
-export interface ODataServiceConfig {
-  name: string
-  url: string
-  route?: string
-  icon?: string
-  strategy?: 'proxied' | 'direct'
-  proxyMode?: 'stream' | 'buffer'
-  destination?: string
-  auth?: {
-    username?: string
-    password?: string
-    bearerToken?: string
-    mockUserCompanies?: Array<{ company: string, source: string }>
-  }
-  headers?: Record<string, string>
-}
-
-export interface ModuleOptions {
-  mode?: 'sdk'
-  basePath?: string
-  defaultProxyMode?: 'stream' | 'buffer'
-  destination?: string
-  auth?: {
-    username?: string
-    password?: string
-    bearerToken?: string
-    mockUserCompanies?: Array<{ company: string, source: string }>
-  }
-  headers?: Record<string, string>
-  rejectUnauthorized?: boolean
-  forwardAuthHeader?: boolean
-  services?: ODataServiceConfig[]
-  buildDir?: string
-  rootDir?: string
-  devtools?: {
-    enabled?: boolean
-    maxLogs?: number
-  }
-}
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {

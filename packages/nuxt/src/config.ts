@@ -1,5 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
-import type { ModuleOptions, ODataServiceConfig } from './module'
+import type { ModuleOptions, ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
 import process from 'node:process'
 import { useLogger } from '@nuxt/kit'
 
@@ -35,7 +34,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
   }
 
   // 1. Resolve Services (explicitly configured + discovered from env)
-  const services: ODataServiceConfig[] = (options.services || []).map((s) => {
+  const services: ODataServiceConfig[] = (options.services || []).map((s: ODataServiceConfig) => {
     const envKey = s.name.toUpperCase()
     const envHeadersJson = parseEnvJson(process.env[`${ENV_PREFIX}${envKey}_HEADERS`])
     const envHeadersIndividual: Record<string, string> = {}
