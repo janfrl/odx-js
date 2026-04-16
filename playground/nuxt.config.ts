@@ -31,6 +31,9 @@ export default defineNuxtConfig({
         url: 'edmx/v4.edmx',
         route: 'v4',
         icon: 'i-lucide-package',
+        rules: [
+          { type: 'allowOnlyMethods', value: ['GET'] },
+        ],
       },
       {
         name: 'Northwind',

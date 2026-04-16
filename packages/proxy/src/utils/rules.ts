@@ -1,11 +1,14 @@
+import type { ODataRule } from '@bc8-odx/core'
 import type { H3Event } from 'h3'
 import type { FetchOptions } from 'ofetch'
+import process from 'node:process'
 import { createError } from 'h3'
 
 export interface ODataRuleContext {
   event: H3Event
   serviceName: string
   fetchOptions: FetchOptions
+  url?: string
 }
 
 /**
@@ -13,13 +16,106 @@ export interface ODataRuleContext {
  * Automatically handles telemetry tracing for the ODX Explorer.
  */
 export class ODataGuard {
-  constructor(private ctx: ODataRuleContext) {}
+  constructor(public ctx: ODataRuleContext) {}
 
   private addTrace(label: string, message: string, details?: any, status: 'success' | 'error' | 'info' = 'info'): void {
     const trace = (this.ctx.event.context as any).proxyTrace
     if (typeof trace === 'function') {
       trace(label, message, details, status)
     }
+  }
+
+  /**
+   * Restricts the service to an explicit list of methods.
+   */
+  allowOnlyMethods(methods: string[], reason?: string): this {
+    this.addTrace('Rules', `Checking method restriction: [${methods.join(', ')}]`, { methods, policy: 'MethodGuard' })
+
+    if (!methods.includes(this.ctx.event.method)) {
+      const message = reason || `Method ${this.ctx.event.method} is not allowed. Only [${methods.join(', ')}] are permitted.`
+      this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT', method: this.ctx.event.method }, 'error')
+      throw createError({
+        statusCode: 405,
+        statusMessage: message,
+      })
+    }
+    return this
+  }
+
+  /**
+   * Specifically blocks certain methods.
+   */
+  denyMethods(methods: string[], reason?: string): this {
+    this.addTrace('Rules', `Checking method blocklist: [${methods.join(', ')}]`, { methods, policy: 'MethodGuard' })
+
+    if (methods.includes(this.ctx.event.method)) {
+      const message = reason || `Method ${this.ctx.event.method} is explicitly denied.`
+      this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT', method: this.ctx.event.method }, 'error')
+      throw createError({
+        statusCode: 405,
+        statusMessage: message,
+      })
+    }
+    return this
+  }
+
+  /**
+   * Verifies that the current user has the specified XSUAA scope.
+   */
+  requireScope(scope: string, reason?: string): this {
+    this.addTrace('Rules', `Verifying XSUAA scope: "${scope}"`, { scope, policy: 'SecurityGuard' })
+
+    const secContext = this.ctx.event.context.securityContext
+    if (!secContext) {
+      if (process.env.NODE_ENV === 'production') {
+        const message = 'Security context missing. Authentication required.'
+        this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT' }, 'error')
+        throw createError({ statusCode: 401, statusMessage: message })
+      }
+      return this
+    }
+
+    if (typeof secContext.checkLocalScope === 'function' && !secContext.checkLocalScope(scope)) {
+      const message = reason || `User lacks required scope: "${scope}"`
+      this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT', scope }, 'error')
+      throw createError({
+        statusCode: 403,
+        statusMessage: message,
+      })
+    }
+
+    return this
+  }
+
+  /**
+   * Ensures a specific user attribute matches the required value.
+   */
+  requireAttribute(name: string, value: string, reason?: string): this {
+    this.addTrace('Rules', `Verifying user attribute: "${name}" = "${value}"`, { name, value, policy: 'SecurityGuard' })
+
+    const secContext = this.ctx.event.context.securityContext
+    if (!secContext) {
+      if (process.env.NODE_ENV === 'production') {
+        const message = 'Security context missing. Authentication required.'
+        this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT' }, 'error')
+        throw createError({ statusCode: 401, statusMessage: message })
+      }
+      return this
+    }
+
+    const attrValue = typeof secContext.getAttribute === 'function' ? secContext.getAttribute(name) : null
+    const matches = Array.isArray(attrValue) ? attrValue.includes(value) : attrValue === value
+
+    if (!matches) {
+      const message = reason || `User attribute "${name}" does not match required value.`
+      this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT', attribute: name, expected: value, actual: attrValue }, 'error')
+      throw createError({
+        statusCode: 403,
+        statusMessage: message,
+      })
+    }
+
+    return this
   }
 
   /**
@@ -33,7 +129,7 @@ export class ODataGuard {
       this.addTrace('Rules', `Access DENIED: ${message}`, { action: 'REJECT', path: this.ctx.event.path }, 'error')
       throw createError({
         statusCode: 403,
-        statusMessage: `Forbidden: ${message}`,
+        statusMessage: message,
       })
     }
     return this
@@ -55,9 +151,38 @@ export class ODataGuard {
       this.addTrace('Rules', `Access DENIED: ${message}`, { header: name, value, action: 'REJECT' }, 'error')
       throw createError({
         statusCode: 403,
-        statusMessage: `Forbidden: ${message}`,
+        statusMessage: message,
       })
     }
+    return this
+  }
+
+  /**
+   * Inject a custom header into the outgoing request.
+   */
+  injectHeader(name: string, value: string): this {
+    this.addTrace('Rules', `Injecting custom header: "${name}"`, { name, value, policy: 'HeaderInjection' })
+    const headers = (this.ctx.fetchOptions.headers as any) || {}
+    headers[name] = value
+    this.ctx.fetchOptions.headers = headers
+    return this
+  }
+
+  /**
+   * Dynamically modifies the target URL path.
+   */
+  rewritePath(pattern: string | RegExp, replacement: string): this {
+    if (!this.ctx.url)
+      return this
+
+    const oldUrl = this.ctx.url
+    const newUrl = oldUrl.replace(pattern, replacement)
+
+    if (oldUrl !== newUrl) {
+      this.addTrace('Rules', `Rewriting path`, { from: oldUrl, to: newUrl, policy: 'PathRewrite' })
+      this.ctx.url = newUrl
+    }
+
     return this
   }
 
@@ -73,7 +198,7 @@ export class ODataGuard {
       this.addTrace('Rules', `Access DENIED: ${message}`, { validator: name, action: 'REJECT' }, 'error')
       throw createError({
         statusCode: 403,
-        statusMessage: `Forbidden: ${message}`,
+        statusMessage: message,
       })
     }
     return this
@@ -85,6 +210,32 @@ export class ODataGuard {
   info(message: string, details?: any): this {
     this.addTrace('Rules', message, details)
     return this
+  }
+
+  /**
+   * Applies a single rule object (usually from configuration).
+   */
+  applyRule(rule: ODataRule): this {
+    switch (rule.type) {
+      case 'allowOnlyMethods':
+        return this.allowOnlyMethods(rule.value, rule.reason)
+      case 'denyMethods':
+        return this.denyMethods(rule.value, rule.reason)
+      case 'requireScope':
+        return this.requireScope(rule.value, rule.reason)
+      case 'requireAttribute':
+        return this.requireAttribute(rule.value.name, rule.value.value, rule.reason)
+      case 'denyPath':
+        return this.denyIfPathIncludes(rule.value, rule.reason)
+      case 'denyIfHeader':
+        return this.denyIfHeader(rule.value.name, rule.value.value, rule.reason)
+      case 'injectHeader':
+        return this.injectHeader(rule.value.name, rule.value.value)
+      case 'rewritePath':
+        return this.rewritePath(rule.value.pattern, rule.value.replacement)
+      default:
+        return this
+    }
   }
 }
 

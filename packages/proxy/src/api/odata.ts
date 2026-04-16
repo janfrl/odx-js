@@ -4,6 +4,7 @@ import { createError, defineEventHandler, getHeaders, proxyRequest, readBody } f
 import { ofetch } from 'ofetch'
 import { validateBtpAuth } from '../utils/auth'
 import { prepareProxyHeaders } from '../utils/headers'
+import { odataGuard } from '../utils/rules'
 import { DevToolsTracer } from '../utils/trace'
 import { parseODataRequest, resolveTargetUrl } from '../utils/url'
 
@@ -41,32 +42,49 @@ export default defineEventHandler(async (event): Promise<any> => {
       || (svc.route && svc.route.toLowerCase() === request.serviceName.toLowerCase()),
     )
     const serviceName = matched?.name || request.serviceName
-    const targetUrl = resolveTargetUrl(event, targetConfig.url, request, targetConfig.isRelative, serviceName)
+    let targetUrl = resolveTargetUrl(event, targetConfig.url, request, targetConfig.isRelative, serviceName)
 
     tracer.addTrace('Proxy', `Forwarding request to: ${targetUrl}`)
 
     // 3. Header Preparation
     const finalHeaders = prepareProxyHeaders(getHeaders(event), matched?.headers, targetConfig.authHeader)
 
-    // 4. Hook Execution
-    const nitroApp = (event.context as any).nitroApp
-    const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
-    const isDirect = targetConfig.strategy === 'direct'
-
-    if (hooks && !isDirect) {
-      tracer.addTrace('Hooks', 'Executing proxy request hooks...')
-      const fetchOptions = { method: event.method, headers: { ...finalHeaders } }
-      await hooks.callHook('odx:proxy:request', { event, serviceName, fetchOptions })
-      await hooks.callHook(`odx:proxy:request:${serviceName}`, { event, serviceName, fetchOptions })
-      Object.assign(finalHeaders, fetchOptions.headers || {})
-    }
-
-    // 5. DevTools Logging Initialization
+    // 4. DevTools Logging Initialization
     let requestBody: any = null
-    if (tracer.enabled && ['POST', 'PUT', 'PATCH'].includes(event.method)) {
+    if (tracer.enabled && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
       requestBody = await readBody(event).catch(() => null)
     }
     tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, finalHeaders)
+
+    // 5. Rule & Hook Execution
+    const isDirect = targetConfig.strategy === 'direct'
+    const fetchOptions: any = { method: event.method, headers: { ...finalHeaders } }
+    const nitroApp = (event.context as any).nitroApp
+    const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
+
+    if (!isDirect) {
+      const hookCtx = { event, serviceName, fetchOptions, url: targetUrl }
+      const guard = odataGuard(hookCtx)
+
+      // A. Programmatic Hooks (Nitro Plugins)
+      if (hooks) {
+        tracer.addTrace('Hooks', 'Executing proxy request hooks...')
+        await hooks.callHook('odx:proxy:request', hookCtx)
+        await hooks.callHook(`odx:proxy:request:${serviceName}`, hookCtx)
+      }
+
+      // B. Declarative Rules (from nuxt.config.ts)
+      if (matched?.rules) {
+        tracer.addTrace('Rules', 'Applying declarative configuration rules...')
+        for (const rule of matched.rules) {
+          guard.applyRule(rule)
+        }
+      }
+
+      // Sync changes back from Guard/Hooks
+      Object.assign(finalHeaders, fetchOptions.headers || {})
+      targetUrl = hookCtx.url || targetUrl
+    }
 
     // 6. Proxy Execution (Hybrid Mode)
     const mode = targetConfig.proxyMode || (tracer.enabled ? 'buffer' : 'stream')
