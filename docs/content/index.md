@@ -12,7 +12,7 @@ description: ODX is a modular, framework-agnostic toolkit designed to bridge the
 Modern [OData Developer Experience]{.text-primary}
 
 #links
-  :u-button{to="/tutorials/introduction" label="Get started" trailing-icon="i-lucide-arrow-right" size="lg"}
+  :u-button{to="/ecosystem/introduction" label="Get started" trailing-icon="i-lucide-arrow-right" size="lg"}
   :u-button{to="https://github.com/janfrl/odx-js" label="GitHub" icon="i-simple-icons-github" variant="outline" size="lg"}
 ::
 
@@ -77,42 +77,42 @@ Modern [OData Developer Experience]{.text-primary}
 ::u-page-section
 ---
 title: Explore the Ecosystem
-description: Everything you need to master OData integration.
+description: Choose the package that fits your architecture.
 ---
   :::u-page-grid
     ::::u-page-card
     ---
-    title: Tutorials
-    description: Step-by-step guides for beginners.
-    to: /tutorials/introduction
-    icon: i-heroicons-academic-cap
+    title: Nuxt Module
+    description: Zero-config OData integration for Nuxt 4 with auto-imports and DevTools.
+    to: /nuxt/getting-started
+    icon: i-lucide-zap
     ---
     ::::
 
     ::::u-page-card
     ---
-    title: How-to Guides
-    description: Solve specific tasks and patterns.
-    to: /how-to/installation
-    icon: i-heroicons-light-bulb
+    title: Proxy
+    description: Standalone Nitro proxy for SAP BTP auth, CSRF, and routing.
+    to: /proxy/installation
+    icon: i-heroicons-server
     ---
     ::::
 
     ::::u-page-card
     ---
-    title: API Reference
-    description: Technical details for all packages.
-    to: /reference/nuxt
+    title: Core SDK
+    description: Framework-agnostic OData types and lightweight fetch client.
+    to: /core/installation
     icon: i-heroicons-code-bracket
     ---
     ::::
 
     ::::u-page-card
     ---
-    title: Explanation
-    description: In-depth architecture articles.
-    to: /explanation/proxy-policies
-    icon: i-heroicons-book-open
+    title: Explorer
+    description: Browser-based DevTools for schema visualization and traffic monitoring.
+    to: /explorer/setup
+    icon: i-heroicons-computer-desktop
     ---
     ::::
   :::
