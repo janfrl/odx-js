@@ -45,18 +45,25 @@ export default defineEventHandler(async (event) => {
   let edmxPath = ''
 
   if (svc.url.startsWith('http')) {
+    const rootDir = config.rootDir ?? ''
     edmxPath = resolve(buildDir, 'odx/temp', `${svc.name}.edmx`)
+    const persistentCacheFile = resolve(rootDir, '.odx', 'cache', `${svc.name}.edmx`)
 
-    // ROBUSTNESS: If local cache is missing, try to fetch it LIVE
+    // If .nuxt cache is missing, restore from persistent cache before trying live fetch
+    if (!fs.existsSync(edmxPath) && fs.existsSync(persistentCacheFile)) {
+      if (!fs.existsSync(dirname(edmxPath)))
+        fs.mkdirSync(dirname(edmxPath), { recursive: true })
+      fs.copyFileSync(persistentCacheFile, edmxPath)
+    }
+
+    // If still missing, try live fetch
     if (!fs.existsSync(edmxPath)) {
       try {
         const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
         const xml = await downloadEdmx(metadataUrl, config.rejectUnauthorized !== false)
 
-        // Ensure directory exists
-        if (!fs.existsSync(dirname(edmxPath))) {
+        if (!fs.existsSync(dirname(edmxPath)))
           fs.mkdirSync(dirname(edmxPath), { recursive: true })
-        }
 
         fs.writeFileSync(edmxPath, xml)
       }

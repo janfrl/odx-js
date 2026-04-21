@@ -11,7 +11,7 @@ export interface ODataServiceState {
     auth?: any
   }
   headers?: Record<string, string>
-  health?: 'online' | 'offline' | 'checking'
+  health?: 'online' | 'offline' | 'checking' | 'degraded'
   icon?: string
 }
 
@@ -117,7 +117,31 @@ const initializedServices = ref(new Set<string>())
 const schemaFocusedServices = ref(new Set<string>())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 
-const serviceHealthOverrides = ref<Record<string, 'online' | 'offline' | 'checking'>>({})
+const DEGRADED_STORAGE_KEY = 'odx:degraded-services'
+
+function loadDegradedServices(): Record<string, 'degraded'> {
+  try {
+    const raw = localStorage.getItem(DEGRADED_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  }
+  catch { return {} }
+}
+
+function saveDegradedServices(overrides: Record<string, string>): void {
+  const degraded = Object.fromEntries(
+    Object.entries(overrides).filter(([, v]) => v === 'degraded'),
+  )
+  try {
+    if (Object.keys(degraded).length > 0)
+      localStorage.setItem(DEGRADED_STORAGE_KEY, JSON.stringify(degraded))
+    else
+      localStorage.removeItem(DEGRADED_STORAGE_KEY)
+  }
+  catch {}
+}
+
+const serviceHealthOverrides = ref<Record<string, 'online' | 'offline' | 'checking' | 'degraded'>>(loadDegradedServices())
+
 
 export interface SharedODataState {
   activeTab: Ref<string>
@@ -155,12 +179,16 @@ export interface SharedODataState {
   generateService: (name: string) => Promise<void>
   clearLogs: () => Promise<void>
   clearEntityMockData: (service: string, entitySet: string) => Promise<void>
-  updateServiceHealth: (name: string, health: 'online' | 'offline' | 'checking') => void
+  updateServiceHealth: (name: string, health: 'online' | 'offline' | 'checking' | 'degraded', force?: boolean) => void
 }
 
 export function useSharedODataState(): SharedODataState {
-  function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking'): void {
+  function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking' | 'degraded', force = false): void {
+    // Background schema checks (local EDMX) must not clear a 'degraded' state — only
+    // an explicit successful regeneration (force=true) is allowed to do that.
+    if (health === 'online' && serviceHealthOverrides.value[name] === 'degraded' && !force) return
     serviceHealthOverrides.value[name] = health
+    saveDegradedServices(serviceHealthOverrides.value)
     // Ensure selectedService ref is updated if it's the one being changed
     if (selectedService.value && selectedService.value.name === name) {
       selectedService.value = { ...selectedService.value, health }
@@ -228,11 +256,23 @@ export function useSharedODataState(): SharedODataState {
   async function generateService(name: string): Promise<void> {
     generatingStatus.value[name] = true
     try {
-      await fetch(`/__odx__/generate?service=${name}`)
+      const res = await fetch(`/__odx__/generate?service=${name}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        const msg = body?.message || body?.statusMessage || `Generation failed (${res.status})`
+        throw new Error(msg)
+      }
+      const body = await res.json().catch(() => null)
       await fetchConfig()
-    }
-    catch (e) {
-      console.error(`[ODataState] Failed to generate types for ${name}`, e)
+      if (body?.stale) {
+        updateServiceHealth(name, 'degraded')
+        const err = new Error(body.staleReason || 'SAP unreachable — using cached metadata') as any
+        err.stale = true
+        throw err
+      }
+      else {
+        updateServiceHealth(name, 'online', true)
+      }
     }
     finally {
       generatingStatus.value[name] = false

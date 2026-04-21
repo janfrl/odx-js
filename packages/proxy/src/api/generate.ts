@@ -28,6 +28,9 @@ export default defineEventHandler(async (event) => {
 
   let inputPath = matched.url
 
+  let stale = false
+  let staleReason: string | null = null
+
   try {
     if (matched.url.startsWith('http')) {
       const metadataUrl = matched.url.endsWith('/') ? `${matched.url}$metadata` : `${matched.url}/$metadata`
@@ -53,33 +56,64 @@ export default defineEventHandler(async (event) => {
 
       console.warn(`[ODX] Downloading metadata for ${matched.name} from ${metadataUrl}...`)
 
-      // Use native https module as it's proven to work with rejectUnauthorized in this environment
-      const xml = await new Promise<string>((resolve, reject) => {
-        const req = https.get(metadataUrl, {
-          headers,
-          rejectUnauthorized: config.rejectUnauthorized !== false,
-        }, (res) => {
-          if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
-            return reject(new Error(`Status: ${res.statusCode} ${res.statusMessage}`))
-          }
-          let data = ''
-          res.on('data', chunk => data += chunk)
-          res.on('end', () => resolve(data))
+      try {
+        // Use native https module as it's proven to work with rejectUnauthorized in this environment
+        const xml = await new Promise<string>((resolve, reject) => {
+          const req = https.get(metadataUrl, {
+            headers,
+            rejectUnauthorized: config.rejectUnauthorized !== false,
+          }, (res) => {
+            if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+              return reject(new Error(`Status: ${res.statusCode} ${res.statusMessage}`))
+            }
+            let data = ''
+            res.on('data', chunk => data += chunk)
+            res.on('end', () => resolve(data))
+          })
+          req.on('error', reject)
+          req.setTimeout(15000, () => {
+            req.destroy()
+            reject(new Error('Request timed out'))
+          })
         })
-        req.on('error', reject)
-        req.setTimeout(15000, () => {
-          req.destroy()
-          reject(new Error('Request timed out'))
-        })
-      })
 
-      if (!xml || xml.length < 100 || !xml.includes('Edmx')) {
-        throw new Error(`Received invalid or empty metadata from ${metadataUrl}`)
+        if (!xml || xml.length < 100 || !xml.includes('Edmx')) {
+          throw new Error(`Received invalid or empty metadata from ${metadataUrl}`)
+        }
+
+        fs.writeFileSync(tempFile, xml)
+        // Mirror to persistent cache so it survives .nuxt cleanups
+        const persistentCacheDir = join(rootDir, '.odx', 'cache')
+        if (!fs.existsSync(persistentCacheDir))
+          fs.mkdirSync(persistentCacheDir, { recursive: true })
+        fs.writeFileSync(join(persistentCacheDir, `${matched.name}.edmx`), xml)
+        inputPath = tempFile
+        console.warn(`[ODX]   - Successfully downloaded to ${tempFile} (${xml.length} bytes)`)
       }
+      catch (downloadErr: any) {
+        const persistentCacheFile = join(rootDir, '.odx', 'cache', `${matched.name}.edmx`)
+        const fallback = fs.existsSync(tempFile)
+          ? tempFile
+          : fs.existsSync(persistentCacheFile)
+            ? persistentCacheFile
+            : null
 
-      fs.writeFileSync(tempFile, xml)
-      inputPath = tempFile
-      console.warn(`[ODX]   - Successfully downloaded to ${tempFile} (${xml.length} bytes)`)
+        if (fallback) {
+          // Restore persistent cache into .nuxt if needed
+          if (fallback === persistentCacheFile) {
+            if (!fs.existsSync(tempDir))
+              fs.mkdirSync(tempDir, { recursive: true })
+            fs.copyFileSync(persistentCacheFile, tempFile)
+          }
+          stale = true
+          staleReason = downloadErr.message || String(downloadErr)
+          inputPath = tempFile
+          console.warn(`[ODX] Could not refresh metadata for ${matched.name}, using cached EDMX: ${staleReason}`)
+        }
+        else {
+          throw downloadErr
+        }
+      }
     }
     else {
       inputPath = resolve(rootDir, matched.url)
@@ -98,7 +132,11 @@ export default defineEventHandler(async (event) => {
 
     return {
       success: true,
-      message: `Generated ${matched.name} successfully`,
+      stale,
+      staleReason,
+      message: stale
+        ? `Generated ${matched.name} from cached metadata (SAP unreachable: ${staleReason})`
+        : `Generated ${matched.name} successfully`,
       service: matched.name,
       timestamp: Date.now(),
     }

@@ -111,14 +111,33 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
       // Handle remote metadata (HTTPS)
       if (svc.url.startsWith('http')) {
         const tempFile = join(tempDir, `${svc.name}.edmx`)
+        // Persistent cache outside .nuxt — survives server restarts and .nuxt cleanups
+        const persistentCacheDir = join(nuxt.options.rootDir, '.odx', 'cache')
+        const persistentCacheFile = join(persistentCacheDir, `${svc.name}.edmx`)
 
         try {
           const xml = await downloadMetadata(svc, config)
           fs.writeFileSync(tempFile, xml)
+          // Mirror to persistent cache so it survives .nuxt cleanups
+          if (!fs.existsSync(persistentCacheDir))
+            fs.mkdirSync(persistentCacheDir, { recursive: true })
+          fs.writeFileSync(persistentCacheFile, xml)
           inputPath = tempFile
         }
         catch (err: any) {
-          if (fs.existsSync(tempFile)) {
+          const fallback = fs.existsSync(tempFile)
+            ? tempFile
+            : fs.existsSync(persistentCacheFile)
+              ? persistentCacheFile
+              : null
+
+          if (fallback) {
+            // Copy persistent cache back into .nuxt so the runtime schema endpoint finds it
+            if (fallback === persistentCacheFile && !fs.existsSync(tempFile)) {
+              if (!fs.existsSync(tempDir))
+                fs.mkdirSync(tempDir, { recursive: true })
+              fs.copyFileSync(persistentCacheFile, tempFile)
+            }
             logger.warn(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name}, using cache: ${err.message}`)
             inputPath = tempFile
           }

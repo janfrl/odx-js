@@ -114,7 +114,10 @@ export default defineEventHandler(async (event): Promise<any> => {
         const status = err.response?.status || 500
         tracer.addTrace('Response', `Backend request failed with status ${status}`, { error: err.message }, 'error')
         tracer.updateLog(status, { error: err.message })
-        throw err
+        // Re-throw as an h3 error so that the original SAP response body (e.g. permission
+        // denied) is forwarded to the client instead of being swallowed by Nitro's error
+        // serializer, which would strip the structured error payload.
+        throw createError({ statusCode: status, data: err.data ?? null })
       }
     }
 

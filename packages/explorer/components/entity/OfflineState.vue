@@ -21,7 +21,9 @@ async function onRegenerate() {
     toast.add({
       id: 'gen-error',
       title: 'Generation Failed',
-      description: e.message || 'An unexpected error occurred during SDK generation.',
+      description: e.stale
+        ? `SAP unreachable — schema generated from cached metadata. ${e.message}`
+        : (e.message || 'An unexpected error occurred during SDK generation.'),
       icon: 'i-lucide-circle-x',
       color: 'error',
     })

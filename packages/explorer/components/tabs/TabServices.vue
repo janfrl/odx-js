@@ -55,7 +55,9 @@ async function onRegenerate() {
     toast.add({
       id: 'gen-error',
       title: 'Generation Failed',
-      description: e.message || 'An unexpected error occurred during SDK generation.',
+      description: e.stale
+        ? `SAP unreachable — schema generated from cached metadata. ${e.message}`
+        : (e.message || 'An unexpected error occurred during SDK generation.'),
       icon: 'i-lucide-circle-x',
       color: 'error',
     })
@@ -66,10 +68,11 @@ const actionItems = computed((): DropdownMenuItem[][] => {
   if (!selectedService.value)
     return []
 
-  const isOffline = selectedService.value.health === 'offline'
+  const isOffline = selectedService.value.health === 'offline' || selectedService.value.health === 'degraded'
+  const hasCachedSchema = selectedService.value.health !== 'offline'
   const menu: DropdownMenuItem[][] = [[]]
 
-  // If online, Regenerate is in the dropdown. If offline, it's the primary button.
+  // If online, Regenerate is in the dropdown. If offline/degraded, it's the primary button.
   if (!isOffline) {
     menu[0]!.push({
       label: 'Regenerate SDK',
@@ -82,8 +85,8 @@ const actionItems = computed((): DropdownMenuItem[][] => {
   // Metadata links
   const metadataGroup: DropdownMenuItem[] = []
 
-  // Internal metadata (only if online)
-  if (!isOffline) {
+  // Internal metadata available as long as local schema exists (online or degraded)
+  if (hasCachedSchema) {
     metadataGroup.push({
       label: 'Internal Metadata',
       icon: 'i-lucide-file-code',
@@ -135,7 +138,7 @@ const actionItems = computed((): DropdownMenuItem[][] => {
             :icon="svc.icon || 'i-lucide-database'"
             variant="subtle"
             to="#"
-            :ui="{ leadingIcon: svc.health === 'offline' ? 'text-error' : (svc.health === 'online' ? 'text-primary' : 'text-neutral-500') }"
+            :ui="{ leadingIcon: svc.health === 'offline' ? 'text-error' : (svc.health === 'degraded' ? 'text-warning-400' : (svc.health === 'online' ? 'text-primary' : 'text-neutral-500')) }"
             @click.prevent="selectedService = svc"
           >
             <template #footer>
@@ -185,9 +188,10 @@ const actionItems = computed((): DropdownMenuItem[][] => {
                 :class="{
                   'bg-success-500': selectedService.health === 'online',
                   'bg-error-500 animate-pulse': selectedService.health === 'offline',
+                  'bg-warning-400 animate-pulse': selectedService.health === 'degraded',
                   'bg-neutral-400': selectedService.health === 'checking',
                 }"
-                :title="`Service ${selectedService.health}`"
+                :title="selectedService.health === 'degraded' ? 'Schema may be out of sync — SAP was unreachable during last regeneration' : `Service ${selectedService.health}`"
               />
             </h2>
             <div class="text-xs font-mono text-muted truncate">
@@ -221,9 +225,9 @@ const actionItems = computed((): DropdownMenuItem[][] => {
           </UFieldGroup>
 
           <UFieldGroup class="-mt-2">
-            <!-- If offline, Regenerate is primary. If online, Metadata is primary. -->
+            <!-- If offline/degraded, Regenerate is primary. If online, Metadata is primary. -->
             <UButton
-              v-if="selectedService.health === 'offline'"
+              v-if="selectedService.health === 'offline' || selectedService.health === 'degraded'"
               icon="i-lucide-refresh-cw"
               color="neutral"
               variant="subtle"

@@ -209,21 +209,34 @@ export function useEntityExplorer(): EntityExplorer {
         },
       })
       if (!res.ok) {
-        if (res.status >= 500) {
+        const errorText = await res.text().catch(() => '')
+        let statusMessage = res.statusText || `Server Error ${res.status}`
+        // If the body is parseable JSON the upstream service responded — only an empty
+        // or non-JSON body on a 5xx means the proxy itself couldn't reach the service.
+        let upstreamResponded = false
+        try {
+          const errData = JSON.parse(errorText)
+          upstreamResponded = true
+          // SAP OData: { error: { code, message } } — may be top-level or wrapped in
+          // h3's { data: { error: { ... } } } when coming through proxy buffer mode.
+          const sapError = errData.error ?? errData.data?.error
+          if (sapError?.message) {
+            statusMessage = sapError.message
+          }
+          else {
+            statusMessage = errData.message || errData.statusMessage || errData.data?.statusMessage || statusMessage
+          }
+        }
+        catch {
+          if (errorText && errorText.length < 200) {
+            statusMessage = errorText || statusMessage
+          }
+        }
+
+        if (res.status >= 500 && !upstreamResponded) {
           updateServiceHealth(svcName, 'offline')
         }
 
-        const errorText = await res.text().catch(() => '')
-        let statusMessage = res.statusText || `Server Error ${res.status}`
-        try {
-          const errData = JSON.parse(errorText)
-          statusMessage = errData.message || errData.statusMessage || (errData.data && errData.data.statusMessage) || statusMessage
-        }
-        catch {
-          if (errorText && errorText.length < 100) {
-            statusMessage = errorText
-          }
-        }
         throw new Error(statusMessage)
       }
 
