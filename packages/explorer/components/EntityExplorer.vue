@@ -7,7 +7,6 @@ import EntityTable from './entity/Table.vue'
 import EntityToolbar from './entity/Toolbar.vue'
 
 const { selectedEntity, editor, refreshEntityData, selectedService } = useEntityExplorer()
-
 </script>
 
 <template>

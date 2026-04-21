@@ -142,7 +142,6 @@ function saveDegradedServices(overrides: Record<string, string>): void {
 
 const serviceHealthOverrides = ref<Record<string, 'online' | 'offline' | 'checking' | 'degraded'>>(loadDegradedServices())
 
-
 export interface SharedODataState {
   activeTab: Ref<string>
   logs: Ref<ODataLog[]>
@@ -186,7 +185,8 @@ export function useSharedODataState(): SharedODataState {
   function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking' | 'degraded', force = false): void {
     // Background schema checks (local EDMX) must not clear a 'degraded' state — only
     // an explicit successful regeneration (force=true) is allowed to do that.
-    if (health === 'online' && serviceHealthOverrides.value[name] === 'degraded' && !force) return
+    if (health === 'online' && serviceHealthOverrides.value[name] === 'degraded' && !force)
+      return
     serviceHealthOverrides.value[name] = health
     saveDegradedServices(serviceHealthOverrides.value)
     // Ensure selectedService ref is updated if it's the one being changed
