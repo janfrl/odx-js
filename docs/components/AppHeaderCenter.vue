@@ -5,8 +5,8 @@ const links = computed(() => [
   {
     label: 'Guide',
     icon: 'i-lucide-book-open',
-    to: '/getting-started/introduction',
-    active: route.path.startsWith('/getting-started') || route.path.startsWith('/nuxt') || route.path.startsWith('/proxy') || route.path.startsWith('/explorer') || route.path.startsWith('/core') || route.path.startsWith('/guides'),
+    to: '/tutorials/introduction',
+    active: route.path.startsWith('/tutorials') || route.path.startsWith('/how-to') || route.path.startsWith('/reference') || route.path.startsWith('/explanation'),
   },
   {
     label: 'Playground',
