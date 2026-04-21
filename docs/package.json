@@ -8,6 +8,7 @@
     "generate": "nuxi generate",
     "preview": "nuxi preview",
     "postinstall": "nuxi prepare",
+    "clean": "nuxt clean",
     "metadata:extract": "tsx scripts/extract-metadata.ts"
   },
   "dependencies": {
