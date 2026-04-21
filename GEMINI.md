@@ -79,5 +79,6 @@ This project is a modern Nuxt module (ODX - OData Developer Experience) designed
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan:
+[specs/001-audit-refactor-compliance/plan.md](specs/001-audit-refactor-compliance/plan.md)
 <!-- SPECKIT END -->
