@@ -12,7 +12,7 @@ description: ODX is a modular, framework-agnostic toolkit designed to bridge the
 Modern [OData Developer Experience]{.text-primary}
 
 #links
-  :u-button{to="/tutorials/introduction" label="Get started" icon="i-lucide-arrow-right" :trailing="true" size="lg"}
+  :u-button{to="/tutorials/introduction" label="Get started" trailing-icon="i-lucide-arrow-right" size="lg"}
   :u-button{to="https://github.com/janfrl/odx-js" label="GitHub" icon="i-simple-icons-github" variant="outline" size="lg"}
 ::
 
