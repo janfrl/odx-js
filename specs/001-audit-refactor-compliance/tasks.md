@@ -22,10 +22,10 @@ description: "Task list for constitutional compliance audit and refactor"
 
 **Purpose**: Audit and dependency resolution
 
-- [ ] T001 [US1] Audit `packages/proxy/package.json` for forbidden dependencies (`@nuxt/kit`, `@bc8-odx/nuxt`)
-- [ ] T002 [US1] Audit `packages/core/package.json` for any framework-specific dependencies
-- [ ] T003 [US1] Scan `packages/proxy` and `packages/core` for Nuxt/Nitro specific imports
-- [ ] T004 [P] Ensure `pathe` is available in monorepo for framework-agnostic path resolution
+- [X] T001 [US1] Audit `packages/proxy/package.json` for forbidden dependencies (`@nuxt/kit`, `@bc8-odx/nuxt`)
+- [X] T002 [US1] Audit `packages/core/package.json` for any framework-specific dependencies
+- [X] T003 [US1] Scan `packages/proxy` and `packages/core` for Nuxt/Nitro specific imports
+- [X] T004 [P] Ensure `pathe` is available in monorepo for framework-agnostic path resolution
 
 ---
 
@@ -37,12 +37,12 @@ description: "Task list for constitutional compliance audit and refactor"
 
 ### Implementation for User Story 2
 
-- [ ] T005 [US2] Remove `@nuxt/kit` and `@bc8-odx/nuxt` from `packages/proxy/package.json`
-- [ ] T006 [US2] Refactor `packages/proxy/nitro.config.ts` to remove `@nuxt/kit` and `createResolver`
-- [ ] T007 [US2] Refactor `packages/proxy/src/nitro.ts` to remove `@nuxt/kit` imports
-- [ ] T008 [US2] Replace `createResolver` with `pathe` or standard Node.js path logic in `packages/proxy`
-- [ ] T009 [US2] Audit and refactor `packages/proxy/src/tsconfig.json` to remove dependency on `.nuxt/tsconfig.server.json`
-- [ ] T010 [US2] Ensure `packages/core` remains framework-independent and clean of imports
+- [X] T005 [US2] Remove `@nuxt/kit` and `@bc8-odx/nuxt` from `packages/proxy/package.json`
+- [X] T006 [US2] Refactor `packages/proxy/nitro.config.ts` to remove `@nuxt/kit` and `createResolver`
+- [X] T007 [US2] Refactor `packages/proxy/src/nitro.ts` to remove `@nuxt/kit` imports
+- [X] T008 [US2] Replace `createResolver` with `pathe` or standard Node.js path logic in `packages/proxy`
+- [X] T009 [US2] Audit and refactor `packages/proxy/src/tsconfig.json` to remove dependency on `.nuxt/tsconfig.server.json`
+- [X] T010 [US2] Ensure `packages/core` remains framework-independent and clean of imports
 
 ---
 
@@ -54,11 +54,11 @@ description: "Task list for constitutional compliance audit and refactor"
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Audit `packages/core/src` for low-signal comments and replace with JSDoc
-- [ ] T012 [US3] Audit `packages/proxy/src` for low-signal comments and replace with JSDoc
-- [ ] T013 [US3] Refactor `packages/proxy/src/utils/rules.ts` to convert redundant comments to high-signal JSDoc
-- [ ] T014 [US3] Update all files in `docs/content/` to reflect framework-agnostic architecture
-- [ ] T015 [US3] Verify `docs/content/3.proxy/` correctly describes the independent package
+- [X] T011 [US3] Audit `packages/core/src` for low-signal comments and replace with JSDoc
+- [X] T012 [US3] Audit `packages/proxy/src` for low-signal comments and replace with JSDoc
+- [X] T013 [US3] Refactor `packages/proxy/src/utils/rules.ts` to convert redundant comments to high-signal JSDoc
+- [X] T014 [US3] Update all files in `docs/content/` to reflect framework-agnostic architecture
+- [X] T015 [US3] Verify `docs/content/3.proxy/` correctly describes the independent package
 
 ---
 
@@ -66,11 +66,11 @@ description: "Task list for constitutional compliance audit and refactor"
 
 **Purpose**: Ensure monorepo integrity
 
-- [ ] T016 [P] Run `pnpm lint` across the entire monorepo
-- [ ] T017 [P] Run `pnpm typecheck` across the entire monorepo
-- [ ] T018 [P] Run `pnpm test` to ensure no regressions in proxy or core logic
-- [ ] T019 Final manual sampling of JSDoc quality in Core/Proxy
-- [ ] T020 [P] Verify recent commits follow Conventional Commits standard
+- [X] T016 [P] Run `pnpm lint` across the entire monorepo
+- [X] T017 [P] Run `pnpm typecheck` across the entire monorepo
+- [X] T018 [P] Run `pnpm test` to ensure no regressions in proxy or core logic
+- [X] T019 Final manual sampling of JSDoc quality in Core/Proxy
+- [X] T020 [P] Verify recent commits follow Conventional Commits standard
 
 ---
 
