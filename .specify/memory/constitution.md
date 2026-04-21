@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report:
-- Version change: 1.3.0 → 1.3.1
+- Version change: 1.3.1 → 1.3.2
 - List of modified principles:
-    - IX. Spec-Kit Guided Development & Autonomy (Clarified that autonomy applies to the entire cycle)
+    - VIII. High-Signal Documentation & Comments (Added mandatory Docus requirement)
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-    - .specify/templates/tasks-template.md (✅ aligned)
+    - .specify/templates/plan-template.md (✅ aligned)
 - Follow-up TODOs: None
 -->
 
@@ -45,7 +45,8 @@ All commit messages MUST follow the [Conventional Commits](https://www.conventio
 Code documentation and comments MUST prioritize signal over noise.
 - **Comments**: MUST only exist if they provide valuable information that is hard or impossible to see from the code alone.
 - **JSDoc**: Preferred over standard comments for describing public APIs, types, and non-obvious logic. JSDoc MUST follow linting guidelines but SHOULD NOT be excessively verbose.
-- **External Documentation**: Documentation under `./docs` MUST always be kept up to date with core changes.
+- **External Documentation**: Documentation under `./docs` MUST always be kept up to date with core changes. 
+- **Documentation Framework**: All documentation MUST be built using **Docus**. Docus provides the foundational structure, themes, and components (utilizing Nuxt Content and Nuxt UI) required for a consistent ODX developer experience.
 
 ### IX. Spec-Kit Guided Development & Autonomy
 Development follows a specification-driven approach using `spec-kit` to ensure alignment and quality.
@@ -70,7 +71,7 @@ Development follows a specification-driven approach using `spec-kit` to ensure a
 - [ ] **Test Coverage**: Are there tests for the new functionality?
 - [ ] **BTP Compatibility**: Does it support BTP destinations/proxying (if applicable)?
 - [ ] **Linting**: Does the code pass `pnpm lint`?
-- [ ] **Documentation**: Are JSDoc comments high-signal? Is `./docs` updated?
+- [ ] **Documentation**: Is the documentation updated to reflect the changes? (MUST use Docus).
 
 ## Governance
 
@@ -79,7 +80,7 @@ Amendments to this constitution require a dedicated PR explaining the rationale.
 
 ### Versioning Policy
 - MAJOR: Removal or redefinition of core principles.
-- MINOR: New principles or sections added (e.g., v1.3.0 Spec-Kit rules).
+- MINOR: New principles or sections added (e.g., v1.3.0 Spec-Kit rules, v1.3.2 Docus requirement).
 - PATCH: Wording clarifications and non-semantic refinements.
 
-**Version**: 1.3.1 | **Ratified**: 2026-04-21 | **Last Amended**: 2026-04-21
+**Version**: 1.3.2 | **Ratified**: 2026-04-21 | **Last Amended**: 2026-04-21

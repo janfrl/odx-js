@@ -37,7 +37,7 @@ The documentation site (`docs/`) expects a `metadata.json` file in its `.data` d
 
 ```typescript
 interface DocMetadata {
-  interfaces: Record<string, ApiMetadata>;
-  composables: Record<string, ApiMetadata>;
+  interfaces: Record<string, ApiMetadata>
+  composables: Record<string, ApiMetadata>
 }
 ```

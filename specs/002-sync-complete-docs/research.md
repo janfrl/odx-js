@@ -27,7 +27,7 @@ Based on the existing structure, the following gaps need to be filled:
 
 ## Alternatives Considered
 
--   **Docus Auto-Doc**: Docus has some built-in support for component documentation, but we need something that works for generic TypeScript interfaces like `ModuleOptions`.
+-   **Docus Auto-Doc**: Docus will be used as the base framework for component documentation, but we need something that works for generic TypeScript interfaces like `ModuleOptions`.
 -   **TypeDoc**: Considered for full API site generation, but rejected in favor of keeping everything within the Nuxt Content/Docus ecosystem for a unified user experience.
 
 ## Research Tasks Summary
@@ -35,4 +35,5 @@ Based on the existing structure, the following gaps need to be filled:
 - [x] Analyze Nuxt UI's metadata extraction (Uses `untyped`).
 - [x] Audit current documentation coverage (Gaps identified in core/explorer/advanced-sap).
 - [x] Verify feasibility of hybrid strategy (Confirmed using `untyped` + custom doc components).
+
 

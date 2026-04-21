@@ -1,8 +1,11 @@
 # ODX: OData Developer Experience
 
 [![Nuxt](https://img.shields.io/badge/Nuxt-4-green.svg)](https://nuxt.com)
+[![Documentation](https://img.shields.io/badge/Documentation-ODX-blue.svg)](https://odx.nuxt.com)
 
 A powerful ecosystem for seamless, type-safe integration with OData services. It provides a robust server-side proxy, automated TypeScript model generation, and a high-fidelity DevTools UI for exploration.
+
+**Check out the [Official Documentation](https://odx.nuxt.com) for guides, tutorials, and API reference.**
 
 ODX works with any standard OData V2/V4 endpoint. Additionally, it comes with first-class support for SAP systems out of the box (handling NetWeaver routing, basic auth, and automated CSRF-Token pre-fetching).
 

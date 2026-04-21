@@ -15,10 +15,10 @@
 
 **Purpose**: Project initialization and basic documentation structure
 
-- [ ] T001 Reorganize `docs/content/` directory structure to follow Diátaxis framework (Tutorials, How-to, Reference, Explanation)
-- [ ] T002 Update `docs/nuxt.config.ts` to support Nuxt Content v3 and Nuxt UI v4
-- [ ] T003 [P] Create `docs/scripts/extract-metadata.ts` using `untyped` for API metadata extraction
-- [ ] T004 [P] Configure `docs/package.json` with a script to run metadata extraction before build
+- [x] T001 Reorganize `docs/content/` directory structure to follow Diátaxis framework (Tutorials, How-to, Reference, Explanation)
+- [x] T002 Update `docs/nuxt.config.ts` to support Nuxt Content v3 and Nuxt UI v4
+- [x] T003 [P] Create `docs/scripts/extract-metadata.ts` using `untyped` for API metadata extraction
+- [x] T004 [P] Configure `docs/package.json` with a script to run metadata extraction before build
 
 ---
 
@@ -26,9 +26,9 @@
 
 **Purpose**: Core documentation components and shared layouts
 
-- [ ] T005 [P] Create `docs/components/ApiReference.vue` component using Nuxt UI v4 to render JSON metadata
-- [ ] T006 [P] Implement `docs/components/AppHeader.vue` and `docs/components/AppFooter.vue` for consistent navigation
-- [ ] T007 Create `docs/content/index.md` with updated branding and logical entry points
+- [x] T005 [P] Create `docs/components/ApiReference.vue` component using Nuxt UI v4 to render JSON metadata
+- [x] T006 [P] Implement `docs/components/AppHeader.vue` and `docs/components/AppFooter.vue` for consistent navigation
+- [x] T007 Create `docs/content/index.md` with updated branding and logical entry points
 
 **Checkpoint**: Infrastructure ready - content implementation can now begin
 
@@ -42,10 +42,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Rewrite `docs/content/1.getting-started/1.introduction.md` as a high-level overview
-- [ ] T009 [P] [US1] Rewrite `docs/content/1.getting-started/2.installation.md` for Nuxt 4 and pnpm
-- [ ] T010 [P] [US1] Create `docs/content/1.getting-started/3.configuration.md` with basic "odata" block options
-- [ ] T011 [US1] Create `docs/content/1.getting-started/4.usage.md` with "Your First Request" guide using `useOData`
+- [x] T008 [P] [US1] Rewrite `docs/content/1.tutorials/1.introduction.md` as a high-level overview
+- [x] T009 [P] [US1] Create `docs/content/2.how-to/1.installation.md` for Nuxt 4 and pnpm
+- [x] T010 [P] [US1] Create `docs/content/2.how-to/2.configuration.md` with basic "odata" block options
+- [x] T011 [US1] Create `docs/content/2.how-to/usage.md` with "Your First Request" guide using `useOData`
 - [ ] T012 [US1] Add "Next Steps" call-to-action buttons to all onboarding pages
 
 **Checkpoint**: Onboarding journey (MVP) is fully functional and testable independently
@@ -60,11 +60,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T013 [P] [US2] Document `@bc8-odx/core` in `docs/content/5.core/` including `ODataQuery` types
-- [ ] T014 [P] [US2] Document `@bc8-odx/proxy` in `docs/content/3.proxy/` including BTP destination setup
-- [ ] T015 [US2] Implement `docs/content/2.nuxt/reference.md` using `ApiReference` for `ModuleOptions`
-- [ ] T016 [US2] Create `docs/content/6.guides/2.authentication.md` with SAP-specific auth patterns
-- [ ] T017 [US2] [P] Create `docs/content/6.guides/3.deployment.md` for SAP BTP (CF/Kyma) deployment details
+- [x] T013 [P] [US2] Document `@bc8-odx/core` in `docs/content/3.reference/5.core.md`
+- [x] T014 [P] [US2] Document `@bc8-odx/proxy` in `docs/content/3.reference/3.proxy.md`
+- [x] T015 [US2] Update `docs/content/3.reference/1.nuxt.md` using `ApiReference` for `ModuleOptions`
+- [x] T016 [US2] Create `docs/content/2.how-to/5.authentication.md` with SAP-specific auth patterns
+- [x] T017 [US2] [P] Create `docs/content/2.how-to/6.deployment.md` for SAP BTP (CF/Kyma) deployment details
 
 **Checkpoint**: Technical reference coverage is complete for all core features
 
@@ -78,9 +78,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T018 [P] [US3] Update `docs/content/4.explorer/1.introduction.md` with latest screenshots/descriptions
-- [ ] T019 [US3] Create `docs/content/4.explorer/2.features.md` documenting schema visualizer and request logs
-- [ ] T020 [US3] Add a "Troubleshooting" section to the Explorer guides
+- [x] T018 [P] [US3] Update `docs/content/3.reference/4.explorer.md` with latest screenshots/descriptions
+- [x] T019 [US3] Create `docs/content/2.how-to/7.explorer-setup.md` documenting schema visualizer and request logs
+- [x] T020 [US3] Add a "Troubleshooting" section to `docs/content/4.explanation/3.troubleshooting.md`
 
 **Checkpoint**: Visual discovery guides are complete
 

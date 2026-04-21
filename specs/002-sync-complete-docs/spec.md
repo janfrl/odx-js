@@ -76,8 +76,9 @@ As a developer using Nuxt DevTools, I want to understand how the ODX Explorer en
 
 ## Assumptions
 
-- Documentation will continue to use Nuxt Content v3 and Nuxt UI v4.
+- Documentation will continue to use Docus (Nuxt Content v3 & Nuxt UI v4).
 - The `docs/` folder is the primary location for all documentation content.
 - The current tech stack (Nuxt 4) is stable and will not undergo major changes during this sync.
 - **API Reference Strategy**: Follow a hybrid approach inspired by Nuxt UI. Technical API references (props, methods, options) SHOULD be auto-generated from code metadata to ensure accuracy and minimize maintenance. High-level explanations, guides, and interactive examples MUST be manually curated to maintain a superior user experience and logical guidance.
+
 
