@@ -9,7 +9,10 @@ export default antfu(
       yaml: false,
     },
     ignores: [
-      '.claude/skills/**',
+      '.claude/**',
+      '.gemini/**',
+      '.github/**',
+      '.specify/**',
     ],
   },
   createConfigForNuxt({
