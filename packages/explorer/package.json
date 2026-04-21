@@ -20,6 +20,7 @@
     "@nuxt/test-utils": "^4.0.0",
     "@nuxt/ui": "^4.6.0",
     "@vue/test-utils": "^2.4.6",
+    "nuxt": "^4.4.2",
     "vitest": "^4.1.1"
   }
 }
