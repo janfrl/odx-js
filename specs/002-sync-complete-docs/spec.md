@@ -1,4 +1,4 @@
-# Feature Specification: Documentation Sync & Completion
+﻿# Feature Specification: Documentation Sync & Completion
 
 **Feature Branch**: `002-sync-complete-docs`
 **Created**: 2026-04-21
@@ -50,11 +50,11 @@ As a developer using Nuxt DevTools, I want to understand how the ODX Explorer en
 
 ### Functional Requirements
 
-- **FR-001: Structural Overhaul**: The documentation structure MUST be reorganized to follow the "Diátaxis" framework (Tutorials, How-to Guides, Reference, Explanation).
+- **FR-001: Structural Overhaul**: The documentation structure MUST be reorganized to follow the "DiÃ¡taxis" framework (Tutorials, How-to Guides, Reference, Explanation).
 - **FR-002: Code-to-Docs Sync**: All configuration options described in the docs MUST match the current `ODataModuleOptions` and `ODataServiceConfig` schemas in the code.
 - **FR-003: Composable API Reference**: The documentation for `useOData` and `$odata` MUST be automatically or manually verified against the TypeScript signatures.
 - **FR-004: Audience-Specific Guides**: Documentation MUST include specific sections for different audiences: Nuxt developers, Node.js/h3 developers (for proxy), and Enterprise/SAP architects (for BTP integration).
-- **FR-005: Visual Consistency**: All UI components used in documentation (Nuxt UI Pro components) MUST be correctly configured and styled.
+- **FR-005: Visual Consistency**: All UI components used in documentation (Nuxt UI v4 components) MUST be correctly configured and styled.
 - **FR-006: Complete Package Coverage**: Every internal package (`@bc8-odx/core`, `@bc8-odx/proxy`, `@bc8-odx/explorer`, `@bc8-odx/nuxt`) MUST have at least an Introduction and Installation page.
 - **FR-007: SAP/BTP Specifics**: Documentation MUST provide clear, working examples for SAP-specific challenges (CSRF tokens, Batch requests, BTP Destinations).
 
@@ -76,7 +76,8 @@ As a developer using Nuxt DevTools, I want to understand how the ODX Explorer en
 
 ## Assumptions
 
-- Documentation will continue to use Nuxt Content v2 and Nuxt UI Pro.
+- Documentation will continue to use Nuxt Content v3 and Nuxt UI v4.
 - The `docs/` folder is the primary location for all documentation content.
 - The current tech stack (Nuxt 4) is stable and will not undergo major changes during this sync.
 - **API Reference Strategy**: Follow a hybrid approach inspired by Nuxt UI. Technical API references (props, methods, options) SHOULD be auto-generated from code metadata to ensure accuracy and minimize maintenance. High-level explanations, guides, and interactive examples MUST be manually curated to maintain a superior user experience and logical guidance.
+
