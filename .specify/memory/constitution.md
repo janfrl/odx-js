@@ -1,12 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - List of modified principles:
-    - I. Modular Monorepo Architecture (Renamed and expanded with strict boundary rules)
-    - Added VII. Conventional Commits & Versioning
-- Added sections: Package Boundary Rules
-- Templates requiring updates: 
-    - .specify/templates/plan-template.md (✅ aligned)
+    - Added VIII. High-Signal Documentation & Comments
+- Added sections: None
+- Removed sections: None
+- Templates requiring updates:
+    - .specify/templates/plan-template.md (✅ aligned - dynamic gates)
+    - .specify/templates/spec-template.md (✅ aligned)
+    - .specify/templates/tasks-template.md (✅ aligned)
 - Follow-up TODOs: None
 -->
 
@@ -38,6 +40,12 @@ Testing is CRITICAL. Every new feature or bug fix MUST include corresponding uni
 ### VII. Conventional Commits & Versioning
 All commit messages MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This ensures automated changelog generation and consistent versioning. This project follows Semantic Versioning (SemVer) for all packages and the constitution itself.
 
+### VIII. High-Signal Documentation & Comments
+Code documentation and comments MUST prioritize signal over noise.
+- **Comments**: MUST only exist if they provide valuable information that is hard or impossible to see from the code alone.
+- **JSDoc**: Preferred over standard comments for describing public APIs, types, and non-obvious logic. JSDoc MUST follow linting guidelines but SHOULD NOT be excessively verbose.
+- **External Documentation**: Documentation under `./docs` MUST always be kept up to date with core changes.
+
 ## Development Constraints
 
 - **Tech Stack:** Nuxt 4, TypeScript (Strict), Nitro, h3, pnpm.
@@ -53,6 +61,7 @@ All commit messages MUST follow the [Conventional Commits](https://www.conventio
 - [ ] **Test Coverage:** Are there tests for the new functionality?
 - [ ] **BTP Compatibility:** Does it support BTP destinations/proxying (if applicable)?
 - [ ] **Linting:** Does the code pass `pnpm lint`?
+- [ ] **Documentation:** Are JSDoc comments high-signal? Is `./docs` updated?
 
 ## Governance
 
@@ -61,7 +70,7 @@ Amendments to this constitution require a dedicated PR explaining the rationale.
 
 ### Versioning Policy
 - MAJOR: Removal or redefinition of core principles.
-- MINOR: New principles or sections added (e.g., v1.1.0 boundary rules).
+- MINOR: New principles or sections added (e.g., v1.1.0 boundary rules, v1.2.0 documentation rules).
 - PATCH: Wording clarifications and non-semantic refinements.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-21 | **Last Amended**: 2026-04-21
+**Version**: 1.2.0 | **Ratified**: 2026-04-21 | **Last Amended**: 2026-04-21
