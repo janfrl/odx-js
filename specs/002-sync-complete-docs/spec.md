@@ -50,7 +50,7 @@ As a developer using Nuxt DevTools, I want to understand how the ODX Explorer en
 
 ### Functional Requirements
 
-- **FR-001: Structural Overhaul**: The documentation structure MUST be reorganized to follow the "DiÃ¡taxis" framework (Tutorials, How-to Guides, Reference, Explanation).
+- **FR-001: Structural Overhaul**: The documentation structure MUST be reorganized to follow the "Diátaxis" framework (Tutorials, How-to Guides, Reference, Explanation).
 - **FR-002: Code-to-Docs Sync**: All configuration options described in the docs MUST match the current `ODataModuleOptions` and `ODataServiceConfig` schemas in the code.
 - **FR-003: Composable API Reference**: The documentation for `useOData` and `$odata` MUST be automatically or manually verified against the TypeScript signatures.
 - **FR-004: Audience-Specific Guides**: Documentation MUST include specific sections for different audiences: Nuxt developers, Node.js/h3 developers (for proxy), and Enterprise/SAP architects (for BTP integration).

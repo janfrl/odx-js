@@ -1,8 +1,8 @@
 ﻿# Research: Documentation Sync & Completion
 
-## Decision: Documentation Structure (DiÃ¡taxis)
+## Decision: Documentation Structure (Diátaxis)
 
-We will reorganize the `./docs/content` directory to follow the DiÃ¡taxis framework, which divides documentation into four categories:
+We will reorganize the `./docs/content` directory to follow the Diátaxis framework, which divides documentation into four categories:
 
 1.  **Tutorials (Learning-oriented)**: "Getting Started" guide, "Time to First Request".
 2.  **How-to Guides (Goal-oriented)**: "How to configure BTP Destinations", "How to use Type Generation", "How to deploy to SAP BTP".

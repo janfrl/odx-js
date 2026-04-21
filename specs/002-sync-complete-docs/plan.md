@@ -5,7 +5,7 @@
 
 ## Summary
 
-The goal is to bring the ODX documentation in sync with the current code and complete its coverage. This involves a structural overhaul following the DiÃ¡taxis framework, implementing a hybrid API reference strategy (auto-generated technical tables + manually curated guides), and ensuring consistency across all ODX packages (@bc8-odx/core, @bc8-odx/proxy, @bc8-odx/explorer, @bc8-odx/nuxt).
+The goal is to bring the ODX documentation in sync with the current code and complete its coverage. This involves a structural overhaul following the Diátaxis framework, implementing a hybrid API reference strategy (auto-generated technical tables + manually curated guides), and ensuring consistency across all ODX packages (@bc8-odx/core, @bc8-odx/proxy, @bc8-odx/explorer, @bc8-odx/nuxt).
 
 ## Technical Context
 

@@ -6,7 +6,7 @@ This guide explains how to contribute to the ODX documentation and how the auto-
 
 The documentation site is built with **Nuxt 4**, **Docus**, and **Nuxt UI v4**. All content is located in the `docs/content/` directory.
 
-### Directory Mapping (DiÃ¡taxis)
+### Directory Mapping (Diátaxis)
 
 - `docs/content/1.getting-started/`: Tutorials and introduction.
 - `docs/content/2.nuxt/`: Nuxt-specific guides and configuration.
