@@ -211,6 +211,10 @@ Task: "Create [Entity2] model in src/models/[entity2].py"
 
 ## Implementation Strategy
 
+### Autonomous Progress
+
+The agent is AUTHORIZED to commit autonomously after completing each task or logical group in this list. Commits MUST be granular and follow Conventional Commits (e.g., `feat(ui): add button component`).
+
 ### MVP First (User Story 1 Only)
 
 1. Complete Phase 1: Setup
