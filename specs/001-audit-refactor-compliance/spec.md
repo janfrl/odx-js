@@ -1,8 +1,8 @@
 # Feature Specification: Audit and Refactor for Constitutional Compliance
 
-**Feature Branch**: `001-audit-refactor-compliance`  
-**Created**: 2026-04-21  
-**Status**: Draft  
+**Feature Branch**: `001-audit-refactor-compliance`
+**Created**: 2026-04-21
+**Status**: Draft
 **Input**: User description: "Audit the repo and refactor it to strictyl comply with the project constitution"
 
 ## User Scenarios & Testing *(mandatory)*
