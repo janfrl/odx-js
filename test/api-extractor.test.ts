@@ -17,7 +17,6 @@ describe('api extractor', () => {
 
   it('should extract interfaces correctly', () => {
     const declaration = sourceFile.getInterface('SampleInterface')!
-    // @ts-expect-error - extractor is treated as any to access internal functions for testing
     const result = (extractor as any).extractInterface(declaration)
 
     expect(result.title).toBe('SampleInterface')
@@ -35,7 +34,6 @@ describe('api extractor', () => {
 
   it('should extract type aliases correctly', () => {
     const declaration = sourceFile.getTypeAlias('SampleType')!
-    // @ts-expect-error - extractor is treated as any to access internal functions for testing
     const result = (extractor as any).extractTypeAlias(declaration)
 
     expect(result.title).toBe('SampleType')
@@ -46,7 +44,6 @@ describe('api extractor', () => {
 
   it('should extract functions correctly', () => {
     const declaration = sourceFile.getFunction('sampleFunction')!
-    // @ts-expect-error - extractor is treated as any to access internal functions for testing
     const result = (extractor as any).extractFunction(declaration)
 
     expect(result.title).toBe('sampleFunction')
