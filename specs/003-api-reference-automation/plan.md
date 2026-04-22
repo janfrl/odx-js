@@ -9,14 +9,14 @@ This feature automates the generation of API reference documentation by parsing 
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x  
-**Primary Dependencies**: `ts-morph` (for AST/JSDoc parsing), `tsx` (for execution), `fs-extra`  
-**Storage**: JSON file (`docs/public/api-reference.json`)  
-**Testing**: Vitest (using fixtures)  
-**Target Platform**: Node.js (Build-time)  
-**Project Type**: CLI / Build Script  
-**Performance Goals**: < 5 seconds execution for all packages  
-**Constraints**: Must accurately capture union types, optional properties, and JSDoc `@default` tags.  
+**Language/Version**: TypeScript 5.x
+**Primary Dependencies**: `ts-morph` (for AST/JSDoc parsing), `tsx` (for execution), `fs-extra`
+**Storage**: JSON file (`docs/public/api-reference.json`)
+**Testing**: Vitest (using fixtures)
+**Target Platform**: Node.js (Build-time)
+**Project Type**: CLI / Build Script
+**Performance Goals**: < 5 seconds execution for all packages
+**Constraints**: Must accurately capture union types, optional properties, and JSDoc `@default` tags.
 **Scale/Scope**: Focuses on `packages/core/src/index.ts` and `packages/nuxt/src/module.ts`.
 
 ## Constitution Check

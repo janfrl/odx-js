@@ -21,7 +21,7 @@ Represents a single property of an interface/type or a parameter of a function.
 | Field | Type | Description |
 |-------|------|-------------|
 | `name` | `string` | The name of the property or parameter. |
-| `type` | `string` | The TypeScript type as a string (e.g., `string | number`). |
+| `type` | `string` | The TypeScript type as a string (e.g., `string \| number`). |
 | `default` | `string?` | The default value, extracted from `@default` JSDoc tag or initializer. |
 | `description` | `string?` | The JSDoc comment for this specific property. |
 | `required` | `boolean` | Whether the property/parameter is mandatory. |
