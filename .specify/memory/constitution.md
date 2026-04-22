@@ -1,14 +1,12 @@
 <!--
 Sync Impact Report:
-- Version change: 1.1.0 → 1.2.0
+- Version change: 1.3.1 → 1.3.2
 - List of modified principles:
-    - Added VIII. High-Signal Documentation & Comments
+    - VIII. High-Signal Documentation & Comments (Added mandatory Docus requirement)
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-    - .specify/templates/plan-template.md (✅ aligned - dynamic gates)
-    - .specify/templates/spec-template.md (✅ aligned)
-    - .specify/templates/tasks-template.md (✅ aligned)
+    - .specify/templates/plan-template.md (✅ aligned)
 - Follow-up TODOs: None
 -->
 
@@ -38,13 +36,24 @@ The codebase MUST adhere to `@antfu/eslint-config`. Modern TypeScript (strict mo
 Testing is CRITICAL. Every new feature or bug fix MUST include corresponding unit or integration tests using Vitest and `@nuxt/test-utils`. Bugs MUST be reproduced with a failing test before applying a fix.
 
 ### VII. Conventional Commits & Versioning
-All commit messages MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This ensures automated changelog generation and consistent versioning. This project follows Semantic Versioning (SemVer) for all packages and the constitution itself.
+All commit messages MUST follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. 
+- **Granularity**: Commits MUST be granular, scoping exactly one change (e.g., one feature, one docs change, one fix).
+- **Autonomy**: While operating within a dedicated `spec-kit` feature branch, the agent is AUTHORIZED to commit autonomously without explicit user confirmation for each commit, provided they adhere to the conventional commit standard and granularity rules.
+- **Versioning**: This project follows Semantic Versioning (SemVer) for all packages and the constitution itself.
 
 ### VIII. High-Signal Documentation & Comments
 Code documentation and comments MUST prioritize signal over noise.
 - **Comments**: MUST only exist if they provide valuable information that is hard or impossible to see from the code alone.
 - **JSDoc**: Preferred over standard comments for describing public APIs, types, and non-obvious logic. JSDoc MUST follow linting guidelines but SHOULD NOT be excessively verbose.
-- **External Documentation**: Documentation under `./docs` MUST always be kept up to date with core changes.
+- **External Documentation**: Documentation under `./docs` MUST always be kept up to date with core changes. 
+- **Documentation Framework**: All documentation MUST be built using **Docus**. Docus provides the foundational structure, themes, and components (utilizing Nuxt Content and Nuxt UI) required for a consistent ODX developer experience.
+
+### IX. Spec-Kit Guided Development & Autonomy
+Development follows a specification-driven approach using `spec-kit` to ensure alignment and quality.
+- **Branching Strategy**: Every new specification or feature request MUST be developed in its own dedicated branch (prefixed with `feat/`, `fix/`, or `spec/`).
+- **Encapsulation**: All related artifacts—including the specification, implementation plan, task list, and code changes—MUST reside within this branch.
+- **Merge & Squash**: Upon completion and successful validation of all tasks, the branch MUST be merged and squashed into the main branch to maintain a clean history.
+- **Autonomous Execution**: The agent IS AUTHORIZED to commit changes as they see fit throughout the entire `spec-kit` lifecycle (from specification and planning to implementation and validation) as long as they are inside a dedicated feature branch. This ensures high velocity and clear traceability.
 
 ## Development Constraints
 
@@ -56,12 +65,13 @@ Code documentation and comments MUST prioritize signal over noise.
 ## Development Workflow
 
 ### Constitution Gates (Checklist for Plans)
-- [ ] **Boundary Compliance:** Does the feature respect package isolation (e.g., no Nuxt in Proxy)?
-- [ ] **Type Safety:** Are all new interfaces and models fully typed? No `any`?
-- [ ] **Test Coverage:** Are there tests for the new functionality?
-- [ ] **BTP Compatibility:** Does it support BTP destinations/proxying (if applicable)?
-- [ ] **Linting:** Does the code pass `pnpm lint`?
-- [ ] **Documentation:** Are JSDoc comments high-signal? Is `./docs` updated?
+- [ ] **Spec-Kit Alignment**: Is this change developed in a dedicated branch?
+- [ ] **Boundary Compliance**: Does the feature respect package isolation (e.g., no Nuxt in Proxy)?
+- [ ] **Type Safety**: Are all new interfaces and models fully typed? No `any`?
+- [ ] **Test Coverage**: Are there tests for the new functionality?
+- [ ] **BTP Compatibility**: Does it support BTP destinations/proxying (if applicable)?
+- [ ] **Linting**: Does the code pass `pnpm lint`?
+- [ ] **Documentation**: Is the documentation updated to reflect the changes? (MUST use Docus).
 
 ## Governance
 
@@ -70,7 +80,7 @@ Amendments to this constitution require a dedicated PR explaining the rationale.
 
 ### Versioning Policy
 - MAJOR: Removal or redefinition of core principles.
-- MINOR: New principles or sections added (e.g., v1.1.0 boundary rules, v1.2.0 documentation rules).
+- MINOR: New principles or sections added (e.g., v1.3.0 Spec-Kit rules, v1.3.2 Docus requirement).
 - PATCH: Wording clarifications and non-semantic refinements.
 
-**Version**: 1.2.0 | **Ratified**: 2026-04-21 | **Last Amended**: 2026-04-21
+**Version**: 1.3.2 | **Ratified**: 2026-04-21 | **Last Amended**: 2026-04-21
