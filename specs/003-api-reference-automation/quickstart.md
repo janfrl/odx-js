@@ -25,7 +25,7 @@ The generated JSON is saved to `docs/public/api-reference.json`. In the Docus si
 ```vue
 <script setup>
 const { data: apiRef } = await useFetch('/api-reference.json')
-const myType = apiRef.value['ODataClientConfig']
+const myType = apiRef.value.ODataClientConfig
 </script>
 
 <template>

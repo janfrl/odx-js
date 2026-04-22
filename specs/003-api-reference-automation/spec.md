@@ -1,8 +1,8 @@
 # Feature Specification: API Reference Automation
 
-**Feature Branch**: `003-api-reference-automation`  
-**Created**: 2026-04-22  
-**Status**: Draft  
+**Feature Branch**: `003-api-reference-automation`
+**Created**: 2026-04-22
+**Status**: Draft
 **Input**: User description: "# Role and Context You are an expert TypeScript Tooling Developer, highly experienced with AST parsing, TypeDoc, and the Nuxt ecosystem (untyped/unbuild). I am working on an open-source pnpm workspace monorepo called `odx-js` (OData Developer Experience). Currently, maintaining the API reference tables in our Nuxt-based documentation (located in the `/docs` folder) is a manual, error-prone process. # The Goal I want to automate the generation of our API reference data. I need a standalone TypeScript build script that reads the exported types, interfaces, and functions from our packages, extracts their properties and JSDoc comments, and outputs a clean, flat JSON artifact. This JSON will be fetched at runtime by our docs site. # Project Structure - `/packages/core/src/index.ts` (Entry point for the Core SDK) - `/packages/nuxt/src/module.ts` (Entry point for the Nuxt module) - `/docs/public/` (Target directory for the generated JSON) - `/scripts/` (Directory where this new extraction script should live) # Target JSON Schema The script must parse the TypeScript AST and transform it into a flat dictionary where the key is the exported symbol name (e.g., `ODataClientConfig`), and the value matches this exact TypeScript interface: ```typescript interface ApiProperty { name: string; type: string; default?: string; description?: string; required: boolean; } interface ApiItem { title: string; // The name of the interface/type/function description?: string; // The top-level JSDoc comment properties: ApiProperty[]; // The parameters or interface members } // Final Output Shape: Record<string, ApiItem> ```"
 
 ## User Scenarios & Testing *(mandatory)*

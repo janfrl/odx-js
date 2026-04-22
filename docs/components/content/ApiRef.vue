@@ -11,7 +11,9 @@ const item = computed(() => (apiReferenceData as any)[props.name])
 
 <template>
   <div v-if="item" class="api-ref-container my-8">
-    <h3 class="text-xl font-bold mb-4">{{ item.title }}</h3>
+    <h3 class="text-xl font-bold mb-4">
+      {{ item.title }}
+    </h3>
     <MDC v-if="item.description" :value="item.description" class="prose-sm mb-4" />
 
     <ProseTable>
@@ -55,7 +57,7 @@ const item = computed(() => (apiReferenceData as any)[props.name])
 </template>
 
 <style scoped>
-/* 
+/*
   Ensure the table columns handle long content gracefully.
   We use table-layout auto so columns adjust to their content.
 */

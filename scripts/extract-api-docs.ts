@@ -1,7 +1,9 @@
-import { writeFileSync, mkdirSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
-import { Project, Node, type InterfaceDeclaration, type TypeAliasDeclaration, type FunctionDeclaration } from 'ts-morph'
+import type { FunctionDeclaration, InterfaceDeclaration, TypeAliasDeclaration } from 'ts-morph'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import process from 'node:process'
 import consola from 'consola'
+import { Node, Project } from 'ts-morph'
 
 /**
  * Represents a single property of an interface/type or a parameter of a function.
@@ -27,10 +29,13 @@ export type ApiReference = Record<string, ApiItem>
 
 const DEFAULT_ENTRY_POINTS = [
   'packages/core/src/index.ts',
-  'packages/nuxt/src/module.ts'
+  'packages/nuxt/src/module.ts',
 ]
 
 const DEFAULT_OUTPUT_PATH = 'docs/public/api-reference.json'
+
+const CRLF_REGEX = /\r\n/g
+const IMPORT_REGEX = /import\(.*?\)\./g
 
 /**
  * Extracts JSDoc description and @default tag from a node.
@@ -39,16 +44,17 @@ function getDocs(node: any) {
   if (!node || typeof node.getJsDocs !== 'function') {
     return { description: undefined, defaultValue: undefined }
   }
-  
+
   const docs = node.getJsDocs()
-  if (docs.length === 0) return { description: undefined, defaultValue: undefined }
+  if (docs.length === 0)
+    return { description: undefined, defaultValue: undefined }
 
   const doc = docs[0]
-  const description = doc.getDescription().trim().replace(/\r\n/g, '\n') || undefined
+  const description = doc.getDescription().trim().replace(CRLF_REGEX, '\n') || undefined
   const defaultTag = doc.getTags().find((tag: any) => tag.getTagName() === 'default')
-  
+
   // Use getCommentText() for more direct tag content extraction
-  const defaultValue = defaultTag?.getCommentText()?.trim().replace(/\r\n/g, '\n') || undefined
+  const defaultValue = defaultTag?.getCommentText()?.trim().replace(CRLF_REGEX, '\n') || undefined
 
   return { description, defaultValue }
 }
@@ -57,7 +63,7 @@ function getDocs(node: any) {
  * Normalizes type text for better readability.
  */
 function normalizeType(typeText: string): string {
-  return typeText.replace(/import\(.*?\)\./g, '').trim()
+  return typeText.replace(IMPORT_REGEX, '').trim()
 }
 
 /**
@@ -65,7 +71,7 @@ function normalizeType(typeText: string): string {
  */
 export function extractInterface(node: InterfaceDeclaration): ApiItem {
   const { description } = getDocs(node)
-  const properties: ApiProperty[] = node.getProperties().map(p => {
+  const properties: ApiProperty[] = node.getProperties().map((p) => {
     const { description: propDesc, defaultValue } = getDocs(p)
     return {
       name: p.getName(),
@@ -89,10 +95,11 @@ export function extractInterface(node: InterfaceDeclaration): ApiItem {
  */
 export function extractTypeAlias(node: TypeAliasDeclaration): ApiItem | undefined {
   const typeNode = node.getTypeNode()
-  if (!typeNode || !Node.isTypeLiteral(typeNode)) return undefined
+  if (!typeNode || !Node.isTypeLiteral(typeNode))
+    return undefined
 
   const { description } = getDocs(node)
-  const properties: ApiProperty[] = typeNode.getProperties().map(p => {
+  const properties: ApiProperty[] = typeNode.getProperties().map((p) => {
     const { description: propDesc, defaultValue } = getDocs(p)
     return {
       name: p.getName(),
@@ -115,15 +122,16 @@ export function extractTypeAlias(node: TypeAliasDeclaration): ApiItem | undefine
  */
 export function extractFunction(node: FunctionDeclaration): ApiItem | undefined {
   const name = node.getName()
-  if (!name) return undefined
+  if (!name)
+    return undefined
 
   const { description } = getDocs(node)
-  
+
   const paramDocs: Record<string, string> = {}
   const docs = node.getJsDocs()
   if (docs.length > 0) {
     const doc = docs[0]
-    doc.getTags().forEach(tag => {
+    doc.getTags().forEach((tag) => {
       if (Node.isJSDocParameterTag(tag)) {
         const paramName = tag.getName()
         const comment = tag.getCommentText()?.trim()
@@ -134,7 +142,7 @@ export function extractFunction(node: FunctionDeclaration): ApiItem | undefined 
     })
   }
 
-  const properties: ApiProperty[] = node.getParameters().map(p => {
+  const properties: ApiProperty[] = node.getParameters().map((p) => {
     const pName = p.getName()
     const { description: directDesc, defaultValue } = getDocs(p)
     return {
@@ -155,7 +163,7 @@ export function extractFunction(node: FunctionDeclaration): ApiItem | undefined 
 
 async function main() {
   consola.start('API Reference Extractor: Initializing...')
-  
+
   const project = new Project({
     tsConfigFilePath: 'tsconfig.json',
     skipAddingFilesFromTsConfig: true,
@@ -174,7 +182,7 @@ async function main() {
     consola.info(`Processing ${entryPath}...`)
 
     const exports = sourceFile.getExportedDeclarations()
-    
+
     for (const [name, declarations] of exports) {
       for (const declaration of declarations) {
         let item: ApiItem | undefined
@@ -182,16 +190,19 @@ async function main() {
         try {
           if (Node.isInterfaceDeclaration(declaration)) {
             item = extractInterface(declaration)
-          } else if (Node.isTypeAliasDeclaration(declaration)) {
+          }
+          else if (Node.isTypeAliasDeclaration(declaration)) {
             item = extractTypeAlias(declaration)
-          } else if (Node.isFunctionDeclaration(declaration)) {
+          }
+          else if (Node.isFunctionDeclaration(declaration)) {
             item = extractFunction(declaration)
           }
 
           if (item) {
             apiReference[name] = item
           }
-        } catch (error) {
+        }
+        catch (error) {
           consola.error(`Failed to extract metadata for "${name}" in ${entryPath}:`, error)
         }
       }
@@ -205,14 +216,15 @@ async function main() {
 
     consola.success(`API Reference saved to ${DEFAULT_OUTPUT_PATH}`)
     consola.info(`Total items extracted: ${Object.keys(apiReference).length}`)
-  } catch (error) {
+  }
+  catch (error) {
     consola.error('Failed to save API reference JSON:', error)
     process.exit(1)
   }
 }
 
-if (import.meta.url.startsWith('file:') || process.argv[1] === resolve(import.meta.url.replace('file:///', ''))) {
-  main().catch(error => {
+if (import.meta.url.startsWith('file:') || (typeof process.argv[1] === 'string' && resolve(process.argv[1]) === resolve(import.meta.url.replace('file:///', '')))) {
+  main().catch((error) => {
     consola.error('Fatal error during API extraction:', error)
     process.exit(1)
   })

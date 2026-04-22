@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest'
 import { resolve } from 'node:path'
-import { Project, Node } from 'ts-morph'
-import { ApiItem, ApiProperty } from '../scripts/extract-api-docs.js'
+import { Project } from 'ts-morph'
+import { describe, expect, it } from 'vitest'
 
 // Since we are running in a project that might have ESM issues with direct script imports in tests,
 // we'll re-implement or mock parts of the logic if needed, but here we'll try to use the actual functions.
@@ -12,19 +11,19 @@ import { ApiItem, ApiProperty } from '../scripts/extract-api-docs.js'
 
 import * as extractor from '../scripts/extract-api-docs.js'
 
-describe('API Extractor', () => {
+describe('api extractor', () => {
   const project = new Project()
   const sourceFile = project.addSourceFileAtPath(resolve('test/fixtures/api-extraction/sample.ts'))
 
   it('should extract interfaces correctly', () => {
     const declaration = sourceFile.getInterface('SampleInterface')!
-    // @ts-ignore - assuming it's exported
+    // @ts-expect-error - extractor is treated as any to access internal functions for testing
     const result = (extractor as any).extractInterface(declaration)
 
     expect(result.title).toBe('SampleInterface')
     expect(result.description).toBe('A sample interface for testing.')
     expect(result.properties).toHaveLength(3)
-    
+
     const nameProp = result.properties.find((p: any) => p.name === 'name')
     expect(nameProp.type).toBe('string')
     expect(nameProp.default).toBe('"default-name"')
@@ -36,7 +35,7 @@ describe('API Extractor', () => {
 
   it('should extract type aliases correctly', () => {
     const declaration = sourceFile.getTypeAlias('SampleType')!
-    // @ts-ignore
+    // @ts-expect-error - extractor is treated as any to access internal functions for testing
     const result = (extractor as any).extractTypeAlias(declaration)
 
     expect(result.title).toBe('SampleType')
@@ -47,12 +46,12 @@ describe('API Extractor', () => {
 
   it('should extract functions correctly', () => {
     const declaration = sourceFile.getFunction('sampleFunction')!
-    // @ts-ignore
+    // @ts-expect-error - extractor is treated as any to access internal functions for testing
     const result = (extractor as any).extractFunction(declaration)
 
     expect(result.title).toBe('sampleFunction')
     expect(result.properties).toHaveLength(2)
-    
+
     const p1 = result.properties.find((p: any) => p.name === 'param1')
     expect(p1.description).toBe('The first parameter.')
     expect(p1.required).toBe(true)

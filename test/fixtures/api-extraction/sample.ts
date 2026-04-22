@@ -20,7 +20,7 @@ export interface SampleInterface {
 /**
  * A sample type alias.
  */
-export type SampleType = {
+export interface SampleType {
   /**
    * ID of the type.
    */
@@ -30,15 +30,15 @@ export type SampleType = {
 /**
  * A sample function.
  * @param param1 The first parameter.
- * @param param2 An optional second parameter.
+ * @param _param2 An optional second parameter.
  */
-export function sampleFunction(param1: string, param2: number = 42): boolean {
+export function sampleFunction(param1: string, _param2: number = 42): boolean {
   return !!param1
 }
 
 /**
  * An unexported interface.
  */
-interface InternalInterface {
+interface _InternalInterface {
   secret: boolean
 }
