@@ -80,5 +80,5 @@ This project is a modern Nuxt module (ODX - OData Developer Experience) designed
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-[specs/002-sync-complete-docs/plan.md](specs/002-sync-complete-docs/plan.md)
+[specs/003-api-reference-automation/plan.md](specs/003-api-reference-automation/plan.md)
 <!-- SPECKIT END -->
