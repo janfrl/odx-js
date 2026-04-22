@@ -59,7 +59,32 @@ export function resolveTargetUrl(
     targetUrl += `/${overrideServiceName || requestInfo.serviceName}`
   }
 
-  targetUrl += `/${requestInfo.odataPath}${requestInfo.query}`
+  let query = requestInfo.query
+  let odataPath = requestInfo.odataPath
+
+  // Special handling for explorer-style id parameter: ?id=XYZ
+  // We rewrite this into the OData path format: EntitySet('XYZ')
+  if (query.includes('id=')) {
+    const params = new URLSearchParams(query.startsWith('?') ? query.slice(1) : query)
+    const id = params.get('id')
+    if (id) {
+      // 1. Remove id from query string
+      params.delete('id')
+      const remaining = params.toString()
+      query = remaining ? `?${remaining}` : ''
+
+      // 2. Format ID correctly (quotes for strings, none for numbers)
+      // Note: We use encodeURIComponent to handle special characters in the ID
+      const formattedId = (Number.isNaN(Number(id)) || id.trim() === '') ? `'${encodeURIComponent(id)}'` : id
+
+      // 3. Append to path (ensure we don't double up parentheses if already present)
+      if (!odataPath.endsWith(')')) {
+        odataPath += `(${formattedId})`
+      }
+    }
+  }
+
+  targetUrl += `/${odataPath}${query}`
   // Ensure no double slashes (except after protocol)
   targetUrl = targetUrl.replace(RE_DOUBLE_SLASHES, '$1')
 

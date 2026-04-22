@@ -33,6 +33,12 @@ export function createBackend(): App {
     }
   }))
 
+  router.use('/EchoURL/**', defineEventHandler((event) => {
+    return {
+      url: event.path,
+    }
+  }))
+
   router.get('/', defineEventHandler((event) => {
     const csrfFetch = event.node.req.headers['x-csrf-token']
     if (csrfFetch === 'fetch') {

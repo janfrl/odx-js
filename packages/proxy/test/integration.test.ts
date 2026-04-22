@@ -160,4 +160,12 @@ describe('proxy integration', () => {
     })
     expect(resOverride.receivedHeaders['x-priority-test']).toBe('client-override')
   })
+
+  it('rewrites ?id= query parameter to OData path format', async () => {
+    const resString = await ofetch(`${proxyUrl}/api/odx/TestService/EchoURL/Products?id=HT-1000`)
+    expect(resString.url).toBe('/EchoURL/Products(\'HT-1000\')')
+
+    const resNumber = await ofetch(`${proxyUrl}/api/odx/TestService/EchoURL/Products?id=123`)
+    expect(resNumber.url).toBe('/EchoURL/Products(123)')
+  })
 })
