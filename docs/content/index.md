@@ -94,7 +94,7 @@ description: Choose the package that fits your architecture.
     title: Proxy
     description: Standalone Nitro proxy for SAP BTP auth, CSRF, and routing.
     to: /proxy/installation
-    icon: i-heroicons-server
+    icon: i-lucide-server
     ---
     ::::
 
@@ -103,7 +103,7 @@ description: Choose the package that fits your architecture.
     title: Core SDK
     description: Framework-agnostic OData types and lightweight fetch client.
     to: /core/installation
-    icon: i-heroicons-code-bracket
+    icon: i-lucide-code-2
     ---
     ::::
 
@@ -112,7 +112,7 @@ description: Choose the package that fits your architecture.
     title: Explorer
     description: Browser-based DevTools for schema visualization and traffic monitoring.
     to: /explorer/setup
-    icon: i-heroicons-computer-desktop
+    icon: i-lucide-monitor
     ---
     ::::
   :::
