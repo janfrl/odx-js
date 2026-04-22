@@ -1,11 +1,24 @@
 <script setup lang="ts">
+interface Property {
+  name: string
+  type: string
+  default?: string
+  required?: boolean
+  description: string
+}
+
+interface MetadataItem {
+  title: string
+  description: string
+  properties: Property[]
+}
+
 const props = defineProps<{
   name: string
 }>()
 
 // In a real app, this would be loaded from metadata.json
-// For this MVP, we provide some defaults if not found
-const metadata = {
+const metadata: Record<string, MetadataItem> = {
   ModuleOptions: {
     title: 'Module Options',
     description: 'Configuration options for the ODX Nuxt module.',
@@ -39,42 +52,35 @@ const item = metadata[props.name]
       {{ item.description }}
     </p>
 
-    <div class="overflow-x-auto">
-      <table class="min-w-full border-collapse border border-gray-200 dark:border-gray-800">
-        <thead>
-          <tr class="bg-gray-50 dark:bg-gray-900">
-            <th class="px-4 py-2 text-left border border-gray-200 dark:border-gray-800">
-              Property
-            </th>
-            <th class="px-4 py-2 text-left border border-gray-200 dark:border-gray-800">
-              Type
-            </th>
-            <th class="px-4 py-2 text-left border border-gray-200 dark:border-gray-800">
-              Default
-            </th>
-            <th class="px-4 py-2 text-left border border-gray-200 dark:border-gray-800">
-              Description
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="prop in item.properties" :key="prop.name" class="border border-gray-200 dark:border-gray-800">
-            <td class="px-4 py-2 font-mono text-sm">
-              {{ prop.name }}
-              <span v-if="prop.required" class="text-red-500">*</span>
-            </td>
-            <td class="px-4 py-2 font-mono text-xs text-primary-600 dark:text-primary-400">
-              {{ prop.type }}
-            </td>
-            <td class="px-4 py-2 font-mono text-xs text-gray-500">
-              {{ prop.default || '-' }}
-            </td>
-            <td class="px-4 py-2 text-sm">
+    <div class="overflow-x-auto my-6">
+      <prose-table>
+        <prose-thead>
+          <prose-tr>
+            <prose-th>Property</prose-th>
+            <prose-th>Type</prose-th>
+            <prose-th>Default</prose-th>
+            <prose-th>Description</prose-th>
+          </prose-tr>
+        </prose-thead>
+        <prose-tbody>
+          <prose-tr v-for="prop in item.properties" :key="prop.name">
+            <prose-td>
+              <prose-code-inline>{{ prop.name }}</prose-code-inline>
+              <span v-if="prop.required" class="text-red-500 ml-1">*</span>
+            </prose-td>
+            <prose-td>
+              <prose-code-inline>{{ prop.type }}</prose-code-inline>
+            </prose-td>
+            <prose-td>
+              <prose-code-inline v-if="prop.default">{{ prop.default }}</prose-code-inline>
+              <span v-else>-</span>
+            </prose-td>
+            <prose-td class="text-sm">
               {{ prop.description }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </prose-td>
+          </prose-tr>
+        </prose-tbody>
+      </prose-table>
     </div>
   </div>
   <div v-else class="p-4 border border-red-200 bg-red-50 text-red-700 rounded">
