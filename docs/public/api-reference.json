@@ -1,0 +1,900 @@
+{
+  "fetchRealXsuaaToken": {
+    "title": "fetchRealXsuaaToken",
+    "description": "Fetches a real JWT token from SAP BTP XSUAA using Password Grant.\nUsed for local testing with real user data.",
+    "properties": [
+      {
+        "name": "credentials",
+        "type": "{ clientid: string; clientsecret: string; url: string; }",
+        "required": true
+      },
+      {
+        "name": "user",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "pass",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "parseXsuaaPolicies": {
+    "title": "parseXsuaaPolicies",
+    "description": "Transforms raw XSUAA data into a structured policy-based user context.\nRobustly handles real BTP attributes and local mock formats.",
+    "properties": [
+      {
+        "name": "payload",
+        "type": "XsuaaPayload",
+        "required": true
+      }
+    ]
+  },
+  "XsuaaPayload": {
+    "title": "XsuaaPayload",
+    "description": "Raw payload structure expected from the SAP XSUAA JWT token.\nSupports both real XSUAA attributes and synthetic mock structures.",
+    "properties": [
+      {
+        "name": "'user_id'",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "'userId'",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "'email'",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "'xs.user.attributes'",
+        "type": "Record<string, string[]> | undefined",
+        "required": false
+      },
+      {
+        "name": "'userCompanies'",
+        "type": "{ [key: string]: unknown; company: string; source: string; }[] | undefined",
+        "required": false
+      }
+    ]
+  },
+  "PolicyRule": {
+    "title": "PolicyRule",
+    "description": "Authorization rule mapping actions to subjects with specific conditions.",
+    "properties": [
+      {
+        "name": "action",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "subject",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "conditions",
+        "type": "{ companyCode: string[]; }",
+        "required": true
+      }
+    ]
+  },
+  "UserContext": {
+    "title": "UserContext",
+    "description": "Application-specific user context derived from the authentication token.",
+    "properties": [
+      {
+        "name": "userId",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "policies",
+        "type": "PolicyRule[]",
+        "required": true
+      }
+    ]
+  },
+  "addODataLog": {
+    "title": "addODataLog",
+    "properties": [
+      {
+        "name": "log",
+        "type": "ODataLog",
+        "required": true
+      },
+      {
+        "name": "maxLogs",
+        "type": "number",
+        "default": "DEFAULT_MAX_LOGS",
+        "required": false
+      }
+    ]
+  },
+  "updateODataLog": {
+    "title": "updateODataLog",
+    "description": "Updates an existing OData log entry by its ID.",
+    "properties": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "updates",
+        "type": "Partial<ODataLog>",
+        "required": true
+      }
+    ]
+  },
+  "getODataLogs": {
+    "title": "getODataLogs",
+    "properties": []
+  },
+  "clearODataLogs": {
+    "title": "clearODataLogs",
+    "properties": []
+  },
+  "ProxyTraceEntry": {
+    "title": "ProxyTraceEntry",
+    "properties": [
+      {
+        "name": "timestamp",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "duration",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "details",
+        "type": "any",
+        "required": false
+      },
+      {
+        "name": "status",
+        "type": "\"success\" | \"error\" | \"info\" | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataLog": {
+    "title": "ODataLog",
+    "properties": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "timestamp",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "method",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "url",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "targetUrl",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "status",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "duration",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "isPending",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "requestBody",
+        "type": "any",
+        "required": false
+      },
+      {
+        "name": "requestHeaders",
+        "type": "Record<string, string> | undefined",
+        "required": false
+      },
+      {
+        "name": "responseBody",
+        "type": "any",
+        "required": false
+      },
+      {
+        "name": "proxyTrace",
+        "type": "ProxyTraceEntry[] | undefined",
+        "required": false
+      }
+    ]
+  },
+  "$odata": {
+    "title": "$odata",
+    "description": "Low-level OData utility.\nExecutes a single OData request using the provided client.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "<R>(path: string, options?: any) => Promise<R>",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "method",
+        "type": "\"GET\" | \"POST\" | \"PATCH\" | \"DELETE\"",
+        "default": "'GET'",
+        "required": false
+      },
+      {
+        "name": "options",
+        "type": "b<\"json\", any> & { entitySet?: string | undefined; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "flattenOData": {
+    "title": "flattenOData",
+    "description": "Recursive flattener for OData V2/V4 structures and removes metadata.\nPreserves count information if present.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "any",
+        "description": "The data to flatten",
+        "required": true
+      },
+      {
+        "name": "depth",
+        "type": "number",
+        "description": "Current recursion depth",
+        "default": "0",
+        "required": false
+      },
+      {
+        "name": "maxDepth",
+        "type": "number",
+        "description": "Maximum recursion depth (default 10)",
+        "default": "10",
+        "required": false
+      }
+    ]
+  },
+  "mergeHeaders": {
+    "title": "mergeHeaders",
+    "description": "Merges multiple header initializers into a plain record.",
+    "properties": [
+      {
+        "name": "headers",
+        "type": "(HeadersInit | Record<string, any> | undefined)[]",
+        "required": true
+      }
+    ]
+  },
+  "sanitizeBaseURL": {
+    "title": "sanitizeBaseURL",
+    "description": "Sanitizes a base URL by removing redundant slashes and ensuring no trailing slash.",
+    "properties": [
+      {
+        "name": "url",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "stringifyQuery": {
+    "title": "stringifyQuery",
+    "description": "Stringifies an OData query object into a URL-compatible record.\nHandles special OData parameters like $filter and $expand.\nArrays (e.g. for $select) are joined with commas.",
+    "properties": [
+      {
+        "name": "query",
+        "type": "Record<string, any>",
+        "required": true
+      }
+    ]
+  },
+  "createODataClient": {
+    "title": "createODataClient",
+    "properties": [
+      {
+        "name": "options",
+        "type": "ODataClientOptions",
+        "required": true
+      }
+    ]
+  },
+  "ODataClientOptions": {
+    "title": "ODataClientOptions",
+    "properties": [
+      {
+        "name": "config",
+        "type": "ODataProxyConfig",
+        "required": true
+      },
+      {
+        "name": "authorization",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "fetchWithCsrf": {
+    "title": "fetchWithCsrf",
+    "description": "Executes a fetch request with automatic SAP CSRF token handling.\nWorks for both OData V2 and V4.\nFor mutations (POST, PUT, PATCH, DELETE), it first performs a HEAD request\nto fetch a valid CSRF token and session cookies.",
+    "properties": [
+      {
+        "name": "targetUrl",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "any",
+        "required": true
+      }
+    ]
+  },
+  "ODataProxyHooks": {
+    "title": "ODataProxyHooks",
+    "properties": [
+      {
+        "name": "'odx:proxy:request'",
+        "type": "(ctx: { event: H3Event<EventHandlerRequest>; serviceName: string; fetchOptions: b<h, any>; }) => void | Promise<void>",
+        "required": true
+      },
+      {
+        "name": "'odx:proxy:response'",
+        "type": "(ctx: { event: H3Event<EventHandlerRequest>; serviceName: string; response: i<any>; }) => void | Promise<void>",
+        "required": true
+      }
+    ]
+  },
+  "EntityProperty": {
+    "title": "EntityProperty",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "type",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "isKey",
+        "type": "boolean",
+        "required": true
+      }
+    ]
+  },
+  "NavigationProperty": {
+    "title": "NavigationProperty",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "relationship",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "fromRole",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "toRole",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "AssociationEnd": {
+    "title": "AssociationEnd",
+    "properties": [
+      {
+        "name": "type",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "multiplicity",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "Association": {
+    "title": "Association",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "ends",
+        "type": "AssociationEnd[]",
+        "required": true
+      }
+    ]
+  },
+  "EntityMapping": {
+    "title": "EntityMapping",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "type",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "properties",
+        "type": "EntityProperty[]",
+        "required": true
+      },
+      {
+        "name": "navigationProperties",
+        "type": "NavigationProperty[]",
+        "required": true
+      }
+    ]
+  },
+  "ODataRule": {
+    "title": "ODataRule",
+    "properties": [
+      {
+        "name": "type",
+        "type": "\"allowOnlyMethods\" | \"denyMethods\" | \"requireScope\" | \"requireAttribute\" | \"denyPath\" | \"denyIfHeader\" | \"injectHeader\" | \"rewritePath\" | \"validate\" | (string & {})",
+        "description": "The type of rule to apply (e.g., 'allowOnlyMethods', 'requireScope').",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "any",
+        "description": "The value for the rule (e.g., ['GET', 'POST'], 'Admin', '/$metadata').",
+        "required": true
+      },
+      {
+        "name": "reason",
+        "type": "string | undefined",
+        "description": "Optional custom error message when the rule fails.",
+        "required": false
+      }
+    ]
+  },
+  "ODataServiceConfig": {
+    "title": "ODataServiceConfig",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "url",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "route",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "icon",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "strategy",
+        "type": "\"proxied\" | \"direct\" | undefined",
+        "required": false
+      },
+      {
+        "name": "proxyMode",
+        "type": "\"stream\" | \"buffer\" | undefined",
+        "required": false
+      },
+      {
+        "name": "destination",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "auth",
+        "type": "{ username?: string | undefined; password?: string | undefined; bearerToken?: string | undefined; mockUserCompanies?: { company: string; source: string; }[] | undefined; } | undefined",
+        "required": false
+      },
+      {
+        "name": "headers",
+        "type": "Record<string, string> | undefined",
+        "required": false
+      },
+      {
+        "name": "rules",
+        "type": "ODataRule[] | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAsyncData": {
+    "title": "ODataAsyncData",
+    "description": "Minimal interface mimicking Nuxt's AsyncData for type inference.\nThe intersection with the raw type T helps the Vue template compiler\nand IDE to see the unwrapped types without a direct Vue dependency.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "{ value: T | null; } & T",
+        "description": "Reactive data payload.",
+        "default": "null",
+        "required": true
+      },
+      {
+        "name": "pending",
+        "type": "{ value: boolean; } & boolean",
+        "description": "Boolean state indicating if the request is in-flight.",
+        "default": "false",
+        "required": true
+      },
+      {
+        "name": "error",
+        "type": "any",
+        "description": "Error object if the request failed.",
+        "default": "null",
+        "required": true
+      },
+      {
+        "name": "status",
+        "type": "{ value: \"success\" | \"error\" | \"idle\" | \"pending\"; } & (\"success\" | \"error\" | \"idle\" | \"pending\")",
+        "description": "Status of the request: idle, pending, success, or error.",
+        "default": "'idle'",
+        "required": true
+      },
+      {
+        "name": "refresh",
+        "type": "(opts?: any) => Promise<void>",
+        "description": "Function to manually refresh the data.",
+        "required": true
+      },
+      {
+        "name": "execute",
+        "type": "(opts?: any) => Promise<void>",
+        "description": "Function to execute the request.",
+        "required": true
+      },
+      {
+        "name": "clear",
+        "type": "() => void",
+        "description": "Function to clear the data and error states.",
+        "required": true
+      }
+    ]
+  },
+  "ODataQuery": {
+    "title": "ODataQuery",
+    "description": "Structured OData query options.\nT: The model type of the entity being queried.",
+    "properties": [
+      {
+        "name": "$select",
+        "type": "string | keyof T | (keyof T)[] | undefined",
+        "description": "Select specific properties to return.",
+        "required": false
+      },
+      {
+        "name": "$orderby",
+        "type": "string | undefined",
+        "description": "Sort order (e.g. 'Price desc').",
+        "required": false
+      },
+      {
+        "name": "$top",
+        "type": "number | undefined",
+        "description": "Number of results to return.",
+        "default": "undefined",
+        "required": false
+      },
+      {
+        "name": "$skip",
+        "type": "number | undefined",
+        "description": "Number of results to skip (offset).",
+        "default": "0",
+        "required": false
+      },
+      {
+        "name": "$filter",
+        "type": "string | undefined",
+        "description": "Filter expression to restrict the results.",
+        "required": false
+      },
+      {
+        "name": "$expand",
+        "type": "string | undefined",
+        "description": "Expand navigation properties.",
+        "required": false
+      },
+      {
+        "name": "$inlinecount",
+        "type": "\"allpages\" | \"none\" | undefined",
+        "description": "Include the count of the matching entities.",
+        "default": "'none'",
+        "required": false
+      },
+      {
+        "name": "$search",
+        "type": "string | undefined",
+        "description": "Search expression (OData V4).",
+        "required": false
+      }
+    ]
+  },
+  "ODataEntitySet": {
+    "title": "ODataEntitySet",
+    "description": "Interface for a specific OData Entity Set.\nT: The model type of the entity.",
+    "properties": [
+      {
+        "name": "list",
+        "type": "(query?: ODataQuery<T> | undefined, options?: any) => ODataAsyncDataPromise<T[]>",
+        "description": "Fetches a list of entities.",
+        "required": true
+      },
+      {
+        "name": "get",
+        "type": "(key: ODataKey, query?: ODataQuery<T> | undefined, options?: any) => ODataAsyncDataPromise<T>",
+        "description": "Fetches a single entity by key.\nKey can be a single value or an object for composite keys.",
+        "required": true
+      },
+      {
+        "name": "create",
+        "type": "(body: Partial<T>) => Promise<T>",
+        "description": "Creates a new entity.",
+        "required": true
+      },
+      {
+        "name": "update",
+        "type": "(key: ODataKey, body: Partial<T>) => Promise<T>",
+        "description": "Updates an existing entity.",
+        "required": true
+      },
+      {
+        "name": "remove",
+        "type": "(key: ODataKey) => Promise<any>",
+        "description": "Deletes an entity.",
+        "required": true
+      }
+    ]
+  },
+  "ODataServiceRegistry": {
+    "title": "ODataServiceRegistry",
+    "description": "Global registry for OData services.\nCan be augmented by generated types.",
+    "properties": []
+  },
+  "ODataProxyConfig": {
+    "title": "ODataProxyConfig",
+    "properties": [
+      {
+        "name": "services",
+        "type": "ODataServiceConfig[]",
+        "required": true
+      },
+      {
+        "name": "buildDir",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "rootDir",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "destination",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "headers",
+        "type": "Record<string, string> | undefined",
+        "required": false
+      },
+      {
+        "name": "forwardAuthHeader",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "rejectUnauthorized",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "auth",
+        "type": "{ username?: string | undefined; password?: string | undefined; bearerToken?: string | undefined; mockUserCompanies?: { company: string; source: string; }[] | undefined; } | undefined",
+        "required": false
+      },
+      {
+        "name": "basePath",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "defaultProxyMode",
+        "type": "\"stream\" | \"buffer\" | undefined",
+        "required": false
+      },
+      {
+        "name": "hooks",
+        "type": "Hookable<ODataProxyHooks, HookKeys<ODataProxyHooks>> | undefined",
+        "required": false
+      },
+      {
+        "name": "devtools",
+        "type": "{ enabled?: boolean | undefined; maxLogs?: number | undefined; } | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataPublicConfig": {
+    "title": "ODataPublicConfig",
+    "properties": [
+      {
+        "name": "basePath",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "mode",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "services",
+        "type": "ODataServiceConfig[] | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ModuleOptions": {
+    "title": "ModuleOptions",
+    "properties": [
+      {
+        "name": "basePath",
+        "type": "string | undefined",
+        "description": "The Nitro route prefix where the proxy handlers are mounted.",
+        "default": "'/api/odx'",
+        "required": false
+      },
+      {
+        "name": "mode",
+        "type": "\"sdk\" | undefined",
+        "description": "The generation mode.",
+        "default": "'sdk'",
+        "required": false
+      },
+      {
+        "name": "defaultProxyMode",
+        "type": "\"stream\" | \"buffer\" | undefined",
+        "description": "Default response handling mode for the proxy.",
+        "default": "'stream'",
+        "required": false
+      },
+      {
+        "name": "destination",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "auth",
+        "type": "{ username?: string | undefined; password?: string | undefined; bearerToken?: string | undefined; mockUserCompanies?: { company: string; source: string; }[] | undefined; } | undefined",
+        "required": false
+      },
+      {
+        "name": "headers",
+        "type": "Record<string, string> | undefined",
+        "required": false
+      },
+      {
+        "name": "rejectUnauthorized",
+        "type": "boolean | undefined",
+        "description": "Whether to reject unauthorized TLS certificates.",
+        "default": "true",
+        "required": false
+      },
+      {
+        "name": "forwardAuthHeader",
+        "type": "boolean | undefined",
+        "description": "Whether to forward the Authorization header to the OData backend.",
+        "default": "true",
+        "required": false
+      },
+      {
+        "name": "services",
+        "type": "ODataServiceConfig[] | undefined",
+        "description": "List of OData services to configure.",
+        "default": "[]",
+        "required": false
+      },
+      {
+        "name": "buildDir",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "rootDir",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "btpConfigService",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "devtools",
+        "type": "{ enabled?: boolean | undefined; maxLogs?: number | undefined; } | undefined",
+        "required": false
+      }
+    ]
+  }
+}

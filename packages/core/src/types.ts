@@ -73,12 +73,31 @@ export interface ODataServiceConfig {
  * and IDE to see the unwrapped types without a direct Vue dependency.
  */
 export interface ODataAsyncData<T> {
+  /**
+   * Reactive data payload.
+   * @default null
+   */
   data: { value: T | null } & (T | null)
+  /**
+   * Boolean state indicating if the request is in-flight.
+   * @default false
+   */
   pending: { value: boolean } & boolean
+  /**
+   * Error object if the request failed.
+   * @default null
+   */
   error: { value: any | null } & any
+  /**
+   * Status of the request: idle, pending, success, or error.
+   * @default 'idle'
+   */
   status: { value: 'idle' | 'pending' | 'success' | 'error' } & ('idle' | 'pending' | 'success' | 'error')
+  /** Function to manually refresh the data. */
   refresh: (opts?: any) => Promise<void>
+  /** Function to execute the request. */
   execute: (opts?: any) => Promise<void>
+  /** Function to clear the data and error states. */
   clear: () => void
 }
 
@@ -98,38 +117,32 @@ export type ODataKey = string | number | Record<string, string | number>
  * T: The model type of the entity being queried.
  */
 export interface ODataQuery<T = any> {
-  /**
-   * Select specific properties to return.
-   * Can be a single property name, an array of names, or a comma-separated string.
-   */
+  /** Select specific properties to return. */
   $select?: keyof T | (keyof T)[] | string
-  /**
-   * Filter expression to restrict the results.
-   */
+  /** Sort order (e.g. 'Price desc'). */
   $orderby?: string
   /**
    * Number of results to return.
+   * @default undefined
    */
   $top?: number
   /**
-   * Number of results to skip.
+   * Number of results to skip (offset).
+   * @default 0
    */
   $skip?: number
-  /**
-   * Expand navigation properties.
-   */
+  /** Filter expression to restrict the results. */
+  $filter?: string
+  /** Expand navigation properties. */
   $expand?: string
   /**
    * Include the count of the matching entities.
+   * @default 'none'
    */
   $inlinecount?: 'allpages' | 'none'
-  /**
-   * Search expression (OData V4).
-   */
+  /** Search expression (OData V4). */
   $search?: string
-  /**
-   * Allow for custom query parameters.
-   */
+  /** Allow for custom query parameters. */
   [key: string]: any
 }
 
@@ -217,8 +230,20 @@ export interface ODataPublicConfig {
 }
 
 export interface ModuleOptions {
+  /**
+   * The Nitro route prefix where the proxy handlers are mounted.
+   * @default '/api/odx'
+   */
   basePath?: string
+  /**
+   * The generation mode.
+   * @default 'sdk'
+   */
   mode?: 'sdk'
+  /**
+   * Default response handling mode for the proxy.
+   * @default 'stream'
+   */
   defaultProxyMode?: 'stream' | 'buffer'
   destination?: string
   auth?: {
@@ -228,14 +253,28 @@ export interface ModuleOptions {
     mockUserCompanies?: Array<{ company: string, source: string }>
   }
   headers?: Record<string, string>
+  /**
+   * Whether to reject unauthorized TLS certificates.
+   * @default true
+   */
   rejectUnauthorized?: boolean
+  /**
+   * Whether to forward the Authorization header to the OData backend.
+   * @default true
+   */
   forwardAuthHeader?: boolean
+  /**
+   * List of OData services to configure.
+   * @default []
+   */
   services?: ODataServiceConfig[]
   buildDir?: string
   rootDir?: string
   btpConfigService?: string
   devtools?: {
+    /** @default true */
     enabled?: boolean
+    /** @default 100 */
     maxLogs?: number
   }
 }

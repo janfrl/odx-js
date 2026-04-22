@@ -27,6 +27,7 @@ This repository is a monorepo managed with `pnpm`.
 - **Server Proxy:** Automated handling of authentication, CSRF tokens, and mock data.
 - **Enterprise Optimized:** Specifically built for the nuances of OData V2 and V4.
 - **Flexible Mocking:** Serve local mock data based on JSON files or EDMX definitions.
+- **API Reference Automation:** Automatically extracted documentation from source code via `ts-morph`.
 
 ## 🚀 Quick Start
 
@@ -77,4 +78,9 @@ pnpm run dev
 
 # Run tests
 pnpm run test
+
+# Regenerate API Reference
+pnpm run docs:api
 ```
+
+The API reference is automatically updated during `pnpm run docs:prepare`.

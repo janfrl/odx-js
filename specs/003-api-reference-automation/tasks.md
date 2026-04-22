@@ -22,9 +22,9 @@ description: "Task list for API Reference Automation"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Initialize script environment and install `ts-morph` dependency
-- [ ] T002 Create initial script file in `scripts/extract-api-docs.ts`
-- [ ] T003 [P] Create test fixture directory in `test/fixtures/api-extraction/`
+- [x] T001 Initialize script environment and install `ts-morph` dependency
+- [x] T002 Create initial script file in `scripts/extract-api-docs.ts`
+- [x] T003 [P] Create test fixture directory in `test/fixtures/api-extraction/`
 
 ---
 
@@ -32,9 +32,9 @@ description: "Task list for API Reference Automation"
 
 **Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
-- [ ] T004 Define `ApiItem` and `ApiProperty` TypeScript interfaces in `scripts/extract-api-docs.ts`
-- [ ] T005 Setup basic `ts-morph` Project instance in `scripts/extract-api-docs.ts`
-- [ ] T006 Implement CLI argument parsing and configuration (entry points, output path) in `scripts/extract-api-docs.ts`
+- [x] T004 Define `ApiItem` and `ApiProperty` TypeScript interfaces in `scripts/extract-api-docs.ts`
+- [x] T005 Setup basic `ts-morph` Project instance in `scripts/extract-api-docs.ts`
+- [x] T006 Implement CLI argument parsing and configuration (entry points, output path) in `scripts/extract-api-docs.ts`
 
 **Checkpoint**: Foundation ready - extraction logic implementation can now begin.
 
@@ -48,16 +48,16 @@ description: "Task list for API Reference Automation"
 
 ### Tests for User Story 1
 
-- [ ] T007 [P] [US1] Create test fixtures with complex TypeScript structures in `test/fixtures/api-extraction/sample.ts`
-- [ ] T008 [US1] Implement unit test suite in `test/api-extractor.test.ts` (initially failing)
+- [x] T007 [P] [US1] Create test fixtures with complex TypeScript structures in `test/fixtures/api-extraction/sample.ts`
+- [x] T008 [US1] Implement unit test suite in `test/api-extractor.test.ts` (initially failing)
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Implement export discovery logic (navigating `index.ts` exports) in `scripts/extract-api-docs.ts`
-- [ ] T010 [US1] Implement Interface and Type Alias extraction (properties, types, required) in `scripts/extract-api-docs.ts`
-- [ ] T011 [US1] Implement Function extraction (parameters as properties) in `scripts/extract-api-docs.ts`
-- [ ] T012 [US1] Implement JSDoc parsing (descriptions, `@default` tags) in `scripts/extract-api-docs.ts`
-- [ ] T013 [US1] Implement JSON serialization and file writing in `scripts/extract-api-docs.ts`
+- [x] T009 [US1] Implement export discovery logic (navigating `index.ts` exports) in `scripts/extract-api-docs.ts`
+- [x] T010 [US1] Implement Interface and Type Alias extraction (properties, types, required) in `scripts/extract-api-docs.ts`
+- [x] T011 [US1] Implement Function extraction (parameters as properties) in `scripts/extract-api-docs.ts`
+- [x] T012 [US1] Implement JSDoc parsing (descriptions, `@default` tags) in `scripts/extract-api-docs.ts`
+- [x] T013 [US1] Implement JSON serialization and file writing in `scripts/extract-api-docs.ts`
 
 **Checkpoint**: User Story 1 complete - JSON can be generated from source.
 
@@ -71,8 +71,8 @@ description: "Task list for API Reference Automation"
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Update script default output path to `docs/public/api-reference.json` in `scripts/extract-api-docs.ts`
-- [ ] T015 [P] [US2] Create a sample Docus component/page in `docs/content/2.nuxt/api-reference.md` demonstrating `useFetch` consumption.
+- [x] T014 [US2] Update script default output path to `docs/public/api-reference.json` in `scripts/extract-api-docs.ts`
+- [x] T015 [P] [US2] Create a sample Docus component/page in `docs/content/2.nuxt/api-reference.md` demonstrating `useFetch` consumption.
 
 **Checkpoint**: User Story 2 complete - Data is available for documentation rendering.
 
@@ -86,8 +86,8 @@ description: "Task list for API Reference Automation"
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Add `docs:api` script to root `package.json` to run the extractor.
-- [ ] T017 [US3] Integrate `docs:api` into the `docs:prepare` or main `build` script in `package.json`.
+- [x] T016 [US3] Add `docs:api` script to root `package.json` to run the extractor.
+- [x] T017 [US3] Integrate `docs:api` into the `docs:prepare` or main `build` script in `package.json`.
 
 ---
 
@@ -95,9 +95,9 @@ description: "Task list for API Reference Automation"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T018 [P] Add progress logging and error reporting to the script.
-- [ ] T019 [P] Update `README.md` with instructions for running and maintaining the API extractor.
-- [ ] T020 Final validation against all scenarios in `specs/003-api-reference-automation/spec.md`.
+- [x] T018 [P] Add progress logging and error reporting to the script.
+- [x] T019 [P] Update `README.md` with instructions for running and maintaining the API extractor.
+- [x] T020 Final validation against all scenarios in `specs/003-api-reference-automation/spec.md`.
 
 ---
 
