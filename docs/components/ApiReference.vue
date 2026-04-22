@@ -65,14 +65,14 @@ const item = metadata[props.name]
         <prose-tbody>
           <prose-tr v-for="prop in item.properties" :key="prop.name">
             <prose-td>
-              <prose-code-inline>{{ prop.name }}</prose-code-inline>
+              <code>{{ prop.name }}</code>
               <span v-if="prop.required" class="text-red-500 ml-1">*</span>
             </prose-td>
             <prose-td>
-              <prose-code-inline>{{ prop.type }}</prose-code-inline>
+              <code>{{ prop.type }}</code>
             </prose-td>
             <prose-td>
-              <prose-code-inline v-if="prop.default">{{ prop.default }}</prose-code-inline>
+              <code v-if="prop.default">{{ prop.default }}</code>
               <span v-else>-</span>
             </prose-td>
             <prose-td class="text-sm">
