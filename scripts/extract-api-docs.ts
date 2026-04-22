@@ -1,6 +1,6 @@
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
-import { Project, Node, type InterfaceDeclaration, type TypeAliasDeclaration, type FunctionDeclaration, type JSDocableNode } from 'ts-morph'
+import { Project, Node, type InterfaceDeclaration, type TypeAliasDeclaration, type FunctionDeclaration } from 'ts-morph'
 import consola from 'consola'
 
 /**
@@ -45,8 +45,10 @@ function getDocs(node: any) {
 
   const doc = docs[0]
   const description = doc.getDescription().trim().replace(/\r\n/g, '\n') || undefined
-  const defaultTag = doc.getTags().find(tag => tag.getTagName() === 'default')
-  const defaultValue = defaultTag?.getComment()?.toString().trim().replace(/\r\n/g, '\n') || undefined
+  const defaultTag = doc.getTags().find((tag: any) => tag.getTagName() === 'default')
+  
+  // Use getCommentText() for more direct tag content extraction
+  const defaultValue = defaultTag?.getCommentText()?.trim().replace(/\r\n/g, '\n') || undefined
 
   return { description, defaultValue }
 }
@@ -67,7 +69,8 @@ export function extractInterface(node: InterfaceDeclaration): ApiItem {
     const { description: propDesc, defaultValue } = getDocs(p)
     return {
       name: p.getName(),
-      type: normalizeType(p.getType().getText()),
+      // Passing 'p' as context to getText ensure types are formatted correctly relative to the node
+      type: normalizeType(p.getType().getText(p)),
       description: propDesc,
       default: defaultValue,
       required: !p.hasQuestionToken(),
@@ -93,7 +96,7 @@ export function extractTypeAlias(node: TypeAliasDeclaration): ApiItem | undefine
     const { description: propDesc, defaultValue } = getDocs(p)
     return {
       name: p.getName(),
-      type: normalizeType(p.getType().getText()),
+      type: normalizeType(p.getType().getText(p)),
       description: propDesc,
       default: defaultValue,
       required: !p.hasQuestionToken(),
@@ -116,7 +119,6 @@ export function extractFunction(node: FunctionDeclaration): ApiItem | undefined 
 
   const { description } = getDocs(node)
   
-  // Also look for @param tags in the function's JSDoc
   const paramDocs: Record<string, string> = {}
   const docs = node.getJsDocs()
   if (docs.length > 0) {
@@ -124,7 +126,7 @@ export function extractFunction(node: FunctionDeclaration): ApiItem | undefined 
     doc.getTags().forEach(tag => {
       if (Node.isJSDocParameterTag(tag)) {
         const paramName = tag.getName()
-        const comment = tag.getComment()?.toString().trim()
+        const comment = tag.getCommentText()?.trim()
         if (paramName && comment) {
           paramDocs[paramName] = comment
         }
@@ -137,7 +139,7 @@ export function extractFunction(node: FunctionDeclaration): ApiItem | undefined 
     const { description: directDesc, defaultValue } = getDocs(p)
     return {
       name: pName,
-      type: normalizeType(p.getType().getText()),
+      type: normalizeType(p.getType().getText(p)),
       description: directDesc || paramDocs[pName],
       default: defaultValue || (p.getInitializer()?.getText()),
       required: !p.hasQuestionToken() && !p.getInitializer(),

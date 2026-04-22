@@ -271,7 +271,7 @@
       },
       {
         "name": "options",
-        "type": "b<\"json\", any> & { entitySet?: string | undefined; }",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
         "default": "{}",
         "required": false
       }
@@ -382,12 +382,12 @@
     "properties": [
       {
         "name": "'odx:proxy:request'",
-        "type": "(ctx: { event: H3Event<EventHandlerRequest>; serviceName: string; fetchOptions: b<h, any>; }) => void | Promise<void>",
+        "type": "(ctx: { event: H3Event; serviceName: string; fetchOptions: FetchOptions; }) => void | Promise<void>",
         "required": true
       },
       {
         "name": "'odx:proxy:response'",
-        "type": "(ctx: { event: H3Event<EventHandlerRequest>; serviceName: string; response: i<any>; }) => void | Promise<void>",
+        "type": "(ctx: { event: H3Event; serviceName: string; response: FetchResponse<any>; }) => void | Promise<void>",
         "required": true
       }
     ]
@@ -560,7 +560,7 @@
       },
       {
         "name": "auth",
-        "type": "{ username?: string | undefined; password?: string | undefined; bearerToken?: string | undefined; mockUserCompanies?: { company: string; source: string; }[] | undefined; } | undefined",
+        "type": "{ username?: string; password?: string; bearerToken?: string; mockUserCompanies?: Array<{ company: string; source: string; }>; } | undefined",
         "required": false
       },
       {
@@ -602,7 +602,7 @@
       },
       {
         "name": "status",
-        "type": "{ value: \"success\" | \"error\" | \"idle\" | \"pending\"; } & (\"success\" | \"error\" | \"idle\" | \"pending\")",
+        "type": "{ value: \"idle\" | \"pending\" | \"success\" | \"error\"; } & (\"success\" | \"error\" | \"idle\" | \"pending\")",
         "description": "Status of the request: idle, pending, success, or error.",
         "default": "'idle'",
         "required": true
@@ -690,13 +690,13 @@
     "properties": [
       {
         "name": "list",
-        "type": "(query?: ODataQuery<T> | undefined, options?: any) => ODataAsyncDataPromise<T[]>",
+        "type": "(query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T[]>",
         "description": "Fetches a list of entities.",
         "required": true
       },
       {
         "name": "get",
-        "type": "(key: ODataKey, query?: ODataQuery<T> | undefined, options?: any) => ODataAsyncDataPromise<T>",
+        "type": "(key: ODataKey, query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T>",
         "description": "Fetches a single entity by key.\nKey can be a single value or an object for composite keys.",
         "required": true
       },
@@ -765,7 +765,7 @@
       },
       {
         "name": "auth",
-        "type": "{ username?: string | undefined; password?: string | undefined; bearerToken?: string | undefined; mockUserCompanies?: { company: string; source: string; }[] | undefined; } | undefined",
+        "type": "{ username?: string; password?: string; bearerToken?: string; mockUserCompanies?: Array<{ company: string; source: string; }>; } | undefined",
         "required": false
       },
       {
@@ -790,7 +790,7 @@
       },
       {
         "name": "devtools",
-        "type": "{ enabled?: boolean | undefined; maxLogs?: number | undefined; } | undefined",
+        "type": "{ enabled?: boolean; maxLogs?: number; } | undefined",
         "required": false
       }
     ]
@@ -846,7 +846,7 @@
       },
       {
         "name": "auth",
-        "type": "{ username?: string | undefined; password?: string | undefined; bearerToken?: string | undefined; mockUserCompanies?: { company: string; source: string; }[] | undefined; } | undefined",
+        "type": "{ username?: string; password?: string; bearerToken?: string; mockUserCompanies?: Array<{ company: string; source: string; }>; } | undefined",
         "required": false
       },
       {
@@ -892,7 +892,7 @@
       },
       {
         "name": "devtools",
-        "type": "{ enabled?: boolean | undefined; maxLogs?: number | undefined; } | undefined",
+        "type": "{ enabled?: boolean; maxLogs?: number; } | undefined",
         "required": false
       }
     ]
