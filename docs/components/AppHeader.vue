@@ -24,9 +24,9 @@ const { docus: config } = useAppConfig()
 
       <!-- Right: Search, Socials, Theme -->
       <div class="flex items-center justify-end gap-1.5 lg:flex-1">
-        <UContentSearchButton label="Search..." />
+        <!-- <UContentSearchButton label="Search..." />
 
-        <div class="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-2" />
+        <div class="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-2" /> -->
 
         <div class="flex items-center gap-0.5">
           <UButton
