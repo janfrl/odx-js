@@ -17,6 +17,7 @@
   "devDependencies": {
     "@bc8-odx/nuxt": "workspace:*",
     "@nuxt/schema": "^4.4.2",
+    "@nuxtjs/i18n": "latest",
     "nuxt": "^4.4.2",
     "untyped": "^2.0.0"
   }
