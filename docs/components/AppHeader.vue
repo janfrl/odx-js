@@ -24,11 +24,14 @@ const { docus: config } = useAppConfig()
 
       <!-- Right: Search, Socials, Theme -->
       <div class="flex items-center justify-end gap-1.5 lg:flex-1">
-        <!-- <UContentSearchButton label="Search..." />
-
-        <div class="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-2" /> -->
-
         <div class="flex items-center gap-0.5">
+          <ClientOnly>
+            <LanguageSelect />
+            <template #fallback>
+              <div class="h-8 w-8 animate-pulse bg-neutral-200 dark:bg-neutral-800 rounded-md" />
+            </template>
+          </ClientOnly>
+
           <UButton
             v-if="config.socials?.github"
             :to="`https://github.com/${config.socials.github}`"
