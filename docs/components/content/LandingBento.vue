@@ -1,51 +1,38 @@
 <script setup lang="ts">
-const route = useRoute()
-const localePrefix = computed(() => route.path.startsWith('/de') ? '/de' : '/en')
-
-const paths = computed(() => [
+const features = [
   {
-    title: 'Build a Nuxt app',
-    description: 'Start here when you want auto-imported clients, SSR-safe queries, generated types, and DevTools integration.',
-    icon: 'i-simple-icons-nuxtdotjs',
-    to: `${localePrefix.value}/nuxt/getting-started`,
+    title: 'Typed from metadata',
+    description: 'Generate models, entity sets, and query helpers directly from EDMX instead of maintaining client types by hand.',
+    icon: 'i-lucide-braces',
   },
   {
-    title: 'Connect to SAP safely',
-    description: 'Use the proxy when your service needs BTP destinations, NetWeaver routing, CSRF handling, or backend isolation.',
+    title: 'SAP-ready access',
+    description: 'Route through a Nitro proxy for destinations, auth-heavy services, CSRF handling, and backend isolation.',
     icon: 'i-simple-icons-sap',
-    to: `${localePrefix.value}/proxy/installation`,
   },
   {
-    title: 'Use OData without Nuxt',
-    description: 'Reach for Core when you need typed OData models, query helpers, and a lightweight client in any TypeScript runtime.',
-    icon: 'i-lucide-code-2',
-    to: `${localePrefix.value}/core/installation`,
-  },
-  {
-    title: 'Inspect and debug services',
-    description: 'Open Explorer when you need to understand entity sets, relationships, metadata, requests, and proxy behavior.',
+    title: 'Visible while developing',
+    description: 'Inspect schemas, relationships, requests, responses, and proxy behavior without leaving the Nuxt workflow.',
     icon: 'i-lucide-activity',
-    to: `${localePrefix.value}/explorer/setup`,
   },
-])
+]
 </script>
 
 <template>
   <UPageSection
-    id="paths"
-    headline="Choose your path"
-    title="Start where your integration starts"
-    description="ODX is split by workflow, so you can go straight to the package and guide that match the problem in front of you."
+    id="features"
+    headline="Why ODX"
+    title="A shorter path from service metadata to working UI"
+    description="The toolkit keeps the repetitive OData work close to the framework and visible during development."
     orientation="vertical"
-    :ui="{ container: 'py-16 lg:py-20' }"
+    :ui="{ container: 'py-12 lg:py-16' }"
   >
-    <UPageGrid class="sm:grid-cols-2 lg:grid-cols-4">
+    <UPageGrid class="lg:grid-cols-3">
       <UPageCard
-        v-for="path in paths"
-        :key="path.title"
-        v-bind="path"
+        v-for="feature in features"
+        :key="feature.title"
+        v-bind="feature"
         variant="subtle"
-        spotlight
       />
     </UPageGrid>
   </UPageSection>

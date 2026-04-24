@@ -10,6 +10,25 @@ export default defineNuxtConfig({
     ],
     strategy: 'prefix',
   },
+  vite: {
+    optimizeDeps: {
+      include: ['@shikijs/twoslash'],
+    },
+  },
+  mdc: {
+    highlight: {
+      noApiRoute: false,
+    },
+  },
+  runtimeConfig: {
+    public: {
+      mdc: {
+        highlight: {
+          noApiRoute: false,
+        },
+      },
+    },
+  },
   compatibilityDate: 'latest',
   site: {
     name: 'ODX',
@@ -19,5 +38,12 @@ export default defineNuxtConfig({
     devtools: {
       enabled: false,
     },
+    services: [
+      {
+        name: 'demo',
+        url: './edmx/demo-v4.edmx',
+        strategy: 'direct',
+      },
+    ],
   },
 })

@@ -30,6 +30,7 @@ export default defineNitroModule({
       { route: '/__odx__/config', handler: './api/config.ts' },
       { route: '/__odx__/generate', handler: './api/generate.ts' },
       { route: '/__odx__/schema', handler: './api/schema.ts' },
+      { route: '/__odx__/types', handler: './api/types.ts' },
       { route: '/__odx__/me', handler: './api/me.ts' },
     ]
 

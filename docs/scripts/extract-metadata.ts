@@ -6,6 +6,7 @@ async function main() {
   const jiti = createJiti(import.meta.url, {
     interopDefault: true,
     alias: {
+      '@bc8-odx/core/server': resolve('../packages/core/src/server.ts'),
       '@bc8-odx/core': resolve('../packages/core/src/index.ts'),
     },
   })

@@ -99,6 +99,13 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
     if (!fs.existsSync(outRoot))
       fs.mkdirSync(outRoot, { recursive: true })
 
+    // odata2ts uses ts-morph which resolves the project tsconfig. During
+    // prepare:types, Nuxt hasn't written .nuxt/tsconfig.json yet, so
+    // tsconfig-loader fails following the extends chain. Ensure a stub exists.
+    const nuxtTsconfig = join(nuxt.options.buildDir, 'tsconfig.json')
+    if (!fs.existsSync(nuxtTsconfig))
+      fs.writeFileSync(nuxtTsconfig, JSON.stringify({ compilerOptions: {} }))
+
     const serviceEntities: Record<string, EntityMapping[]> = {}
     const serviceModelFiles: Record<string, string> = {}
 

@@ -8,6 +8,9 @@ aside: false
 ::landing-hero
 ::
 
+::landing-bento
+::
+
 ::landing-live-demo
 #code
   ```ts [composables/products.ts] {4-10}
@@ -73,9 +76,6 @@ aside: false
     ]
   }
   ```
-::
-
-::landing-bento
 ::
 
 ::landing-cta
