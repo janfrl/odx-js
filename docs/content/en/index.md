@@ -78,14 +78,5 @@ aside: false
 ::landing-bento
 ::
 
-::landing-quickstart
-::
-
-::landing-architecture
-::
-
-::landing-packages
-::
-
 ::landing-cta
 ::

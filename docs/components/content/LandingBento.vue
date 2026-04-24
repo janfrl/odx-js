@@ -1,53 +1,51 @@
 <script setup lang="ts">
-const features = [
+const route = useRoute()
+const localePrefix = computed(() => route.path.startsWith('/de') ? '/de' : '/en')
+
+const paths = computed(() => [
   {
-    title: 'Universal compatibility',
-    description: 'Works with compliant OData V2 and V4 endpoints, from public services to enterprise SAP landscapes.',
-    icon: 'i-lucide-globe',
+    title: 'Build a Nuxt app',
+    description: 'Start here when you want auto-imported clients, SSR-safe queries, generated types, and DevTools integration.',
+    icon: 'i-simple-icons-nuxtdotjs',
+    to: `${localePrefix.value}/nuxt/getting-started`,
   },
   {
-    title: 'First-class SAP support',
-    description: 'Handles NetWeaver routing, CSRF token prefetching, and BTP destination authentication through the proxy layer.',
+    title: 'Connect to SAP safely',
+    description: 'Use the proxy when your service needs BTP destinations, NetWeaver routing, CSRF handling, or backend isolation.',
     icon: 'i-simple-icons-sap',
+    to: `${localePrefix.value}/proxy/installation`,
   },
   {
-    title: 'Type-safe SDK',
-    description: 'Generates TypeScript models from EDMX so entity fields, navigation properties, and query operators are known by your editor.',
-    icon: 'i-lucide-shield-check',
+    title: 'Use OData without Nuxt',
+    description: 'Reach for Core when you need typed OData models, query helpers, and a lightweight client in any TypeScript runtime.',
+    icon: 'i-lucide-code-2',
+    to: `${localePrefix.value}/core/installation`,
   },
   {
-    title: 'Schema Explorer',
-    description: 'Inspect entity sets, relationships, metadata, and service shape from a Nuxt DevTools experience.',
-    icon: 'i-lucide-share-2',
-  },
-  {
-    title: 'Request introspection',
-    description: 'Follow OData requests, responses, metadata fetches, and proxy behavior while developing.',
+    title: 'Inspect and debug services',
+    description: 'Open Explorer when you need to understand entity sets, relationships, metadata, requests, and proxy behavior.',
     icon: 'i-lucide-activity',
+    to: `${localePrefix.value}/explorer/setup`,
   },
-  {
-    title: 'Mock-friendly development',
-    description: 'Build UI against local JSON and metadata fixtures before the target backend is ready.',
-    icon: 'i-lucide-database',
-  },
-]
+])
 </script>
 
 <template>
   <UPageSection
-    id="features"
-    headline="Features"
-    title="Built for OData, shaped for Nuxt DX"
-    description="The landing page now uses the same Nuxt UI page primitives as the rest of the docs: semantic colors, standard cards, and compact content."
+    id="paths"
+    headline="Choose your path"
+    title="Start where your integration starts"
+    description="ODX is split by workflow, so you can go straight to the package and guide that match the problem in front of you."
     orientation="vertical"
     :ui="{ container: 'py-16 lg:py-20' }"
   >
-    <UPageGrid>
+    <UPageGrid class="sm:grid-cols-2 lg:grid-cols-4">
       <UPageCard
-        v-for="feature in features"
-        :key="feature.title"
-        v-bind="feature"
+        v-for="path in paths"
+        :key="path.title"
+        v-bind="path"
         variant="subtle"
+        spotlight
       />
     </UPageGrid>
   </UPageSection>
