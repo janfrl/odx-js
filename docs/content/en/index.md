@@ -1,6 +1,6 @@
 ---
-title: ODX — Modern OData Developer Experience
-description: ODX is a modular, framework-agnostic toolkit that bridges modern TypeScript web apps and OData V2 / V4 services — with first-class support for SAP.
+title: ODX - Modern OData Developer Experience
+description: ODX is a modular, framework-agnostic toolkit that bridges modern TypeScript web apps and OData V2 / V4 services with first-class support for SAP.
 navigation: false
 aside: false
 ---
@@ -9,6 +9,70 @@ aside: false
 ::
 
 ::landing-live-demo
+#code
+  ```ts [composables/products.ts] {4-10}
+  import { odata } from '@bc8-odx/nuxt'
+
+  // Fully typed from your EDMX schema
+  const products = await odata.northwind
+    .Products
+    .select('ProductID', 'ProductName', 'UnitPrice')
+    .filter({ Discontinued: false })
+    .orderBy('UnitPrice', 'desc')
+    .top(5)
+    .get()
+
+  // products: Product[] inferred from EDMX
+  ```
+
+  ```ts [nuxt.config.ts] {4-11}
+  export default defineNuxtConfig({
+    modules: ['@bc8-odx/nuxt'],
+
+    odx: {
+      services: {
+        northwind: {
+          url: 'https://services.odata.org/V4/Northwind/Northwind.svc',
+          version: 'v4',
+        },
+      },
+    },
+  })
+  ```
+
+  ```ts [.odx/northwind.d.ts]
+  // Auto-generated from EDMX - do not edit
+  export interface Product {
+    ProductID: number
+    ProductName: string
+    UnitPrice?: number
+    UnitsInStock?: number
+    Discontinued: boolean
+    Category?: Category
+    Supplier?: Supplier
+  }
+  ```
+
+#response
+  ```json [response.json]
+  {
+    "@odata.context": "$metadata#Products",
+    "value": [
+      {
+        "ProductID": 38,
+        "ProductName": "Cote de Blaye",
+        "UnitPrice": 263.50,
+        "Discontinued": false
+      },
+      {
+        "ProductID": 29,
+        "ProductName": "Thuringer Rostbratwurst",
+        "UnitPrice": 123.79,
+        "Discontinued": true
+      }
+    ]
+  }
+  ```
 ::
 
 ::landing-bento
@@ -20,53 +84,7 @@ aside: false
 ::landing-architecture
 ::
 
-::u-page-section
----
-description: Use one. Use all. ODX is a monorepo of four npm packages that compose — Core under everything, Proxy for auth-heavy backends, Nuxt for the integrated DX, and Explorer for the DevTools layer.
----
-#title
-Modular, [by design.]{.text-primary}
-
-  :::u-page-grid
-    ::::u-page-card
-    ---
-    title: Core
-    description: Framework-agnostic OData types, URL builder, and lightweight fetch client.
-    icon: i-lucide-code-2
-    to: /en/core/installation
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Proxy
-    description: Standalone Nitro proxy for SAP BTP auth, CSRF pre-fetch, and routing.
-    icon: i-lucide-cable
-    to: /en/proxy/installation
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Nuxt
-    description: Zero-config Nuxt 4 module with auto-imports and DevTools binding.
-    icon: i-simple-icons-nuxtdotjs
-    to: /en/nuxt/getting-started
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Explorer
-    description: Browser-based DevTools for schema visualization and live traffic monitoring.
-    icon: i-lucide-monitor
-    to: /en/explorer/setup
-    ---
-    ::::
-  :::
-::
-
-::landing-stats
+::landing-packages
 ::
 
 ::landing-cta
