@@ -34,10 +34,10 @@ const items = computed(() => {
         :items="items"
         default-value="composables/products.ts"
         expand-all
-        class="!my-0 h-full"
+        class="my-0! h-full"
       />
 
-      <div class="min-h-0 lg:h-full [&_.relative.group]:!my-0 [&_.relative.group]:h-full [&_.relative.group]:min-h-0 [&_.relative.group]:flex [&_.relative.group]:flex-col [&_.prose-pre]:!my-0 [&_.prose-pre]:min-h-0 [&_.prose-pre]:flex-1 [&_.prose-pre]:overflow-auto">
+      <div class="min-h-0 lg:h-full [&_.relative.group]:my-0! [&_.relative.group]:h-full [&_.relative.group]:min-h-0 [&_.relative.group]:flex [&_.relative.group]:flex-col [&_.prose-pre]:my-0! [&_.prose-pre]:min-h-0 [&_.prose-pre]:flex-1 [&_.prose-pre]:overflow-auto">
         <slot name="response" />
       </div>
     </div>

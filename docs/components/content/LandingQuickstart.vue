@@ -85,7 +85,7 @@ const active = ref(0)
         </UPageCard>
       </div>
 
-      <div class="[&_.prose-pre]:!my-0 [&_.prose-pre]:min-h-[260px] lg:[&_.prose-pre]:min-h-[360px]">
+      <div class="[&_.prose-pre]:my-0! [&_.prose-pre]:min-h-[260px] lg:[&_.prose-pre]:min-h-[360px]">
         <MDC :value="steps[active]!.code" />
       </div>
     </div>

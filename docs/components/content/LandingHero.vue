@@ -45,18 +45,35 @@ const serviceName = 'demo'
 const rawEdmx = rawEdmxSource.trim()
 
 function parseAttributes(input: string) {
-  return Object.fromEntries(
-    Array.from(input.matchAll(ATTRIBUTE_RE), ([, key, value]) => [key, value]),
-  )
+  const attributes: Record<string, string> = {}
+
+  for (const match of input.matchAll(ATTRIBUTE_RE)) {
+    const key = match[1]
+    const value = match[2]
+
+    if (key && value !== undefined)
+      attributes[key] = value
+  }
+
+  return attributes
 }
 
 function parseDemoSchema(xml: string): SchemaResponse {
   const namespace = xml.match(SCHEMA_NAMESPACE_RE)?.[1] || 'DemoService'
   const entityTypes = new Map<string, SchemaResponse['entities'][number]>()
 
-  for (const [, type, body = ''] of xml.matchAll(ENTITY_TYPE_RE)) {
-    const keys = new Set(Array.from(body.matchAll(PROPERTY_REF_RE), ([, name]) => name))
-    const properties = Array.from(body.matchAll(PROPERTY_RE), ([, rawAttributes]) => {
+  for (const match of xml.matchAll(ENTITY_TYPE_RE)) {
+    const type = match[1]
+    const body = match[2] || ''
+
+    if (!type)
+      continue
+
+    const keys = new Set(
+      Array.from(body.matchAll(PROPERTY_REF_RE), match => match[1]).filter((name): name is string => Boolean(name)),
+    )
+    const properties = Array.from(body.matchAll(PROPERTY_RE), (match) => {
+      const rawAttributes = match[1] || ''
       const attributes = parseAttributes(` ${rawAttributes}`)
 
       return {
@@ -67,7 +84,8 @@ function parseDemoSchema(xml: string): SchemaResponse {
     })
       .filter(property => property.name)
 
-    const navigationProperties = Array.from(body.matchAll(NAVIGATION_PROPERTY_RE), ([, rawAttributes]) => {
+    const navigationProperties = Array.from(body.matchAll(NAVIGATION_PROPERTY_RE), (match) => {
+      const rawAttributes = match[1] || ''
       const attributes = parseAttributes(` ${rawAttributes}`)
 
       return { name: attributes.Name || '' }
@@ -82,7 +100,13 @@ function parseDemoSchema(xml: string): SchemaResponse {
     })
   }
 
-  const entities = Array.from(xml.matchAll(ENTITY_SET_RE), ([, name, qualifiedType]) => {
+  const entities = Array.from(xml.matchAll(ENTITY_SET_RE), (match) => {
+    const name = match[1]
+    const qualifiedType = match[2]
+
+    if (!name || !qualifiedType)
+      return undefined
+
     const type = qualifiedType.split('.').pop() || qualifiedType
     const entityType = entityTypes.get(type)
 
@@ -93,6 +117,7 @@ function parseDemoSchema(xml: string): SchemaResponse {
       navigationProperties: entityType?.navigationProperties || [],
     }
   })
+    .filter((entity): entity is SchemaResponse['entities'][number] => Boolean(entity))
 
   return {
     name: serviceName,
