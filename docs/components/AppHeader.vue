@@ -7,13 +7,8 @@ const { docus: config } = useAppConfig()
     <nav class="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl h-16 flex items-center justify-between gap-3">
       <!-- Left: Logo & Title -->
       <div class="flex items-center gap-3 lg:flex-1">
-        <NuxtLink to="/" class="flex items-center gap-2 group">
-          <div class="w-8 h-8 bg-neutral-900 dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-neutral-900 font-bold transition-transform group-hover:scale-110">
-            O
-          </div>
-          <span class="font-bold text-xl tracking-tight text-gray-900 dark:text-white">
-            ODX
-          </span>
+        <NuxtLink to="/" class="flex items-center group transition-transform hover:scale-105">
+          <OdxLogo />
         </NuxtLink>
       </div>
 
