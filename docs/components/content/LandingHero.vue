@@ -168,38 +168,89 @@ function sampleValue(type: string, name: string, index: number) {
 
 const entities = computed(() => schema.entities)
 const selectedEntity = computed(() => entities.value.find(entity => entity.name === 'Products') || entities.value[0])
-const usageCode = `// @noErrors
-// @filename: odx-types.d.ts
-interface Product {
+const usageCode = `
+const products = await useOData().demo.Products.list({
+  $select: ['ID', 'Name', 'Price'],
+  $expand: 'Category',
+  $filter: 'Price gt 50',
+  $top: 2,
+})
+
+products.data.value
+// ^?
+`
+const twoslashExtraFiles = {
+  '/node_modules/@bc8-odx/core/index.d.ts': `
+export interface ODataAsyncData<T> {
+  data: { value: T | null }
+  pending: { value: boolean }
+  error: { value: unknown | null }
+  refresh: () => Promise<void>
+}
+export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncData<T>>
+export type ODataKey = string | number | Record<string, string | number>
+export interface ODataQuery<T = unknown> {
+  $select?: keyof T | (keyof T)[] | string
+  $orderby?: string
+  $top?: number
+  $skip?: number
+  $filter?: string
+  $expand?: string
+  $inlinecount?: 'allpages' | 'none'
+  $search?: string
+  [key: string]: unknown
+}
+export interface ODataEntitySet<T = unknown> {
+  list: (query?: ODataQuery<T>) => ODataAsyncDataPromise<T[]>
+  get: (key: ODataKey, query?: ODataQuery<T>) => ODataAsyncDataPromise<T>
+  create: (body: Partial<T>) => Promise<T>
+  update: (key: ODataKey, body: Partial<T>) => Promise<T>
+  remove: (key: ODataKey) => Promise<unknown>
+}
+export type ODataService<E extends string = string, M extends Record<string, unknown> = Record<string, unknown>> = {
+  entitySet: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : unknown>
+} & {
+  [K in E]: ODataEntitySet<K extends keyof M ? M[K] : unknown>
+}
+export interface ODataServiceRegistry {}
+`,
+  '/node_modules/.nuxt/odx-types/demo/DemoServiceModel.d.ts': `
+export interface Product {
   ID: string
   Name: string | null
   Price: number | null
   Category_ID: string | null
   Category?: Category | null
 }
-interface Category {
+export interface Category {
   ID: string
   Name: string | null
   Products?: Product[]
 }
-interface ODataBuilder<T> {
-  select<K extends keyof T>(...fields: (K & string)[]): ODataBuilder<Pick<T, K>>
-  expand(field: keyof T & string): ODataBuilder<T>
-  filter(predicate: object): ODataBuilder<T>
-  top(n: number): ODataBuilder<T>
-  get(): Promise<T[]>
-}
-declare const odata: { demo: { Products: ODataBuilder<Product>; Categories: ODataBuilder<Category> } }
-// @filename: index.ts
-const products = await odata.demo.Products
-//    ^?
-  .select('ID', 'Name', 'Price')
-  .expand('Category')
-  .filter({ Price: { gt: 50 } })
-  .top(2)
-  .get()
+`,
+  '/node_modules/.nuxt/odx-types/index.d.ts': `
+import type { ODataService, ODataServiceRegistry } from '@bc8-odx/core'
+import type { Product, Category } from './demo/DemoServiceModel'
 
-// products: Product[] - inferred from generated EDMX types`
+declare module '@bc8-odx/core' {
+  interface ODataServiceRegistry {
+    demo: ODataService<'Products' | 'Categories', {
+      Products: Product
+      Categories: Category
+    }>
+  }
+}
+`,
+  '/node_modules/.nuxt/imports.d.ts': `
+import type { ODataServiceRegistry } from '@bc8-odx/core'
+import './odx-types'
+
+declare global {
+  const useOData: () => ODataServiceRegistry
+}
+export {}
+`,
+} satisfies Record<string, string>
 const responseCode = computed(() => {
   const entity = selectedEntity.value
   if (!entity)
@@ -235,6 +286,9 @@ async function renderCode(markdown: string) {
       transformers: [
         transformerTwoslash({
           explicitTrigger: true,
+          twoslashOptions: {
+            extraFiles: twoslashExtraFiles,
+          },
         }),
       ],
     }),
