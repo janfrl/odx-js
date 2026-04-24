@@ -1,119 +1,73 @@
 ---
-title: ODX - Modern SAP OData Integration
+title: ODX — Modern OData Developer Experience
+description: ODX is a modular, framework-agnostic toolkit that bridges modern TypeScript web apps and OData V2 / V4 services — with first-class support for SAP.
 navigation: false
 aside: false
 ---
 
-::u-page-hero
+::landing-hero
+::
+
+::landing-live-demo
+::
+
+::landing-bento
+::
+
+::landing-quickstart
+::
+
+::landing-architecture
+::
+
+::u-page-section
 ---
-description: ODX is a modular, framework-agnostic toolkit designed to bridge the gap between OData services and modern web applications. Built for standard OData V2 and V4 compliance.
+description: Use one. Use all. ODX is a monorepo of four npm packages that compose — Core under everything, Proxy for auth-heavy backends, Nuxt for the integrated DX, and Explorer for the DevTools layer.
 ---
 #title
-Modern [OData Developer Experience]{.text-primary}
+Modular, [by design.]{.text-primary}
 
-#links
-  :u-button{to="/ecosystem/introduction" label="Get started" trailing-icon="i-lucide-arrow-right" size="lg"}
-  :u-button{to="https://github.com/janfrl/odx-js" label="GitHub" icon="i-simple-icons-github" variant="outline" size="lg"}
-::
-
-::u-page-section
   :::u-page-grid
     ::::u-page-card
     ---
-    title: Universal Compatibility
-    description: ODX works with any compliant OData V2 or V4 endpoint. Seamlessly connect to standard enterprise services and APIs.
-    icon: i-lucide-globe
-    spotlight: true
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: First-Class SAP Support
-    description: Premium out-of-the-box support for SAP systems, handling NetWeaver routing, CSRF-Token pre-fetching, and auth.
-    icon: i-simple-icons-sap
-    spotlight: true
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Type-Safe SDK
-    description: Automated TypeScript model generation from your EDMX schema. Catch errors at compile time, not runtime.
-    icon: i-lucide-shield-check
-    spotlight: true
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Nuxt-First DX
-    description: Intuitive dot-notation syntax with built-in SSR support and zero-config setup.
-    icon: i-lucide-zap
-    spotlight: true
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Deep Introspection
-    description: Visualize complex schemas and monitor live OData traffic directly within Nuxt DevTools.
-    icon: i-lucide-activity
-    spotlight: true
-    ---
-    ::::
-
-    ::::u-page-card
-    ---
-    title: Offline-Ready
-    description: Mock any OData backend with local JSON files for rapid UI development.
-    icon: i-lucide-database
-    spotlight: true
-    ---
-    ::::
-  :::
-::
-
-::u-page-section
----
-title: Explore the Ecosystem
-description: Choose the package that fits your architecture.
----
-  :::u-page-grid
-    ::::u-page-card
-    ---
-    title: Nuxt Module
-    description: Zero-config OData integration for Nuxt 4 with auto-imports and DevTools.
-    to: /nuxt/getting-started
-    icon: i-lucide-zap
+    title: Core
+    description: Framework-agnostic OData types, URL builder, and lightweight fetch client.
+    icon: i-lucide-code-2
+    to: /en/core/installation
     ---
     ::::
 
     ::::u-page-card
     ---
     title: Proxy
-    description: Standalone Nitro proxy for SAP BTP auth, CSRF, and routing.
-    to: /proxy/installation
-    icon: i-lucide-server
+    description: Standalone Nitro proxy for SAP BTP auth, CSRF pre-fetch, and routing.
+    icon: i-lucide-cable
+    to: /en/proxy/installation
     ---
     ::::
 
     ::::u-page-card
     ---
-    title: Core SDK
-    description: Framework-agnostic OData types and lightweight fetch client.
-    to: /core/installation
-    icon: i-lucide-code-2
+    title: Nuxt
+    description: Zero-config Nuxt 4 module with auto-imports and DevTools binding.
+    icon: i-simple-icons-nuxtdotjs
+    to: /en/nuxt/getting-started
     ---
     ::::
 
     ::::u-page-card
     ---
     title: Explorer
-    description: Browser-based DevTools for schema visualization and traffic monitoring.
-    to: /explorer/setup
+    description: Browser-based DevTools for schema visualization and live traffic monitoring.
     icon: i-lucide-monitor
+    to: /en/explorer/setup
     ---
     ::::
   :::
+::
+
+::landing-stats
+::
+
+::landing-cta
 ::
