@@ -1,0 +1,53 @@
+/* ODX Design Tokens — Landing Page */
+
+:root {
+  --odx-primary: #22c55e;
+  --odx-primary-hover: #16a34a;
+  --odx-primary-soft: color-mix(in srgb, #22c55e 12%, transparent);
+  --odx-primary-fg: #15803d;
+
+  --odx-bg: #fafafa;
+  --odx-bg-muted: #f4f4f5;
+  --odx-bg-elevated: #ffffff;
+  --odx-fg: #18181b;
+  --odx-fg-toned: #3f3f46;
+  --odx-fg-muted: #71717a;
+  --odx-border: #e4e4e7;
+  --odx-border-strong: #d4d4d8;
+
+  --odx-error: #ef4444;
+  --odx-warning: #f59e0b;
+  --odx-blue: #3b82f6;
+
+  --odx-font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --odx-shadow-xs: 0 1px 0 rgb(0 0 0 / 0.04);
+  --odx-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --odx-shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08);
+  --odx-shadow-lg: 0 12px 32px -4px rgb(0 0 0 / 0.12);
+}
+
+.dark {
+  --odx-primary-soft: color-mix(in srgb, #22c55e 18%, transparent);
+  --odx-primary-fg: #4ade80;
+
+  --odx-bg: #09090b;
+  --odx-bg-muted: #18181b;
+  --odx-bg-elevated: #27272a;
+  --odx-fg: #fafafa;
+  --odx-fg-toned: #d4d4d8;
+  --odx-fg-muted: #71717a;
+  --odx-border: #27272a;
+  --odx-border-strong: #3f3f46;
+
+  --odx-shadow-xs: 0 1px 0 rgb(0 0 0 / 0.4);
+  --odx-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --odx-shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.35);
+  --odx-shadow-lg: 0 12px 32px -4px rgb(0 0 0 / 0.5);
+}
+
+/* Shared landing animation */
+@keyframes odx-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.8); }
+}
