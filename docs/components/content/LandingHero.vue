@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import rawEdmxSource from '~/edmx/demo-v4.edmx?raw'
+import { recomputeAllPoppers } from 'floating-vue'
 
 const ATTRIBUTE_RE = /\s([\w:]+)="([^"]*)"/g
 const SCHEMA_NAMESPACE_RE = /<Schema [^>]*Namespace="([^"]+)"/
@@ -157,6 +158,10 @@ const tabs = [
   },
 ] as const
 
+const demoRef = ref<HTMLElement | null>(null)
+const twoslashPopupCleanup: Array<() => void> = []
+let twoslashResizeObserver: ResizeObserver | undefined
+
 function sampleValue(type: string, name: string, index: number) {
   if (name === 'ID')
     return `P-${String(index + 1).padStart(3, '0')}`
@@ -174,14 +179,18 @@ function sampleValue(type: string, name: string, index: number) {
 const entities = computed(() => schema.entities)
 const selectedEntity = computed(() => entities.value.find(entity => entity.name === 'Products') || entities.value[0])
 const usageCode = `
-const products = await useOData().demo.Products.list({
-  $select: ['ID', 'Name', 'Price'],
-  $expand: 'Category',
-  $filter: 'Price gt 50',
-  $top: 2,
-})
+const { data: products } = await useOData()
+  .demo.Products
+  .list({
+    $select: ['ID', 'Name', 'Price'],
+    $expand: 'Category',
+    $filter: 'Price gt 50',
+    $top: 2,
+  })
 
-products.data.value
+type ProductShape = Expand<
+  ODataItem<typeof products.value>
+>
 `
 const generatedModelSource = `
 export interface Product {
@@ -255,6 +264,8 @@ import './odx-types'
 
 declare global {
   const useOData: () => ODataServiceRegistry
+  type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never
+  type ODataItem<T> = NonNullable<T> extends Array<infer Item> ? Item : never
 }
 export {}
 `,
@@ -315,6 +326,42 @@ if (import.meta.server) {
   responseHtml.value = await renderCode(responseMarkdown.value)
 }
 
+onMounted(() => {
+  const demo = demoRef.value
+  if (!demo)
+    return
+
+  import('floating-vue').then(({ createTooltip, destroyTooltip }) => {
+    demo.querySelectorAll<HTMLElement>('.twoslash-hover, .twoslash-error-hover').forEach((trigger) => {
+      const popup = trigger.querySelector<HTMLElement>('.twoslash-popup-container')
+      if (!popup)
+        return
+
+      const floatingContent = popup.cloneNode(true) as HTMLElement
+      floatingContent.querySelector('.twoslash-popup-arrow')?.remove()
+      const content = floatingContent.innerHTML
+      popup.remove()
+
+      createTooltip(trigger, {
+        content,
+        html: true,
+        theme: 'twoslash',
+        popperClass: 'shiki twoslash-floating landing-twoslash-floating',
+      })
+
+      twoslashPopupCleanup.push(() => destroyTooltip(trigger))
+    })
+  })
+
+  twoslashResizeObserver = new ResizeObserver(() => recomputeAllPoppers())
+  twoslashResizeObserver.observe(demo)
+})
+
+onBeforeUnmount(() => {
+  twoslashResizeObserver?.disconnect()
+  twoslashPopupCleanup.forEach(remove => remove())
+})
+
 </script>
 
 <template>
@@ -341,11 +388,11 @@ if (import.meta.server) {
       </ULink>
     </template>
 
-    <div class="landing-hero-demo mx-auto w-full max-w-2xl rounded-lg bg-elevated/40 ring ring-default">
+    <div ref="demoRef" class="landing-hero-demo mx-auto w-full max-w-2xl rounded-lg bg-elevated/40 ring ring-default">
       <div class="border-b border-default p-3">
-        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="mb-3.5 flex flex-wrap items-center justify-between gap-2">
           <div class="flex min-w-0 items-center gap-2">
-            <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <div class="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
               <UIcon name="i-simple-icons-nuxtdotjs" class="size-4" />
             </div>
             <div class="min-w-0">
@@ -365,34 +412,36 @@ if (import.meta.server) {
           </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-2">
-          <UButton
-            v-for="tab in tabs"
-            :key="tab.value"
-            :label="tab.label"
-            :icon="tab.icon"
-            :color="activeTab === tab.value ? 'primary' : 'neutral'"
-            :variant="activeTab === tab.value ? 'solid' : 'outline'"
-            size="sm"
-            block
-            @click="activeTab = tab.value"
-          />
-        </div>
+        <UTabs
+          v-model="activeTab"
+          :items="tabs"
+          :content="false"
+          color="primary"
+          variant="pill"
+          size="sm"
+          :ui="{
+            root: 'w-full',
+            list: 'w-full bg-default ring ring-default',
+            trigger: 'flex-1 justify-center transition-none',
+            label: 'transition-none',
+            leadingIcon: 'transition-none',
+          }"
+        />
       </div>
 
-      <div
-        class="h-[360px] p-4"
-        :class="activeTab === 'usage' ? 'overflow-visible' : 'overflow-hidden'"
-      >
+      <div class="relative h-[360px] overflow-hidden px-3 pb-3 pt-3">
         <div
-          v-show="activeTab === 'usage'"
-          class="flex h-full flex-col gap-3 overflow-visible [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-visible!"
+          class="landing-hero-pane landing-hero-usage absolute inset-x-3 bottom-3 top-3 flex flex-col gap-3 overflow-hidden [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:w-full"
+          :class="activeTab === 'usage' ? 'is-active' : 'pointer-events-none'"
         >
           <div class="min-h-0 h-full">
             <div class="comark-content" v-html="usageHtml" />
           </div>
         </div>
-        <div v-show="activeTab === 'schema'" class="h-full overflow-y-auto">
+        <div
+          class="landing-hero-pane absolute inset-x-3 bottom-3 top-3 overflow-y-auto"
+          :class="activeTab === 'schema' ? 'is-active' : 'pointer-events-none'"
+        >
           <div class="grid gap-3 sm:grid-cols-2">
             <div
               v-for="entity in entities"
@@ -446,14 +495,14 @@ if (import.meta.server) {
           </div>
         </div>
         <div
-          v-show="activeTab === 'edmx'"
-          class="h-full [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto"
+          class="landing-hero-pane absolute inset-x-3 bottom-3 top-3 [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto"
+          :class="activeTab === 'edmx' ? 'is-active' : 'pointer-events-none'"
         >
           <div class="comark-content" v-html="edmxHtml" />
         </div>
         <div
-          v-show="activeTab === 'response'"
-          class="h-full [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto"
+          class="landing-hero-pane absolute inset-x-3 bottom-3 top-3 [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto"
+          :class="activeTab === 'response' ? 'is-active' : 'pointer-events-none'"
         >
           <div class="comark-content" v-html="responseHtml" />
         </div>
@@ -463,41 +512,103 @@ if (import.meta.server) {
 </template>
 
 <style>
-.landing-hero-demo .twoslash {
+:root {
   --twoslash-popup-bg: var(--ui-bg);
   --twoslash-popup-color: var(--ui-text-highlighted);
   --twoslash-border-color: var(--ui-border);
   --twoslash-docs-color: var(--ui-text-muted);
   --twoslash-popup-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+  --twoslash-docs-font: var(--ui-font-sans);
+  --twoslash-code-font: var(--ui-font-mono);
+}
+
+.landing-hero-demo {
+  container-type: inline-size;
+}
+
+.landing-hero-pane {
+  visibility: hidden;
+  opacity: 0;
+  content-visibility: hidden;
+  contain: layout paint style;
+}
+
+.landing-hero-pane.is-active {
+  visibility: visible;
+  opacity: 1;
+  content-visibility: visible;
+}
+
+.landing-hero-demo .comark-content > pre {
+  padding-block: 0.375rem !important;
+}
+
+.landing-hero-usage .comark-content > pre {
+  height: auto !important;
+  overflow: hidden !important;
 }
 
 .landing-hero-demo .twoslash .twoslash-popup-container {
-  left: 50%;
-  right: auto;
-  max-width: min(28rem, calc(100vw - 48px));
-  max-height: min(16rem, calc(100vh - 48px));
-  transform: translate(-50%, 1.1em);
-  overflow: auto;
-  background: var(--twoslash-popup-bg);
-  backdrop-filter: none;
+  display: none !important;
 }
 
-.landing-hero-demo .twoslash .twoslash-query-persisted .twoslash-popup-container {
-  transform: translate(-50%, 1.5em);
+@container (max-width: 34rem) {
+  .landing-hero-usage .comark-content > pre {
+    overflow: auto !important;
+  }
 }
 
-.landing-hero-demo .twoslash .twoslash-popup-code,
-.landing-hero-demo .twoslash .twoslash-popup-docs {
-  background: var(--ui-bg);
+.landing-twoslash-floating.v-popper__popper {
+  z-index: 1000;
+  max-width: calc(100vw - 2rem);
+  overflow: hidden;
 }
 
-.landing-hero-demo .twoslash .twoslash-popup-code pre,
-.landing-hero-demo .twoslash .twoslash-popup-code code,
-.landing-hero-demo .twoslash .twoslash-popup-code .line {
+.landing-twoslash-floating .v-popper__inner {
+  max-width: 100%;
+  background: var(--ui-bg) !important;
+  border-color: var(--ui-border) !important;
+  box-shadow: var(--twoslash-popup-shadow);
+  overflow: hidden;
+}
+
+.landing-twoslash-floating .v-popper__arrow-outer {
+  border-color: var(--ui-border) !important;
+}
+
+.landing-twoslash-floating .v-popper__arrow-inner {
+  border-color: var(--ui-bg) !important;
+}
+
+.landing-twoslash-floating .twoslash-popup-code,
+.landing-twoslash-floating .twoslash-popup-docs {
   background: var(--ui-bg) !important;
 }
 
-.landing-hero-demo .twoslash .twoslash-popup-code pre {
+.landing-twoslash-floating .twoslash-popup-code {
+  max-width: min(42rem, calc(100vw - 2rem));
+  max-height: min(16rem, calc(100vh - 2rem));
+  overflow: auto;
+}
+
+.landing-twoslash-floating .twoslash-popup-docs {
+  max-width: min(42rem, calc(100vw - 2rem));
+}
+
+body:has(.landing-twoslash-floating.v-popper__popper) {
+  overflow-x: hidden;
+}
+
+.landing-twoslash-floating .twoslash-popup-code pre,
+.landing-twoslash-floating .twoslash-popup-code code,
+.landing-twoslash-floating .twoslash-popup-code .line,
+.landing-twoslash-floating .twoslash-popup-code span,
+.landing-twoslash-floating .twoslash-popup-docs,
+.landing-twoslash-floating .twoslash-popup-docs * {
+  background: var(--ui-bg) !important;
+}
+
+.landing-twoslash-floating .twoslash-popup-code pre {
   margin: 0;
 }
 </style>
