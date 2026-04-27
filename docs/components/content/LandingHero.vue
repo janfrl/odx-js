@@ -43,6 +43,7 @@ interface SchemaResponse {
 }
 
 const serviceName = 'demo'
+const metadataTo = `/__odx__/schema?service=${serviceName}&raw=true`
 const rawEdmx = rawEdmxSource.trim()
 
 function parseAttributes(input: string) {
@@ -400,7 +401,15 @@ onBeforeUnmount(() => {
                 Typed OData query
               </div>
               <div class="text-xs text-muted">
-                Generated from {{ schema.namespace }} metadata
+                Generated from
+                <ULink
+                  :to="metadataTo"
+                  target="_blank"
+                  class="text-muted underline decoration-dotted underline-offset-2 hover:text-default"
+                >
+                  {{ schema.namespace }}
+                  metadata
+                </ULink>
               </div>
             </div>
           </div>
