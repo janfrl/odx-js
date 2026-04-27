@@ -341,7 +341,7 @@ if (import.meta.server) {
       </ULink>
     </template>
 
-    <div class="landing-hero-demo mx-auto w-full max-w-2xl overflow-hidden rounded-lg bg-elevated/40 ring ring-default">
+    <div class="landing-hero-demo mx-auto w-full max-w-2xl rounded-lg bg-elevated/40 ring ring-default">
       <div class="border-b border-default p-3">
         <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div class="flex min-w-0 items-center gap-2">
@@ -380,8 +380,14 @@ if (import.meta.server) {
         </div>
       </div>
 
-      <div class="h-[360px] overflow-hidden p-4 [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto">
-        <div v-show="activeTab === 'usage'" class="flex h-full flex-col gap-3">
+      <div
+        class="h-[360px] p-4"
+        :class="activeTab === 'usage' ? 'overflow-visible' : 'overflow-hidden'"
+      >
+        <div
+          v-show="activeTab === 'usage'"
+          class="flex h-full flex-col gap-3 overflow-visible [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-visible!"
+        >
           <div class="min-h-0 h-full">
             <div class="comark-content" v-html="usageHtml" />
           </div>
@@ -439,10 +445,16 @@ if (import.meta.server) {
             </div>
           </div>
         </div>
-        <div v-show="activeTab === 'edmx'" class="h-full">
+        <div
+          v-show="activeTab === 'edmx'"
+          class="h-full [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto"
+        >
           <div class="comark-content" v-html="edmxHtml" />
         </div>
-        <div v-show="activeTab === 'response'" class="h-full">
+        <div
+          v-show="activeTab === 'response'"
+          class="h-full [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto"
+        >
           <div class="comark-content" v-html="responseHtml" />
         </div>
       </div>
@@ -460,9 +472,18 @@ if (import.meta.server) {
 }
 
 .landing-hero-demo .twoslash .twoslash-popup-container {
+  left: 50%;
+  right: auto;
   max-width: min(28rem, calc(100vw - 48px));
-  overflow: hidden;
+  max-height: min(16rem, calc(100vh - 48px));
+  transform: translate(-50%, 1.1em);
+  overflow: auto;
+  background: var(--twoslash-popup-bg);
   backdrop-filter: none;
+}
+
+.landing-hero-demo .twoslash .twoslash-query-persisted .twoslash-popup-container {
+  transform: translate(-50%, 1.5em);
 }
 
 .landing-hero-demo .twoslash .twoslash-popup-code,
@@ -474,5 +495,9 @@ if (import.meta.server) {
 .landing-hero-demo .twoslash .twoslash-popup-code code,
 .landing-hero-demo .twoslash .twoslash-popup-code .line {
   background: var(--ui-bg) !important;
+}
+
+.landing-hero-demo .twoslash .twoslash-popup-code pre {
+  margin: 0;
 }
 </style>
