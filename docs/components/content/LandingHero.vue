@@ -129,7 +129,7 @@ function parseDemoSchema(xml: string): SchemaResponse {
 
 const schema = parseDemoSchema(rawEdmx)
 
-const activeTab = ref<'edmx' | 'usage' | 'response'>('usage')
+const activeTab = ref<'usage' | 'schema' | 'edmx' | 'response'>('usage')
 
 const tabs = [
   {
@@ -137,6 +137,11 @@ const tabs = [
     label: 'Nuxt',
     icon: 'i-simple-icons-nuxtdotjs',
     language: 'ts',
+  },
+  {
+    value: 'schema',
+    label: 'Schema',
+    icon: 'i-lucide-waypoints',
   },
   {
     value: 'edmx',
@@ -177,9 +182,24 @@ const products = await useOData().demo.Products.list({
 })
 
 products.data.value
-// ^?
 `
+const generatedModelSource = `
+export interface Product {
+  ID: string
+  Name: string | null
+  Price: number | null
+  Category_ID: string | null
+  Category?: Category | null
+}
+export interface Category {
+  ID: string
+  Name: string | null
+  Products?: Product[]
+}
+`
+
 const twoslashExtraFiles = {
+  '/node_modules/#build/odx-types/demo/DemoServiceModel.d.ts': generatedModelSource,
   '/node_modules/@bc8-odx/core/index.d.ts': `
 export interface ODataAsyncData<T> {
   data: { value: T | null }
@@ -214,20 +234,8 @@ export type ODataService<E extends string = string, M extends Record<string, unk
 }
 export interface ODataServiceRegistry {}
 `,
-  '/node_modules/.nuxt/odx-types/demo/DemoServiceModel.d.ts': `
-export interface Product {
-  ID: string
-  Name: string | null
-  Price: number | null
-  Category_ID: string | null
-  Category?: Category | null
-}
-export interface Category {
-  ID: string
-  Name: string | null
-  Products?: Product[]
-}
-`,
+  '/node_modules/.nuxt/odx-types/demo/DemoServiceModel.d.ts': generatedModelSource,
+  '/node_modules/.nuxt/odx-types/demo/DemoServiceModel.ts': generatedModelSource,
   '/node_modules/.nuxt/odx-types/index.d.ts': `
 import type { ODataService, ODataServiceRegistry } from '@bc8-odx/core'
 import type { Product, Category } from './demo/DemoServiceModel'
@@ -306,6 +314,7 @@ if (import.meta.server) {
   edmxHtml.value = await renderCode(edmxMarkdown)
   responseHtml.value = await renderCode(responseMarkdown.value)
 }
+
 </script>
 
 <template>
@@ -332,23 +341,31 @@ if (import.meta.server) {
       </ULink>
     </template>
 
-    <div class="mx-auto w-full max-w-xl overflow-hidden rounded-lg bg-elevated/40 ring ring-default">
-      <div class="border-b border-default p-4">
-        <div class="mb-3 flex items-center justify-between gap-3">
-          <div class="min-w-0">
-            <div class="text-sm font-medium text-highlighted">
-              Powered by the ODX Nuxt module
+    <div class="landing-hero-demo mx-auto w-full max-w-2xl overflow-hidden rounded-lg bg-elevated/40 ring ring-default">
+      <div class="border-b border-default p-3">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex min-w-0 items-center gap-2">
+            <div class="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <UIcon name="i-simple-icons-nuxtdotjs" class="size-4" />
             </div>
-            <div class="mt-1 text-xs text-muted">
-              {{ schema.namespace }} EDMX -> generated types -> typed Nuxt query
+            <div class="min-w-0">
+              <div class="text-sm font-medium text-highlighted">
+                Typed OData query
+              </div>
+              <div class="text-xs text-muted">
+                Generated from {{ schema.namespace }} metadata
+              </div>
             </div>
           </div>
-          <UBadge color="primary" variant="subtle">
-            Build-time
-          </UBadge>
+
+          <div>
+            <UBadge color="neutral" variant="subtle" size="sm">
+              {{ schema.version.toUpperCase() }}
+            </UBadge>
+          </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-4 gap-2">
           <UButton
             v-for="tab in tabs"
             :key="tab.value"
@@ -363,59 +380,99 @@ if (import.meta.server) {
         </div>
       </div>
 
-      <div class="grid h-[360px] lg:grid-cols-[0.7fr_1.3fr]">
-        <div class="overflow-y-auto border-b border-default p-4 lg:border-b-0 lg:border-r">
-          <div class="mb-3 text-xs font-medium uppercase text-muted">
-            Entity preview
+      <div class="h-[360px] overflow-hidden p-4 [&_.comark-content]:h-full [&_.comark-content>pre]:my-0! [&_.comark-content>pre]:h-full [&_.comark-content>pre]:w-full [&_.comark-content>pre]:overflow-auto">
+        <div v-show="activeTab === 'usage'" class="flex h-full flex-col gap-3">
+          <div class="min-h-0 h-full">
+            <div class="comark-content" v-html="usageHtml" />
           </div>
-          <div class="space-y-2">
+        </div>
+        <div v-show="activeTab === 'schema'" class="h-full overflow-y-auto">
+          <div class="grid gap-3 sm:grid-cols-2">
             <div
               v-for="entity in entities"
               :key="entity.name"
-              class="rounded-md bg-default px-3 py-2 ring ring-default"
+              class="rounded-md bg-default p-3 ring ring-default"
             >
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-sm font-medium text-highlighted">{{ entity.name }}</span>
-                <UBadge color="neutral" variant="subtle" size="sm">
+              <div class="flex min-w-0 items-baseline gap-2">
+                <span class="text-sm text-muted">
                   {{ entity.properties.length }}
-                </UBadge>
+                </span>
+                <div class="truncate text-sm font-medium text-highlighted">
+                  {{ entity.name }}
+                </div>
+                <div class="sr-only">
+                  fields
+                </div>
               </div>
-              <div class="mt-1 text-xs text-muted">
+              <div class="mt-0.5 text-xs text-muted">
                 {{ entity.type }}
               </div>
-            </div>
-          </div>
 
-          <div v-if="selectedEntity" class="mt-4 border-t border-default pt-4">
-            <div class="mb-2 text-xs font-medium uppercase text-muted">
-              {{ selectedEntity.name }} fields
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              <UBadge
-                v-for="property in selectedEntity.properties.slice(0, 5)"
-                :key="property.name"
-                :color="property.isKey ? 'primary' : 'neutral'"
-                variant="subtle"
-                size="sm"
-              >
-                {{ property.name }}
-              </UBadge>
+              <div class="mt-3 flex flex-wrap gap-1.5">
+                <UBadge
+                  v-for="property in entity.properties.slice(0, 6)"
+                  :key="property.name"
+                  :color="property.isKey ? 'primary' : 'neutral'"
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ property.name }}
+                </UBadge>
+              </div>
+
+              <div v-if="entity.navigationProperties.length" class="mt-3 border-t border-default pt-3">
+                <div class="mb-1.5 text-xs font-medium uppercase text-muted">
+                  Relations
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <UBadge
+                    v-for="navigationProperty in entity.navigationProperties"
+                    :key="navigationProperty.name"
+                    color="neutral"
+                    variant="outline"
+                    size="sm"
+                  >
+                    {{ navigationProperty.name }}
+                  </UBadge>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
-        <div class="h-full overflow-y-auto p-4 [&_pre]:my-0! [&_pre]:overflow-auto">
-          <div v-show="activeTab === 'usage'">
-            <div class="comark-content" v-html="usageHtml" />
-          </div>
-          <div v-show="activeTab === 'edmx'">
-            <div class="comark-content" v-html="edmxHtml" />
-          </div>
-          <div v-show="activeTab === 'response'">
-            <div class="comark-content" v-html="responseHtml" />
-          </div>
+        <div v-show="activeTab === 'edmx'" class="h-full">
+          <div class="comark-content" v-html="edmxHtml" />
+        </div>
+        <div v-show="activeTab === 'response'" class="h-full">
+          <div class="comark-content" v-html="responseHtml" />
         </div>
       </div>
     </div>
   </UPageHero>
 </template>
+
+<style>
+.landing-hero-demo .twoslash {
+  --twoslash-popup-bg: var(--ui-bg);
+  --twoslash-popup-color: var(--ui-text-highlighted);
+  --twoslash-border-color: var(--ui-border);
+  --twoslash-docs-color: var(--ui-text-muted);
+  --twoslash-popup-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+}
+
+.landing-hero-demo .twoslash .twoslash-popup-container {
+  max-width: min(28rem, calc(100vw - 48px));
+  overflow: hidden;
+  backdrop-filter: none;
+}
+
+.landing-hero-demo .twoslash .twoslash-popup-code,
+.landing-hero-demo .twoslash .twoslash-popup-docs {
+  background: var(--ui-bg);
+}
+
+.landing-hero-demo .twoslash .twoslash-popup-code pre,
+.landing-hero-demo .twoslash .twoslash-popup-code code,
+.landing-hero-demo .twoslash .twoslash-popup-code .line {
+  background: var(--ui-bg) !important;
+}
+</style>
