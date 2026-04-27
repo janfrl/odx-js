@@ -372,7 +372,7 @@ onBeforeUnmount(() => {
     description="ODX turns service metadata into typed clients, safer backend access, and a clearer development loop."
     orientation="horizontal"
     :links="links"
-    :ui="{ container: 'py-20 sm:py-24 lg:py-28' }"
+    :ui="{ container: 'pt-20 !pb-20 sm:pt-24 sm:!pb-24 lg:pt-28 lg:!pb-32' }"
   >
     <template #headline>
       <ULink
