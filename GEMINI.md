@@ -77,8 +77,3 @@ This project is a modern Nuxt module (ODX - OData Developer Experience) designed
 - The `packages/approuter` provides the entry point for BTP managed approuter or standalone approuter scenarios.
 - Deployment can be triggered via `pnpm run deploy` if the Cloud Foundry CLI and MTA plugin are installed.
 
-<!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan:
-[specs/003-api-reference-automation/plan.md](specs/003-api-reference-automation/plan.md)
-<!-- SPECKIT END -->
