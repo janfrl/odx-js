@@ -10,18 +10,44 @@ const PROPERTY_RE = /<Property ([^/>]*)\/>/g
 const NAVIGATION_PROPERTY_RE = /<NavigationProperty ([^>]*)>/g
 const ENTITY_SET_RE = /<EntitySet Name="([^"]+)" EntityType="([^"]+)"/g
 
-const route = useRoute()
-const localePrefix = computed(() => route.path.startsWith('/de') ? '/de' : '/en')
-const getStartedTo = computed(() => `${localePrefix.value}/ecosystem/introduction`)
+const props = withDefaults(defineProps<{
+  headline?: string
+  title?: string
+  description?: string
+  explorer?: string
+  getStarted?: string
+  getStartedTo?: string
+  githubLabel?: string
+  cardTitle?: string
+  cardSubtitlePrefix?: string
+  metadata?: string
+  fields?: string
+  relations?: string
+  dataTab?: string
+}>(), {
+  headline: 'OData Developer Experience',
+  title: 'Modern OData Developer Experience',
+  description: 'ODX turns service metadata into typed clients, safer backend access, and a clearer development loop.',
+  explorer: 'Explorer 0.4: schema graph and live proxy tap',
+  getStarted: 'Get started',
+  getStartedTo: '/en/ecosystem/introduction',
+  githubLabel: 'GitHub',
+  cardTitle: 'Typed OData query',
+  cardSubtitlePrefix: 'Generated from',
+  metadata: 'metadata',
+  fields: 'fields',
+  relations: 'Relations',
+  dataTab: 'Data',
+})
 
 const links = computed(() => [
   {
-    label: 'Get started',
-    to: getStartedTo.value,
+    label: props.getStarted,
+    to: props.getStartedTo,
     trailingIcon: 'i-lucide-arrow-right',
   },
   {
-    label: 'GitHub',
+    label: props.githubLabel,
     to: 'https://github.com/janfrl/odx-js',
     target: '_blank',
     color: 'neutral' as const,
@@ -133,7 +159,7 @@ const schema = parseDemoSchema(rawEdmx)
 
 const activeTab = ref<'usage' | 'schema' | 'edmx' | 'response'>('usage')
 
-const tabs = [
+const tabs = computed(() => [
   {
     value: 'usage',
     label: 'Nuxt',
@@ -153,11 +179,11 @@ const tabs = [
   },
   {
     value: 'response',
-    label: 'Data',
+    label: props.dataTab,
     icon: 'i-lucide-database',
     language: 'json',
   },
-] as const
+])
 
 const demoRef = ref<HTMLElement | null>(null)
 const twoslashPopupCleanup: Array<() => void> = []
@@ -367,16 +393,16 @@ onBeforeUnmount(() => {
 
 <template>
   <UPageHero
-    headline="OData Developer Experience"
-    title="Modern OData Developer Experience"
-    description="ODX turns service metadata into typed clients, safer backend access, and a clearer development loop."
+    :headline="props.headline"
+    :title="props.title"
+    :description="props.description"
     orientation="horizontal"
     :links="links"
     :ui="{ container: 'pt-20 !pb-20 sm:pt-24 sm:!pb-24 lg:pt-28 lg:!pb-32' }"
   >
     <template #headline>
       <ULink
-        :to="getStartedTo"
+        :to="props.getStartedTo"
       >
         <UBadge
           color="primary"
@@ -384,7 +410,7 @@ onBeforeUnmount(() => {
           size="lg"
           trailing-icon="i-lucide-arrow-right"
         >
-          Explorer 0.4: schema graph and live proxy tap
+          {{ props.explorer }}
         </UBadge>
       </ULink>
     </template>
@@ -398,17 +424,17 @@ onBeforeUnmount(() => {
             </div>
             <div class="min-w-0">
               <div class="text-sm font-medium text-highlighted">
-                Typed OData query
+                {{ props.cardTitle }}
               </div>
               <div class="text-xs text-muted">
-                Generated from
+                {{ props.cardSubtitlePrefix }}
                 <ULink
                   :to="metadataTo"
                   target="_blank"
                   class="text-muted underline decoration-dotted underline-offset-2 hover:text-default"
                 >
                   {{ schema.namespace }}
-                  metadata
+                  {{ props.metadata }}
                 </ULink>
               </div>
             </div>
@@ -465,7 +491,7 @@ onBeforeUnmount(() => {
                   {{ entity.name }}
                 </div>
                 <div class="sr-only">
-                  fields
+                  {{ props.fields }}
                 </div>
               </div>
               <div class="mt-0.5 text-xs text-muted">
@@ -486,7 +512,7 @@ onBeforeUnmount(() => {
 
               <div v-if="entity.navigationProperties.length" class="mt-3 border-t border-default pt-3">
                 <div class="mb-1.5 text-xs font-medium uppercase text-muted">
-                  Relations
+                  {{ props.relations }}
                 </div>
                 <div class="flex flex-wrap gap-1.5">
                   <UBadge

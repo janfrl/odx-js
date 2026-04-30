@@ -3,6 +3,16 @@ import type { VNode } from 'vue'
 
 const slots = useSlots()
 
+const props = withDefaults(defineProps<{
+  headline?: string
+  title?: string
+  description?: string
+}>(), {
+  headline: 'Live demo',
+  title: 'Query any OData service like a local object',
+  description: 'Point ODX at a metadata URL and the SDK generates typed collections, entities, and navigation properties for your Nuxt app.',
+})
+
 function flatten(nodes: VNode[] = []): VNode[] {
   return nodes.flatMap((node) => {
     return Array.isArray(node.children) ? flatten(node.children as VNode[]) : node
@@ -23,9 +33,9 @@ const items = computed(() => {
 <template>
   <UPageSection
     id="demo"
-    headline="Live demo"
-    title="Query any OData service like a local object"
-    description="Point ODX at a metadata URL and the SDK generates typed collections, entities, and navigation properties for your Nuxt app."
+    :headline="props.headline"
+    :title="props.title"
+    :description="props.description"
     orientation="vertical"
     :ui="{ container: 'py-16 lg:py-20' }"
   >

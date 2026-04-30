@@ -1,16 +1,29 @@
 <script setup lang="ts">
-const route = useRoute()
-const localePrefix = computed(() => route.path.startsWith('/de') ? '/de' : '/en')
+const props = withDefaults(defineProps<{
+  docsLabel?: string
+  docsTo?: string
+  githubLabel?: string
+  githubTo?: string
+  title?: string
+  description?: string
+}>(), {
+  docsLabel: 'Read the docs',
+  docsTo: '/en/ecosystem/introduction',
+  githubLabel: 'Star on GitHub',
+  githubTo: 'https://github.com/janfrl/odx-js',
+  title: 'Start with the package you need',
+  description: 'Install one package or compose the full ODX stack. Core, Proxy, Nuxt, and Explorer are designed to work independently and together.',
+})
 
 const links = computed(() => [
   {
-    label: 'Read the docs',
-    to: `${localePrefix.value}/ecosystem/introduction`,
+    label: props.docsLabel,
+    to: props.docsTo,
     trailingIcon: 'i-lucide-arrow-right',
   },
   {
-    label: 'Star on GitHub',
-    to: 'https://github.com/janfrl/odx-js',
+    label: props.githubLabel,
+    to: props.githubTo,
     target: '_blank',
     color: 'neutral' as const,
     variant: 'subtle' as const,
@@ -39,8 +52,8 @@ const installMarkdown = `
 <template>
   <UPageSection :ui="{ container: 'py-10 lg:py-16' }">
     <UPageCTA
-      title="Start with the package you need"
-      description="Install one package or compose the full ODX stack. Core, Proxy, Nuxt, and Explorer are designed to work independently and together."
+      :title="props.title"
+      :description="props.description"
       orientation="horizontal"
       variant="subtle"
       :links="links"

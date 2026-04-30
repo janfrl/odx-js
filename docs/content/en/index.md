@@ -6,12 +6,47 @@ aside: false
 ---
 
 ::landing-hero
+---
+headline: OData Developer Experience
+title: Modern OData Developer Experience
+description: ODX turns service metadata into typed clients, safer backend access, and a clearer development loop.
+explorer: "Explorer 0.4: schema graph and live proxy tap"
+getStarted: Get started
+getStartedTo: /en/ecosystem/introduction
+githubLabel: GitHub
+cardTitle: Typed OData query
+cardSubtitlePrefix: Generated from
+metadata: metadata
+fields: fields
+relations: Relations
+dataTab: Data
+---
 ::
 
 ::landing-bento
+---
+headline: Why ODX
+title: A shorter path from service metadata to working UI
+description: The toolkit keeps the repetitive OData work close to the framework and visible during development.
+features:
+  - title: Typed from metadata
+    description: Generate models, entity sets, and query helpers directly from EDMX instead of maintaining client types by hand.
+    icon: i-lucide-braces
+  - title: SAP-ready access
+    description: Route through a Nitro proxy for destinations, auth-heavy services, CSRF handling, and backend isolation.
+    icon: i-simple-icons-sap
+  - title: Visible while developing
+    description: Inspect schemas, relationships, requests, responses, and proxy behavior without leaving the Nuxt workflow.
+    icon: i-lucide-activity
+---
 ::
 
 ::landing-live-demo
+---
+headline: Live demo
+title: Query any OData service like a local object
+description: Point ODX at a metadata URL and the SDK generates typed collections, entities, and navigation properties for your Nuxt app.
+---
 #code
   ```ts [composables/products.ts] {4-10}
   import { odata } from '@bc8-odx/nuxt'
@@ -79,4 +114,12 @@ aside: false
 ::
 
 ::landing-cta
+---
+docsLabel: Read the docs
+docsTo: /en/ecosystem/introduction
+githubLabel: Star on GitHub
+githubTo: https://github.com/janfrl/odx-js
+title: Start with the package you need
+description: Install one package or compose the full ODX stack. Core, Proxy, Nuxt, and Explorer are designed to work independently and together.
+---
 ::
