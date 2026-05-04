@@ -1,7 +1,7 @@
 # Task: Restore lint baseline
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-04
 Risk: low
 Review: not required
@@ -74,15 +74,23 @@ lint configuration beyond operational skill/reference files.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `eslint.config.mjs`,
+  `docs/components/content/LandingHero.vue`,
+  `docs/components/content/LandingLiveDemo.vue`,
+  `.agents/NEXT.md`, and this task file
+- summary: ignored operational `.agents/skills/**` reference material from
+  source lint and fixed docs Vue macro-order/spacing issues without behavior
+  changes
+- tests run: `pnpm.cmd run lint`, `pnpm.cmd run typecheck`
+- skipped checks and residual risk: full tests skipped because the change is
+  lint configuration and script ordering only
+- self-check result: scope, acceptance criteria, docs boundaries, and unrelated
+  changes checked
+- review requirement decision: separate review not required; low-risk lint
+  baseline task with no runtime behavior change
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: point to
+  `.agents/tasks/ready/002-audit-devtools-log-data-exposure.md`
+- commit hash: pending commit at handoff-note update time
+- known gaps: none

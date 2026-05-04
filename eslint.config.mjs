@@ -10,6 +10,7 @@ export default antfu(
     },
     ignores: [
       '.claude/**',
+      '.agents/skills/**',
       '.gemini/**',
       '.github/**',
       '.specify/**',

@@ -2,14 +2,6 @@
 import { recomputeAllPoppers } from 'floating-vue'
 import rawEdmxSource from '~/edmx/demo-v4.edmx?raw'
 
-const ATTRIBUTE_RE = /\s([\w:]+)="([^"]*)"/g
-const SCHEMA_NAMESPACE_RE = /<Schema [^>]*Namespace="([^"]+)"/
-const ENTITY_TYPE_RE = /<EntityType Name="([^"]+)"[^>]*>([\s\S]*?)<\/EntityType>/g
-const PROPERTY_REF_RE = /<PropertyRef Name="([^"]+)"/g
-const PROPERTY_RE = /<Property ([^/>]*)\/>/g
-const NAVIGATION_PROPERTY_RE = /<NavigationProperty ([^>]*)>/g
-const ENTITY_SET_RE = /<EntitySet Name="([^"]+)" EntityType="([^"]+)"/g
-
 const props = withDefaults(defineProps<{
   headline?: string
   title?: string
@@ -39,6 +31,14 @@ const props = withDefaults(defineProps<{
   relations: 'Relations',
   dataTab: 'Data',
 })
+
+const ATTRIBUTE_RE = /\s([\w:]+)="([^"]*)"/g
+const SCHEMA_NAMESPACE_RE = /<Schema [^>]*Namespace="([^"]+)"/
+const ENTITY_TYPE_RE = /<EntityType Name="([^"]+)"[^>]*>([\s\S]*?)<\/EntityType>/g
+const PROPERTY_REF_RE = /<PropertyRef Name="([^"]+)"/g
+const PROPERTY_RE = /<Property ([^/>]*)\/>/g
+const NAVIGATION_PROPERTY_RE = /<NavigationProperty ([^>]*)>/g
+const ENTITY_SET_RE = /<EntitySet Name="([^"]+)" EntityType="([^"]+)"/g
 
 const links = computed(() => [
   {
@@ -388,7 +388,6 @@ onBeforeUnmount(() => {
   twoslashResizeObserver?.disconnect()
   twoslashPopupCleanup.forEach(remove => remove())
 })
-
 </script>
 
 <template>

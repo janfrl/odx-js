@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Run the Implementer for
-`.agents/tasks/ready/001-restore-lint-baseline.md`.
+`.agents/tasks/ready/002-audit-devtools-log-data-exposure.md`.
 
 ## Prompt For Next Chat
 
@@ -25,18 +25,24 @@ Read:
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/tasks/ready/001-restore-lint-baseline.md
-- eslint.config.mjs
-- docs/components/content/LandingHero.vue
-- docs/components/content/LandingLiveDemo.vue
+- SECURITY.md
+- .agents/tasks/ready/002-audit-devtools-log-data-exposure.md
+- packages/proxy/src/api/odata.ts
+- packages/proxy/src/utils/trace.ts
+- packages/core/src/dev-logs.ts
+- packages/proxy/test/dev-logs.test.ts
+- packages/proxy/test/integration.test.ts
+- packages/explorer/components/tabs/TabLogs.vue
 
-Implement exactly .agents/tasks/ready/001-restore-lint-baseline.md.
+Implement exactly .agents/tasks/ready/002-audit-devtools-log-data-exposure.md.
 
 Rules:
 - Keep changes scoped to the task.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
 - Use pnpm.cmd, not pnpm, on this Windows machine.
+- Do not add broad header-name-based redaction.
+- Write a focused test or concrete inspection note before changing behavior.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.

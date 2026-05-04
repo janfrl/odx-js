@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { VNode } from 'vue'
 
-const slots = useSlots()
-
 const props = withDefaults(defineProps<{
   headline?: string
   title?: string
@@ -12,6 +10,8 @@ const props = withDefaults(defineProps<{
   title: 'Query any OData service like a local object',
   description: 'Point ODX at a metadata URL and the SDK generates typed collections, entities, and navigation properties for your Nuxt app.',
 })
+
+const slots = useSlots()
 
 function flatten(nodes: VNode[] = []): VNode[] {
   return nodes.flatMap((node) => {
