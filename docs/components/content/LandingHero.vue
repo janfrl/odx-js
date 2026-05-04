@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import rawEdmxSource from '~/edmx/demo-v4.edmx?raw'
 import { recomputeAllPoppers } from 'floating-vue'
+import rawEdmxSource from '~/edmx/demo-v4.edmx?raw'
 
 const ATTRIBUTE_RE = /\s([\w:]+)="([^"]*)"/g
 const SCHEMA_NAMESPACE_RE = /<Schema [^>]*Namespace="([^"]+)"/
@@ -374,7 +374,7 @@ onMounted(() => {
         html: true,
         theme: 'twoslash',
         popperClass: 'shiki twoslash-floating landing-twoslash-floating',
-      })
+      }, {})
 
       twoslashPopupCleanup.push(() => destroyTooltip(trigger))
     })
