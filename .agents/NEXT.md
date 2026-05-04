@@ -12,47 +12,44 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run an Orchestrator chat to adopt or continue the workflow from repository
-state.
+Run the Implementer for
+`.agents/tasks/ready/001-restore-lint-baseline.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Orchestrator for <PROJECT_NAME>.
+You are the Implementer for ODX.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- .agents/ADOPTION.md
-- any relevant root documentation that exists
 - .agents/WORKFLOW.md
-- .agents/roles/orchestrator.md
-- .agents/NEXT.md
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/decisions/
-- .agents/reviews/
+- .agents/tasks/ready/001-restore-lint-baseline.md
+- eslint.config.mjs
+- docs/components/content/LandingHero.vue
+- docs/components/content/LandingLiveDemo.vue
 
-Coordinate the next workflow step from repository state.
+Implement exactly .agents/tasks/ready/001-restore-lint-baseline.md.
 
 Rules:
-- Treat existing project documentation as authoritative unless it conflicts
-  with a newer explicit operator instruction.
-- Do not overwrite existing project-specific rules with template placeholders.
-- If this is a fresh adoption, identify missing setup, verification, and scope
-  details before creating implementation tasks.
-- Use Adaptive Teamflow unless the operator selects another mode.
-- Keep any changes small and commit them with Conventional Commits.
-- Stop for human direction when product scope, security, deployment,
-  dependency, or destructive-action decisions are unclear.
+- Keep changes scoped to the task.
+- Do not start unrelated refactors.
+- Follow existing repository structure, style, and documented architecture boundaries.
+- Use pnpm.cmd, not pnpm, on this Windows machine.
+- Update the task handoff notes before finishing.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
+- Decide whether separate review is required using .agents/WORKFLOW.md.
+- Move the task to .agents/tasks/done/ when implementation and verification are complete.
+- Update .agents/NEXT.md with the next action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
-Final output requirements:
+When done, summarize:
 - changed files
-- repository state inspected
+- what was implemented
 - verification performed
+- self-check result
 - whether separate review is required and why
 - commit hash
 - known gaps

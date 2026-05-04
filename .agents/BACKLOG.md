@@ -8,19 +8,27 @@ implementation phases.
 
 ## Now
 
-- Create the first small task briefs from the current root documentation.
+- Restore the lint baseline so all standard checks are green.
+- Redact sensitive header values from DevTools traffic logs.
+- Fix async custom validation in proxy rules.
+- Harden type generation process execution.
+- Escape OData key literals in the Nuxt composable.
 
 ## Next
 
-- Add focused checks for the first implementation slice.
-- Add or update root documentation when durable decisions emerge.
+- Finish workflow adoption cleanup after the first implementation tasks land.
+- Review high-risk proxy and process-execution changes independently.
+- Batch a full checkpoint after the ready task queue is complete.
 
 ## Later
 
-- Expand the roadmap after the first implementation tasks are complete.
+- Expand Explorer tests around traffic-log UI behavior.
+- Add broader integration coverage for BTP destination edge cases.
+- Revisit production TLS defaults as a documented security decision.
 
 ## Questions
 
-- What is the first end-to-end workflow this project must prove?
-- Which changes require independent review in this repository?
-- Which checks are required before a change can be considered complete?
+- Should `.agents/skills/**` be linted as project Markdown, or treated as
+  operational reference material outside the source lint target?
+- Should async proxy validation become the preferred documented validation API,
+  or should the public docs restrict validators to synchronous callbacks?
