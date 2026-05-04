@@ -20,6 +20,15 @@ This repository is a monorepo managed with `pnpm`.
 | [`@bc8-odx/nuxt`](./packages/nuxt) | The main Nuxt module and client-side composables. |
 | [`@bc8-odx/explorer`](./packages/explorer) | Standalone UI for the ODX DevTools. |
 
+## Repository Documentation
+
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) - package boundaries, runtime flows, generation, deployment shape, and extension points.
+- [`API.md`](./API.md) - durable module, composable, proxy, hook, and internal endpoint contracts.
+- [`DEPLOYMENT.md`](./DEPLOYMENT.md) - local development, SAP BTP MTA deployment, AppRouter routes, and operational checks.
+- [`SECURITY.md`](./SECURITY.md) - trust boundaries, auth, headers, secrets, logging, CSRF, and review triggers.
+- [`DOMAIN_MODEL.md`](./DOMAIN_MODEL.md) - stable ODX, OData, proxy, generation, and Explorer concepts.
+- [`DESIGN.md`](./DESIGN.md) - Nuxt UI design system guidance for the docs site and Explorer.
+
 ## ✨ Features
 
 - **Type-Safe SDK:** Automated TypeScript model generation from EDMX schemas using `odata2ts`.
