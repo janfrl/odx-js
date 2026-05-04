@@ -22,24 +22,28 @@ Exit criteria:
 - `pnpm.cmd run lint`, `pnpm.cmd run typecheck`, and `pnpm.cmd run test` pass or
   have documented residual risk
 
-## Epic 02: Proxy Security And Policy Hardening
+## Epic 02: Proxy Correctness And Observability
 
-Goal: reduce risk around DevTools telemetry and proxy rule enforcement.
+Goal: improve confidence in proxy behavior with tests-first bug fixes and
+measurement.
 
 Deliverables:
 
-- sensitive headers are redacted before traffic logs are stored
-- async custom validation cannot accidentally allow a blocked proxy request
-- high-risk proxy changes receive independent review
+- async custom validation behavior is verified before implementation changes
+- DevTools log data exposure is audited without broad redaction heuristics
+- proxy performance overhead has a local baseline benchmark
+- high-risk proxy changes receive independent review when required
 
 Candidate tasks:
 
-- `.agents/tasks/ready/002-redact-devtools-sensitive-headers.md`
+- `.agents/tasks/ready/002-audit-devtools-log-data-exposure.md`
 - `.agents/tasks/ready/003-await-async-rule-validation.md`
+- `.agents/tasks/ready/007-add-proxy-performance-benchmarks.md`
 
 Exit criteria:
 
 - focused proxy tests cover the fixed behavior
+- benchmark output gives a usable overhead baseline
 - required review notes exist for high-risk changes
 
 ## Epic 03: Nuxt Generation And Composable Correctness
@@ -49,8 +53,8 @@ more robust.
 
 Deliverables:
 
-- `odata2ts` is invoked without shell-string command construction
-- OData string keys are escaped correctly in generated request URLs
+- type generation command construction is verified before being changed
+- OData string key escaping is verified before implementation changes
 - existing registry augmentation behavior remains intact
 
 Candidate tasks:
@@ -82,3 +86,25 @@ Exit criteria:
 
 - the next chat can resume from repository state without template-adoption
   ambiguity
+
+## Epic 05: Package Isolation And Explorer Confidence
+
+Goal: make package boundaries easier to understand and verify without damaging
+the existing Explorer experience.
+
+Deliverables:
+
+- each package has an independent verification story
+- selected package playgrounds or examples are planned before implementation
+- Explorer test coverage improves without visual churn
+- browser verification, when needed, uses port `3000` and runs late in the task
+
+Candidate tasks:
+
+- `.agents/tasks/ready/008-design-package-isolation-playgrounds.md`
+- `.agents/tasks/ready/009-expand-explorer-tests.md`
+
+Exit criteria:
+
+- implementation tasks exist for package-level examples or playgrounds
+- Explorer additions are test-first and do not alter UI unless a bug is proven

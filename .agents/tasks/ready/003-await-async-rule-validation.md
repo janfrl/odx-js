@@ -29,6 +29,8 @@ Relevant files:
 
 ## Scope
 
+- First add a focused failing test that demonstrates the suspected bug.
+- Only change implementation after the failing test verifies the bug.
 - Change the validation API or add an async validation path so async validators
   are awaited before proxying.
 - Ensure programmatic hook usage can block requests with async validators.
@@ -44,6 +46,8 @@ Relevant files:
 
 ## Acceptance Criteria
 
+- [ ] The first implementation step adds a test that fails against current code
+      for async denial.
 - [ ] A custom validator returning `Promise.resolve(false)` rejects with 403.
 - [ ] A custom validator returning `Promise.resolve(true)` allows the request.
 - [ ] Existing synchronous validation tests still pass.

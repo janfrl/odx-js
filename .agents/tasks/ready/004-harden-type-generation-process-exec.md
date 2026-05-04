@@ -8,15 +8,15 @@ Review: required
 
 ## Objective
 
-Run `odata2ts` during type generation without shell-string command
-construction.
+Verify whether type generation command construction is brittle, then harden it
+only if a focused test demonstrates the problem.
 
 ## Context
 
 `packages/nuxt/src/generate.ts` builds a shell command string from metadata and
-output paths, then runs it with `execSync`. Paths can contain spaces and should
-not be interpreted by a shell. Type generation is part of setup and CI, and the
-current implementation is brittle on Windows paths.
+output paths, then runs it with `execSync`. Paths can contain spaces and shell
+significant characters. This is a suspected robustness issue, not yet a proven
+bug.
 
 Relevant files:
 
@@ -27,9 +27,11 @@ Relevant files:
 
 ## Scope
 
+- First write a focused test around process invocation behavior. It should fail
+  against the current implementation if the suspected bug is real.
 - Replace shell-string execution with an argument-array process call such as
   `execFileSync`, `spawnSync`, or a local helper that avoids shell
-  interpretation.
+  interpretation only after the test proves the issue.
 - Preserve the current `odata2ts` options and error reporting.
 - Add focused tests around the process invocation helper if practical.
 - Keep metadata download and registry generation behavior unchanged.
@@ -43,6 +45,8 @@ Relevant files:
 
 ## Acceptance Criteria
 
+- [ ] The first implementation step verifies the bug with a failing test or
+      records that no bug was reproduced.
 - [ ] Process execution passes source and output paths as discrete arguments.
 - [ ] Paths containing spaces are handled by construction, not by manual shell
       quoting.
@@ -71,8 +75,10 @@ If a check is skipped, record why and the residual risk in Handoff Notes.
 
 ## Risk Notes
 
-High risk because this touches command execution and setup/build behavior.
-Separate review is required under `.agents/WORKFLOW.md`.
+High risk if implementation changes process execution or setup/build behavior.
+Separate review is required for an implementation fix. If no bug is reproduced
+and no implementation changes are made, this can close as an audit without
+separate review.
 
 ## Handoff Notes
 

@@ -27,6 +27,8 @@ Relevant files:
 
 ## Scope
 
+- First add a focused failing test for an embedded single quote in a key.
+- Only change implementation after the failing test verifies the bug.
 - Add or extract a small string-key escaping helper.
 - Apply it consistently to single and composite key values.
 - Add focused composable tests for keys containing single quotes.
@@ -41,6 +43,8 @@ Relevant files:
 
 ## Acceptance Criteria
 
+- [ ] The first implementation step adds a test that fails against current code
+      for embedded single quotes.
 - [ ] `get("O'Brien")` produces an OData key literal with doubled embedded
       quotes.
 - [ ] Composite string keys escape embedded quotes.
