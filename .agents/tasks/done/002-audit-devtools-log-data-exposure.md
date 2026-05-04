@@ -1,7 +1,7 @@
 # Task: Audit DevTools log data exposure
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if implementation changes telemetry storage or
@@ -84,15 +84,30 @@ and require separate review.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `packages/proxy/src/api/odata.ts`,
+  `packages/proxy/test/integration.test.ts`, `.agents/NEXT.md`, and this task
+  file
+- summary: verified with a failing test that DevTools logs stored
+  ODX-managed Basic auth generated from service config; changed the logged
+  header copy to omit only the authorization value that matches the
+  ODX-managed backend auth header while preserving outbound forwarding and
+  ordinary visible debug headers
+- tests run:
+  - `pnpm.cmd run test -- packages/proxy/test/integration.test.ts` failed
+    before the fix and passed after the fix
+  - `pnpm.cmd run test -- packages/proxy`
+  - `pnpm.cmd run typecheck`
+  - `pnpm.cmd run lint`
+- skipped checks and residual risk: full root test suite was not rerun after
+  the final focused proxy-suite pass; proxy suite invocation currently runs the
+  repository Vitest set because of package script argument forwarding
+- self-check result: scope, acceptance criteria, security guidance, and
+  unrelated changes checked; no broad header-name redaction was added
+- review requirement decision: separate review required because implementation
+  changes security-sensitive DevTools telemetry storage
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: point to a Reviewer prompt for this task
+- commit hash: pending commit at handoff-note update time
+- known gaps: independent review is still required before this change should be
+  considered merge-ready

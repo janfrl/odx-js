@@ -1,5 +1,6 @@
 import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
 import { createServer } from 'node:http'
+import { clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
@@ -52,11 +53,25 @@ describe('proxy integration', () => {
             'x-priority-test': 'config-default',
           },
         },
+        {
+          name: 'AuthLogService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          auth: {
+            username: 'configured-user',
+            password: 'configured-password',
+          },
+        },
       ],
       basePath: '/api/odx',
       buildDir: '',
       rootDir: '',
       mode: 'sdk',
+      devtools: {
+        enabled: true,
+        maxLogs: 100,
+      },
       hooks,
     }
 
@@ -159,6 +174,22 @@ describe('proxy integration', () => {
       },
     })
     expect(resOverride.receivedHeaders['x-priority-test']).toBe('client-override')
+  })
+
+  it('does not store ODX-managed authorization values in DevTools logs', async () => {
+    clearODataLogs()
+
+    const response = await ofetch(`${proxyUrl}/api/odx/AuthLogService/HeaderEcho`, {
+      headers: {
+        'x-debug-test': 'visible',
+      },
+    })
+
+    expect(response.receivedHeaders.authorization).toMatch(/^Basic /)
+
+    const [log] = getODataLogs()
+    expect(log?.requestHeaders?.['x-debug-test']).toBe('visible')
+    expect(log?.requestHeaders?.authorization).toBeUndefined()
   })
 
   it('rewrites ?id= query parameter to OData path format', async () => {

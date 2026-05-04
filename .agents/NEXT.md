@@ -12,52 +12,41 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run the Implementer for
-`.agents/tasks/ready/002-audit-devtools-log-data-exposure.md`.
+Run a Reviewer for
+`.agents/tasks/done/002-audit-devtools-log-data-exposure.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX.
+You are the Reviewer for ODX.
+
+Review the completed task:
+.agents/tasks/done/002-audit-devtools-log-data-exposure.md
 
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - SECURITY.md
-- .agents/tasks/ready/002-audit-devtools-log-data-exposure.md
+- .agents/tasks/done/002-audit-devtools-log-data-exposure.md
 - packages/proxy/src/api/odata.ts
-- packages/proxy/src/utils/trace.ts
-- packages/core/src/dev-logs.ts
-- packages/proxy/test/dev-logs.test.ts
 - packages/proxy/test/integration.test.ts
-- packages/explorer/components/tabs/TabLogs.vue
+- the diff for the latest implementation commit
 
-Implement exactly .agents/tasks/ready/002-audit-devtools-log-data-exposure.md.
+Review stance:
+- Findings first.
+- Prioritize correctness, security/privacy, proxy behavior, missing tests, and acceptance criteria gaps.
+- Verify that the implementation does not introduce broad header-name redaction.
+- Verify that outbound proxy authorization behavior is unchanged.
+- Verify that ODX-managed auth values are omitted only from the DevTools log copy.
 
-Rules:
-- Keep changes scoped to the task.
-- Do not start unrelated refactors.
-- Follow existing repository structure, style, and documented architecture boundaries.
-- Use pnpm.cmd, not pnpm, on this Windows machine.
-- Do not add broad header-name-based redaction.
-- Write a focused test or concrete inspection note before changing behavior.
-- Update the task handoff notes before finishing.
-- Run the verification steps listed in the task, or explain why they could not be run.
-- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
-- Decide whether separate review is required using .agents/WORKFLOW.md.
-- Move the task to .agents/tasks/done/ when implementation and verification are complete.
-- Update .agents/NEXT.md with the next action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+Output:
+- findings with severity and file/line references
+- acceptance criteria status
+- test/verification gaps
+- whether the task is approved or needs changes
+- exact next-chat prompt from .agents/NEXT.md after updating workflow state
 
-When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
-- commit hash
-- known gaps
-- exact next-chat prompt from .agents/NEXT.md
+Create or update a review note under .agents/reviews/ using REVIEW_TEMPLATE.md.
+Update .agents/NEXT.md and commit the review note and workflow state changes.
 ```

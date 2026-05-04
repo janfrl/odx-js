@@ -48,13 +48,17 @@ export default defineEventHandler(async (event): Promise<any> => {
 
     // 3. Header Preparation
     const finalHeaders = prepareProxyHeaders(getHeaders(event), matched?.headers, targetConfig.authHeader)
+    const loggedHeaders = { ...finalHeaders }
+    if (targetConfig.authHeader && loggedHeaders.authorization === targetConfig.authHeader) {
+      delete loggedHeaders.authorization
+    }
 
     // 4. DevTools Logging Initialization
     let requestBody: any = null
     if (tracer.enabled && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
       requestBody = await readBody(event).catch(() => null)
     }
-    tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, finalHeaders)
+    tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, loggedHeaders)
 
     // 5. Rule & Hook Execution
     const isDirect = targetConfig.strategy === 'direct'
