@@ -1,10 +1,14 @@
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
 import { EventEmitter } from 'node:events'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { downloadMetadata, generateODataTypes, generateRegistryDts } from '../src/generate'
+import { tmpdir } from 'node:os'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'pathe'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { downloadMetadata, generateODataTypes, generateRegistryDts, setupTypeGeneration } from '../src/generate'
 
 vi.mock('node:child_process', () => ({
   execFileSync: vi.fn(),
@@ -13,9 +17,65 @@ vi.mock('node:child_process', () => ({
 vi.mock('node:http')
 vi.mock('node:https')
 
+const testDir = dirname(fileURLToPath(import.meta.url))
+const minimalMetadataPath = join(testDir, '../playground/minimal/edmx/minimal.edmx')
+const tempRoots: string[] = []
+
+function createTempRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), 'odx-generate-test-'))
+  tempRoots.push(root)
+  return root
+}
+
+function createNuxtTypeGenerationHarness(serviceName: string) {
+  const rootDir = createTempRoot()
+  const buildDir = join(rootDir, '.nuxt')
+  let prepareTypesHook: ((payload: { references: { path: string }[] }) => Promise<void>) | undefined
+
+  const nuxt = {
+    options: {
+      rootDir,
+      buildDir,
+    },
+    hook: vi.fn((name: string, callback: typeof prepareTypesHook) => {
+      if (name === 'prepare:types')
+        prepareTypesHook = callback
+    }),
+  } as any
+
+  setupTypeGeneration(nuxt, {
+    services: [
+      {
+        name: serviceName,
+        url: minimalMetadataPath,
+      },
+    ],
+  } as any)
+
+  return {
+    buildDir,
+    async runPrepareTypes() {
+      if (!prepareTypesHook)
+        throw new Error('prepare:types hook was not registered')
+
+      const references: { path: string }[] = []
+      await prepareTypesHook({ references })
+      return references
+    },
+  }
+}
+
 describe('type Generation Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    while (tempRoots.length > 0) {
+      const tempRoot = tempRoots.pop()!
+      if (existsSync(tempRoot))
+        rmSync(tempRoot, { recursive: true, force: true })
+    }
   })
 
   describe('generateODataTypes', () => {
@@ -39,6 +99,38 @@ describe('type Generation Logic', () => {
           'ts',
           '--prettier',
         ],
+        { stdio: 'pipe' },
+      )
+    })
+  })
+
+  describe('setupTypeGeneration', () => {
+    it.each(['Sales/Order', 'Sales\\Order'])(
+      'rejects service name %s before generating output from the service name',
+      async (serviceName) => {
+        const harness = createNuxtTypeGenerationHarness(serviceName)
+
+        await expect(harness.runPrepareTypes()).rejects.toThrow(
+          `Invalid OData service name "${serviceName}": path separators are not allowed`,
+        )
+
+        expect(execFileSync).not.toHaveBeenCalled()
+      },
+    )
+
+    it('preserves safe non-identifier service names for type generation', async () => {
+      const harness = createNuxtTypeGenerationHarness('Sales-Order')
+
+      await expect(harness.runPrepareTypes()).resolves.toEqual([
+        { path: join(harness.buildDir, 'odx-types', 'index.d.ts') },
+      ])
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        process.execPath,
+        expect.arrayContaining([
+          '--output',
+          join(harness.buildDir, 'odx-types', 'Sales-Order'),
+        ]),
         { stdio: 'pipe' },
       )
     })

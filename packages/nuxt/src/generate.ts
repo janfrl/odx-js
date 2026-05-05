@@ -15,6 +15,7 @@ const logger = consola.withTag('@bc8-odx/nuxt')
 const require = createRequire(import.meta.url)
 const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
+const RE_PATH_SEPARATOR = /[/\\]/
 
 /**
  * Core function to generate TypeScript types from an EDMX metadata file using odata2ts.
@@ -118,6 +119,14 @@ function formatTypeKey(value: string): string {
   return toTypeScriptIdentifier(value) === value ? value : JSON.stringify(value)
 }
 
+function assertValidServiceNameForTypeGeneration(serviceName: string): void {
+  if (RE_PATH_SEPARATOR.test(serviceName)) {
+    throw new Error(
+      `Invalid OData service name "${serviceName}": path separators are not allowed in service names used for Nuxt type generation.`,
+    )
+  }
+}
+
 /**
  * Sets up the 'prepare:types' hook for automated type generation and augmentation of the service registry.
  */
@@ -147,6 +156,8 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
     for (const svc of config.services) {
       if (!svc.url)
         continue
+
+      assertValidServiceNameForTypeGeneration(svc.name)
 
       let inputPath = svc.url
 

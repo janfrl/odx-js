@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md`.
+Implement `.agents/tasks/ready/074-reject-duplicate-benchmark-output-scenarios.md`.
 
 ## Prompt For Next Chat
 
@@ -25,23 +25,26 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md
-- .agents/tasks/done/058-quote-generated-registry-service-keys.md
-- .agents/tasks/done/061-document-service-name-type-generation-limits.md
-- .agents/tasks/done/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md
-- any root documentation referenced by the task
+- .agents/tasks/ready/074-reject-duplicate-benchmark-output-scenarios.md
+- .agents/tasks/done/047-reject-duplicate-benchmark-scenarios.md
+- .agents/tasks/done/064-reject-malformed-benchmark-report-timing-fields.md
+- .agents/tasks/done/068-validate-benchmark-count-fields.md
+- packages/proxy/test/benchmark-report.ts
+- packages/proxy/test/benchmark-report.test.ts
+
+Implement exactly `.agents/tasks/ready/074-reject-duplicate-benchmark-output-scenarios.md`.
 
 Rules:
-- Implement exactly `.agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md`.
-- Keep changes scoped to Nuxt type-generation validation and focused tests.
-- Add failing tests first for `/` and `\` service names.
-- Preserve safe non-identifier service names such as `Sales-Order`.
-- Do not change generated registry declaration quoting, model output layout for valid services, metadata download behavior, runtime composable lookup, Explorer behavior, proxy behavior, dependencies, lockfiles, or generated files.
+- Keep changes scoped to benchmark report creation validation and focused tests.
+- Add failing tests first for duplicate scenario labels in `formatBenchmarkReport()` and `createBenchmarkOutput()`.
+- Reject duplicate labels with an error naming the repeated scenario label.
+- Preserve valid report formatting, JSON output shape, category derivation, timing validation, count validation, and overhead fields.
+- Do not change benchmark scenario definitions, timing measurement loops, comparison tooling, production proxy runtime behavior, package scripts, dependencies, lockfiles, or generated files.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Decide whether separate review is required using .agents/WORKFLOW.md and the task risk notes.
 - Move the task to .agents/tasks/done/ when implementation and verification are complete.
-- Update .agents/NEXT.md with a Reviewer prompt because task 073 requires separate review.
+- Update .agents/NEXT.md with the next workflow action and exact next-chat prompt.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
