@@ -20,7 +20,7 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   }
 
   // 1. Handle OData V2 'd' envelope (recursive to catch d.results or d.value)
-  if (data.d) {
+  if (isODataV2Envelope(data)) {
     return flattenOData(data.d, depth + 1, maxDepth)
   }
 
@@ -58,6 +58,11 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   // If we have no properties left after stripping (but we HAD an object), return null
   // This helps represents stripped metadata objects as null.
   return hasProperties ? flattened : null
+}
+
+function isODataV2Envelope(data: Record<string, any>): boolean {
+  return Object.hasOwn(data, 'd')
+    && Object.keys(data).every(key => key === 'd' || key === '__metadata')
 }
 
 const RE_REDUNDANT_SLASHES = /([^:]\/)\/+/g

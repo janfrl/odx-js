@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`.
+Run `.agents/tasks/ready/057-run-stability-checkpoint.md`.
 
 ## Prompt For Next Chat
 
@@ -25,19 +25,17 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md
-- packages/core/src/odata-utils.ts
-- packages/core/test/odata-utils.test.ts
+- .agents/tasks/ready/057-run-stability-checkpoint.md
 
-Implement exactly `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`.
+Implement exactly `.agents/tasks/ready/057-run-stability-checkpoint.md`.
 
 Rules:
 - Keep changes scoped to the task.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
-- Add the focused failing test first for falsy OData V2 `d` payloads.
-- Keep changes limited to core flattening behavior and focused tests.
-- Do not change OData V4 collection envelope behavior or metadata stripping beyond the proven bug.
+- Run the checkpoint verification commands listed in the task.
+- Clean generated verification artifacts before committing unless the task explicitly says otherwise.
+- Do not implement new feature work inside the checkpoint task.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.

@@ -73,6 +73,24 @@ describe('oData Utils', () => {
       expect(flattened[0].Name).toBe('A')
     })
 
+    it('unwraps falsy scalar OData V2 d envelopes', () => {
+      expect(flattenOData({ d: 0 })).toBe(0)
+      expect(flattenOData({ d: false })).toBe(false)
+      expect(flattenOData({ d: '' })).toBe('')
+    })
+
+    it('preserves ordinary entity properties named d when other fields exist', () => {
+      const flattened = flattenOData({
+        ID: 1,
+        d: false,
+      })
+
+      expect(flattened).toEqual({
+        ID: 1,
+        d: false,
+      })
+    })
+
     it('unwraps OData V4 value collection envelopes', () => {
       const data = {
         '@odata.count': 2,

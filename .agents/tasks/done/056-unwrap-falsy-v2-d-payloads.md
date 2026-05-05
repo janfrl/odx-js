@@ -1,7 +1,7 @@
 # Task: Unwrap falsy V2 d payloads
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if behavior changes beyond proven top-level OData V2 envelope unwrapping
@@ -52,13 +52,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Tests fail before implementation for falsy top-level V2 `d` payloads.
-- [ ] `flattenOData({ d: 0 })` returns `0`.
-- [ ] `flattenOData({ d: false })` returns `false`.
-- [ ] `flattenOData({ d: '' })` returns `''`.
-- [ ] Ordinary entity objects with their own `d` property and other fields are
+- [x] Tests fail before implementation for falsy top-level V2 `d` payloads.
+- [x] `flattenOData({ d: 0 })` returns `0`.
+- [x] `flattenOData({ d: false })` returns `false`.
+- [x] `flattenOData({ d: '' })` returns `''`.
+- [x] Ordinary entity objects with their own `d` property and other fields are
   preserved rather than unwrapped.
-- [ ] Core package verification remains green.
+- [x] Core package verification remains green.
 
 ## Verification
 
@@ -89,16 +89,41 @@ types, proxy behavior, Nuxt behavior, or V4 collection semantics.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/core/src/odata-utils.ts`
+  - `packages/core/test/odata-utils.test.ts`
+  - `.agents/tasks/done/056-unwrap-falsy-v2-d-payloads.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added focused tests for `{ d: 0 }`, `{ d: false }`, and `{ d: '' }`.
+  - Added a guard test proving ordinary entity objects with `d` plus other
+    fields are preserved.
+  - Replaced truthy `data.d` envelope detection with explicit V2
+    envelope-shape detection using `Object.hasOwn(data, 'd')` and only `d` or
+    `__metadata` keys.
 - tests run
+  - FAIL before fix: `pnpm.cmd --filter @bc8-odx/core exec vitest run test/odata-utils.test.ts -t "falsy scalar|ordinary entity"`; falsy `d` envelope returned `{ d: 0 }`.
+  - PASS: `pnpm.cmd --filter @bc8-odx/core exec vitest run test/odata-utils.test.ts`
+  - PASS: `pnpm.cmd --filter @bc8-odx/core run verify`
+  - PASS: `pnpm.cmd run typecheck`
+  - Initial `pnpm.cmd run lint` failed on `prefer-object-has-own`.
+  - PASS after fix: `pnpm.cmd run lint`
 - skipped checks and residual risk
+  - None.
 - self-check result
+  - Scope stayed limited to core flattening behavior and focused tests. Existing
+    `d.results`, V4 `value` collections, metadata stripping, binary
+    placeholders, nested entity properties, and entity `value` field behavior
+    are preserved by existing tests.
 - review requirement decision
+  - Separate review is not required because the fix is limited to proven V2
+    envelope unwrapping and does not alter public types, proxy behavior, Nuxt
+    behavior, or V4 collection semantics.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/057-run-stability-checkpoint.md`.
 - commit hash
+  - The task implementation commit is the commit containing this handoff.
 - known gaps
-
+  - None.
