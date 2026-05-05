@@ -1,5 +1,5 @@
 import type { App } from 'h3'
-import { createApp, createError, createRouter, defineEventHandler, getHeaders } from 'h3'
+import { createApp, createError, createRouter, defineEventHandler, getHeaders, readBody, setResponseStatus } from 'h3'
 
 const largeProducts = Array.from({ length: 500 }, (_, index) => {
   const id = String(index + 1).padStart(4, '0')
@@ -41,6 +41,18 @@ export function createBackend(): App {
     return {
       d: {
         results: largeProducts,
+      },
+    }
+  }))
+
+  router.post('/CreatedProducts', defineEventHandler(async (event) => {
+    const body = await readBody(event)
+    setResponseStatus(event, 201, 'Created')
+
+    return {
+      d: {
+        ID: 'created-1',
+        ...body,
       },
     }
   }))

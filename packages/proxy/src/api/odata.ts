@@ -1,6 +1,6 @@
 import process from 'node:process'
 import { flattenOData } from '@bc8-odx/core'
-import { createError, defineEventHandler, getHeaders, proxyRequest, readBody } from 'h3'
+import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, setResponseStatus } from 'h3'
 import { ofetch } from 'ofetch'
 import { validateBtpAuth } from '../utils/auth'
 import { prepareProxyHeaders } from '../utils/headers'
@@ -101,6 +101,7 @@ export default defineEventHandler(async (event): Promise<any> => {
 
     if (mode === 'buffer') {
       try {
+        let responseStatus = 200
         const responseData = await ofetch(targetUrl, {
           method: event.method as any,
           headers: {
@@ -110,14 +111,16 @@ export default defineEventHandler(async (event): Promise<any> => {
           },
           body: event.method !== 'GET' ? (requestBody || await readBody(event).catch(() => null)) : null,
           onResponse({ response }) {
+            responseStatus = response.status
             if (hooks?.callHook && !isDirect) {
               hooks.callHook('odx:proxy:response', { event, serviceName, response })
             }
           },
         })
 
-        tracer.addTrace('Response', 'Request successful', { status: 200 }, 'success')
-        tracer.updateLog(200, flattenOData(responseData))
+        setResponseStatus(event, responseStatus)
+        tracer.addTrace('Response', 'Request successful', { status: responseStatus }, 'success')
+        tracer.updateLog(responseStatus, flattenOData(responseData))
         return responseData
       }
       catch (err: any) {

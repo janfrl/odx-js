@@ -107,6 +107,30 @@ describe('proxy integration', () => {
     expect(response.d.results[0].Name).toBe('Test Product')
   })
 
+  it('preserves successful backend status in buffered responses and DevTools logs', async () => {
+    clearODataLogs()
+
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/TestService/CreatedProducts`, {
+      method: 'POST',
+      body: {
+        Name: 'Created Product',
+      },
+    })
+
+    expect(response.status).toBe(201)
+    expect(response._data.d).toMatchObject({
+      ID: 'created-1',
+      Name: 'Created Product',
+    })
+
+    const [log] = getODataLogs()
+    expect(log?.status).toBe(201)
+    expect(log?.responseBody).toMatchObject({
+      ID: 'created-1',
+      Name: 'Created Product',
+    })
+  })
+
   it('triggers interception hooks', async () => {
     const requestSpy = vi.fn()
     const responseSpy = vi.fn()

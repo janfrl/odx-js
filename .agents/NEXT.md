@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Implement the lowest-numbered ready task:
-`.agents/tasks/ready/022-preserve-buffer-proxy-success-status.md`.
+`.agents/tasks/ready/023-add-package-local-verify-scripts.md`.
 
 ## Prompt For Next Chat
 
@@ -26,22 +26,24 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/022-preserve-buffer-proxy-success-status.md
-- ARCHITECTURE.md
-- API.md
-- SECURITY.md
+- .agents/tasks/ready/023-add-package-local-verify-scripts.md
+- packages/core/README.md
+- packages/proxy/README.md
+- packages/nuxt/README.md
+- packages/explorer/README.md
+- .agents/PACKAGE_ISOLATION.md
 
 Rules:
-- Implement exactly `.agents/tasks/ready/022-preserve-buffer-proxy-success-status.md`.
-- Keep changes scoped to buffered proxy success status preservation.
-- Add failing tests first, then implement the smallest fix.
-- Do not change authentication, destination resolution, proxy rules, stream-mode behavior, or DevTools log redaction.
+- Implement exactly `.agents/tasks/ready/023-add-package-local-verify-scripts.md`.
+- Keep changes scoped to package-local verify scripts and documentation.
+- Do not add new tests, examples, playgrounds, dependencies, or runtime code.
+- Preserve existing root verification commands.
 - Run the verification steps listed in the task, or explain skipped checks and residual risk.
 - Update the task handoff notes before finishing.
 - Move the task to `.agents/tasks/done/` when implementation and verification are complete.
 - Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
-- Because the task is high risk and changes public proxy HTTP behavior, request separate review after implementation.
+- Separate review is not required unless runtime code, dependencies, or broad workspace scripts change.
 
 When done, summarize:
 - changed files
