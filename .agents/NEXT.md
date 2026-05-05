@@ -12,52 +12,55 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement ready task `.agents/tasks/ready/062-run-stability-and-hooks-checkpoint.md`.
+Create the next 3-5 ready tasks from the latest stability and performance
+analysis.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Planner for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
-Implement exactly:
-- `.agents/tasks/ready/062-run-stability-and-hooks-checkpoint.md`
+Create the next 3-5 ready tasks.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/decisions/
-- `.agents/tasks/ready/062-run-stability-and-hooks-checkpoint.md`
+- .agents/NEXT.md
+- .agents/BACKLOG.md
+- .agents/ROADMAP.md
+- .agents/PACKAGE_ISOLATION.md
 - `.agents/tasks/done/058-quote-generated-registry-service-keys.md`
 - `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`
 - `.agents/tasks/done/060-validate-proxy-benchmark-iteration-env.md`
 - `.agents/tasks/done/061-document-service-name-type-generation-limits.md`
+- `.agents/tasks/done/062-run-stability-and-hooks-checkpoint.md`
 - `.agents/reviews/059-cover-buffered-service-specific-response-hooks-review.md`
 
 Rules:
-- Run the checkpoint commands listed in task 062.
-- Confirm task 059 has an approved review note.
-- Confirm task states and `.agents/NEXT.md` are consistent.
-- Do not implement unrelated fixes while running the checkpoint.
-- Move task 062 to `.agents/tasks/done/` only after checkpoint verification is complete.
+- Create concrete ready tasks for failing-test-first stability bugs,
+  benchmark reliability/performance confidence, and package-isolation
+  verification.
+- Consider these read-only Explorer candidates: URI-encode Nuxt OData string
+  keys, verify non-identifier service names in the minimal Nuxt playground,
+  reject malformed benchmark report timing fields before formatting/output,
+  and protect DevTools log storage from external mutation.
+- Do not duplicate completed tasks 058-062.
+- Keep each task small, testable, and executable by one implementer chat.
 - Update `.agents/NEXT.md` with the next workflow action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+- Commit the planning update with a Conventional Commit unless a stop condition
+  prevents committing.
 
 Verification:
-- `pnpm.cmd run verify:packages`
-- `pnpm.cmd run test`
-- `pnpm.cmd run typecheck`
-- `pnpm.cmd run lint`
-- `git status --short`
+- Review task files for clear scope, acceptance criteria, verification, and
+  review requirements.
+- `git diff --check`
 
 Output:
-- changed files
-- checkpoint results
-- verification performed
-- self-check result
-- whether separate review is required and why
+- new tasks created
+- recommended next task
+- open decisions or blockers
 - commit hash
-- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
