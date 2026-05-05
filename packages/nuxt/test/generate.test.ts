@@ -24,9 +24,9 @@ describe('type Generation Logic', () => {
       await generateODataTypes(sourcePath, outputDir, 'SpacedService')
 
       expect(execFileSync).toHaveBeenCalledWith(
-        expect.stringMatching(/^pnpm(\.cmd)?$/),
+        process.execPath,
         [
-          'odata2ts',
+          expect.stringContaining('run-cli.js'),
           '--source',
           sourcePath,
           '--output',

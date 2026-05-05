@@ -5,20 +5,21 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import https from 'node:https'
 import process from 'node:process'
+import { createRequire } from 'node:module'
 import { extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { consola } from 'consola'
 import { join, resolve } from 'pathe'
 
 const logger = consola.withTag('@bc8-odx/nuxt')
+const require = createRequire(import.meta.url)
 
 /**
  * Core function to generate TypeScript types from an EDMX metadata file using odata2ts.
  */
 export async function generateODataTypes(xmlFilePath: string, outputDir: string, serviceName: string): Promise<void> {
-  // Use pnpm odata2ts to use the locally installed version in the workspace
-  const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+  const cliPath = require.resolve('@odata2ts/odata2ts/lib/run-cli.js')
   const args = [
-    'odata2ts',
+    cliPath,
     '--source',
     xmlFilePath,
     '--output',
@@ -31,7 +32,7 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
   ]
 
   try {
-    execFileSync(command, args, { stdio: 'pipe' })
+    execFileSync(process.execPath, args, { stdio: 'pipe' })
     logger.success(`Generated SDK for ${serviceName}`)
   }
   catch (err: any) {

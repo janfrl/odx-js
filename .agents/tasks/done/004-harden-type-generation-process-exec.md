@@ -105,3 +105,11 @@ separate review.
 - `.agents/NEXT.md` update: pending orchestrator integration
 - commit hash: pending commit at handoff-note update time
 - known gaps: none
+
+Review update:
+
+- initial review found that `execFileSync('pnpm.cmd', ...)` fails on Windows
+- focused fix now launches `process.execPath` with the resolved
+  `@odata2ts/odata2ts/lib/run-cli.js` path and keeps CLI options as discrete
+  arguments
+- focused re-review approved the change
