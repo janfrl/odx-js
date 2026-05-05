@@ -8,13 +8,7 @@ implementation phases.
 
 ## Now
 
-- Isolate Explorer entity preview cache keys for service and entity names that
-  contain separator characters.
-- Add deterministic local verification that AppRouter destinations declared in
-  `xs-app.json` are provided by `mta.yaml`.
-- Reject malformed optional timing fields in proxy benchmark comparison
-  reports.
-- Clarify generated metadata cache cleanup expectations in existing docs.
+- Complete the task 050-053 checkpoint and plan the next stability queue.
 
 ## Next
 
@@ -22,7 +16,8 @@ implementation phases.
   unless UI changes are explicitly needed and browser-verified.
 - Consider runtime performance optimizations only after benchmark tooling keeps
   malformed reports visible and checkpoint checks remain green.
-- Batch a full checkpoint after tasks 050-053 are complete.
+- Turn the high-confidence bug candidates from the latest read-only exploration
+  into small test-first tasks where they are not already covered.
 
 ## Later
 

@@ -150,11 +150,16 @@ backend URLs. Do not commit credentials, tenant-specific destinations, or local
 
 Remote EDMX metadata is cached in two places:
 
-- `.nuxt/odx/temp/<service>.edmx` for runtime/generated Nuxt state
-- `.odx/cache/<service>.edmx` as a persistent cache across `.nuxt` cleanup
+- `.nuxt/odx/temp/<service>.edmx` for generated Nuxt runtime/build state.
+- `.odx/cache/<service>.edmx` as a persistent local fallback cache across
+  `.nuxt` cleanup.
 
-The persistent cache is a local/generated artifact. Do not commit it unless a
-future release intentionally changes that policy.
+Both locations are local generated artifacts. Do not commit them unless a future
+release intentionally changes that policy. If stale metadata causes local type
+generation or runtime schema checks to disagree with the backend, delete
+`.nuxt/odx/temp/` first. Delete the matching `.odx/cache/<service>.edmx` file as
+well only when you want the next prepare/build to refetch metadata instead of
+using the local fallback.
 
 ## Operational Checks
 
