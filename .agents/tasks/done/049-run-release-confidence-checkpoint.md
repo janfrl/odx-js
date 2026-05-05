@@ -1,7 +1,7 @@
 # Task: Run release confidence checkpoint
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -51,12 +51,12 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Package-local aggregate verification is run or a blocker is recorded.
-- [ ] Workspace tests are run or a blocker is recorded.
-- [ ] Typecheck is run or a blocker is recorded.
-- [ ] Lint is run or a blocker is recorded.
-- [ ] Task states and `.agents/NEXT.md` are consistent at the end.
-- [ ] Any failures, skipped checks, and residual risks are recorded clearly.
+- [x] Package-local aggregate verification is run or a blocker is recorded.
+- [x] Workspace tests are run or a blocker is recorded.
+- [x] Typecheck is run or a blocker is recorded.
+- [x] Lint is run or a blocker is recorded.
+- [x] Task states and `.agents/NEXT.md` are consistent at the end.
+- [x] Any failures, skipped checks, and residual risks are recorded clearly.
 
 ## Verification
 
@@ -89,15 +89,46 @@ that require code changes or a risky decision.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `.agents/tasks/done/049-run-release-confidence-checkpoint.md`
+  - `.agents/NEXT.md`
+- summary:
+  - Ran the release-confidence checkpoint after tasks 046-048 completed.
+  - Confirmed package aggregate verification, workspace tests, typecheck, and
+    lint pass.
+  - Cleaned generated verification artifacts before recording the checkpoint:
+    `docs/public/api-reference.json` and `packages/explorer/.nuxtrc`.
+  - Confirmed the ready queue is empty except `.gitkeep` and the worktree is
+    clean before moving this task to done.
+- tests run:
+  - PASS: `pnpm.cmd run verify:packages`
+    - core: 5 files passed, 26 tests passed, standalone example passed.
+    - proxy: 8 files passed, 1 skipped; 72 tests passed, 1 skipped; standalone
+      example passed.
+    - Nuxt: 3 files passed, 12 tests passed; minimal playground check passed.
+    - Explorer: 31 tests passed.
+    - docs: metadata extraction and API reference extraction passed.
+  - PASS: `pnpm.cmd run test`
+    (18 files passed, 1 skipped; 163 tests passed, 1 skipped).
+  - PASS: `pnpm.cmd run typecheck`.
+  - PASS: `pnpm.cmd run lint`.
+  - PASS: `git status --short`.
+- skipped checks and residual risk:
+  - No checkpoint commands were skipped.
+  - Nuxt/Nitro test runs still emit existing Node `DEP0155` dependency
+    warnings about trailing slash package export mappings.
+- self-check result:
+  - Scope stayed in checkpoint recording and workflow state. No production
+    source, tests, scripts, dependencies, lockfiles, CI config, browser checks,
+    or unrelated docs were changed.
+- review requirement decision:
+  - Separate review is not required because this is verification and workflow
+    state recording only.
+- task state movement:
+  - Moved this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Updated to Planner prompt because the ready queue is empty.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - None beyond the existing dependency deprecation warnings noted above.
