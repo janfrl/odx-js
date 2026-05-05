@@ -67,6 +67,23 @@ const displayedTimingFields = [
   'overheadAvgPercent',
 ] as const
 
+const countFields = [
+  'iterations',
+  'rounds',
+  'concurrency',
+] as const
+
+function assertValidCountFields(summaries: MeasurementSummary[]): void {
+  for (const summary of summaries) {
+    for (const field of countFields) {
+      const value = summary[field]
+      if (!Number.isInteger(value) || value <= 0) {
+        throw new TypeError(`Invalid benchmark count for scenario "${summary.label}": ${field} must be a positive integer`)
+      }
+    }
+  }
+}
+
 function assertFiniteDisplayedTimings(summaries: MeasurementSummary[]): void {
   for (const summary of summaries) {
     for (const field of displayedTimingFields) {
@@ -79,6 +96,7 @@ function assertFiniteDisplayedTimings(summaries: MeasurementSummary[]): void {
 }
 
 export function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
+  assertValidCountFields(summaries)
   assertFiniteDisplayedTimings(summaries)
 
   const rows = summaries.map(summary => [
@@ -140,6 +158,7 @@ export function createBenchmarkOutput(
   },
   options: BenchmarkOutputOptions = {},
 ): BenchmarkOutput {
+  assertValidCountFields(summaries)
   assertFiniteDisplayedTimings(summaries)
 
   return {

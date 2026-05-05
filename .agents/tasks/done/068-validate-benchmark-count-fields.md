@@ -1,7 +1,7 @@
 # Task: Validate benchmark count fields
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -45,13 +45,13 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] A focused test fails before implementation for at least one malformed
+- [x] A focused test fails before implementation for at least one malformed
   count field.
-- [ ] `formatBenchmarkReport()` and `createBenchmarkOutput()` reject invalid
+- [x] `formatBenchmarkReport()` and `createBenchmarkOutput()` reject invalid
   `iterations`, `rounds`, and `concurrency` values with scenario-specific
   errors.
-- [ ] Valid benchmark report fixtures still format and serialize as before.
-- [ ] No production runtime behavior or benchmark schema changes are included.
+- [x] Valid benchmark report fixtures still format and serialize as before.
+- [x] No production runtime behavior or benchmark schema changes are included.
 
 ## Verification
 
@@ -82,15 +82,46 @@ or CI behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/proxy/test/benchmark-report.ts`
+  - `packages/proxy/test/benchmark-report.test.ts`
+  - `.agents/tasks/done/068-validate-benchmark-count-fields.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added deterministic malformed count tests for `formatBenchmarkReport()` and
+    `createBenchmarkOutput()`.
+  - Added shared report/output validation that rejects missing, zero, negative,
+    fractional, and non-finite `iterations`, `rounds`, and `concurrency`
+    values with scenario-specific `TypeError` messages.
+  - Preserved valid report formatting, JSON output shape, timing validation,
+    and overhead reporting.
 - tests run
+  - FAIL before fix: `pnpm.cmd exec vitest run packages/proxy/test/benchmark-report.test.ts`; 14 new malformed count cases failed because no error was thrown.
+  - PASS: `pnpm.cmd exec vitest run packages/proxy/test/benchmark-report.test.ts`
+  - PASS: `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - PASS: `pnpm.cmd run typecheck`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `git diff --check`
 - skipped checks and residual risk
+  - No required checks were skipped.
+  - Did not run full `ODX_PROXY_BENCHMARK=1` timing benchmarks because the task
+    targets deterministic report/output validation.
 - self-check result
+  - Scope stayed limited to proxy benchmark report test tooling and workflow
+    state. No production proxy runtime behavior, benchmark timing semantics,
+    env parsing, package scripts, dependencies, lockfiles, generated files,
+    report schema, comparison tooling, or scenario definitions changed.
 - review requirement decision
+  - Separate review is not required because this remains low-risk benchmark
+    tooling validation and does not change runtime behavior, timing semantics,
+    dependencies, CI behavior, or report schema.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` at start
+    and to `.agents/tasks/done/` after verification. Direct filesystem moves
+    were blocked, so task state was moved with `apply_patch`.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/069-warn-on-benchmark-comparison-metadata-mismatches.md`.
 - commit hash
+  - Commit containing this handoff.
 - known gaps
+  - None.

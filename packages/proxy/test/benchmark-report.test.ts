@@ -111,6 +111,42 @@ describe('proxy benchmark report formatting', () => {
     )).toThrow(`Invalid benchmark timing for scenario "broken output": ${field} must be finite`)
   })
 
+  it.each([
+    ['iterations', undefined],
+    ['rounds', 0],
+    ['concurrency', -1],
+    ['iterations', 12.5],
+    ['rounds', Number.NaN],
+    ['concurrency', Number.POSITIVE_INFINITY],
+    ['iterations', Number.NEGATIVE_INFINITY],
+  ] as const)('rejects malformed %s count values before formatting the report', (field, value) => {
+    expect(() => formatBenchmarkReport([
+      summary({ label: 'broken count', [field]: value } as Partial<MeasurementSummary>),
+    ])).toThrow(`Invalid benchmark count for scenario "broken count": ${field} must be a positive integer`)
+  })
+
+  it.each([
+    ['iterations', undefined],
+    ['rounds', 0],
+    ['concurrency', -1],
+    ['iterations', 12.5],
+    ['rounds', Number.NaN],
+    ['concurrency', Number.POSITIVE_INFINITY],
+    ['iterations', Number.NEGATIVE_INFINITY],
+  ] as const)('rejects malformed %s count values before creating JSON output', (field, value) => {
+    expect(() => createBenchmarkOutput(
+      [
+        summary({ label: 'broken output count', [field]: value } as Partial<MeasurementSummary>),
+      ],
+      {
+        iterations: 50,
+        rounds: 7,
+        warmupIterations: 10,
+        defaultConcurrency: 5,
+      },
+    )).toThrow(`Invalid benchmark count for scenario "broken output count": ${field} must be a positive integer`)
+  })
+
   it('assigns average overhead from a direct baseline', () => {
     const baseline = summary({ avgMs: 0.4 })
     const proxied = summary({ avgMs: 0.9 })
