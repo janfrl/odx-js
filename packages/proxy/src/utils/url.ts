@@ -1,7 +1,6 @@
 import type { H3Event } from 'h3'
 import { getRequestURL } from 'h3'
 
-const RE_QUERY_SPLIT = /\?/
 const RE_TRAILING_SLASH = /\/$/
 const RE_LEADING_SLASH = /^\//
 const RE_DOUBLE_SLASHES = /([^:]\/)\/+/g
@@ -24,14 +23,15 @@ export interface ODataRequestInfo {
  * @returns Parsed OData request info.
  */
 export function parseODataRequest(event: H3Event, basePath = '/api/odx'): ODataRequestInfo {
-  const pathOnly = event.path.split(RE_QUERY_SPLIT)[0] || ''
+  const queryIndex = event.path.indexOf('?')
+  const pathOnly = queryIndex === -1 ? event.path : event.path.slice(0, queryIndex)
   const relativePath = pathOnly.slice(basePath.length).replace(RE_LEADING_SLASH, '')
   const segments = relativePath.split('/').filter(Boolean)
 
   return {
     serviceName: segments[0] || 'unknown',
     odataPath: segments.slice(1).join('/'),
-    query: event.path.includes('?') ? `?${event.path.split(RE_QUERY_SPLIT)[1]}` : '',
+    query: queryIndex === -1 ? '' : event.path.slice(queryIndex),
     segments,
   }
 }

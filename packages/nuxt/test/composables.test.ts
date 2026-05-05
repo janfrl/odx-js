@@ -10,6 +10,7 @@ vi.mock('#imports', () => ({
       odata: {
         basePath: '/api/odx',
         services: [
+          { name: 'RoutedService', url: 'https://example.com/routed', route: 'routed-api', strategy: 'proxied' },
           { name: 'DirectService', url: 'https://external.com/odata', strategy: 'direct' },
         ],
       },
@@ -71,6 +72,12 @@ describe('useOData Composable', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').list() as any
       expect(result.url).toBe('/api/odx/MyService/Products')
+    })
+
+    it('constructs proxied list URLs with the configured service route', () => {
+      const api = useOData('RoutedService' as any)
+      const result = api.entitySet('Products').list() as any
+      expect(result.url).toBe('/api/odx/routed-api/Products')
     })
 
     it('constructs URLs correctly for direct (HTTP) services', () => {

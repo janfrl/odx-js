@@ -1,5 +1,5 @@
-import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
-import { useFetch } from '#imports'
+import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
+import { useFetch, useRuntimeConfig } from '#imports'
 import { $odata, flattenOData, stringifyQuery } from '@bc8-odx/core'
 import { useODataBasePath } from './useODataBasePath'
 
@@ -16,6 +16,13 @@ export function useOData(service?: string): any {
   const client = globalThis.$fetch
 
   const formatStringKeyLiteral = (value: string): string => `'${value.replace(RE_SINGLE_QUOTE, '\'\'')}'`
+
+  const resolveServiceRoute = (serviceName: string): string => {
+    const config = useRuntimeConfig()
+    const publicConfig = config.public.odata as unknown as ODataPublicConfig
+    const serviceConfig = publicConfig?.services?.find(s => s.name === serviceName)
+    return serviceConfig?.route || serviceName
+  }
 
   /**
    * Formats a single or composite key for OData URLs.
@@ -38,7 +45,8 @@ export function useOData(service?: string): any {
       fullPath = entitySet ? `${basePath}/${entitySet}` : basePath
     }
     else {
-      const path = entitySet ? `${serviceName}/${entitySet}` : serviceName
+      const route = resolveServiceRoute(serviceName)
+      const path = entitySet ? `${route}/${entitySet}` : route
       fullPath = `${basePath}/${path}`
     }
 

@@ -21,6 +21,15 @@ describe('oData URL Utilities', () => {
       expect(result.odataPath).toBe('Products')
       expect(result.query).toBe('?$filter=Name eq \'Test\'')
     })
+
+    it('preserves question marks that are part of the query string', () => {
+      const event = { path: '/api/odx/TestService/Products?$filter=contains(Name,\'?\')&$top=1' } as any
+      const result = parseODataRequest(event, '/api/odx')
+
+      expect(result.serviceName).toBe('TestService')
+      expect(result.odataPath).toBe('Products')
+      expect(result.query).toBe('?$filter=contains(Name,\'?\')&$top=1')
+    })
   })
 
   describe('resolveTargetUrl', () => {
