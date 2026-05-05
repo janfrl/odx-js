@@ -16,6 +16,7 @@ const RE_TRAILING_SLASH = /\/$/
 const RE_ODATA_NUMERIC_TYPE = /(?:^|\.)(?:Byte|SByte|Int16|Int32|Int64|Decimal|Double|Single)$/
 const RE_NUMERIC_LITERAL = /^[+-]?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?$/i
 const RE_SINGLE_QUOTE = /'/g
+const RE_QUERY_SEPARATOR_CHARS = /[&#]/g
 
 export interface EntityExplorer {
   selectedService: Ref<any>
@@ -89,7 +90,10 @@ export function useEntityExplorer(): EntityExplorer {
   }
 
   function serializeStringLiteral(value: string): string {
-    return `'${value.replace(RE_SINGLE_QUOTE, '\'\'')}'`
+    const escaped = value
+      .replace(RE_SINGLE_QUOTE, '\'\'')
+      .replace(RE_QUERY_SEPARATOR_CHARS, char => encodeURIComponent(char))
+    return `'${escaped}'`
   }
 
   function serializeFilterValue(rule: any, forceStringLiteral = false): string {

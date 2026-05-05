@@ -486,6 +486,28 @@ describe('explorer State Composable', () => {
     expect(queryInput.value).toBe('?$filter=contains(Name,\'Bob\'\'s\')')
   })
 
+  it('encodes ampersands inside visual query builder string filters so they are not parsed as query separators', async () => {
+    const { queryInput, queryState } = useEntityExplorer()
+
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [
+          { type: 'rule', field: 'Name', operator: 'eq', value: 'R&D' },
+        ],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    }
+    await nextTick()
+
+    expect(queryInput.value).toBe('?$filter=Name eq \'R%26D\'')
+  })
+
   it('serializes numeric visual query builder values without string quotes', async () => {
     const { entitySchema, queryInput, selectedEntity, selectedService } = useSharedODataState()
     const schema = {
