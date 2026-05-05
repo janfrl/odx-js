@@ -55,7 +55,32 @@ function formatOptionalPercent(value?: number): string {
   return typeof value === 'number' ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'
 }
 
+const displayedTimingFields = [
+  'minMs',
+  'avgMs',
+  'medianRoundAvgMs',
+  'roundStdDevMs',
+  'p50Ms',
+  'p95Ms',
+  'maxMs',
+  'overheadAvgMs',
+  'overheadAvgPercent',
+] as const
+
+function assertFiniteDisplayedTimings(summaries: MeasurementSummary[]): void {
+  for (const summary of summaries) {
+    for (const field of displayedTimingFields) {
+      const value = summary[field]
+      if (typeof value === 'number' && !Number.isFinite(value)) {
+        throw new TypeError(`Invalid benchmark timing for scenario "${summary.label}": ${field} must be finite`)
+      }
+    }
+  }
+}
+
 export function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
+  assertFiniteDisplayedTimings(summaries)
+
   const rows = summaries.map(summary => [
     summary.label.padEnd(24),
     summary.path.padEnd(43),
@@ -115,6 +140,8 @@ export function createBenchmarkOutput(
   },
   options: BenchmarkOutputOptions = {},
 ): BenchmarkOutput {
+  assertFiniteDisplayedTimings(summaries)
+
   return {
     name: 'ODX proxy performance baseline',
     createdAt: options.createdAt || new Date().toISOString(),

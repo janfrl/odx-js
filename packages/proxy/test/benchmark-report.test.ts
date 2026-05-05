@@ -83,6 +83,34 @@ describe('proxy benchmark report formatting', () => {
     expect(output.scenarios.map(item => item.category)).toEqual(['small', 'large', 'devtools'])
   })
 
+  it.each([
+    ['minMs', Number.NaN],
+    ['avgMs', Number.POSITIVE_INFINITY],
+    ['maxMs', Number.NEGATIVE_INFINITY],
+  ] as const)('rejects malformed %s values before formatting the report', (field, value) => {
+    expect(() => formatBenchmarkReport([
+      summary({ label: 'broken timing', [field]: value }),
+    ])).toThrow(`Invalid benchmark timing for scenario "broken timing": ${field} must be finite`)
+  })
+
+  it.each([
+    ['medianRoundAvgMs', Number.NaN],
+    ['roundStdDevMs', Number.POSITIVE_INFINITY],
+    ['overheadAvgMs', Number.NEGATIVE_INFINITY],
+  ] as const)('rejects malformed %s values before creating JSON output', (field, value) => {
+    expect(() => createBenchmarkOutput(
+      [
+        summary({ label: 'broken output', [field]: value }),
+      ],
+      {
+        iterations: 50,
+        rounds: 7,
+        warmupIterations: 10,
+        defaultConcurrency: 5,
+      },
+    )).toThrow(`Invalid benchmark timing for scenario "broken output": ${field} must be finite`)
+  })
+
   it('assigns average overhead from a direct baseline', () => {
     const baseline = summary({ avgMs: 0.4 })
     const proxied = summary({ avgMs: 0.9 })

@@ -1,7 +1,7 @@
 # Task: Reject malformed benchmark report timing fields
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -53,13 +53,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] A focused test fails before implementation for at least one non-finite
+- [x] A focused test fails before implementation for at least one non-finite
   displayed timing field.
-- [ ] Formatting/output rejects `NaN`, `Infinity`, and `-Infinity` timing
+- [x] Formatting/output rejects `NaN`, `Infinity`, and `-Infinity` timing
   values with scenario-specific errors.
-- [ ] Valid benchmark report fixtures still format and serialize exactly as
+- [x] Valid benchmark report fixtures still format and serialize exactly as
   expected, except for intentional error handling tests.
-- [ ] No production runtime behavior or report schema changes are included.
+- [x] No production runtime behavior or report schema changes are included.
 
 ## Verification
 
@@ -90,16 +90,43 @@ CI gates.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/proxy/test/benchmark-report.ts`
+  - `packages/proxy/test/benchmark-report.test.ts`
+  - `.agents/tasks/done/064-reject-malformed-benchmark-report-timing-fields.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added deterministic malformed timing tests for both
+    `formatBenchmarkReport()` and `createBenchmarkOutput()`.
+  - Added shared report/output validation that rejects non-finite displayed
+    timing fields with scenario-specific `TypeError` messages naming the
+    scenario label and field.
+  - Preserved valid report formatting and JSON output shape.
 - tests run
+  - FAIL before fix: `pnpm.cmd exec vitest run packages/proxy/test/benchmark-report.test.ts`; 6 new malformed timing cases failed because no error was thrown.
+  - PASS: `pnpm.cmd exec vitest run packages/proxy/test/benchmark-report.test.ts`
+  - PASS: `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - PASS: `pnpm.cmd run typecheck`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `git diff --check`
 - skipped checks and residual risk
+  - Did not run full `ODX_PROXY_BENCHMARK=1` timing benchmarks because the task
+    targets deterministic report/output validation.
 - self-check result
+  - Scope stayed limited to proxy benchmark report test tooling and workflow
+    state. No production proxy runtime behavior, benchmark measurement
+    semantics, env parsing, scripts, dependencies, lockfiles, generated files,
+    report schema, or scenario definitions changed.
 - review requirement decision
+  - Separate review is not required because this remains low-risk local
+    benchmark tooling validation and does not change runtime behavior or report
+    schema.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` at start
+    and to `.agents/tasks/done/` after verification.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md`.
 - commit hash
+  - Commit containing this handoff.
 - known gaps
-
+  - None.

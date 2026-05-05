@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md`.
+Implement `.agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md`.
 
 ## Prompt For Next Chat
 
@@ -24,16 +24,18 @@ Read:
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
+- .agents/PACKAGE_ISOLATION.md
 - .agents/decisions/
-- .agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md
+- .agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md
 - any root documentation referenced by the task
 
 Rules:
-- Implement exactly .agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md.
-- Keep changes scoped to proxy benchmark report timing validation and focused tests.
+- Implement exactly .agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md.
+- Keep changes scoped to the minimal Nuxt playground config, app usage, and verification assertions.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
-- Add failing tests first, then implement the smallest fix.
+- Update verify.mjs first with a failing-first assertion for a quoted non-identifier registry key.
+- Do not change generated declaration implementation, metadata output layout, production runtime code, dependencies, lockfiles, or generated files.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Self-check against scope, acceptance criteria, relevant docs/decisions,
@@ -42,7 +44,7 @@ Rules:
   task risk notes.
 - Move the task to .agents/tasks/done/ when implementation and verification are complete.
 - Update .agents/NEXT.md with the next action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+- Do not commit unless the operator explicitly asks; orchestrator will review and commit.
 
 When done, summarize:
 - changed files
