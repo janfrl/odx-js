@@ -8,16 +8,19 @@ implementation phases.
 
 ## Now
 
-- Complete the task 054-057 stability queue.
+- Complete the task 058-062 registry, hook-contract, benchmark-validation, and
+  checkpoint queue.
 
 ## Next
 
 - Continue Explorer improvements only through narrow, test-backed state fixes
   unless UI changes are explicitly needed and browser-verified.
+- Revisit stream proxy response-hook behavior only after the expected contract
+  is clear from public docs or focused tests.
 - Consider runtime performance optimizations only after benchmark tooling keeps
   malformed reports visible and checkpoint checks remain green.
 - Plan the next small stability or package-isolation queue after the task
-  054-057 checkpoint completes.
+  058-062 checkpoint completes.
 
 ## Later
 

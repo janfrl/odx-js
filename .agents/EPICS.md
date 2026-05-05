@@ -319,3 +319,38 @@ Exit criteria:
 - No UI redesign or browser-mode work is introduced.
 - Broad checkpoint checks are run or residual risk is recorded after the queue
   completes.
+
+## Epic 11: Registry And Hook Contract Tightening
+
+Goal: close small generated-type and hook-contract gaps without broad runtime
+redesign or ambiguous stream-mode behavior changes.
+
+Deliverables:
+
+- Generated Nuxt registry declarations remain valid for service names that are
+  not TypeScript identifiers.
+- Buffered proxy response hooks call the typed service-specific hook and await
+  async hook work.
+- Proxy benchmark iteration and round env parsing fails fast for invalid loop
+  controls.
+- Nuxt package docs explain how non-identifier service names are represented in
+  generated registry types after the implementation lands.
+- A checkpoint records package and workspace verification plus required review
+  state after the queue.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/058-quote-generated-registry-service-keys.md`
+- `.agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md`
+- `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`
+- `.agents/tasks/ready/061-document-service-name-type-generation-limits.md`
+- `.agents/tasks/ready/062-run-stability-and-hooks-checkpoint.md`
+
+Exit criteria:
+
+- The ready task queue completes with task-local checks passing.
+- Required independent review is completed for the proxy hook-contract change.
+- Stream proxy response-hook behavior is not changed until its expected
+  contract is clarified in docs or tests.
+- Broad checkpoint checks are run or residual risk is recorded after the queue
+  completes.

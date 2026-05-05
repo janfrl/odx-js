@@ -105,3 +105,13 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Prove and fix core V2 `d` envelope unwrapping for falsy scalar payloads
   without regressing ordinary entity properties.
 - Run a stability checkpoint after the focused fixes complete.
+
+## Phase 12: Registry And Hook Contract Tightening
+
+- Keep generated Nuxt registry declarations valid for configured service names
+  that are not TypeScript identifiers.
+- Align buffered proxy response hook behavior with the existing typed generic
+  and service-specific hook contract.
+- Keep proxy benchmark env validation strict for timing loop controls.
+- Document service-name type-generation limits narrowly after implementation.
+- Run a checkpoint after the queue and required hook-contract review complete.
