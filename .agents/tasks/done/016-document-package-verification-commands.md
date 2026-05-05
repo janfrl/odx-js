@@ -1,7 +1,7 @@
 # Task: Document package verification commands
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Kant + Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: optional
@@ -51,11 +51,11 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] Core standalone example command is documented.
-- [ ] Proxy standalone example and benchmark commands are documented.
-- [ ] Nuxt minimal playground check is documented.
-- [ ] Root README points to package-level verification options.
-- [ ] Docs remain lint-clean.
+- [x] Core standalone example command is documented.
+- [x] Proxy standalone example and benchmark commands are documented.
+- [x] Nuxt minimal playground check is documented.
+- [x] Root README points to package-level verification options.
+- [x] Docs remain lint-clean.
 
 ## Verification
 
@@ -80,4 +80,29 @@ Low risk because this is documentation-only for existing commands.
 
 ## Handoff Notes
 
-To be completed by the implementer.
+Implementation notes:
+
+- Added root README package verification table for the existing core, proxy,
+  combined examples, proxy benchmark, and Nuxt playground check commands.
+- Added package README verification sections for `@bc8-odx/core`,
+  `@bc8-odx/proxy`, and `@bc8-odx/nuxt`.
+- Kept commands factual and tied to existing scripts only; no examples,
+  benchmarks, source code, package scripts, docs UI, task movement, or commits
+  were changed.
+- Mentioned `pnpm.cmd` for the Windows PowerShell context where `.ps1`
+  launchers can be blocked.
+
+Verification:
+
+- `pnpm.cmd run lint` passed. First sandboxed attempt failed with `EPERM`
+  while opening the Corepack pnpm cache under `AppData`; rerun with approved
+  escalation passed.
+
+Review:
+
+- Separate review optional per task and `.agents/WORKFLOW.md` because this is
+  low-risk documentation-only work.
+- Orchestrator also ran `pnpm.cmd run typecheck` during the integration
+  checkpoint.
+- Commit hash:
+  - To be filled after commit.

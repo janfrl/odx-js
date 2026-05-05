@@ -8,4 +8,17 @@ The official Nuxt module for the ODX ecosystem. It provides type-safe OData comp
 pnpm add @bc8-odx/nuxt
 ```
 
+## Verification
+
+From the repository root:
+
+```bash
+pnpm.cmd --filter @bc8-odx/nuxt run playground:check
+```
+
+This prepares the minimal Nuxt playground and verifies the generated ODX
+service registry types plus typed composable usage in the playground app. Use
+`pnpm.cmd` on Windows PowerShell in this repository when `.ps1` launchers are
+blocked.
+
 **For full documentation, getting started guides, and module configuration, please visit: [odx-js.io/packages/nuxt](https://odx-js.io/packages/nuxt)**

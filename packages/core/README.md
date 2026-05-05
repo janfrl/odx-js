@@ -8,4 +8,18 @@ Framework-agnostic OData types and low-level utilities for handling results, met
 pnpm add @bc8-odx/core
 ```
 
+## Verification
+
+From the repository root:
+
+```bash
+pnpm.cmd run example:core
+```
+
+This runs `examples/core-standalone.ts` against local fixtures. It verifies the
+package can be used outside a framework for EDMX version detection, entity
+extraction, query stringification, OData response flattening, and the low-level
+`$odata` helper. Use `pnpm.cmd` on Windows PowerShell in this repository when
+`.ps1` launchers are blocked.
+
 **For full documentation, architecture details, and API reference, please visit: [odx-js.io/packages/core](https://odx-js.io/packages/core)**

@@ -88,8 +88,24 @@ pnpm run dev
 # Run tests
 pnpm run test
 
+# Run package-level verification examples
+pnpm run examples
+
 # Regenerate API Reference
 pnpm run docs:api
 ```
 
 The API reference is automatically updated during `pnpm run docs:prepare`.
+
+### Package verification
+
+On Windows PowerShell in this repository, use `pnpm.cmd` instead of `pnpm`
+because `.ps1` launchers may be blocked by execution policy.
+
+| Command | What it verifies |
+| :--- | :--- |
+| `pnpm.cmd run example:core` | Runs the standalone core example against local fixtures, covering EDMX version detection, entity extraction, query stringification, OData response flattening, and the low-level `$odata` helper. |
+| `pnpm.cmd run example:proxy` | Starts a local fixture backend and H3 proxy, then verifies proxied OData reads and header forwarding through `@bc8-odx/proxy`. |
+| `pnpm.cmd run examples` | Runs the core and proxy standalone examples together for a quick package isolation smoke check. |
+| `pnpm.cmd run bench:proxy` | Runs the proxy performance benchmark and reports direct, buffered proxy, streamed proxy, concurrent, and DevTools logging timing baselines. |
+| `pnpm.cmd --filter @bc8-odx/nuxt run playground:check` | Prepares the minimal Nuxt playground and verifies generated ODX registry types plus the typed composable usage in the playground app. |
