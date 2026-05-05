@@ -19,8 +19,15 @@ vi.mock('node:fs', () => ({
 describe('btp Destination Resolution', () => {
   const originalEnv = process.env
 
+  function mockBtpBindings(): void {
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: 'https://dest.api' } }],
+      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
+    })
+  }
+
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
     process.env = { ...originalEnv }
     delete process.env.VCAP_SERVICES
     // Clear the internal cache by calling it with different params or just accept it for now
@@ -97,10 +104,7 @@ describe('btp Destination Resolution', () => {
   })
 
   it('supports principal propagation via user token', async () => {
-    process.env.VCAP_SERVICES = JSON.stringify({
-      destination: [{ credentials: { uri: 'https://dest.api' } }],
-      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
-    })
+    mockBtpBindings()
 
     vi.mocked(ofetch)
       .mockResolvedValueOnce({ access_token: 'dest-token' })
@@ -118,5 +122,128 @@ describe('btp Destination Resolution', () => {
         }),
       }),
     )
+  })
+
+  it('loads destination bindings from local default-env.json when VCAP_SERVICES is absent', async () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true)
+    vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({
+      VCAP_SERVICES: {
+        destination: [{ credentials: { uri: 'https://default-dest.api' } }],
+        xsuaa: [{ credentials: { url: 'https://default-uaa.api', clientid: 'default-id', clientsecret: 'default-sec' } }],
+      },
+    }))
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'default-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'https://default-backend.example',
+          ProxyType: 'Internet',
+        },
+      })
+
+    const result = await resolveBtpDestination('DefaultEnvService')
+
+    expect(result.url).toBe('https://default-backend.example')
+    expect(ofetch).toHaveBeenCalledWith('https://default-uaa.api/oauth/token', expect.anything())
+    expect(ofetch).toHaveBeenCalledWith(
+      'https://default-dest.api/destination-configuration/v1/destinations/DefaultEnvService',
+      expect.anything(),
+    )
+  })
+
+  it('throws in production when Destination Service calls fail', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch).mockRejectedValueOnce(new Error('destination unavailable'))
+
+    await expect(resolveBtpDestination('FailingProductionService')).rejects.toThrow(
+      'Failed to resolve BTP destination "FailingProductionService": destination unavailable',
+    )
+  })
+
+  it('keeps technical and user-token destination cache entries separate', async () => {
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'technical-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://technical-backend.example' },
+      })
+      .mockResolvedValueOnce({ access_token: 'user-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://user-backend.example' },
+      })
+
+    const technicalResult = await resolveBtpDestination('CacheModeService')
+    const userResult = await resolveBtpDestination('CacheModeService', 'Bearer user-jwt-123')
+
+    expect(technicalResult.url).toBe('https://technical-backend.example')
+    expect(userResult.url).toBe('https://user-backend.example')
+    expect(ofetch).toHaveBeenCalledTimes(4)
+  })
+
+  it('does not reuse cached user-token destination data across different bearer tokens', async () => {
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'first-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://first-user-backend.example' },
+        authTokens: [{ value: 'first-user-auth-token' }],
+      })
+      .mockResolvedValueOnce({ access_token: 'second-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://second-user-backend.example' },
+        authTokens: [{ value: 'second-user-auth-token' }],
+      })
+
+    const firstResult = await resolveBtpDestination('PerUserCacheService', 'Bearer first-user-jwt')
+    const secondResult = await resolveBtpDestination('PerUserCacheService', 'Bearer second-user-jwt')
+
+    expect(firstResult.url).toBe('https://first-user-backend.example')
+    expect(firstResult.authTokens?.[0].value).toBe('first-user-auth-token')
+    expect(secondResult.url).toBe('https://second-user-backend.example')
+    expect(secondResult.authTokens?.[0].value).toBe('second-user-auth-token')
+    expect(ofetch).toHaveBeenCalledTimes(4)
+  })
+
+  it('uses connectivity proxy defaults when OnPremise binding omits proxy host and port', async () => {
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: 'https://dest.api' } }],
+      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
+      connectivity: [{ credentials: {
+        url: 'https://conn-uaa.api',
+        clientid: 'conn-id',
+        clientsecret: 'conn-sec',
+      } }],
+    })
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'http://onpremise-defaults:8000',
+          ProxyType: 'OnPremise',
+        },
+      })
+      .mockResolvedValueOnce({ access_token: 'conn-token' })
+
+    const result = await resolveBtpDestination('OnPremDefaultsService', 'Bearer user-jwt-456')
+
+    expect(result.connectivity).toEqual({
+      host: 'connectivityproxy.internal.cf.eu10.hana.ondemand.com',
+      port: 20003,
+      token: 'conn-token',
+      userToken: 'user-jwt-456',
+    })
+  })
+
+  it('surfaces malformed VCAP_SERVICES without calling external services', async () => {
+    process.env.VCAP_SERVICES = '{not-json'
+
+    await expect(resolveBtpDestination('MalformedVcapService')).rejects.toThrow()
+    expect(ofetch).not.toHaveBeenCalled()
   })
 })

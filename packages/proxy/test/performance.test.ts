@@ -2,6 +2,7 @@ import type { ODataProxyConfig } from '@bc8-odx/core'
 import type { Server } from 'node:http'
 import { createServer } from 'node:http'
 import { performance } from 'node:perf_hooks'
+import { clearODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
@@ -13,6 +14,7 @@ interface MeasurementSummary {
   label: string
   path: string
   iterations: number
+  concurrency: number
   minMs: number
   avgMs: number
   p50Ms: number
@@ -24,6 +26,7 @@ interface MeasurementSummary {
 const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || process.env.ODX_PROXY_BENCHMARK === '1'
 const benchmarkIterations = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ITERATIONS || '50', 10)
 const warmupIterations = 10
+const concurrentRequests = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_CONCURRENCY || '5', 10)
 const describeBenchmark = shouldRunBenchmark ? describe : describe.skip
 
 async function listen(app: ReturnType<typeof createBackend>): Promise<{ server: Server, url: string }> {
@@ -55,7 +58,7 @@ async function closeServer(server?: Server): Promise<void> {
   })
 }
 
-async function measure(label: string, path: string, request: () => Promise<unknown>): Promise<MeasurementSummary> {
+async function measureSequential(label: string, path: string, request: () => Promise<unknown>): Promise<MeasurementSummary> {
   for (let i = 0; i < warmupIterations; i++) {
     await request()
   }
@@ -74,6 +77,48 @@ async function measure(label: string, path: string, request: () => Promise<unkno
     label,
     path,
     iterations: benchmarkIterations,
+    concurrency: 1,
+    minMs: sorted[0] ?? 0,
+    avgMs: total / timings.length,
+    p50Ms: percentile(sorted, 50),
+    p95Ms: percentile(sorted, 95),
+    maxMs: sorted.at(-1) ?? 0,
+  }
+}
+
+async function measureConcurrent(
+  label: string,
+  path: string,
+  concurrency: number,
+  request: () => Promise<unknown>,
+): Promise<MeasurementSummary> {
+  for (let i = 0; i < warmupIterations; i += concurrency) {
+    const batchSize = Math.min(concurrency, warmupIterations - i)
+    const batch: Array<Promise<unknown>> = []
+    for (let j = 0; j < batchSize; j++) {
+      batch.push(request())
+    }
+    await Promise.all(batch)
+  }
+
+  const timings: number[] = []
+  for (let i = 0; i < benchmarkIterations; i += concurrency) {
+    const batchSize = Math.min(concurrency, benchmarkIterations - i)
+    await Promise.all(Array.from({ length: batchSize }, async () => {
+      const start = performance.now()
+      await request()
+      timings.push(performance.now() - start)
+    }))
+  }
+
+  const sorted = [...timings].sort((a, b) => a - b)
+  const total = timings.reduce((sum, timing) => sum + timing, 0)
+
+  return {
+    label,
+    path,
+    iterations: benchmarkIterations,
+    concurrency,
     minMs: sorted[0] ?? 0,
     avgMs: total / timings.length,
     p50Ms: percentile(sorted, 50),
@@ -92,9 +137,10 @@ function percentile(sortedTimings: number[], percentileRank: number): number {
 
 function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
   const rows = summaries.map(summary => [
-    summary.label.padEnd(15),
+    summary.label.padEnd(24),
     summary.path.padEnd(43),
     String(summary.iterations).padStart(10),
+    String(summary.concurrency).padStart(11),
     formatMs(summary.minMs).padStart(10),
     formatMs(summary.avgMs).padStart(10),
     formatMs(summary.p50Ms).padStart(10),
@@ -107,9 +153,10 @@ function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
     '',
     'ODX proxy performance baseline',
     [
-      'mode'.padEnd(15),
+      'scenario'.padEnd(24),
       'path'.padEnd(43),
       'iterations'.padStart(10),
+      'concurrency'.padStart(11),
       'min'.padStart(10),
       'avg'.padStart(10),
       'p50'.padStart(10),
@@ -133,8 +180,10 @@ function formatOptionalMs(value?: number): string {
 describeBenchmark('proxy performance baseline', () => {
   let backendServer: Server
   let proxyServer: Server
+  let devtoolsProxyServer: Server
   let backendUrl: string
   let proxyUrl: string
+  let devtoolsProxyUrl: string
 
   beforeAll(async () => {
     const backend = await listen(createBackend())
@@ -169,37 +218,91 @@ describeBenchmark('proxy performance baseline', () => {
     proxyServer = proxy.server
     proxyUrl = proxy.url
 
+    const devtoolsConfig: ODataProxyConfig = {
+      ...config,
+      services: [
+        {
+          name: 'DevToolsBufferService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+        },
+      ],
+      devtools: {
+        enabled: true,
+        maxLogs: 20,
+      },
+    }
+
+    const devtoolsProxy = await listen(createProxyServer(devtoolsConfig))
+    devtoolsProxyServer = devtoolsProxy.server
+    devtoolsProxyUrl = devtoolsProxy.url
+
     const direct = await ofetch(`${backendUrl}/Products`)
     const buffered = await ofetch(`${proxyUrl}/api/odx/BufferService/Products`)
     const streamed = await ofetch(`${proxyUrl}/api/odx/StreamService/Products`)
+    const largeDirect = await ofetch(`${backendUrl}/LargeProducts`)
+    const largeBuffered = await ofetch(`${proxyUrl}/api/odx/BufferService/LargeProducts`)
+    const largeStreamed = await ofetch(`${proxyUrl}/api/odx/StreamService/LargeProducts`)
 
     expect(direct).toEqual(buffered)
     expect(direct).toEqual(streamed)
+    expect(largeDirect).toEqual(largeBuffered)
+    expect(largeDirect).toEqual(largeStreamed)
   }, 20000)
 
   afterAll(async () => {
     await Promise.all([
       closeServer(backendServer),
       closeServer(proxyServer),
+      closeServer(devtoolsProxyServer),
     ])
   }, 20000)
 
   it('reports direct backend, proxied buffer, and proxied stream GET timings', async () => {
-    const direct = await measure('direct', '/Products', () => ofetch(`${backendUrl}/Products`))
-    const buffered = await measure('buffer', '/api/odx/BufferService/Products', () => ofetch(`${proxyUrl}/api/odx/BufferService/Products`))
-    const streamed = await measure('stream', '/api/odx/StreamService/Products', () => ofetch(`${proxyUrl}/api/odx/StreamService/Products`))
+    const smallDirect = await measureSequential('small seq direct', '/Products', () => ofetch(`${backendUrl}/Products`))
+    const smallBuffered = await measureSequential('small seq buffer', '/api/odx/BufferService/Products', () => ofetch(`${proxyUrl}/api/odx/BufferService/Products`))
+    const smallStreamed = await measureSequential('small seq stream', '/api/odx/StreamService/Products', () => ofetch(`${proxyUrl}/api/odx/StreamService/Products`))
 
-    const summaries = [direct, buffered, streamed]
+    const largeDirect = await measureSequential('large seq direct', '/LargeProducts', () => ofetch(`${backendUrl}/LargeProducts`))
+    const largeBuffered = await measureSequential('large seq buffer', '/api/odx/BufferService/LargeProducts', () => ofetch(`${proxyUrl}/api/odx/BufferService/LargeProducts`))
+    const largeStreamed = await measureSequential('large seq stream', '/api/odx/StreamService/LargeProducts', () => ofetch(`${proxyUrl}/api/odx/StreamService/LargeProducts`))
+
+    const concurrentDirect = await measureConcurrent('large conc direct', '/LargeProducts', concurrentRequests, () => ofetch(`${backendUrl}/LargeProducts`))
+    const concurrentBuffered = await measureConcurrent('large conc buffer', '/api/odx/BufferService/LargeProducts', concurrentRequests, () => ofetch(`${proxyUrl}/api/odx/BufferService/LargeProducts`))
+    const concurrentStreamed = await measureConcurrent('large conc stream', '/api/odx/StreamService/LargeProducts', concurrentRequests, () => ofetch(`${proxyUrl}/api/odx/StreamService/LargeProducts`))
+
+    clearODataLogs()
+    const devtoolsBuffered = await measureSequential('small seq devtools buffer', '/api/odx/DevToolsBufferService/Products', () => ofetch(`${devtoolsProxyUrl}/api/odx/DevToolsBufferService/Products`))
+
+    const summaries = [
+      smallDirect,
+      smallBuffered,
+      smallStreamed,
+      largeDirect,
+      largeBuffered,
+      largeStreamed,
+      concurrentDirect,
+      concurrentBuffered,
+      concurrentStreamed,
+      devtoolsBuffered,
+    ]
     for (const summary of summaries) {
       expect(Number.isFinite(summary.avgMs)).toBe(true)
       expect(Number.isFinite(summary.p95Ms)).toBe(true)
       expect(summary.iterations).toBeGreaterThanOrEqual(10)
+      expect(summary.concurrency).toBeGreaterThanOrEqual(1)
       expect(summary.p95Ms).toBeLessThan(1000)
       expect(summary.maxMs).toBeLessThan(3000)
     }
 
-    buffered.overheadAvgMs = buffered.avgMs - direct.avgMs
-    streamed.overheadAvgMs = streamed.avgMs - direct.avgMs
+    smallBuffered.overheadAvgMs = smallBuffered.avgMs - smallDirect.avgMs
+    smallStreamed.overheadAvgMs = smallStreamed.avgMs - smallDirect.avgMs
+    largeBuffered.overheadAvgMs = largeBuffered.avgMs - largeDirect.avgMs
+    largeStreamed.overheadAvgMs = largeStreamed.avgMs - largeDirect.avgMs
+    concurrentBuffered.overheadAvgMs = concurrentBuffered.avgMs - concurrentDirect.avgMs
+    concurrentStreamed.overheadAvgMs = concurrentStreamed.avgMs - concurrentDirect.avgMs
+    devtoolsBuffered.overheadAvgMs = devtoolsBuffered.avgMs - smallBuffered.avgMs
 
     process.stdout.write(formatBenchmarkReport(summaries))
   }, 120000)

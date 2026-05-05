@@ -12,8 +12,8 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run the Implementer for
-`.agents/tasks/ready/014-expand-proxy-performance-scenarios.md`.
+Run the Implementer for the next ready task:
+`.agents/tasks/ready/016-document-package-verification-commands.md`.
 
 ## Prompt For Next Chat
 
@@ -25,20 +25,22 @@ Read:
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/tasks/ready/014-expand-proxy-performance-scenarios.md
-- packages/proxy/test/performance.test.ts
-- packages/proxy/test/fixtures/backend.ts
-- packages/proxy/test/fixtures/server.ts
-- packages/proxy/src/api/odata.ts
+- .agents/tasks/ready/016-document-package-verification-commands.md
+- README.md
+- packages/core/README.md
+- packages/proxy/README.md
+- packages/nuxt/README.md
 - package.json
+- packages/nuxt/package.json
+- examples/core-standalone.ts
+- examples/proxy-standalone.ts
 
-Implement exactly .agents/tasks/ready/014-expand-proxy-performance-scenarios.md.
+Implement exactly .agents/tasks/ready/016-document-package-verification-commands.md.
 
 Rules:
-- Keep changes scoped to the benchmark and local fixtures.
-- Do not change production proxy behavior unless a severe measurement blocker is found.
-- Use local fixture servers only; do not require SAP/BTP/network services.
-- Keep benchmark thresholds tolerant and non-flaky.
+- Keep documentation concise and accurate.
+- Document verification commands that already exist; do not invent commands.
+- Do not redesign docs UI or add new build tooling.
 - Use pnpm.cmd, not pnpm, on this Windows machine.
 - Update task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain skipped checks and residual risk.
@@ -49,7 +51,7 @@ Rules:
 
 When done, summarize:
 - changed files
-- benchmark scenarios added
+- documentation updates
 - verification performed
 - whether separate review is required and why
 - commit hash

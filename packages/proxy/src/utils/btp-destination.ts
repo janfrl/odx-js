@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -23,6 +24,16 @@ export interface BtpDestination {
 }
 
 const destinationCache = new Map<string, BtpDestination>()
+
+function createDestinationCacheKey(serviceName: string, userToken?: string): string {
+  if (!userToken) {
+    return `${serviceName}:technical`
+  }
+
+  const normalizedUserToken = userToken.replace('Bearer ', '')
+  const userTokenHash = createHash('sha256').update(normalizedUserToken).digest('hex')
+  return `${serviceName}:user:${userTokenHash}`
+}
 
 /**
  * Loads VCAP_SERVICES from the environment or local default-env.json.
@@ -75,7 +86,7 @@ async function fetchXsuaaToken(credentials: any, grantType: string = 'client_cre
  * Supports Principal Propagation via userToken exchange and Connectivity Service for OnPremise targets.
  */
 export async function resolveBtpDestination(serviceName: string, userToken?: string): Promise<BtpDestination> {
-  const cacheKey = `${serviceName}:${userToken ? 'user' : 'technical'}`
+  const cacheKey = createDestinationCacheKey(serviceName, userToken)
   if (destinationCache.has(cacheKey)) {
     return destinationCache.get(cacheKey)!
   }
