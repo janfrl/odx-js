@@ -15,20 +15,32 @@ import { createBackend } from './fixtures/backend'
 import { createProxyServer } from './fixtures/server'
 
 const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || process.env.ODX_PROXY_BENCHMARK === '1'
-const benchmarkIterations = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ITERATIONS || '50', 10)
-const benchmarkRounds = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ROUNDS || '5', 10)
+const benchmarkIterations = parseBenchmarkIterations(process.env.ODX_PROXY_BENCHMARK_ITERATIONS)
+const benchmarkRounds = parseBenchmarkRounds(process.env.ODX_PROXY_BENCHMARK_ROUNDS)
 const warmupIterations = 10
 const concurrentRequests = parseBenchmarkConcurrency(process.env.ODX_PROXY_BENCHMARK_CONCURRENCY)
 const benchmarkOutputPath = process.env.ODX_PROXY_BENCHMARK_OUTPUT
 const describeBenchmark = shouldRunBenchmark ? describe : describe.skip
 
+function parseBenchmarkIterations(value: string | undefined): number {
+  return parsePositiveIntegerEnv('ODX_PROXY_BENCHMARK_ITERATIONS', value, 50)
+}
+
+function parseBenchmarkRounds(value: string | undefined): number {
+  return parsePositiveIntegerEnv('ODX_PROXY_BENCHMARK_ROUNDS', value, 5)
+}
+
 function parseBenchmarkConcurrency(value: string | undefined): number {
+  return parsePositiveIntegerEnv('ODX_PROXY_BENCHMARK_CONCURRENCY', value, 5)
+}
+
+function parsePositiveIntegerEnv(name: string, value: string | undefined, defaultValue: number): number {
   if (value === undefined) {
-    return 5
+    return defaultValue
   }
 
   if (!/^[1-9]\d*$/.test(value)) {
-    throw new Error('ODX_PROXY_BENCHMARK_CONCURRENCY must be a positive integer')
+    throw new Error(`${name} must be a positive integer`)
   }
 
   return Number.parseInt(value, 10)
@@ -171,6 +183,30 @@ function percentile(sortedTimings: number[], percentileRank: number): number {
 }
 
 describe('proxy benchmark configuration', () => {
+  it('uses the default iteration and round counts when env vars are absent', () => {
+    expect(parseBenchmarkIterations(undefined)).toBe(50)
+    expect(parseBenchmarkRounds(undefined)).toBe(5)
+  })
+
+  it('uses valid positive integer iteration and round overrides', () => {
+    expect(parseBenchmarkIterations('75')).toBe(75)
+    expect(parseBenchmarkRounds('9')).toBe(9)
+  })
+
+  it.each(['0', '-1', '1.5', 'abc', '', '5abc'])(
+    'rejects invalid benchmark iteration value %j',
+    (value) => {
+      expect(() => parseBenchmarkIterations(value)).toThrow('ODX_PROXY_BENCHMARK_ITERATIONS')
+    },
+  )
+
+  it.each(['0', '-1', '1.5', 'abc', '', '5abc'])(
+    'rejects invalid benchmark round value %j',
+    (value) => {
+      expect(() => parseBenchmarkRounds(value)).toThrow('ODX_PROXY_BENCHMARK_ROUNDS')
+    },
+  )
+
   it('uses the default concurrency when the env var is absent', () => {
     expect(parseBenchmarkConcurrency(undefined)).toBe(5)
   })

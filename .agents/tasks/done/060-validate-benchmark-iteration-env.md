@@ -1,7 +1,7 @@
 # Task: Validate benchmark iteration env
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -52,12 +52,12 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Focused tests fail before implementation for invalid iteration and round
+- [x] Focused tests fail before implementation for invalid iteration and round
   env values.
-- [ ] Invalid values fail with clear errors naming the relevant env var.
-- [ ] Absent env vars keep existing defaults.
-- [ ] Valid positive integer overrides still work.
-- [ ] No production proxy runtime behavior or benchmark report schema changes
+- [x] Invalid values fail with clear errors naming the relevant env var.
+- [x] Absent env vars keep existing defaults.
+- [x] Valid positive integer overrides still work.
+- [x] No production proxy runtime behavior or benchmark report schema changes
   are included.
 
 ## Verification
@@ -89,16 +89,42 @@ dependencies, report JSON shape, CI gates, or performance budgets change.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/proxy/test/performance.test.ts`
+  - `packages/proxy/README.md`
+  - `.agents/tasks/done/060-validate-benchmark-iteration-env.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added deterministic tests for iteration and round defaults, valid
+    positive-integer overrides, and invalid values.
+  - Confirmed invalid values failed before the fix because `parseInt` accepted
+    or partially parsed them.
+  - Reused a shared positive-integer env parser for iterations, rounds, and
+    concurrency.
+  - Updated proxy README wording so iteration and round env values are
+    discoverable as positive integers.
 - tests run
+  - FAIL before fix: `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts -t "iteration value|round value"`; 12 invalid-value cases did not throw.
+  - PASS: `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
+  - PASS: `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `pnpm.cmd run typecheck`
 - skipped checks and residual risk
+  - Did not run the full timing benchmark with `ODX_PROXY_BENCHMARK=1`
+    because the task targets deterministic env parsing before timing loops.
 - self-check result
+  - Scope stayed limited to benchmark configuration tests/tooling and narrow
+    README wording. No production proxy runtime code, benchmark scenario
+    semantics, report JSON shape, comparison tooling, dependencies, lockfiles,
+    CI gates, or performance budgets changed.
 - review requirement decision
+  - Separate review is not required because this is low-risk local benchmark
+    tooling validation.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/061-document-service-name-type-generation-limits.md`.
 - commit hash
+  - The task implementation commit is the commit containing this handoff.
 - known gaps
-
+  - None.

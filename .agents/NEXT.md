@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement ready task `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`.
+Implement ready task `.agents/tasks/ready/061-document-service-name-type-generation-limits.md`.
 
 ## Prompt For Next Chat
 
@@ -20,7 +20,7 @@ Implement ready task `.agents/tasks/ready/060-validate-benchmark-iteration-env.m
 You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
 Implement exactly:
-- `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`
+- `.agents/tasks/ready/061-document-service-name-type-generation-limits.md`
 
 Read:
 - AGENTS.md
@@ -28,26 +28,24 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`
-- `.agents/tasks/done/054-validate-benchmark-concurrency-env.md`
-- `packages/proxy/test/performance.test.ts`
-- `packages/proxy/README.md`
+- `.agents/tasks/ready/061-document-service-name-type-generation-limits.md`
+- `.agents/tasks/done/058-quote-generated-registry-service-keys.md`
+- `packages/nuxt/README.md`
+- `docs/content/en/2.nuxt/1.getting-started.md`
+- `docs/content/en/2.nuxt/5.module-reference.md`
 
 Rules:
-- Keep changes scoped to benchmark iteration and round env validation.
-- Do not change production proxy runtime code, benchmark scenario semantics, report JSON shape, dependencies, lockfiles, CI gates, or performance budgets.
-- Add focused tests that fail before implementation for invalid `ODX_PROXY_BENCHMARK_ITERATIONS` and `ODX_PROXY_BENCHMARK_ROUNDS` values.
-- Preserve absent-env defaults and valid positive integer overrides.
-- Update the proxy README only if accepted env value rules need to be discoverable.
+- Keep changes documentation-only.
+- Document service-name guidance for generated registry/type ergonomics after task 058.
+- Do not change source, tests, scripts, dependencies, lockfiles, generated artifacts, runtime composables, or service config shape.
 - Move the task to `.agents/tasks/done/` only after implementation and verification.
 - Update `.agents/NEXT.md` with the next workflow action and exact next-chat prompt.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
-- `pnpm.cmd --filter @bc8-odx/proxy run verify`
-- `pnpm.cmd run lint`
-- `pnpm.cmd run typecheck` if the change scope warrants it
+- Manual Markdown inspection for accuracy and consistency
+- `git diff --check`
+- `pnpm.cmd run lint` only if non-Markdown files change
 
 Output:
 - changed files
