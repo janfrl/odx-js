@@ -13,6 +13,8 @@ import { join, resolve } from 'pathe'
 
 const logger = consola.withTag('@bc8-odx/nuxt')
 const require = createRequire(import.meta.url)
+const RE_IDENTIFIER_CHARS = /\W/g
+const RE_IDENTIFIER_START = /^[a-z_]/i
 
 /**
  * Core function to generate TypeScript types from an EDMX metadata file using odata2ts.
@@ -83,9 +85,12 @@ export function generateRegistryDts(
   serviceModelFiles: Record<string, string>,
 ): string {
   const indexDtsLines = ['import type { ODataServiceRegistry, ODataService } from "@bc8-odx/core"']
+  const serviceModelAliases: Record<string, string> = {}
 
   for (const [svcName, modelFile] of Object.entries(serviceModelFiles)) {
-    indexDtsLines.push(`import * as ${svcName}Models from "./${svcName}/${modelFile}"`)
+    const modelAlias = `${toTypeScriptIdentifier(svcName)}Models`
+    serviceModelAliases[svcName] = modelAlias
+    indexDtsLines.push(`import * as ${modelAlias} from "./${svcName}/${modelFile}"`)
   }
 
   indexDtsLines.push('\ndeclare module "@bc8-odx/core" {')
@@ -94,14 +99,23 @@ export function generateRegistryDts(
     const entityNames = entities.map(e => e.name)
     const entityUnion = entityNames.length > 0 ? entityNames.map(e => `"${e}"`).join(' | ') : 'string'
     const modelMapping = serviceModelFiles[svcName]
-      ? `{ ${entities.map(e => `"${e.name}": ${svcName}Models.${e.type}`).join(', ')} }`
+      ? `{ ${entities.map(e => `"${e.name}": ${serviceModelAliases[svcName]}.${e.type}`).join(', ')} }`
       : 'Record<string, any>'
-    indexDtsLines.push(`    ${svcName}: ODataService<${entityUnion}, ${modelMapping}>`)
+    indexDtsLines.push(`    ${formatTypeKey(svcName)}: ODataService<${entityUnion}, ${modelMapping}>`)
   }
   indexDtsLines.push('  }')
   indexDtsLines.push('}')
 
   return indexDtsLines.join('\n')
+}
+
+function toTypeScriptIdentifier(value: string): string {
+  const identifier = value.replace(RE_IDENTIFIER_CHARS, '_')
+  return RE_IDENTIFIER_START.test(identifier) ? identifier : `_${identifier}`
+}
+
+function formatTypeKey(value: string): string {
+  return toTypeScriptIdentifier(value) === value ? value : JSON.stringify(value)
 }
 
 /**

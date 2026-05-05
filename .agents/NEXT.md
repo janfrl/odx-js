@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/058-quote-generated-registry-service-keys.md`.
+Implement `.agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md`.
 
 ## Prompt For Next Chat
 
@@ -25,17 +25,19 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/058-quote-generated-registry-service-keys.md
-- packages/nuxt/src/generate.ts
-- packages/nuxt/test/generate.test.ts
-- packages/nuxt/playground/minimal/verify.mjs
+- .agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md
+- packages/proxy/src/api/odata.ts
+- packages/proxy/test/integration.test.ts
+- API.md
+- docs/content/en/3.proxy/4.reference.md
 
-Implement exactly `.agents/tasks/ready/058-quote-generated-registry-service-keys.md`.
+Implement exactly `.agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md`.
 
 Rules:
 - Keep changes scoped to the task.
-- Start with focused failing tests for non-identifier service names in generated registry declarations.
-- Do not change service config shape, generated model output, output directory layout, runtime composables, dependencies, or lockfiles.
+- Start with focused failing tests for buffered service-specific response hooks.
+- Do not change stream proxy behavior in this task.
+- Separate review is required after implementation because this touches public proxy hook behavior.
 - Do not revert edits made by others.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.

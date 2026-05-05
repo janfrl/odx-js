@@ -190,5 +190,23 @@ describe('type Generation Logic', () => {
 
       expect(result).toContain('SvcNoEntities: ODataService<string, {  }>')
     })
+
+    it('generates valid declarations for non-identifier service names', () => {
+      const serviceEntities = {
+        'Sales-Order': [
+          { name: 'Order Items', type: 'SalesOrderItem', properties: [], navigationProperties: [] },
+        ],
+      }
+      const serviceModelFiles = {
+        'Sales-Order': 'SalesOrderModel',
+      }
+
+      const result = generateRegistryDts(serviceEntities, serviceModelFiles)
+
+      expect(result).toContain('import * as Sales_OrderModels from "./Sales-Order/SalesOrderModel"')
+      expect(result).toContain('"Sales-Order": ODataService<"Order Items", { "Order Items": Sales_OrderModels.SalesOrderItem }>')
+      expect(result).not.toContain('import * as Sales-OrderModels')
+      expect(result).not.toContain('Sales-Order: ODataService')
+    })
   })
 })
