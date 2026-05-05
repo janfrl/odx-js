@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { useEntityExplorer } from '../composables/useEntityExplorer'
-import { buildSchemaEndpointUrl, useSharedODataState } from '../composables/useODataState'
+import { buildEntityPreviewCacheKey, buildSchemaEndpointUrl, useSharedODataState } from '../composables/useODataState'
 
 // Mock global fetch
 globalThis.fetch = vi.fn()
@@ -889,7 +889,7 @@ describe('explorer State Composable', () => {
       },
     })
     expect(previewData.value).toEqual([{ ID: 1, Name: 'Tea' }])
-    expect(entityDataCache.value['Northwind:Products']).toEqual({
+    expect(entityDataCache.value[buildEntityPreviewCacheKey('Northwind', 'Products')]).toEqual({
       data: [{ ID: 1, Name: 'Tea' }],
       error: null,
       query: '?$select=ID&$top=1',
@@ -908,7 +908,7 @@ describe('explorer State Composable', () => {
   it('restores cached entity preview state when reselecting an entity', async () => {
     const { entityDataCache, previewData, previewError, queryInput, queryMethod, queryState, selectedEntity, selectedService } = useSharedODataState()
     selectedService.value = { name: 'Northwind', route: 'northwind' } as any
-    entityDataCache.value['Northwind:Products'] = {
+    entityDataCache.value[buildEntityPreviewCacheKey('Northwind', 'Products')] = {
       data: [{ ID: 1, Name: 'Tea' }],
       error: null,
       query: '?$select=ID',
@@ -937,5 +937,38 @@ describe('explorer State Composable', () => {
     expect(queryMethod.value).toBe('GET')
     expect(queryState.value.select).toEqual(['ID'])
     expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/schema?service=Northwind')
+  })
+
+  it('does not restore cached entity preview state for colliding service and entity names', async () => {
+    const { entityDataCache, previewData, queryInput, queryState, selectedEntity, selectedService } = useSharedODataState()
+    selectedService.value = { name: 'Northwind', route: 'northwind' } as any
+    entityDataCache.value[buildEntityPreviewCacheKey('Northwind', 'Products:Variants')] = {
+      data: [{ ID: 1, Name: 'Wrong cached item' }],
+      error: null,
+      query: '?$select=ID',
+      method: 'GET',
+      queryState: {
+        filters: { type: 'group', logic: 'and', items: [] },
+        select: ['ID'],
+        expand: [],
+        sortBy: [],
+        top: null,
+        skip: null,
+      },
+    }
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ entities: [] }),
+    })
+
+    selectedService.value = { name: 'Northwind:Products', route: 'northwind-products' } as any
+    selectedEntity.value = 'Variants'
+    await nextTick()
+    await nextTick()
+
+    expect(previewData.value).toBeNull()
+    expect(queryInput.value).toBe('?')
+    expect(queryState.value.select).toEqual([])
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/schema?service=Northwind%3AProducts')
   })
 })

@@ -119,6 +119,10 @@ function buildMockDataEndpointUrl(service: string, entitySet: string): string {
   return `/__odx__/mockdata?service=${encodeInternalQueryValue(service)}&entitySet=${encodeInternalQueryValue(entitySet)}`
 }
 
+export function buildEntityPreviewCacheKey(service: string, entity: string): string {
+  return JSON.stringify([service, entity])
+}
+
 // Global Singleton state
 const activeTab = ref('overview')
 const logs = ref<ODataLog[]>([])
@@ -499,7 +503,7 @@ watch(selectedEntity, async (newEntity) => {
   }
 
   const svcName = selectedService.value.name
-  const cacheKey = `${svcName}:${newEntity}`
+  const cacheKey = buildEntityPreviewCacheKey(svcName, newEntity)
   const cached = entityDataCache.value[cacheKey]
 
   if (cached) {

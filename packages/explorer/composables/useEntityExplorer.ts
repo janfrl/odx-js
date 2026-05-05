@@ -1,6 +1,7 @@
 import type { EntityMapping } from '@bc8-odx/core'
 import type { EditorState } from './useODataState'
 import { flattenOData } from '@bc8-odx/core'
+import { buildEntityPreviewCacheKey } from './useODataState'
 
 const editor = ref<EditorState>({
   show: false,
@@ -312,7 +313,7 @@ export function useEntityExplorer(): EntityExplorer {
       previewData.value = dataArray
 
       // Update cache
-      const cacheKey = `${selectedService.value.name}:${selectedEntity.value}`
+      const cacheKey = buildEntityPreviewCacheKey(selectedService.value.name, selectedEntity.value)
       entityDataCache.value[cacheKey] = {
         data: [...dataArray],
         error: null,
@@ -328,7 +329,7 @@ export function useEntityExplorer(): EntityExplorer {
 
       // Cache the error state too
       if (selectedService.value && selectedEntity.value) {
-        const cacheKey = `${selectedService.value.name}:${selectedEntity.value}`
+        const cacheKey = buildEntityPreviewCacheKey(selectedService.value.name, selectedEntity.value)
         entityDataCache.value[cacheKey] = {
           data: [],
           error: msg,

@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/050-isolate-explorer-entity-cache-keys.md`.
+Implement `.agents/tasks/ready/051-add-deployment-config-consistency-tests.md`.
 
 ## Prompt For Next Chat
 
@@ -25,19 +25,20 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/050-isolate-explorer-entity-cache-keys.md
-- .agents/tasks/done/046-encode-explorer-internal-endpoint-params.md
-- packages/explorer/composables/useODataState.ts
-- packages/explorer/composables/useEntityExplorer.ts
-- packages/explorer/test/state.test.ts
+- .agents/tasks/ready/051-add-deployment-config-consistency-tests.md
+- ARCHITECTURE.md
+- DEPLOYMENT.md
+- SECURITY.md
+- mta.yaml
+- packages/approuter/xs-app.json
+- packages/approuter/package.json
+- package.json
 
-Implement exactly `.agents/tasks/ready/050-isolate-explorer-entity-cache-keys.md`.
+Implement exactly `.agents/tasks/ready/051-add-deployment-config-consistency-tests.md`.
 
 Rules:
 - Keep changes scoped to the task.
-- Add the focused failing Explorer state test before changing the cache-key implementation.
 - Do not start unrelated refactors.
-- Do not redesign Explorer UI or use browser-mode verification.
 - Do not revert edits made by others.
 - Follow existing repository structure, style, and documented architecture boundaries.
 - Update the task handoff notes before finishing.
