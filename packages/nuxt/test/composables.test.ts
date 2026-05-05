@@ -2,20 +2,22 @@ import * as core from '@bc8-odx/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useOData } from '../src/runtime/composables/useOData'
 
+const runtimeConfig = vi.hoisted(() => ({
+  public: {
+    odata: {
+      basePath: '/api/odx',
+      services: [
+        { name: 'RoutedService', url: 'https://example.com/routed', route: 'routed-api', strategy: 'proxied' },
+        { name: 'DirectService', url: 'https://external.com/odata', strategy: 'direct' },
+      ],
+    },
+  },
+}))
+
 // Mock Nuxt-specific imports
 vi.mock('#imports', () => ({
   useFetch: vi.fn((url, options) => ({ url, options })),
-  useRuntimeConfig: vi.fn(() => ({
-    public: {
-      odata: {
-        basePath: '/api/odx',
-        services: [
-          { name: 'RoutedService', url: 'https://example.com/routed', route: 'routed-api', strategy: 'proxied' },
-          { name: 'DirectService', url: 'https://external.com/odata', strategy: 'direct' },
-        ],
-      },
-    },
-  })),
+  useRuntimeConfig: vi.fn(() => runtimeConfig),
 }))
 
 // Mock core library
@@ -33,6 +35,11 @@ describe('useOData Composable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     globalThis.$fetch = vi.fn() as any
+    runtimeConfig.public.odata.basePath = '/api/odx'
+    runtimeConfig.public.odata.services = [
+      { name: 'RoutedService', url: 'https://example.com/routed', route: 'routed-api', strategy: 'proxied' },
+      { name: 'DirectService', url: 'https://external.com/odata', strategy: 'direct' },
+    ]
   })
 
   describe('key Formatting', () => {
@@ -85,6 +92,32 @@ describe('useOData Composable', () => {
       const api = useOData('DirectService' as any)
       const result = api.entitySet('Products').list() as any
       expect(result.url).toBe('https://external.com/odata/Products')
+    })
+
+    it('normalizes direct service URLs with trailing slashes', () => {
+      runtimeConfig.public.odata.services.push({
+        name: 'DirectSlashService',
+        url: 'https://external.com/odata/',
+        strategy: 'direct',
+      })
+
+      const api = useOData('DirectSlashService' as any)
+      const result = api.entitySet('Products').list() as any
+      expect(result.url).toBe('https://external.com/odata/Products')
+    })
+
+    it('normalizes proxied base paths and routes with boundary slashes', () => {
+      runtimeConfig.public.odata.basePath = '/api/odx/'
+      runtimeConfig.public.odata.services.push({
+        name: 'RoutedSlashService',
+        url: 'https://example.com/routed',
+        route: '/routed-api/',
+        strategy: 'proxied',
+      })
+
+      const api = useOData('RoutedSlashService' as any)
+      const result = api.entitySet('Products').list() as any
+      expect(result.url).toBe('/api/odx/routed-api/Products')
     })
 
     it('handles service calls without entity sets (service root)', () => {

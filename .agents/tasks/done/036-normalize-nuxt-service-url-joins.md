@@ -1,7 +1,7 @@
 # Task: Normalize Nuxt service URL joins
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if public composable contracts or runtime config shape change
@@ -86,16 +86,40 @@ semantics, or proxy behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
-
+- changed files:
+  - `packages/nuxt/test/composables.test.ts`
+  - `packages/nuxt/src/runtime/composables/useOData.ts`
+- summary:
+  - Added focused composable tests for direct service URLs ending in `/` and
+    proxied basePath/route values with boundary slashes.
+  - Confirmed the new tests failed before the fix with double slashes.
+  - Added local URL segment normalization in `useOData` for direct and proxied
+    composable paths without changing runtime config shape, service strategy
+    semantics, query serialization, key formatting, or proxy behavior.
+- tests run:
+  - Before fix: `pnpm.cmd exec vitest run packages/nuxt/test/composables.test.ts -t "normalizes"`
+    failed for direct and proxied double-slash cases.
+  - After fix: same focused command passed.
+  - `pnpm.cmd exec vitest run packages/nuxt/test/composables.test.ts` - passed,
+    19 tests.
+  - `pnpm.cmd --filter @bc8-odx/nuxt run verify` - passed.
+  - `pnpm.cmd run typecheck` - passed.
+  - `pnpm.cmd run lint` - passed.
+- skipped checks and residual risk:
+  - none.
+- self-check result:
+  - Scope stayed in Nuxt composable URL construction and tests. No proxy
+    package behavior, runtime config fields, service strategy semantics,
+    dependencies, query serialization, or OData key formatting changed.
+- review requirement decision:
+  - Separate review is not required because the change is limited to URL
+    normalization with focused tests and does not alter public config shape or
+    proxy behavior.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Point to `.agents/tasks/ready/037-reject-non-http-btp-destination-url.md`.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - none.

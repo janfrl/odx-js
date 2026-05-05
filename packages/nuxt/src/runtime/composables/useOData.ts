@@ -4,6 +4,8 @@ import { $odata, flattenOData, stringifyQuery } from '@bc8-odx/core'
 import { useODataBasePath } from './useODataBasePath'
 
 const RE_SINGLE_QUOTE = /'/g
+const RE_LEADING_SLASHES = /^\/+/
+const RE_TRAILING_SLASHES = /\/+$/
 
 /**
  * Composable for interacting with OData services.
@@ -24,6 +26,20 @@ export function useOData(service?: string): any {
     return serviceConfig?.route || serviceName
   }
 
+  const normalizeUrlBase = (value: string): string => value.replace(RE_TRAILING_SLASHES, '')
+
+  const joinUrlSegments = (base: string, ...segments: string[]): string => {
+    const normalizedBase = normalizeUrlBase(base)
+    const normalizedSegments = segments
+      .filter(Boolean)
+      .map(segment => segment.replace(RE_LEADING_SLASHES, '').replace(RE_TRAILING_SLASHES, ''))
+      .filter(Boolean)
+
+    return normalizedSegments.length > 0
+      ? [normalizedBase, ...normalizedSegments].join('/')
+      : normalizedBase
+  }
+
   /**
    * Formats a single or composite key for OData URLs.
    */
@@ -42,12 +58,11 @@ export function useOData(service?: string): any {
 
     let fullPath = ''
     if (isDirect) {
-      fullPath = entitySet ? `${basePath}/${entitySet}` : basePath
+      fullPath = entitySet ? joinUrlSegments(basePath, entitySet) : normalizeUrlBase(basePath)
     }
     else {
       const route = resolveServiceRoute(serviceName)
-      const path = entitySet ? `${route}/${entitySet}` : route
-      fullPath = `${basePath}/${path}`
+      fullPath = entitySet ? joinUrlSegments(basePath, route, entitySet) : joinUrlSegments(basePath, route)
     }
 
     return {
