@@ -110,10 +110,12 @@ export default defineEventHandler(async (event): Promise<any> => {
             ...finalHeaders,
           },
           body: event.method !== 'GET' ? (requestBody || await readBody(event).catch(() => null)) : null,
-          onResponse({ response }) {
+          async onResponse({ response }) {
             responseStatus = response.status
             if (hooks?.callHook && !isDirect) {
-              hooks.callHook('odx:proxy:response', { event, serviceName, response })
+              const hookCtx = { event, serviceName, response }
+              await hooks.callHook('odx:proxy:response', hookCtx)
+              await hooks.callHook(`odx:proxy:response:${serviceName}`, hookCtx)
             }
           },
         })

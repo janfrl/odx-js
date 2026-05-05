@@ -190,6 +190,11 @@ Supported hook names:
 - `odx:proxy:request`
 - `odx:proxy:request:<ServiceName>`
 - `odx:proxy:response`
+- `odx:proxy:response:<ServiceName>`
+
+Response hooks run for buffered proxy responses and are awaited before the
+proxied request resolves. Stream proxy response-hook behavior is not part of the
+current public contract.
 
 ## Internal Explorer Endpoints
 

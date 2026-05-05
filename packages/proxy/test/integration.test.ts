@@ -165,6 +165,38 @@ describe('proxy integration', () => {
     expect(ctx.serviceName).toBe('TestService')
   })
 
+  it('triggers generic and service-specific buffered response hooks', async () => {
+    const genericResponseSpy = vi.fn()
+    const serviceResponseSpy = vi.fn()
+
+    hooks.hookOnce('odx:proxy:response', genericResponseSpy)
+    hooks.hookOnce('odx:proxy:response:TestService', serviceResponseSpy)
+
+    await ofetch(`${proxyUrl}/api/odx/TestService/Products`)
+
+    expect(genericResponseSpy).toHaveBeenCalledOnce()
+    expect(serviceResponseSpy).toHaveBeenCalledOnce()
+    expect(genericResponseSpy.mock.calls[0][0]).toMatchObject({
+      serviceName: 'TestService',
+    })
+    expect(serviceResponseSpy.mock.calls[0][0]).toMatchObject({
+      serviceName: 'TestService',
+    })
+  })
+
+  it('awaits async buffered response hooks before resolving', async () => {
+    let asyncHookCompleted = false
+
+    hooks.hookOnce('odx:proxy:response:TestService', async () => {
+      await new Promise(resolve => setTimeout(resolve, 20))
+      asyncHookCompleted = true
+    })
+
+    await ofetch(`${proxyUrl}/api/odx/TestService/Products`)
+
+    expect(asyncHookCompleted).toBe(true)
+  })
+
   it('forwards 500 errors from backend to client', async () => {
     try {
       await ofetch(`${proxyUrl}/api/odx/TestService/FailingEntity`)

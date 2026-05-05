@@ -1,7 +1,7 @@
 # Task: Cover buffered service-specific response hooks
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex Implementer
 Created: 2026-05-05
 Risk: high
 Review: required
@@ -92,16 +92,40 @@ not clear enough from current docs/tests.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
-
+- Changed files:
+  - `packages/proxy/src/api/odata.ts`
+  - `packages/proxy/test/integration.test.ts`
+  - `API.md`
+  - `docs/content/en/3.proxy/4.reference.md`
+  - `.agents/NEXT.md`
+  - `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`
+- Summary:
+  - Added focused proxy integration coverage for buffered generic and service-specific response hooks.
+  - Added coverage proving async service-specific buffered response hooks are awaited before the proxied request resolves.
+  - Updated buffered proxy response handling to await generic and service-specific response hooks.
+  - Clarified public docs that response hooks are buffered-mode hooks and stream response-hook behavior is not currently defined.
+- Initial failing test result:
+  - `pnpm.cmd --filter @bc8-odx/proxy exec vitest run test/integration.test.ts -t "generic and service-specific buffered response hooks|awaits async buffered response hooks"` failed before implementation: service-specific response hook was called 0 times, and async hook side effect remained `false` after request resolution.
+- Tests run:
+  - `pnpm.cmd --filter @bc8-odx/proxy exec vitest run test/integration.test.ts -t "generic and service-specific buffered response hooks|awaits async buffered response hooks"` passed after implementation.
+  - `pnpm.cmd --filter @bc8-odx/proxy exec vitest run test/integration.test.ts` passed, 13 tests.
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify` passed, 9 test files, 84 passed, 1 skipped, plus proxy standalone example.
+  - `pnpm.cmd run typecheck` passed.
+  - `pnpm.cmd run lint` passed.
+- Skipped checks and residual risk:
+  - None.
+- Self-check result:
+  - Scope matches the task: buffered response hooks only; no stream proxy behavior changes.
+  - Direct-strategy bypass, request hooks, status forwarding, DevTools logging, and error forwarding remain covered by the full proxy integration file and package verification.
+  - No new dependencies or unrelated refactors.
+  - Documentation updates are narrow and match the public hook contract.
+- Review requirement decision:
+  - Separate review is required because this touches public proxy hook behavior.
+- Task state movement:
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Updated to a reviewer prompt for this completed task.
+- Commit hash:
+  - To be filled after commit.
+- Known gaps:
+  - Stream proxy response-hook behavior remains intentionally undefined and unchanged.

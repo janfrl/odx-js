@@ -12,47 +12,47 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md`.
+Review completed task `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+
+Review the completed task:
+- `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`
 
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md
-- packages/proxy/src/api/odata.ts
-- packages/proxy/test/integration.test.ts
 - API.md
 - docs/content/en/3.proxy/4.reference.md
+- packages/proxy/src/api/odata.ts
+- packages/proxy/test/integration.test.ts
+- the changed files and diff
 
-Implement exactly `.agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md`.
+Review stance:
+- Findings first.
+- Prioritize correctness, architecture boundaries, security/privacy, public proxy hook contracts, missing tests, and acceptance criteria gaps.
+- Confirm buffered responses call and await both generic and service-specific response hooks.
+- Confirm stream proxy behavior, direct-strategy hook bypass, request hooks, status forwarding, DevTools logging, and error forwarding were preserved.
+- Check that docs accurately describe buffered response-hook behavior without broadening the stream contract.
 
-Rules:
-- Keep changes scoped to the task.
-- Start with focused failing tests for buffered service-specific response hooks.
-- Do not change stream proxy behavior in this task.
-- Separate review is required after implementation because this touches public proxy hook behavior.
-- Do not revert edits made by others.
-- Update the task handoff notes before finishing.
-- Run the verification steps listed in the task, or explain why they could not be run.
-- Decide whether separate review is required using `.agents/WORKFLOW.md`.
-- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
-- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+Verification to consider:
+- `pnpm.cmd --filter @bc8-odx/proxy exec vitest run test/integration.test.ts`
+- `pnpm.cmd --filter @bc8-odx/proxy run verify`
+- `pnpm.cmd run typecheck`
+- `pnpm.cmd run lint`
 
-When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
-- commit hash
-- known gaps
-- exact next-chat prompt from `.agents/NEXT.md`
+Output:
+- findings with severity and file/line references
+- acceptance criteria status
+- test/verification gaps
+- whether the task is approved or needs changes
+
+Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md`.
+Update `.agents/NEXT.md` and commit the review note and workflow state changes.
+Include the exact next-chat prompt the operator should paste into a new chat.
 ```
