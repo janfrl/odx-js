@@ -277,10 +277,10 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/050-isolate-explorer-entity-cache-keys.md`
-- `.agents/tasks/ready/051-add-deployment-config-consistency-tests.md`
-- `.agents/tasks/ready/052-validate-benchmark-comparison-timing-fields.md`
-- `.agents/tasks/ready/053-document-generated-metadata-cache-cleanup.md`
+- `.agents/tasks/done/050-isolate-explorer-entity-cache-keys.md`
+- `.agents/tasks/done/051-add-deployment-config-consistency-tests.md`
+- `.agents/tasks/done/052-validate-benchmark-comparison-timing-fields.md`
+- `.agents/tasks/done/053-document-generated-metadata-cache-cleanup.md`
 
 Exit criteria:
 
@@ -288,5 +288,34 @@ Exit criteria:
 - Required review is completed for deployment configuration verification.
 - No UI redesign or browser-mode work is introduced without a dedicated task
   and a port `3000` verification plan.
+- Broad checkpoint checks are run or residual risk is recorded after the queue
+  completes.
+
+## Epic 10: Falsy Payload And Metadata Download Tightening
+
+Goal: close high-confidence stability candidates from read-only exploration
+with small test-first changes before broader optimization work.
+
+Deliverables:
+
+- Proxy benchmark concurrency env validation rejects invalid values before
+  timing loops can hang or misreport.
+- Nuxt metadata generation downloads from `http://` services with the correct
+  Node client while preserving HTTPS behavior.
+- Core OData flattening unwraps proven falsy V2 `d` payloads without
+  collapsing ordinary entity properties named `d`.
+- A checkpoint records package and workspace verification after the queue.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/054-validate-benchmark-concurrency-env.md`
+- `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`
+- `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`
+- `.agents/tasks/ready/057-run-stability-checkpoint.md`
+
+Exit criteria:
+
+- The ready task queue completes with task-local checks passing.
+- No UI redesign or browser-mode work is introduced.
 - Broad checkpoint checks are run or residual risk is recorded after the queue
   completes.

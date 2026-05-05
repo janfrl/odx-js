@@ -96,3 +96,12 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Continue improving benchmark comparison validation before runtime
   optimization work.
 - Clarify generated metadata cache cleanup expectations in existing docs.
+
+## Phase 11: Falsy Payload And Metadata Download Tightening
+
+- Reject invalid proxy benchmark concurrency settings before timing loops.
+- Make Nuxt metadata downloads select the correct Node client for `http://`
+  and `https://` services.
+- Prove and fix core V2 `d` envelope unwrapping for falsy scalar payloads
+  without regressing ordinary entity properties.
+- Run a stability checkpoint after the focused fixes complete.

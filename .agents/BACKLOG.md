@@ -8,7 +8,7 @@ implementation phases.
 
 ## Now
 
-- Complete the task 050-053 checkpoint and plan the next stability queue.
+- Complete the task 054-057 stability queue.
 
 ## Next
 
@@ -16,8 +16,8 @@ implementation phases.
   unless UI changes are explicitly needed and browser-verified.
 - Consider runtime performance optimizations only after benchmark tooling keeps
   malformed reports visible and checkpoint checks remain green.
-- Turn the high-confidence bug candidates from the latest read-only exploration
-  into small test-first tasks where they are not already covered.
+- Plan the next small stability or package-isolation queue after the task
+  054-057 checkpoint completes.
 
 ## Later
 
