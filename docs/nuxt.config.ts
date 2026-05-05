@@ -1,3 +1,5 @@
+const siteUrl = 'https://odx.nuxt.com'
+
 export default defineNuxtConfig({
   extends: ['docus'],
   css: ['~/assets/css/main.css'],
@@ -12,8 +14,17 @@ export default defineNuxtConfig({
   },
   vite: {
     optimizeDeps: {
-      include: ['@shikijs/twoslash'],
+      include: [
+        '@shikijs/twoslash',
+        '@shikijs/vitepress-twoslash/client',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+      ],
     },
+  },
+  experimental: {
+    // Avoid Nuxt/Nitro registering competing server-side useAppConfig imports.
+    serverAppConfig: false,
   },
   mdc: {
     highlight: {
@@ -31,9 +42,14 @@ export default defineNuxtConfig({
   },
   compatibilityDate: 'latest',
   site: {
+    url: siteUrl,
     name: 'ODX',
     description: 'Modern OData Developer Experience for Nuxt and SAP BTP',
   },
+  llms: {
+    domain: siteUrl,
+  },
+  assistant: false,
   odata: {
     devtools: {
       enabled: false,
