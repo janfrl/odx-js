@@ -109,3 +109,4 @@ because `.ps1` launchers may be blocked by execution policy.
 | `pnpm.cmd run examples` | Runs the core and proxy standalone examples together for a quick package isolation smoke check. |
 | `pnpm.cmd run bench:proxy` | Runs the proxy performance benchmark and reports direct, buffered proxy, streamed proxy, concurrent, and DevTools logging timing baselines. |
 | `pnpm.cmd --filter @bc8-odx/nuxt run playground:check` | Prepares the minimal Nuxt playground and verifies generated ODX registry types plus the typed composable usage in the playground app. |
+| `pnpm.cmd --filter @bc8-odx/explorer run verify` | Runs the Explorer package Vitest suite without the full workspace test run. |

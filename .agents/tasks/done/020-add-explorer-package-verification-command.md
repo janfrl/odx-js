@@ -1,7 +1,7 @@
 # Task: Add Explorer package verification command
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: optional
@@ -76,15 +76,37 @@ workspace package wiring beyond a focused script.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Implementer worker and integrated by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/explorer/package.json`
+  - `packages/explorer/README.md`
+  - `README.md`
+- summary:
+  - Added `verify: vitest run` to the Explorer package scripts.
+  - Documented `pnpm.cmd --filter @bc8-odx/explorer run verify` in the
+    Explorer README.
+  - Added the Explorer verification command to the root package verification
+    table for symmetry with the other package checks.
+- tests run:
+  - PASS: `pnpm.cmd --filter @bc8-odx/explorer run verify`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - No task-local checks were skipped.
+  - Runtime Explorer filtering changes reported by the worker were split into
+    task 018 instead of this low-risk tooling/docs task.
+- self-check result:
+  - Scope is limited to package script and documentation.
+  - No dependencies, runtime behavior, proxy, Nuxt, or core files are included
+    in this task commit.
+- review requirement decision:
+  - Separate review is optional and not required because the integrated task
+    contains only script/docs changes.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Left pointing at task 018 because task 018 is the active next work item.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None.

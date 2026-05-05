@@ -8,7 +8,8 @@
     "dev": "nuxi dev",
     "generate": "nuxi generate",
     "prepare": "nuxi prepare",
-    "preview": "nuxi preview"
+    "preview": "nuxi preview",
+    "verify": "vitest run"
   },
   "dependencies": {
     "@vue-flow/background": "^1.3.2",
