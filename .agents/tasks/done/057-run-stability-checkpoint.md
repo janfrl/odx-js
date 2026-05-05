@@ -1,7 +1,7 @@
 # Task: Run stability checkpoint
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -50,12 +50,12 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Package-local aggregate verification is run or a blocker is recorded.
-- [ ] Workspace tests are run or a blocker is recorded.
-- [ ] Typecheck is run or a blocker is recorded.
-- [ ] Lint is run or a blocker is recorded.
-- [ ] Task states and `.agents/NEXT.md` are consistent at the end.
-- [ ] Any failures, skipped checks, and residual risks are recorded clearly.
+- [x] Package-local aggregate verification is run or a blocker is recorded.
+- [x] Workspace tests are run or a blocker is recorded.
+- [x] Typecheck is run or a blocker is recorded.
+- [x] Lint is run or a blocker is recorded.
+- [x] Task states and `.agents/NEXT.md` are consistent at the end.
+- [x] Any failures, skipped checks, and residual risks are recorded clearly.
 
 ## Verification
 
@@ -88,16 +88,47 @@ that require code changes or a risky decision.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `.agents/tasks/done/057-run-stability-checkpoint.md`
+  - `.agents/NEXT.md`
 - summary
+  - Ran the stability checkpoint after tasks 054-056 completed.
+  - Cleaned generated verification artifacts from `docs/public/api-reference.json`
+    and `packages/explorer/.nuxtrc` before recording the checkpoint.
+  - Confirmed the worktree was clean before moving the checkpoint task.
+  - Updated `.agents/NEXT.md` to the Planner prompt because the ready queue is
+    empty after this task.
 - tests run
+  - PASS: `pnpm.cmd run verify:packages`
+    - core: 5 files passed, 28 tests passed, standalone example passed.
+    - proxy: 9 files passed, 82 tests passed, 1 skipped, standalone example passed.
+    - Nuxt: 3 files passed, 13 tests passed, minimal playground check passed.
+    - Explorer: 1 file passed, 32 tests passed.
+    - AppRouter: 1 file passed, 1 test passed.
+    - docs metadata extraction and API reference extraction passed.
+  - PASS: `pnpm.cmd run test`
+    - 20 files passed, 178 tests passed, 1 skipped.
+  - PASS: `pnpm.cmd run typecheck`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `git status --short --branch` after cleanup
 - skipped checks and residual risk
+  - No checkpoint commands were skipped.
+  - Existing Node DEP0155 warnings from Nuxt/Vue trailing slash export mappings
+    appeared during Nuxt/package and workspace tests. They are unchanged
+    dependency warnings and did not fail verification.
 - self-check result
+  - Scope stayed limited to verification, generated-artifact cleanup, task
+    handoff, and workflow state. No production source, tests, scripts,
+    dependencies, lockfiles, product documentation, or new feature work changed
+    in this checkpoint task.
 - review requirement decision
+  - Separate review is not required because this is low-risk checkpoint
+    recording and all verification passed.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
 - `.agents/NEXT.md` update
+  - Updated to Planner prompt for creating the next 3-5 implementation tasks.
 - commit hash
+  - The task implementation commit is the commit containing this handoff.
 - known gaps
-
+  - None.
