@@ -12,43 +12,41 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/019-harden-explorer-query-builder-serialization.md`.
+Run the Planner because no implementation tasks remain in `.agents/tasks/ready/`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX.
+You are the Planner for ODX.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- .agents/WORKFLOW.md
+- relevant root documentation
+- .agents/ROADMAP.md
+- .agents/EPICS.md
+- .agents/BACKLOG.md
+- .agents/tasks/
+- .agents/reviews/
 - .agents/decisions/
-- .agents/tasks/ready/019-harden-explorer-query-builder-serialization.md
-- DESIGN.md
-- DOMAIN_MODEL.md
 
 Rules:
-- Implement exactly `.agents/tasks/ready/019-harden-explorer-query-builder-serialization.md`.
-- Add failing Explorer state tests first for string literal escaping, function filters, and numeric values.
-- Keep behavior local to Explorer unless a proven reusable OData concern belongs in `@bc8-odx/core`.
-- Preserve existing manual `queryInput` behavior.
-- Do not rewrite the query builder UI or implement a full OData expression grammar.
-- Use `pnpm.cmd`, not `pnpm`, on this Windows machine.
-- Run the verification steps listed in the task, or explain why they could not be run.
-- Request separate review only if core query contracts, public composable contracts, or proxy/server behavior change.
-- Move the task to `.agents/tasks/done/` only after implementation and verification.
+- Create the next 3-5 implementation tasks.
+- Each task must be executable by one implementer chat.
+- Use `.agents/tasks/TASK_TEMPLATE.md`.
+- Put new tasks in `.agents/tasks/ready/`.
+- Keep tasks small and reviewable.
+- Include acceptance criteria and verification steps.
+- Do not create vague or oversized tasks.
+- Update BACKLOG.md, EPICS.md, and ROADMAP.md only if needed.
 - Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
+- new tasks created
+- recommended next task
+- open decisions or blockers
 - commit hash
-- known gaps
-- exact next-chat prompt from .agents/NEXT.md
+- exact next-chat prompt from `.agents/NEXT.md`
 ```

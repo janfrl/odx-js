@@ -13,6 +13,9 @@ const editor = ref<EditorState>({
 
 const showLoadingIndicator = ref(false)
 const RE_TRAILING_SLASH = /\/$/
+const RE_ODATA_NUMERIC_TYPE = /(?:^|\.)(?:Byte|SByte|Int16|Int32|Int64|Decimal|Double|Single)$/
+const RE_NUMERIC_LITERAL = /^[+-]?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?$/i
+const RE_SINGLE_QUOTE = /'/g
 
 export interface EntityExplorer {
   selectedService: Ref<any>
@@ -60,6 +63,47 @@ export function useEntityExplorer(): EntityExplorer {
 
   let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
+  function getCurrentEntitySchema(): any {
+    const entityName = selectedEntity.value
+    if (!entitySchema.value || !entityName) {
+      return null
+    }
+
+    const entities = entitySchema.value.entities || []
+    return entities.find((e: any) =>
+      e.name === entityName || e.entitySet === entityName,
+    ) || entities.find((e: any) =>
+      e.name.toLowerCase() === entityName.toLowerCase(),
+    ) || entities.find((e: any) =>
+      entityName.toLowerCase().startsWith(e.name.toLowerCase())
+      || e.name.toLowerCase().startsWith(entityName.toLowerCase()),
+    ) || null
+  }
+
+  function isNumericProperty(field: string): boolean {
+    const propertyType = getCurrentEntitySchema()
+      ?.properties
+      ?.find((p: any) => p.name === field)
+      ?.type
+    return typeof propertyType === 'string' && RE_ODATA_NUMERIC_TYPE.test(propertyType)
+  }
+
+  function serializeStringLiteral(value: string): string {
+    return `'${value.replace(RE_SINGLE_QUOTE, '\'\'')}'`
+  }
+
+  function serializeFilterValue(rule: any, forceStringLiteral = false): string {
+    const value = rule.value
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (!forceStringLiteral && isNumericProperty(rule.field) && RE_NUMERIC_LITERAL.test(trimmed)) {
+        return trimmed
+      }
+      return serializeStringLiteral(value)
+    }
+    return String(value)
+  }
+
   // Watch queryState and generate queryInput string
   watch(queryState, (newState) => {
     let q = '?'
@@ -77,12 +121,9 @@ export function useEntityExplorer(): EntityExplorer {
 
     // 3. $filter (Recursive)
     function serializeRule(rule: any): string {
-      let val = rule.value
-      if (typeof val === 'string') {
-        val = `'${val}'`
-      }
-
-      if (rule.operator === 'contains' || rule.operator === 'startswith' || rule.operator === 'endswith') {
+      const isFunctionFilter = rule.operator === 'contains' || rule.operator === 'startswith' || rule.operator === 'endswith'
+      const val = serializeFilterValue(rule, isFunctionFilter)
+      if (isFunctionFilter) {
         return `${rule.operator}(${rule.field},${val})`
       }
       return `${rule.field} ${rule.operator} ${val}`
@@ -299,34 +340,7 @@ export function useEntityExplorer(): EntityExplorer {
   }
 
   const currentEntitySchema = computed(() => {
-    const entityName = selectedEntity.value
-    if (!entitySchema.value || !entityName) {
-      return null
-    }
-
-    const entities = entitySchema.value.entities || []
-
-    // 1. Try exact match on name or entitySet
-    const exact = entities.find((e: any) =>
-      e.name === entityName || e.entitySet === entityName,
-    )
-    if (exact) {
-      return exact
-    }
-
-    // 2. Try case-insensitive match
-    const caseInsensitive = entities.find((e: any) =>
-      e.name.toLowerCase() === entityName.toLowerCase(),
-    )
-    if (caseInsensitive) {
-      return caseInsensitive
-    }
-
-    // 3. Try to find entity type by stripping possible pluralization or suffixes
-    return entities.find((e: any) =>
-      entityName.toLowerCase().startsWith(e.name.toLowerCase())
-      || e.name.toLowerCase().startsWith(entityName.toLowerCase()),
-    ) || null
+    return getCurrentEntitySchema()
   })
 
   const previewColumns = computed(() => {

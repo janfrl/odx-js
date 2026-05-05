@@ -1,7 +1,7 @@
 # Task: Harden Explorer query builder serialization
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if core query contracts change
@@ -81,15 +81,50 @@ developer tool. Separate review is required only if the task moves behavior into
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Implementer worker and integrated by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/explorer/composables/useEntityExplorer.ts`
+  - `packages/explorer/test/state.test.ts`
+- failing-test evidence:
+  - Added tests first, then ran
+    `pnpm.cmd --filter @bc8-odx/explorer exec vitest run test/state.test.ts`.
+  - Pre-fix failures showed:
+    - `Name eq 'Bob's Tea'` instead of `Name eq 'Bob''s Tea'`
+    - `contains(Name,'Bob's')` instead of `contains(Name,'Bob''s')`
+    - `Price ge '12.5'` instead of `Price ge 12.5`
+- summary:
+  - Escaped embedded single quotes in visual builder string literals.
+  - Applied the same escaping to function filters such as `contains`.
+  - Used the current entity schema to serialize numeric EDM property values
+    without string quotes when the builder value is numeric-looking text.
+  - Kept the serialization helper local to Explorer and reused existing entity
+    schema lookup behavior.
+- tests run:
+  - PASS: `pnpm.cmd --filter @bc8-odx/explorer exec vitest run test/state.test.ts`
+    (Implementer).
+  - PASS: `pnpm.cmd --filter @bc8-odx/explorer exec vitest run`.
+  - PASS: `pnpm.cmd run test -- packages/explorer`.
+  - PASS: `pnpm.cmd run typecheck`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - No task-local checks were skipped.
+  - This remains a lightweight serializer for common builder values, not a full
+    OData expression grammar.
+- self-check result:
+  - Scope stayed local to Explorer query-state serialization and tests.
+  - Manual `queryInput` behavior was not changed.
+  - No `@bc8-odx/core`, `useOData()` composable, proxy, server, UI layout, or
+    dependencies changed.
+- review requirement decision:
+  - Separate review is not required because no core query contracts, public
+    composable contracts, or proxy/server behavior changed.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Updated to planner mode because no implementation tasks remain in
+    `.agents/tasks/ready/`.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None beyond the intentionally limited grammar scope.

@@ -284,6 +284,95 @@ describe('explorer State Composable', () => {
     expect(queryInput.value).toBe('?$select=ID,Name&$expand=Category&$filter=contains(Name,\'Tea\') and Price gt 10&$orderby=Name asc&$top=5&$skip=10')
   })
 
+  it('escapes single quotes in visual query builder string filters', async () => {
+    const { queryInput, queryState } = useEntityExplorer()
+
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [
+          { type: 'rule', field: 'Name', operator: 'eq', value: 'Bob\'s Tea' },
+        ],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    }
+    await nextTick()
+
+    expect(queryInput.value).toBe('?$filter=Name eq \'Bob\'\'s Tea\'')
+  })
+
+  it('escapes string values in visual query builder function filters', async () => {
+    const { queryInput, queryState } = useEntityExplorer()
+
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [
+          { type: 'rule', field: 'Name', operator: 'contains', value: 'Bob\'s' },
+        ],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    }
+    await nextTick()
+
+    expect(queryInput.value).toBe('?$filter=contains(Name,\'Bob\'\'s\')')
+  })
+
+  it('serializes numeric visual query builder values without string quotes', async () => {
+    const { entitySchema, queryInput, selectedEntity, selectedService } = useSharedODataState()
+    const schema = {
+      entities: [
+        {
+          name: 'Product',
+          entitySet: 'Products',
+          properties: [{ name: 'Price', type: 'Edm.Decimal' }],
+        },
+      ],
+    }
+    selectedService.value = {
+      name: 'Northwind',
+      route: 'northwind',
+      strategy: 'proxied',
+    } as any
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => schema,
+    })
+    selectedEntity.value = 'Products'
+    await nextTick()
+    await nextTick()
+    entitySchema.value = schema
+    const explorer = useEntityExplorer()
+
+    explorer.queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [
+          { type: 'rule', field: 'Price', operator: 'ge', value: '12.5' },
+        ],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: 25,
+      skip: 50,
+    }
+    await nextTick()
+
+    expect(queryInput.value).toBe('?$filter=Price ge 12.5&$top=25&$skip=50')
+  })
+
   it('resets visual query state back to the entity browser default', async () => {
     const { queryInput, queryState, resetQuery } = useEntityExplorer()
     queryState.value = {
