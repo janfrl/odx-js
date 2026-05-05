@@ -1,7 +1,7 @@
 # Task: Add proxy benchmark overhead ratios
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -87,15 +87,43 @@ semantics, or dependencies change.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/proxy/test/performance.test.ts`
+  - `packages/proxy/README.md`
+- summary:
+  - Added optional `overheadAvgPercent` to benchmark summaries for scenarios
+    that already had an absolute average overhead baseline.
+  - Added an `avg overhead %` column to the console benchmark table.
+  - JSON benchmark output now includes the same percentage field on applicable
+    scenarios while direct baseline scenarios remain unchanged.
+  - Documented the absolute and relative overhead fields in the proxy package
+    README.
+- tests run:
+  - `$env:ODX_PROXY_BENCHMARK_OUTPUT='reports/proxy-benchmark-ratio.json'; pnpm.cmd run bench:proxy; Remove-Item Env:ODX_PROXY_BENCHMARK_OUTPUT`
+    - passed and wrote gitignored JSON with `overheadAvgPercent` on applicable
+    scenarios.
+  - `pnpm.cmd run bench:proxy:compare -- reports/proxy-benchmark-ratio.json reports/proxy-benchmark-ratio.json`
+    - passed, confirming compare compatibility with ratio reports.
+  - `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
+    - passed with the existing skipped-by-default benchmark behavior outside
+    `bench:proxy`.
+  - `pnpm.cmd run lint` - passed.
+  - `pnpm.cmd run typecheck` - passed.
+- skipped checks and residual risk:
+  - none.
+- self-check result:
+  - Scope stayed limited to local benchmark tooling and proxy README
+    documentation. No production proxy code, scenario definitions, iteration
+    defaults, dependencies, or opt-in benchmark behavior changed. No generated
+    reports are committed.
+- review requirement decision:
+  - Separate review is not required because this is low-risk local benchmark
+    tooling and documentation only.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Point to the planner because no implementation task remains ready.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - none.

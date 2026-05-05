@@ -12,45 +12,44 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement the lowest-numbered ready task:
-`.agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md`.
+No ready implementation tasks remain. Run the Planner to create the next small,
+reviewable tasks.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX.
+You are the Planner for ODX.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
+- relevant root documentation
 - .agents/WORKFLOW.md
+- .agents/ROADMAP.md
+- .agents/EPICS.md
+- .agents/BACKLOG.md
+- .agents/tasks/
+- .agents/reviews/
 - .agents/decisions/
-- .agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md
-- packages/proxy/test/performance.test.ts
-- scripts/compare-proxy-benchmarks.ts
-- packages/proxy/README.md
-- .agents/tasks/done/021-record-proxy-benchmark-baseline-output.md
-- .agents/tasks/done/025-add-proxy-benchmark-compare-helper.md
 
 Rules:
-- Implement exactly `.agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md`.
-- Keep changes scoped to proxy benchmark output, compare compatibility, and related proxy benchmark documentation.
-- Do not change production proxy code, benchmark scenario definitions, iteration defaults, opt-in benchmark behavior, or dependencies.
-- Use local generated reports under gitignored `reports/`.
-- Run the verification steps listed in the task, or explain skipped checks and residual risk.
-- Update the task handoff notes before finishing.
-- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
-- Update `.agents/NEXT.md` with the next concrete workflow action.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
-- Separate review is not required unless production proxy code, benchmark semantics, or dependencies change.
+- Create the next 3-5 implementation tasks.
+- Each task must be executable by one implementer chat.
+- Use `.agents/tasks/TASK_TEMPLATE.md`.
+- Put new tasks in `.agents/tasks/ready/`.
+- Keep tasks small and reviewable.
+- Include acceptance criteria and verification steps.
+- Focus on project value: package isolation, explorer confidence, proxy/BTP correctness, performance measurement, and documentation clarity.
+- Do not create vague or oversized tasks.
+- Update `.agents/BACKLOG.md`, `.agents/EPICS.md`, and `.agents/ROADMAP.md` only if needed.
+- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
+- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
+- new tasks created
+- recommended next task
+- open decisions or blockers
 - commit hash
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

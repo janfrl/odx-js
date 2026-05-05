@@ -23,6 +23,7 @@ interface MeasurementSummary {
   p95Ms: number
   maxMs: number
   overheadAvgMs?: number
+  overheadAvgPercent?: number
 }
 
 interface BenchmarkOutput {
@@ -167,6 +168,7 @@ function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
     formatMs(summary.p95Ms).padStart(10),
     formatMs(summary.maxMs).padStart(10),
     formatOptionalMs(summary.overheadAvgMs).padStart(15),
+    formatOptionalPercent(summary.overheadAvgPercent).padStart(15),
   ])
 
   return [
@@ -183,6 +185,7 @@ function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
       'p95'.padStart(10),
       'max'.padStart(10),
       'avg overhead'.padStart(15),
+      'avg overhead %'.padStart(15),
     ].join('  '),
     ...rows.map(row => row.join('  ')),
     '',
@@ -225,6 +228,18 @@ function formatMs(value: number): string {
 
 function formatOptionalMs(value?: number): string {
   return typeof value === 'number' ? formatMs(value) : '-'
+}
+
+function formatOptionalPercent(value?: number): string {
+  return typeof value === 'number' ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'
+}
+
+function assignAverageOverhead(summary: MeasurementSummary, baseline: MeasurementSummary): void {
+  const overheadAvgMs = summary.avgMs - baseline.avgMs
+  summary.overheadAvgMs = overheadAvgMs
+  if (baseline.avgMs !== 0) {
+    summary.overheadAvgPercent = (overheadAvgMs / baseline.avgMs) * 100
+  }
 }
 
 describeBenchmark('proxy performance baseline', () => {
@@ -346,13 +361,26 @@ describeBenchmark('proxy performance baseline', () => {
       expect(summary.maxMs).toBeLessThan(3000)
     }
 
-    smallBuffered.overheadAvgMs = smallBuffered.avgMs - smallDirect.avgMs
-    smallStreamed.overheadAvgMs = smallStreamed.avgMs - smallDirect.avgMs
-    largeBuffered.overheadAvgMs = largeBuffered.avgMs - largeDirect.avgMs
-    largeStreamed.overheadAvgMs = largeStreamed.avgMs - largeDirect.avgMs
-    concurrentBuffered.overheadAvgMs = concurrentBuffered.avgMs - concurrentDirect.avgMs
-    concurrentStreamed.overheadAvgMs = concurrentStreamed.avgMs - concurrentDirect.avgMs
-    devtoolsBuffered.overheadAvgMs = devtoolsBuffered.avgMs - smallBuffered.avgMs
+    assignAverageOverhead(smallBuffered, smallDirect)
+    assignAverageOverhead(smallStreamed, smallDirect)
+    assignAverageOverhead(largeBuffered, largeDirect)
+    assignAverageOverhead(largeStreamed, largeDirect)
+    assignAverageOverhead(concurrentBuffered, concurrentDirect)
+    assignAverageOverhead(concurrentStreamed, concurrentDirect)
+    assignAverageOverhead(devtoolsBuffered, smallBuffered)
+
+    for (const summary of [
+      smallBuffered,
+      smallStreamed,
+      largeBuffered,
+      largeStreamed,
+      concurrentBuffered,
+      concurrentStreamed,
+      devtoolsBuffered,
+    ]) {
+      expect(Number.isFinite(summary.overheadAvgMs)).toBe(true)
+      expect(Number.isFinite(summary.overheadAvgPercent)).toBe(true)
+    }
 
     process.stdout.write(formatBenchmarkReport(summaries))
     await writeBenchmarkOutput(summaries)
