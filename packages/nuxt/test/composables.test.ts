@@ -140,6 +140,18 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('calls $odata for routed service create using the configured route', async () => {
+      const api = useOData('RoutedService' as any)
+      await api.entitySet('Products').create({ Name: 'New Product' })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products',
+        'POST',
+        { body: { Name: 'New Product' } },
+      )
+    })
+
     it('calls $odata for update (PATCH)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').update(1, { Name: 'Updated' })
@@ -147,6 +159,18 @@ describe('useOData Composable', () => {
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/MyService/Products(1)',
+        'PATCH',
+        { body: { Name: 'Updated' } },
+      )
+    })
+
+    it('calls $odata for routed service update using the configured route and string key', async () => {
+      const api = useOData('RoutedService' as any)
+      await api.entitySet('Products').update('O\'Brien', { Name: 'Updated' })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(\'O\'\'Brien\')',
         'PATCH',
         { body: { Name: 'Updated' } },
       )
@@ -171,6 +195,17 @@ describe('useOData Composable', () => {
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/MyService/Products(\'key1\')',
+        'DELETE',
+      )
+    })
+
+    it('calls $odata for routed service remove using the configured route', async () => {
+      const api = useOData('RoutedService' as any)
+      await api.entitySet('Products').remove(1)
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(1)',
         'DELETE',
       )
     })

@@ -1,8 +1,9 @@
 # Task: Cover routed Nuxt mutations
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Implementer
 Created: 2026-05-05
+Completed: 2026-05-05
 Risk: low
 Review: not required
 
@@ -44,11 +45,11 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Tests cover routed service `create`.
-- [ ] Tests cover routed service `update`.
-- [ ] Tests cover routed service `remove`.
-- [ ] Existing Nuxt composable tests remain green.
-- [ ] No runtime behavior changes are made unless a test proves a bug.
+- [x] Tests cover routed service `create`.
+- [x] Tests cover routed service `update`.
+- [x] Tests cover routed service `remove`.
+- [x] Existing Nuxt composable tests remain green.
+- [x] No runtime behavior changes are made unless a test proves a bug.
 
 ## Verification
 
@@ -79,16 +80,17 @@ composable contracts, generated types, or proxy behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
-
+- changed files: `packages/nuxt/test/composables.test.ts`, `.agents/tasks/done/040-cover-routed-nuxt-mutations.md`, `.agents/tasks/ready/040-cover-routed-nuxt-mutations.md`
+- summary: added focused Nuxt composable tests proving configured service routes are used for routed `create`, `update`, and `remove` mutation calls. The routed update case also covers string-key formatting and escaping.
+- tests run:
+  - `pnpm.cmd exec vitest run packages/nuxt/test/composables.test.ts` - pass, 22 tests
+  - `pnpm.cmd --filter @bc8-odx/nuxt run verify` - pass, 3 files / 12 tests plus minimal playground check; existing Node DEP0155 warnings were emitted by dependencies
+  - `pnpm.cmd run typecheck` - pass
+  - `pnpm.cmd run lint` - pass
+- skipped checks and residual risk: none
+- self-check result: scope, acceptance criteria, API/domain expectations, architecture boundaries, and unrelated-change preservation checked. Runtime `useOData.ts` was not changed because the test-first run passed.
+- review requirement decision: separate review not required. This stayed a low-risk test-only change with no public contract, runtime, proxy, dependency, or generated type changes.
+- task state movement: moved from `.agents/tasks/ready/` to `.agents/tasks/done/` by patch after `Move-Item` was denied by local permissions.
+- `.agents/NEXT.md` update: already pointed at the next ready task 039 when completion was recorded; no further change was needed.
+- commit hash: recorded in final response after commit.
+- known gaps: none for the scoped routed mutation coverage.
