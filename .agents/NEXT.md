@@ -12,50 +12,52 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/051-add-deployment-config-consistency-tests.md`.
+Review `.agents/tasks/done/051-add-deployment-config-consistency-tests.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+
+Review the completed task:
+.agents/tasks/done/051-add-deployment-config-consistency-tests.md
 
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/decisions/
-- .agents/tasks/ready/051-add-deployment-config-consistency-tests.md
 - ARCHITECTURE.md
 - DEPLOYMENT.md
 - SECURITY.md
+- .agents/decisions/
+- .agents/tasks/done/051-add-deployment-config-consistency-tests.md
 - mta.yaml
 - packages/approuter/xs-app.json
 - packages/approuter/package.json
 - package.json
+- the changed files and diff
 
-Implement exactly `.agents/tasks/ready/051-add-deployment-config-consistency-tests.md`.
+Review stance:
+- Findings first.
+- Prioritize correctness, architecture boundaries, security/privacy, authorization, public contracts, missing tests, and acceptance criteria gaps.
+- Check that the implementation matches the task and does not include unrelated scope.
+- Check that durable decisions are documented.
 
-Rules:
-- Keep changes scoped to the task.
-- Do not start unrelated refactors.
-- Do not revert edits made by others.
-- Follow existing repository structure, style, and documented architecture boundaries.
-- Update the task handoff notes before finishing.
-- Run the verification steps listed in the task, or explain why they could not be run.
-- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
-- Decide whether separate review is required using `.agents/WORKFLOW.md`.
-- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
-- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+Output:
+- findings with severity and file/line references
+- acceptance criteria status
+- test/verification gaps
+- whether the task is approved or needs changes
+
+Create or update a review note under .agents/reviews/ using REVIEW_TEMPLATE.md.
+Update .agents/NEXT.md and commit the review note and workflow state changes.
+Include the exact next-chat prompt the operator should paste into a new chat.
 
 When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
+- findings
+- acceptance criteria status
+- verification reviewed
+- approval decision
 - commit hash
-- known gaps
-- exact next-chat prompt from `.agents/NEXT.md`
+- exact next-chat prompt from .agents/NEXT.md
 ```

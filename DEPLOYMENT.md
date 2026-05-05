@@ -164,6 +164,7 @@ Before deployment-sensitive changes, run the relevant checks:
 pnpm run lint
 pnpm run typecheck
 pnpm run test
+pnpm --filter odx-approuter run verify
 pnpm run build
 ```
 

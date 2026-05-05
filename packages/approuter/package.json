@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "verify": "vitest run test/deployment-config.test.ts"
   },
   "dependencies": {
     "@sap/approuter": "^21.1.0"

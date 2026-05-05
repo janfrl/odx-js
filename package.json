@@ -36,7 +36,7 @@
     "example:core": "tsx examples/core-standalone.ts",
     "example:proxy": "tsx examples/proxy-standalone.ts",
     "examples": "pnpm run example:core && pnpm run example:proxy",
-    "verify:packages": "pnpm --filter @bc8-odx/core run verify && pnpm --filter @bc8-odx/proxy run verify && pnpm --filter @bc8-odx/nuxt run verify && pnpm --filter @bc8-odx/explorer run verify && pnpm --filter docs run verify",
+    "verify:packages": "pnpm --filter @bc8-odx/core run verify && pnpm --filter @bc8-odx/proxy run verify && pnpm --filter @bc8-odx/nuxt run verify && pnpm --filter @bc8-odx/explorer run verify && pnpm --filter odx-approuter run verify && pnpm --filter docs run verify",
     "release": "tsx scripts/release.ts",
     "bump": "tsx scripts/bump.ts",
     "lint": "eslint .",
