@@ -24,7 +24,6 @@ documentation.
 ```txt
 .agents/
 |-- README.md
-|-- ADOPTION.md
 |-- WORKFLOW.md
 |-- NEXT.md
 |-- mcp.json
@@ -52,22 +51,21 @@ documentation.
 
 ## Workflow
 
-1. If this template was just copied into a project, follow `.agents/ADOPTION.md`.
-2. Check `.agents/NEXT.md`.
-3. Start with the Orchestrator unless the operator explicitly chooses another
+1. Check `.agents/NEXT.md`.
+2. Start with the Orchestrator unless the operator explicitly chooses another
    role.
-4. Follow `.agents/WORKFLOW.md` and its current operating mode.
-5. The planner reads root documentation and updates `.agents/ROADMAP.md`,
+3. Follow `.agents/WORKFLOW.md` and its current operating mode.
+4. The planner reads root documentation and updates `.agents/ROADMAP.md`,
    `.agents/EPICS.md`, and `.agents/BACKLOG.md`.
-6. The planner turns backlog items into task briefs under `.agents/tasks/ready/`.
-7. An implementer takes exactly one ready task, moves it to `in-progress`,
+5. The planner turns backlog items into task briefs under `.agents/tasks/ready/`.
+6. An implementer takes exactly one ready task, moves it to `in-progress`,
    implements it, verifies it, and moves it to `done`.
-8. A reviewer reviews the implementation against root documentation and task
+7. A reviewer reviews the implementation against root documentation and task
    acceptance criteria when the risk classifier, task file, or operator
    requires independent review.
-9. An integrator applies only bounded review fixes and requests focused
+8. An integrator applies only bounded review fixes and requests focused
    re-review when needed.
-10. Stable decisions are promoted from `.agents/decisions/` into root
+9. Stable decisions are promoted from `.agents/decisions/` into root
    documentation.
 
 ## MCP Servers

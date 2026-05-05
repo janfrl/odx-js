@@ -5,22 +5,23 @@ This roadmap is an operational planning document. Keep stable product scope in
 
 Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 
-## Phase 1: Foundation
+## Phase 1: Quality Baseline
 
-- Define the first usable product or system slice.
-- Establish project structure and local development setup.
-- Add baseline quality checks.
-- Document architecture, security, deployment, and contribution expectations
-  when they become relevant.
+- Keep `lint`, `typecheck`, and tests green.
+- Close focused correctness bugs with tests-first implementation.
+- Record required reviews for security-sensitive proxy and process-execution
+  changes.
 
-## Phase 2: Core Workflows
+## Phase 2: Package Confidence
 
-- Implement the smallest end-to-end workflow that proves the project direction.
-- Add tests around core behavior and boundary contracts.
-- Record stable decisions in root documentation.
+- Add performance benchmarks for proxy overhead.
+- Design independent package playgrounds or examples for `core`, `proxy`,
+  `nuxt`, and `explorer`.
+- Improve package-level verification without coupling everything to the full
+  playground.
 
-## Phase 3: Productization
+## Phase 3: Product Confidence
 
-- Improve operability, deployment, observability, and documentation.
-- Harden security, privacy, and review gates for higher-risk changes.
-- Add extension or integration points only after their boundaries are documented.
+- Expand Explorer tests carefully without visual churn.
+- Add BTP-oriented integration coverage where it can be verified locally.
+- Revisit production TLS defaults as a documented security decision.

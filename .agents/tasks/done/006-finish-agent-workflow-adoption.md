@@ -1,7 +1,7 @@
 # Task: Finish agent workflow adoption
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-04
 Risk: low
 Review: not required
@@ -73,15 +73,21 @@ required unless durable project rules are materially changed.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `AGENTS.md`, `.agents/README.md`, `.agents/ROADMAP.md`,
+  `.agents/NEXT.md`, deleted `.agents/ADOPTION.md`, and this task file
+- summary: removed template-adoption references, deleted the adoption playbook,
+  and updated roadmap language to current ODX quality, package-confidence, and
+  product-confidence work
+- tests run: `git diff --check`, `git status --short --branch`
+- skipped checks and residual risk: package checks skipped because this is
+  operational documentation only
+- self-check result: scope, acceptance criteria, documentation boundaries, and
+  unrelated changes checked
+- review requirement decision: separate review not required; low-risk
+  operational documentation cleanup
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: point to
+  `.agents/tasks/ready/007-add-proxy-performance-benchmarks.md`
+- commit hash: pending commit at handoff-note update time
+- known gaps: none

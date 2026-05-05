@@ -12,41 +12,51 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run a Reviewer for
-`.agents/tasks/done/002-audit-devtools-log-data-exposure.md`.
+Run the Implementer for
+`.agents/tasks/ready/007-add-proxy-performance-benchmarks.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX.
-
-Review the completed task:
-.agents/tasks/done/002-audit-devtools-log-data-exposure.md
+You are the Implementer for ODX.
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- SECURITY.md
-- .agents/tasks/done/002-audit-devtools-log-data-exposure.md
+- .agents/tasks/ready/007-add-proxy-performance-benchmarks.md
+- packages/proxy/test/fixtures/backend.ts
+- packages/proxy/test/fixtures/server.ts
 - packages/proxy/src/api/odata.ts
-- packages/proxy/test/integration.test.ts
-- the diff for the latest implementation commit
+- package.json
+- vitest.config.ts
 
-Review stance:
-- Findings first.
-- Prioritize correctness, security/privacy, proxy behavior, missing tests, and acceptance criteria gaps.
-- Verify that the implementation does not introduce broad header-name redaction.
-- Verify that outbound proxy authorization behavior is unchanged.
-- Verify that ODX-managed auth values are omitted only from the DevTools log copy.
+Implement exactly .agents/tasks/ready/007-add-proxy-performance-benchmarks.md.
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether the task is approved or needs changes
-- exact next-chat prompt from .agents/NEXT.md after updating workflow state
+Rules:
+- Keep changes scoped to the task.
+- Do not start unrelated refactors.
+- Follow existing repository structure, style, and documented architecture boundaries.
+- Use pnpm.cmd, not pnpm, on this Windows machine.
+- Add measurement before optimization.
+- Keep performance thresholds tolerant and non-flaky.
+- Do not change production proxy behavior unless a severe blocker is found.
+- Update the task handoff notes before finishing.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
+- Decide whether separate review is required using .agents/WORKFLOW.md.
+- Move the task to .agents/tasks/done/ when implementation and verification are complete.
+- Update .agents/NEXT.md with the next action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
-Create or update a review note under .agents/reviews/ using REVIEW_TEMPLATE.md.
-Update .agents/NEXT.md and commit the review note and workflow state changes.
+When done, summarize:
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from .agents/NEXT.md
 ```
