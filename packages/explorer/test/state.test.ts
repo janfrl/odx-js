@@ -14,6 +14,8 @@ describe('explorer State Composable', () => {
       activeTab,
       config,
       filteredLogs,
+      hasActiveLogFilters,
+      hasFilteredOutLogs,
       logFilterService,
       logFilterStatus,
       logSearch,
@@ -69,6 +71,8 @@ describe('explorer State Composable', () => {
     sessionHeaders.value = {}
     useCORSBridge.value = true
     expect(filteredLogs.value).toEqual([])
+    expect(hasActiveLogFilters.value).toBe(false)
+    expect(hasFilteredOutLogs.value).toBe(false)
   })
 
   it('fetches config correctly', async () => {
@@ -198,6 +202,44 @@ describe('explorer State Composable', () => {
     logSearch.value = 'products'
 
     expect(filteredLogs.value.map(log => log.id)).toEqual(['ok-products'])
+  })
+
+  it('detects when active traffic filters hide existing logs', () => {
+    const { filteredLogs, hasActiveLogFilters, hasFilteredOutLogs, logFilterStatus, logs } = useSharedODataState()
+    logs.value = [
+      {
+        id: 'ok-products',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        entitySet: 'Products',
+        status: 200,
+        duration: 12,
+      } as any,
+    ]
+
+    logFilterStatus.value = 'failures'
+
+    expect(hasActiveLogFilters.value).toBe(true)
+    expect(filteredLogs.value).toEqual([])
+    expect(hasFilteredOutLogs.value).toBe(true)
+  })
+
+  it('clears all traffic log filters together', () => {
+    const { clearLogFilters, hasActiveLogFilters, logFilterService, logFilterStatus, logSearch } = useSharedODataState()
+    logFilterService.value = 'northwind'
+    logFilterStatus.value = 'failures'
+    logSearch.value = 'orders'
+
+    expect(hasActiveLogFilters.value).toBe(true)
+
+    clearLogFilters()
+
+    expect(logFilterService.value).toBeNull()
+    expect(logFilterStatus.value).toBe('all')
+    expect(logSearch.value).toBe('')
+    expect(hasActiveLogFilters.value).toBe(false)
   })
 
   it('coordinates selected proxy trace log state', () => {

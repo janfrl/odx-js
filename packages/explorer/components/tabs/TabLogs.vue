@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { UBadge, UButton, UIcon } from '#components'
 
-const { filteredLogs, clearLogs, services, logFilterService, logFilterStatus, logSearch, activeTab, selectedTraceLogId } = useSharedODataState()
+const { filteredLogs, clearLogFilters, clearLogs, services, logFilterService, logFilterStatus, logSearch, hasFilteredOutLogs, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
 
 const expanded = ref<Record<string, boolean>>({})
@@ -230,14 +230,24 @@ async function runClear() {
             <template #empty>
               <div class="flex flex-col items-center justify-center py-24 text-center">
                 <div class="w-16 h-16 rounded-2xl bg-default border border-default flex items-center justify-center mb-6 shadow-sm">
-                  <UIcon name="i-lucide-activity" class="text-muted w-8 h-8" />
+                  <UIcon :name="hasFilteredOutLogs ? 'i-lucide-filter-x' : 'i-lucide-activity'" class="text-muted w-8 h-8" />
                 </div>
                 <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-highlighted">
-                  No network activity
+                  {{ hasFilteredOutLogs ? 'No matching traffic' : 'No network activity' }}
                 </h3>
                 <p class="text-[12px] text-muted max-w-70 leading-relaxed">
-                  Recorded OData request and response logs will appear here in real-time.
+                  {{ hasFilteredOutLogs ? 'Recorded requests exist, but none match the active filters.' : 'Recorded OData request and response logs will appear here in real-time.' }}
                 </p>
+                <UButton
+                  v-if="hasFilteredOutLogs"
+                  label="Clear Filters"
+                  color="neutral"
+                  variant="subtle"
+                  size="sm"
+                  icon="i-lucide-filter-x"
+                  class="mt-5 font-bold"
+                  @click="clearLogFilters"
+                />
               </div>
             </template>
 

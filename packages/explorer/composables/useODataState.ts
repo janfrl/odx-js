@@ -164,6 +164,8 @@ export interface SharedODataState {
   logFilterStatus: Ref<LogFilterStatus>
   logSearch: Ref<string>
   filteredLogs: ComputedRef<ODataLog[]>
+  hasActiveLogFilters: ComputedRef<boolean>
+  hasFilteredOutLogs: ComputedRef<boolean>
   useCORSBridge: Ref<boolean>
   selectedTraceLogId: Ref<string | null>
   previewLoading: Ref<boolean>
@@ -188,6 +190,7 @@ export interface SharedODataState {
   fetchConfig: () => Promise<void>
   refreshLogs: () => Promise<void>
   generateService: (name: string) => Promise<void>
+  clearLogFilters: () => void
   clearLogs: () => Promise<void>
   clearEntityMockData: (service: string, entitySet: string) => Promise<void>
   updateServiceHealth: (name: string, health: 'online' | 'offline' | 'checking' | 'degraded', force?: boolean) => void
@@ -306,6 +309,18 @@ export function useSharedODataState(): SharedODataState {
     })
   })
 
+  const hasActiveLogFilters = computed(() => {
+    return Boolean(logFilterService.value)
+      || logFilterStatus.value !== 'all'
+      || logSearch.value.trim().length > 0
+  })
+
+  const hasFilteredOutLogs = computed(() => {
+    return hasActiveLogFilters.value
+      && logs.value.length > 0
+      && filteredLogs.value.length === 0
+  })
+
   watch(config, (data) => {
     if (selectedService.value) {
       const currentService = selectedService.value
@@ -352,6 +367,12 @@ export function useSharedODataState(): SharedODataState {
     }
   }
 
+  function clearLogFilters(): void {
+    logFilterService.value = null
+    logFilterStatus.value = 'all'
+    logSearch.value = ''
+  }
+
   async function clearEntityMockData(service: string, entitySet: string): Promise<void> {
     try {
       await fetch(`/__odx__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
@@ -375,6 +396,8 @@ export function useSharedODataState(): SharedODataState {
     logFilterStatus,
     logSearch,
     filteredLogs,
+    hasActiveLogFilters,
+    hasFilteredOutLogs,
     useCORSBridge,
     selectedTraceLogId,
     previewLoading,
@@ -393,6 +416,7 @@ export function useSharedODataState(): SharedODataState {
     fetchConfig,
     refreshLogs,
     generateService,
+    clearLogFilters,
     clearLogs,
     clearEntityMockData,
     updateServiceHealth,

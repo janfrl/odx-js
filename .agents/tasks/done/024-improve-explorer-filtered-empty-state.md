@@ -1,7 +1,7 @@
 # Task: Improve Explorer filtered empty state
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if log endpoint contracts or proxy logging change
@@ -80,15 +80,46 @@ logging behavior, or security-sensitive displayed data changes.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/explorer/composables/useODataState.ts`
+  - `packages/explorer/components/tabs/TabLogs.vue`
+  - `packages/explorer/test/state.test.ts`
+- failing-test evidence:
+  - Added state tests first, then ran
+    `pnpm.cmd --filter @bc8-odx/explorer run verify`.
+  - The run failed because `hasActiveLogFilters`,
+    `hasFilteredOutLogs`, and `clearLogFilters` did not exist.
+- summary:
+  - Added shared `hasActiveLogFilters` and `hasFilteredOutLogs` computed state.
+  - Added `clearLogFilters()` to reset service, status, and search filters
+    together.
+  - Updated the Traffic Monitor empty slot to distinguish no traffic from no
+    filter matches and show a compact clear-filters action only for filtered
+    empty results.
+- tests run:
+  - PASS: `pnpm.cmd --filter @bc8-odx/explorer run verify`.
+  - PASS: `pnpm.cmd run test -- packages/explorer`.
+  - PASS: `pnpm.cmd run typecheck`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - Browser visual verification was not run because no in-app browser tool was
+    exposed in this session. The UI change is limited to the existing table
+    empty state.
+- self-check result:
+  - Existing no-traffic empty state is preserved.
+  - Existing filtering tests from task 018 still pass.
+  - No proxy logging behavior, endpoint contracts, or sensitive log fields were
+    changed.
+- review requirement decision:
+  - Separate review is not required because the change is local Explorer state
+    and UI behavior.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Updated to task 025.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None beyond skipped browser visual verification noted above.
