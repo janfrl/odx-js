@@ -47,6 +47,11 @@ export function createBackend(): App {
 
   router.post('/CreatedProducts', defineEventHandler(async (event) => {
     const body = await readBody(event)
+    if (body?.NoContent) {
+      setResponseStatus(event, 204, 'No Content')
+      return ''
+    }
+
     setResponseStatus(event, 201, 'Created')
 
     return {

@@ -131,6 +131,24 @@ describe('proxy integration', () => {
     })
   })
 
+  it('preserves 204 No Content in buffered responses and DevTools logs', async () => {
+    clearODataLogs()
+
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/TestService/CreatedProducts`, {
+      method: 'POST',
+      body: {
+        NoContent: true,
+      },
+    })
+
+    expect(response.status).toBe(204)
+    expect(response._data).toBeUndefined()
+
+    const [log] = getODataLogs()
+    expect(log?.status).toBe(204)
+    expect(log?.responseBody).toBeUndefined()
+  })
+
   it('triggers interception hooks', async () => {
     const requestSpy = vi.fn()
     const responseSpy = vi.fn()

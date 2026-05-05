@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Implement the lowest-numbered ready task:
-`.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`.
+`.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`.
 
 ## Prompt For Next Chat
 
@@ -26,21 +26,22 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md
-- ARCHITECTURE.md
-- API.md
-- SECURITY.md
+- .agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md
+- DESIGN.md
+- packages/explorer/composables/useODataState.ts
+- packages/explorer/test/state.test.ts
 
 Rules:
-- Implement exactly `.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`.
-- Keep changes scoped to the buffered proxy 204 regression.
-- Add the integration test before changing implementation code.
-- Do not change authentication, destination resolution, proxy rules, stream mode, or DevTools redaction.
+- Implement exactly `.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`.
+- Keep changes scoped to Explorer Traffic Monitor status filter behavior.
+- Add focused state tests before changing implementation code.
+- Do not change proxy logging behavior, `/__odx__/logs` payloads, or displayed sensitive fields.
 - Run the verification steps listed in the task, or explain skipped checks and residual risk.
 - Update the task handoff notes before finishing.
 - Move the task to `.agents/tasks/done/` when implementation and verification are complete.
-- Update `.agents/NEXT.md` with the required reviewer prompt because this task requires separate review.
+- Update `.agents/NEXT.md` with the next concrete workflow action.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+- Separate review is not required unless proxy logging, endpoint contracts, or displayed sensitive data changes.
 
 When done, summarize:
 - changed files
