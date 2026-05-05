@@ -28,8 +28,9 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 
 ## Phase 4: Release Confidence Follow-Ups
 
-- Bound security-sensitive destination cache lifetimes.
-- Improve Explorer diagnostics for larger local sessions.
-- Make benchmark results easier to compare before runtime optimization work.
-- Keep package-level verification discoverable across core, proxy, Nuxt, and
-  Explorer.
+- Preserve buffered proxy HTTP status semantics before runtime optimization
+  work.
+- Keep package-level verification discoverable through package-local commands.
+- Improve Explorer diagnostics for larger local sessions with focused,
+  test-backed polish.
+- Make benchmark results easy to compare before runtime optimization work.

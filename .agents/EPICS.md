@@ -41,8 +41,10 @@ Candidate tasks:
 - `.agents/tasks/done/007-add-proxy-performance-benchmarks.md`
 - `.agents/tasks/done/014-expand-proxy-performance-scenarios.md`
 - `.agents/tasks/done/015-expand-btp-destination-edge-tests.md`
-- `.agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md`
-- `.agents/tasks/ready/021-record-proxy-benchmark-baseline-output.md`
+- `.agents/tasks/done/017-bound-btp-destination-cache-lifetime.md`
+- `.agents/tasks/done/021-record-proxy-benchmark-baseline-output.md`
+- `.agents/tasks/ready/022-preserve-buffer-proxy-success-status.md`
+- `.agents/tasks/ready/025-add-proxy-benchmark-compare-helper.md`
 
 Exit criteria:
 
@@ -112,9 +114,11 @@ Candidate tasks:
 - `.agents/tasks/done/012-expand-explorer-state-tests.md`
 - `.agents/tasks/done/013-fix-nuxt-e2e-node24-startup.md`
 - `.agents/tasks/done/016-document-package-verification-commands.md`
-- `.agents/tasks/ready/018-add-explorer-traffic-search-and-status-filters.md`
-- `.agents/tasks/ready/019-harden-explorer-query-builder-serialization.md`
-- `.agents/tasks/ready/020-add-explorer-package-verification-command.md`
+- `.agents/tasks/done/018-add-explorer-traffic-search-and-status-filters.md`
+- `.agents/tasks/done/019-harden-explorer-query-builder-serialization.md`
+- `.agents/tasks/done/020-add-explorer-package-verification-command.md`
+- `.agents/tasks/ready/023-add-package-local-verify-scripts.md`
+- `.agents/tasks/ready/024-improve-explorer-filtered-empty-state.md`
 
 Exit criteria:
 
@@ -128,24 +132,30 @@ release work.
 
 Deliverables:
 
-- BTP destination cache entries have bounded lifetime and focused tests
-- Explorer diagnostics scale better for larger local sessions
-- Explorer query construction handles common literal edge cases
-- Explorer has the same package-level verification discoverability as core,
-  proxy, and Nuxt
-- proxy benchmark output can be compared without scraping console text
+- Buffered proxy mode preserves successful backend status codes.
+- Package-local verification commands are discoverable across core, proxy,
+  Nuxt, and Explorer.
+- Explorer diagnostics clearly distinguish filtered-empty from no-traffic
+  states.
+- proxy benchmark output can be compared across local runs without spreadsheet
+  work.
 
 Candidate tasks:
 
-- `.agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md`
-- `.agents/tasks/ready/018-add-explorer-traffic-search-and-status-filters.md`
-- `.agents/tasks/ready/019-harden-explorer-query-builder-serialization.md`
-- `.agents/tasks/ready/020-add-explorer-package-verification-command.md`
-- `.agents/tasks/ready/021-record-proxy-benchmark-baseline-output.md`
+- `.agents/tasks/done/017-bound-btp-destination-cache-lifetime.md`
+- `.agents/tasks/done/018-add-explorer-traffic-search-and-status-filters.md`
+- `.agents/tasks/done/019-harden-explorer-query-builder-serialization.md`
+- `.agents/tasks/done/020-add-explorer-package-verification-command.md`
+- `.agents/tasks/done/021-record-proxy-benchmark-baseline-output.md`
+- `.agents/tasks/ready/022-preserve-buffer-proxy-success-status.md`
+- `.agents/tasks/ready/023-add-package-local-verify-scripts.md`
+- `.agents/tasks/ready/024-improve-explorer-filtered-empty-state.md`
+- `.agents/tasks/ready/025-add-proxy-benchmark-compare-helper.md`
 
 Exit criteria:
 
-- security-sensitive cache work has independent review
-- Explorer tests cover the new state/query behavior
-- package verification docs include Explorer
-- proxy benchmark JSON output is optional and artifact-safe
+- public proxy status behavior has focused tests and required review
+- package verification docs include package-local commands
+- Explorer tests cover filtered-empty state behavior
+- proxy benchmark JSON output and comparison tooling are optional and
+  artifact-safe

@@ -8,20 +8,18 @@ implementation phases.
 
 ## Now
 
-- Bound BTP destination cache lifetime after the user-token cache isolation
-  fix.
-- Improve Explorer Traffic Monitor filtering for larger local diagnostic
-  sessions.
-- Harden Explorer visual query builder serialization with focused tests.
-- Add a discoverable Explorer package verification command.
-- Make proxy benchmark output easier to compare across local runs.
+- Preserve non-200 successful backend statuses in buffered proxy responses.
+- Add package-local verification commands for core, proxy, and Nuxt.
+- Improve the Explorer Traffic Monitor empty state when filters hide existing
+  logs.
+- Add a local proxy benchmark comparison helper.
 
 ## Next
 
-- Run separate review for security-sensitive proxy/auth/cache work.
+- Run separate review for public proxy HTTP behavior changes.
 - Continue Explorer improvements through test-backed state and UI changes.
 - Consider performance optimizations only after benchmark baselines are easy to
-  compare.
+  compare across runs.
 - Batch a full checkpoint after the ready task queue is complete.
 
 ## Later
@@ -37,5 +35,5 @@ implementation phases.
   or should the public docs restrict validators to synchronous callbacks?
 - For DevTools logs, which data sources are acceptable to store verbatim during
   local development, and which source-aware cases should be excluded?
-- What default TTL should ODX use for BTP destination cache entries in long-lived
-  production proxy processes?
+- Should the fixed 60-second BTP destination cache TTL become operator
+  configurable, or remain an internal conservative default?
