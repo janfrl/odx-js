@@ -46,7 +46,7 @@ export function updateODataLog(id: string, updates: Partial<ODataLog>): void {
 }
 
 export function getODataLogs(): ODataLog[] {
-  return logs
+  return [...logs]
 }
 
 export function clearODataLogs(): void {

@@ -1,7 +1,7 @@
 # Task: Protect DevTools log storage from external mutation
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: conditional - required if public log API mutability is intentionally changed or documented as mutable
@@ -50,13 +50,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] A focused test fails before implementation when mutating the returned log
+- [x] A focused test fails before implementation when mutating the returned log
   array.
-- [ ] Subsequent `getODataLogs()` calls are unaffected by caller mutation of a
+- [x] Subsequent `getODataLogs()` calls are unaffected by caller mutation of a
   previously returned array.
-- [ ] Existing log append, clear, ordering, and retention behavior remains
+- [x] Existing log append, clear, ordering, and retention behavior remains
   unchanged.
-- [ ] No log entry payload shape or Explorer behavior changes are included.
+- [x] No log entry payload shape or Explorer behavior changes are included.
 
 ## Verification
 
@@ -92,16 +92,21 @@ broadened.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
-
+- changed files: `packages/core/src/dev-logs.ts`, `packages/proxy/test/dev-logs.test.ts`, `.agents/tasks/done/066-protect-devtools-log-storage-from-external-mutation.md`, `.agents/NEXT.md`
+- summary: added focused regression coverage for caller mutation of the array returned by `getODataLogs()` and changed `getODataLogs()` to return a shallow defensive copy of the internal log array. Log entry objects, ordering, retention, and clearing behavior were preserved.
+- failing-first proof: before implementation, `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts` failed in `protects stored logs from returned array mutation` with `AssertionError: expected [ ...(2) ] to have a length of 1 but got 2` at `packages/proxy/test/dev-logs.test.ts:41`.
+- tests run:
+  - `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts` (failed before implementation as expected)
+  - `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts` (passed: 1 file, 3 tests)
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify` (passed: 9 files, 105 tests passed, 1 skipped, standalone proxy example passed)
+  - `pnpm.cmd --filter @bc8-odx/core run verify` (passed: 5 files, 28 tests, standalone core example passed)
+  - `pnpm.cmd run typecheck` (passed)
+  - `pnpm.cmd run lint` (passed)
+  - `git diff --check` (passed; Git warned that touched LF files will be replaced by CRLF when Git touches them)
+- skipped checks and residual risk: no required checks were skipped.
+- self-check result: scope, acceptance criteria, relevant docs, architecture boundaries, security/privacy implications, and unrelated changes checked. Change is limited to returned-array mutation protection and focused tests.
+- review requirement decision: separate review is not required by `.agents/WORKFLOW.md` because this is low-risk internal storage protection, does not document a mutable public contract, and does not change log payload shape, retention semantics, Explorer behavior, or proxy trace behavior.
+- task state movement: moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` on start, then to `.agents/tasks/done/` after verification.
+- `.agents/NEXT.md` update: ready queue is empty except `.gitkeep`; updated to the Planner prompt for creating next tasks.
+- commit hash: commit containing this handoff.
+- known gaps: none.
