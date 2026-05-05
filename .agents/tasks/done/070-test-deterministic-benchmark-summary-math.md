@@ -1,7 +1,7 @@
 # Task: Test deterministic benchmark summary math
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -48,12 +48,12 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] Focused deterministic tests cover benchmark summary math with fixed
+- [x] Focused deterministic tests cover benchmark summary math with fixed
   fixtures.
-- [ ] If helper extraction is needed, the extracted functions are pure,
+- [x] If helper extraction is needed, the extracted functions are pure,
   package-local, and do not alter benchmark output contracts.
-- [ ] Existing benchmark configuration tests and report tests remain green.
-- [ ] Full `ODX_PROXY_BENCHMARK=1` timing runs are not required to verify this
+- [x] Existing benchmark configuration tests and report tests remain green.
+- [x] Full `ODX_PROXY_BENCHMARK=1` timing runs are not required to verify this
   task.
 
 ## Verification
@@ -86,15 +86,42 @@ code, benchmark output schema, scenario semantics, dependencies, or CI gates.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `packages/proxy/test/performance.test.ts`,
+  `packages/proxy/test/benchmark-summary.ts`,
+  `.agents/tasks/done/070-test-deterministic-benchmark-summary-math.md`, and
+  `.agents/NEXT.md`.
+- summary: added deterministic summary math tests for fixed timing and
+  round-average fixtures, including zero-value empty fixtures. Extracted the
+  existing benchmark summary calculations into a pure package-local test helper
+  and reused it from benchmark measurement code without changing benchmark
+  scenarios, labels, skip behavior, or output fields.
+- failing-first proof: before helper implementation,
+  `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts` failed
+  with `Cannot find module './benchmark-summary' imported from .../performance.test.ts`.
+- tests run:
+  - `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts` - passed
+    after implementation; 24 passed, 1 skipped.
+  - `pnpm.cmd exec vitest run packages/proxy/test/benchmark-report.test.ts` -
+    passed; 24 passed.
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify` - passed; 9 files passed,
+    122 tests passed, 1 skipped, standalone proxy example passed.
+  - `pnpm.cmd run typecheck` - passed.
+  - `pnpm.cmd run lint` - passed.
+- skipped checks and residual risk: no required checks were skipped. Full
+  `ODX_PROXY_BENCHMARK=1` timing runs were intentionally not run per task
+  scope; existing benchmark scenario remains skipped without the benchmark env
+  or lifecycle.
+- self-check result: scope, acceptance criteria, root docs, workflow rules,
+  architecture boundaries, and security/privacy implications checked; no
+  production runtime, dependency, lockfile, generated, or unrelated files were
+  changed.
+- review requirement decision: separate review is not required under the
+  workflow and task risk notes because this is low-risk test-only/helper work
+  and does not change production runtime, output schema, scenario semantics,
+  dependencies, or CI gates.
+- task state movement: moved from `ready/` to `in-progress/` at start, then
+  from `in-progress/` to `done/` after verification and handoff updates.
+- `.agents/NEXT.md` update: points to task 071,
+  `.agents/tasks/ready/071-skip-devtools-trace-allocation-when-disabled.md`.
+- commit hash: commit containing this handoff.
+- known gaps: none.
