@@ -1,6 +1,5 @@
 import * as core from '@bc8-odx/core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useOData } from '../src/runtime/composables/useOData'
 
 const runtimeConfig = vi.hoisted(() => ({
   public: {
@@ -31,6 +30,8 @@ vi.mock('@bc8-odx/core', async () => {
   }
 })
 
+const { useOData } = await import('../src/runtime/composables/useOData')
+
 describe('useOData Composable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -49,6 +50,12 @@ describe('useOData Composable', () => {
       expect(result.url).toBe('/api/odx/MyService/Products(\'abc\')')
     })
 
+    it('uri-encodes string key literal content', () => {
+      const api = useOData('MyService')
+      const result = api.entitySet('Products').get('A/B?x=1&R') as any
+      expect(result.url).toBe('/api/odx/MyService/Products(\'A%2FB%3Fx%3D1%26R\')')
+    })
+
     it('escapes single quotes in string keys', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').get('O\'Brien') as any
@@ -65,6 +72,12 @@ describe('useOData Composable', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Items').get({ ID: 1, Type: 'A' }) as any
       expect(result.url).toBe('/api/odx/MyService/Items(ID=1,Type=\'A\')')
+    })
+
+    it('uri-encodes composite string key literal content', () => {
+      const api = useOData('MyService')
+      const result = api.entitySet('Items').get({ ID: 1, Type: 'A/B?x=1&R' }) as any
+      expect(result.url).toBe('/api/odx/MyService/Items(ID=1,Type=\'A%2FB%3Fx%3D1%26R\')')
     })
 
     it('escapes single quotes in composite string keys', () => {
@@ -171,6 +184,18 @@ describe('useOData Composable', () => {
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/routed-api/Products(\'O\'\'Brien\')',
+        'PATCH',
+        { body: { Name: 'Updated' } },
+      )
+    })
+
+    it('uri-encodes string key literal content for routed update URLs', async () => {
+      const api = useOData('RoutedService' as any)
+      await api.entitySet('Products').update('A/B?x=1&R', { Name: 'Updated' })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(\'A%2FB%3Fx%3D1%26R\')',
         'PATCH',
         { body: { Name: 'Updated' } },
       )

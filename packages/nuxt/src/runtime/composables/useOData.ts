@@ -17,7 +17,7 @@ export function useOData<T extends RegisteredServiceNames>(service: T): T extend
 export function useOData(service?: string): any {
   const client = globalThis.$fetch
 
-  const formatStringKeyLiteral = (value: string): string => `'${value.replace(RE_SINGLE_QUOTE, '\'\'')}'`
+  const formatStringKeyLiteral = (value: string): string => `'${encodeURIComponent(value).replace(RE_SINGLE_QUOTE, '\'\'')}'`
 
   const resolveServiceRoute = (serviceName: string): string => {
     const config = useRuntimeConfig()

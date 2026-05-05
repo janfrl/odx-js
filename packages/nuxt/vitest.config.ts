@@ -1,6 +1,12 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '#imports': fileURLToPath(new URL('./test/imports.mock.ts', import.meta.url)),
+    },
+  },
   test: {
     name: 'nuxt',
     environment: 'node',
@@ -9,8 +15,5 @@ export default defineConfig({
     fileParallelism: false,
     hookTimeout: 60000,
     teardownTimeout: 30000,
-    alias: {
-      '#imports': 'packages/nuxt/src/runtime/composables/useOData.ts', // Dummy pointer, mock will override
-    },
   },
 })

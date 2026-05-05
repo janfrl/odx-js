@@ -1,7 +1,7 @@
 # Task: URI-encode Nuxt OData string keys
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if public composable URL behavior changes beyond key-literal encoding
@@ -61,13 +61,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] A focused test fails before implementation for `get('A/B?x=1&R')` or the
+- [x] A focused test fails before implementation for `get('A/B?x=1&R')` or the
   equivalent existing API shape.
-- [ ] String key literals are URI-encoded in generated request URLs.
-- [ ] Composite key string members are URI-encoded without changing key names or
+- [x] String key literals are URI-encoded in generated request URLs.
+- [x] Composite key string members are URI-encoded without changing key names or
   separators.
-- [ ] Routed mutation helper URLs encode string key literals.
-- [ ] Existing composable tests and Nuxt package verification remain green.
+- [x] Routed mutation helper URLs encode string key literals.
+- [x] Existing composable tests and Nuxt package verification remain green.
 
 ## Verification
 
@@ -105,16 +105,70 @@ independent review before continuing.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/nuxt/src/runtime/composables/useOData.ts`
+  - `packages/nuxt/test/composables.test.ts`
+  - `packages/nuxt/test/imports.mock.ts`
+  - `packages/nuxt/vitest.config.ts`
+  - `.agents/tasks/done/063-uri-encode-nuxt-odata-string-keys.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added focused composable tests for `get('A/B?x=1&R')`, composite string
+    key members, and routed `update()` URLs.
+  - Added a package-local Vitest `#imports` alias/helper so the required direct
+    composable test command resolves Nuxt virtual imports before applying test
+    mocks.
+  - Encoded string key literal content with `encodeURIComponent()` before the
+    existing OData single-quote escaping and wrapping.
+  - Preserved numeric keys, simple string keys, composite key names and
+    separators, service routes, entity-set paths, query options, payloads, and
+    response handling.
 - tests run
+  - Initial sandboxed run failed before assertions:
+    `pnpm.cmd --filter @bc8-odx/nuxt exec vitest run test/composables.test.ts`
+    could not access `C:\Users\janfr\AppData\Local\node\corepack\v1\pnpm`
+    (`EPERM`), so the command was rerun with approved escalation.
+  - Initial escalated direct composable run failed before assertions because
+    `#imports` was unresolved by the existing package Vitest config for this
+    direct test file.
+  - FAIL before fix after the package-local test alias/helper:
+    `pnpm.cmd --filter @bc8-odx/nuxt exec vitest run test/composables.test.ts`
+    failed 3 tests. The URLs contained raw `A/B?x=1&R` where the tests expected
+    `A%2FB%3Fx%3D1%26R`.
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt exec vitest run test/composables.test.ts`
+    (25 tests passed).
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt run verify` (3 files, 14 tests, and
+    minimal playground verification passed; existing Node DEP0155 warnings
+    remained).
+  - Initial `pnpm.cmd run typecheck` failed on the temporary virtual mock
+    option and implicit `globalThis` helper typing.
+  - PASS after cleanup: `pnpm.cmd run typecheck`.
+  - Initial `pnpm.cmd run lint` failed on new test title casing and import
+    ordering.
+  - PASS after cleanup: `pnpm.cmd run lint`.
+  - PASS: `git diff --check` (line-ending warnings only).
 - skipped checks and residual risk
+  - No checks were skipped.
+  - Browser/playground UI verification was not added because the task only
+    changes deterministic composable URL construction.
 - self-check result
+  - Scope stayed limited to Nuxt composable key literal encoding and focused
+    composable test support. No route joining redesign, query serialization,
+    payload handling, response transforms, generated registry output, proxy
+    behavior, dependencies, or lockfiles changed.
 - review requirement decision
+  - Separate review is not required by the task policy because the public URL
+    behavior change is limited to string key literal encoding and is covered by
+    focused tests. The test-only Vitest alias/helper is package-local and does
+    not affect runtime behavior.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` at start.
+  - Moved to `.agents/tasks/done/` after implementation and verification.
 - `.agents/NEXT.md` update
+  - Updated to point at
+    `.agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md`.
 - commit hash
+  - Commit containing this handoff.
 - known gaps
-
+  - Existing Node DEP0155 warnings still appear during Nuxt playground
+    verification and are unchanged dependency warnings.

@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/063-uri-encode-nuxt-odata-string-keys.md`.
+Implement `.agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md`.
 
 ## Prompt For Next Chat
 
@@ -25,12 +25,12 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/063-uri-encode-nuxt-odata-string-keys.md
+- .agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md
 - any root documentation referenced by the task
 
 Rules:
-- Implement exactly .agents/tasks/ready/063-uri-encode-nuxt-odata-string-keys.md.
-- Keep changes scoped to Nuxt OData string key URL encoding and focused tests.
+- Implement exactly .agents/tasks/ready/064-reject-malformed-benchmark-report-timing-fields.md.
+- Keep changes scoped to proxy benchmark report timing validation and focused tests.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
 - Add failing tests first, then implement the smallest fix.
