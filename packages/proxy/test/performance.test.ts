@@ -1,5 +1,6 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
 import type { Server } from 'node:http'
+import type { MeasurementSummary } from './benchmark-report'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { dirname } from 'node:path'
@@ -9,43 +10,9 @@ import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { assignAverageOverhead, createBenchmarkOutput, formatBenchmarkReport } from './benchmark-report'
 import { createBackend } from './fixtures/backend'
 import { createProxyServer } from './fixtures/server'
-
-interface MeasurementSummary {
-  label: string
-  path: string
-  iterations: number
-  rounds: number
-  concurrency: number
-  minMs: number
-  avgMs: number
-  medianRoundAvgMs: number
-  roundStdDevMs: number
-  p50Ms: number
-  p95Ms: number
-  maxMs: number
-  overheadAvgMs?: number
-  overheadAvgPercent?: number
-}
-
-interface BenchmarkOutput {
-  name: string
-  createdAt: string
-  metadata: {
-    node: string
-    platform: string
-    arch: string
-    iterations: number
-    rounds: number
-    warmupIterations: number
-    defaultConcurrency: number
-    lifecycleEvent?: string
-  }
-  scenarios: Array<MeasurementSummary & {
-    category: string
-  }>
-}
 
 const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || process.env.ODX_PROXY_BENCHMARK === '1'
 const benchmarkIterations = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ITERATIONS || '50', 10)
@@ -191,97 +158,19 @@ function percentile(sortedTimings: number[], percentileRank: number): number {
   return sortedTimings[index] ?? 0
 }
 
-function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
-  const rows = summaries.map(summary => [
-    summary.label.padEnd(24),
-    summary.path.padEnd(43),
-    String(summary.iterations).padStart(10),
-    String(summary.rounds).padStart(6),
-    String(summary.concurrency).padStart(11),
-    formatMs(summary.minMs).padStart(10),
-    formatMs(summary.avgMs).padStart(10),
-    formatMs(summary.medianRoundAvgMs).padStart(10),
-    formatMs(summary.roundStdDevMs).padStart(10),
-    formatMs(summary.p50Ms).padStart(10),
-    formatMs(summary.p95Ms).padStart(10),
-    formatMs(summary.maxMs).padStart(10),
-    formatOptionalMs(summary.overheadAvgMs).padStart(15),
-    formatOptionalPercent(summary.overheadAvgPercent).padStart(15),
-  ])
-
-  return [
-    '',
-    'ODX proxy performance baseline',
-    [
-      'scenario'.padEnd(24),
-      'path'.padEnd(43),
-      'iterations'.padStart(10),
-      'rounds'.padStart(6),
-      'concurrency'.padStart(11),
-      'min'.padStart(10),
-      'avg'.padStart(10),
-      'round med'.padStart(10),
-      'round sd'.padStart(10),
-      'p50'.padStart(10),
-      'p95'.padStart(10),
-      'max'.padStart(10),
-      'avg overhead'.padStart(15),
-      'avg overhead %'.padStart(15),
-    ].join('  '),
-    ...rows.map(row => row.join('  ')),
-    '',
-  ].join('\n')
-}
-
 async function writeBenchmarkOutput(summaries: MeasurementSummary[]): Promise<void> {
   if (!benchmarkOutputPath)
     return
 
-  const output: BenchmarkOutput = {
-    name: 'ODX proxy performance baseline',
-    createdAt: new Date().toISOString(),
-    metadata: {
-      node: process.version,
-      platform: process.platform,
-      arch: process.arch,
-      iterations: benchmarkIterations,
-      rounds: benchmarkRounds,
-      warmupIterations,
-      defaultConcurrency: concurrentRequests,
-      lifecycleEvent: process.env.npm_lifecycle_event,
-    },
-    scenarios: summaries.map(summary => ({
-      ...summary,
-      category: summary.path.includes('LargeProducts')
-        ? 'large'
-        : summary.label.includes('devtools')
-          ? 'devtools'
-          : 'small',
-    })),
-  }
+  const output = createBenchmarkOutput(summaries, {
+    iterations: benchmarkIterations,
+    rounds: benchmarkRounds,
+    warmupIterations,
+    defaultConcurrency: concurrentRequests,
+  })
 
   await mkdir(dirname(benchmarkOutputPath), { recursive: true })
   await writeFile(benchmarkOutputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8')
-}
-
-function formatMs(value: number): string {
-  return `${value.toFixed(2)}ms`
-}
-
-function formatOptionalMs(value?: number): string {
-  return typeof value === 'number' ? formatMs(value) : '-'
-}
-
-function formatOptionalPercent(value?: number): string {
-  return typeof value === 'number' ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'
-}
-
-function assignAverageOverhead(summary: MeasurementSummary, baseline: MeasurementSummary): void {
-  const overheadAvgMs = summary.avgMs - baseline.avgMs
-  summary.overheadAvgMs = overheadAvgMs
-  if (baseline.avgMs !== 0) {
-    summary.overheadAvgPercent = (overheadAvgMs / baseline.avgMs) * 100
-  }
 }
 
 describeBenchmark('proxy performance baseline', () => {
