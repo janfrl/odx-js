@@ -1,7 +1,7 @@
 # Task: Document service name type generation limits
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -86,16 +86,38 @@ conflicting service-name behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
-
+- Changed files:
+  - `packages/nuxt/README.md`
+  - `docs/content/en/2.nuxt/5.module-reference.md`
+  - `.agents/NEXT.md`
+  - `.agents/tasks/done/061-document-service-name-type-generation-limits.md`
+- Summary:
+  - Documented that generated Nuxt service registry keys preserve configured
+    service names exactly.
+  - Added typed access guidance for non-identifier service names via bracket
+    notation or `useOData('service-name')`.
+  - Recorded the current practical path constraint that service names should
+    avoid path separator characters because names are used in generated output
+    and metadata cache paths.
+- Tests run:
+  - `git diff --check`
+  - `pnpm.cmd run lint`
+- Skipped checks and residual risk:
+  - No broader package or workspace checks were run because the task is
+    documentation-only and the required lint check passed.
+- Self-check result:
+  - Scope, non-goals, acceptance criteria, documentation boundaries, and
+    unrelated changes were checked. No source, test, script, dependency,
+    lockfile, or generated artifact changes were included.
+- Review requirement decision:
+  - Separate review is not required. The task is low-risk documentation-only
+    work and verification passed.
+- Task state movement:
+  - Moved from `ready` to `done` after implementation and verification.
+- `.agents/NEXT.md` update:
+  - Updated to point at
+    `.agents/tasks/ready/062-run-stability-and-hooks-checkpoint.md`.
+- Commit hash:
+  - Commit containing this handoff.
+- Known gaps:
+  - None.
