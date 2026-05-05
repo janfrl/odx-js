@@ -3,6 +3,7 @@ import type { Nuxt } from '@nuxt/schema'
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import http from 'node:http'
 import https from 'node:https'
 import { createRequire } from 'node:module'
 import process from 'node:process'
@@ -58,7 +59,13 @@ export async function downloadMetadata(svc: ODataServiceConfig, config: ODataPro
   }
 
   return new Promise<string>((resolve, reject) => {
-    https.get(metadataUrl, { headers, rejectUnauthorized: config.rejectUnauthorized }, (res) => {
+    const isHttps = metadataUrl.startsWith('https://')
+    const client = isHttps ? https : http
+    const requestOptions = isHttps
+      ? { headers, rejectUnauthorized: config.rejectUnauthorized }
+      : { headers }
+
+    client.get(metadataUrl, requestOptions, (res) => {
       if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300))
         return reject(new Error(`Status: ${res.statusCode}`))
       let data = ''

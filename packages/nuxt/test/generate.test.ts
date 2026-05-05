@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
 import { EventEmitter } from 'node:events'
+import http from 'node:http'
 import https from 'node:https'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { downloadMetadata, generateODataTypes, generateRegistryDts } from '../src/generate'
@@ -9,6 +10,7 @@ vi.mock('node:child_process', () => ({
   execFileSync: vi.fn(),
   execSync: vi.fn(),
 }))
+vi.mock('node:http')
 vi.mock('node:https')
 
 describe('type Generation Logic', () => {
@@ -45,7 +47,7 @@ describe('type Generation Logic', () => {
   describe('downloadMetadata', () => {
     it('sets Bearer token header when provided', async () => {
       const svc = { name: 'Test', url: 'https://example.com/odata' }
-      const config = { auth: { bearerToken: 'test-token' } } as any
+      const config = { auth: { bearerToken: 'test-token' }, rejectUnauthorized: false } as any
 
       const mockRequest = new EventEmitter() as any
       vi.mocked(https.get).mockImplementation((url, options, callback) => {
@@ -64,9 +66,38 @@ describe('type Generation Logic', () => {
         'https://example.com/odata/$metadata',
         expect.objectContaining({
           headers: { Authorization: 'Bearer test-token' },
+          rejectUnauthorized: false,
         }),
         expect.any(Function),
       )
+      expect(http.get).not.toHaveBeenCalled()
+    })
+
+    it('uses the HTTP client for http metadata URLs and preserves headers', async () => {
+      const svc = { name: 'Local', url: 'http://localhost:4000/odata' }
+      const config = { auth: { bearerToken: 'local-token' }, rejectUnauthorized: false } as any
+
+      const mockRequest = new EventEmitter() as any
+      vi.mocked(http.get).mockImplementation((url, options, callback) => {
+        const res = new EventEmitter() as any
+        res.statusCode = 200
+        callback!(res)
+        res.emit('data', '<xml>local</xml>')
+        res.emit('end')
+        return mockRequest
+      })
+
+      const result = await downloadMetadata(svc, config)
+
+      expect(result).toBe('<xml>local</xml>')
+      expect(http.get).toHaveBeenCalledWith(
+        'http://localhost:4000/odata/$metadata',
+        {
+          headers: { Authorization: 'Bearer local-token' },
+        },
+        expect.any(Function),
+      )
+      expect(https.get).not.toHaveBeenCalled()
     })
 
     it('sets Basic auth header when username/password provided', async () => {

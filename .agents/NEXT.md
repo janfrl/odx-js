@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`.
+Implement `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`.
 
 ## Prompt For Next Chat
 
@@ -25,19 +25,19 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md
-- packages/nuxt/src/generate.ts
-- packages/nuxt/test/generate.test.ts
+- .agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md
+- packages/core/src/odata-utils.ts
+- packages/core/test/odata-utils.test.ts
 
-Implement exactly `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`.
+Implement exactly `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`.
 
 Rules:
 - Keep changes scoped to the task.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
-- Add the focused failing test first proving `http://` metadata URLs use `node:http`.
-- Preserve existing HTTPS behavior and headers.
-- Do not change cache fallback behavior, generated output, dependencies, lockfiles, proxy runtime behavior, or Nuxt runtime composables.
+- Add the focused failing test first for falsy OData V2 `d` payloads.
+- Keep changes limited to core flattening behavior and focused tests.
+- Do not change OData V4 collection envelope behavior or metadata stripping beyond the proven bug.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.

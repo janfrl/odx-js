@@ -1,7 +1,7 @@
 # Task: Use HTTP client for Nuxt metadata downloads
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if public configuration contracts, TLS defaults, dependencies, or generation fallback behavior change
@@ -52,13 +52,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] A focused test proves `http://.../$metadata` is requested through
+- [x] A focused test proves `http://.../$metadata` is requested through
   `node:http`.
-- [ ] Existing HTTPS metadata tests still prove `https://.../$metadata` uses
+- [x] Existing HTTPS metadata tests still prove `https://.../$metadata` uses
   `node:https` with the configured TLS option.
-- [ ] Request headers are preserved for HTTP and HTTPS metadata downloads.
-- [ ] Error handling for non-2xx responses remains clear.
-- [ ] Nuxt package verification remains green.
+- [x] Request headers are preserved for HTTP and HTTPS metadata downloads.
+- [x] Error handling for non-2xx responses remains clear.
+- [x] Nuxt package verification remains green.
 
 ## Verification
 
@@ -91,16 +91,45 @@ fallback behavior, or runtime proxy/composable behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/nuxt/src/generate.ts`
+  - `packages/nuxt/test/generate.test.ts`
+  - `.agents/tasks/done/055-use-http-client-for-nuxt-metadata-downloads.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added a focused failing test proving `http://` metadata URLs should use
+    `node:http` and preserve auth headers.
+  - Strengthened the HTTPS test to assert `node:https` is used with the
+    configured `rejectUnauthorized` option and that `node:http` is not called.
+  - Updated `downloadMetadata()` to choose `node:http` for `http://` metadata
+    URLs and `node:https` for `https://` metadata URLs.
+  - Kept HTTPS-only `rejectUnauthorized` out of HTTP request options.
 - tests run
+  - FAIL before fix: `pnpm.cmd --filter @bc8-odx/nuxt exec vitest run test/generate.test.ts -t "HTTP client"`; the HTTP test failed because the implementation still called `https.get`.
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt exec vitest run test/generate.test.ts`
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt run verify`
+  - PASS: `pnpm.cmd run typecheck`
+  - PASS: `pnpm.cmd run lint`
 - skipped checks and residual risk
+  - No browser-mode or dev-server verification was run; the task uses mocked
+    Node clients and package verification.
+  - Existing Node DEP0155 warnings appeared during Nuxt playground verification
+    and are unchanged dependency warnings.
 - self-check result
+  - Scope stayed limited to setup-time metadata client selection and focused
+    tests. No service configuration shape, generated type output, odata2ts
+    invocation, cache paths, fallback policy, dependencies, lockfiles, proxy
+    runtime behavior, Nuxt runtime composables, or dev-server behavior changed.
 - review requirement decision
+  - Separate review is not required because the implementation stayed limited
+    to scheme-specific client selection with focused tests and did not change
+    public configuration contracts, TLS defaults, dependencies, generation
+    fallback behavior, or runtime proxy/composable behavior.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`.
 - commit hash
+  - The task implementation commit is the commit containing this handoff.
 - known gaps
-
+  - None.
