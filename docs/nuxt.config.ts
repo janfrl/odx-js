@@ -3,7 +3,7 @@ const siteUrl = 'https://odx.nuxt.com'
 export default defineNuxtConfig({
   extends: ['docus'],
   css: ['~/assets/css/main.css'],
-  modules: ['@bc8-odx/nuxt', '@nuxtjs/i18n'],
+  modules: ['./modules/disabled-docus-assistant', '@bc8-odx/nuxt', '@nuxtjs/i18n'],
   i18n: {
     defaultLocale: 'en',
     locales: [
@@ -19,6 +19,11 @@ export default defineNuxtConfig({
         '@shikijs/vitepress-twoslash/client',
         '@vue/devtools-core',
         '@vue/devtools-kit',
+        'floating-vue',
+        'comark',
+        'comark/plugins/highlight',
+        'comark/render',
+        'shiki/langs/xml.mjs',
       ],
     },
   },

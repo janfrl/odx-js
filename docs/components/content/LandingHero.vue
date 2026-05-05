@@ -427,15 +427,16 @@ onBeforeUnmount(() => {
               </div>
               <div class="text-xs text-muted">
                 {{ props.cardSubtitlePrefix }}
-                <a
-                  :href="metadataTo"
+                <ULink
+                  :to="metadataTo"
+                  external
                   target="_blank"
                   rel="noopener noreferrer"
                   class="text-muted underline decoration-dotted underline-offset-2 hover:text-default"
                 >
                   {{ schema.namespace }}
                   {{ props.metadata }}
-                </a>
+                </ULink>
               </div>
             </div>
           </div>
