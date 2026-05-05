@@ -4,6 +4,7 @@ import { getRequestURL } from 'h3'
 const RE_TRAILING_SLASH = /\/$/
 const RE_LEADING_SLASH = /^\//
 const RE_DOUBLE_SLASHES = /([^:]\/)\/+/g
+const RE_SINGLE_QUOTE = /'/g
 
 /**
  * Parsed information about a proxied OData request.
@@ -34,6 +35,10 @@ export function parseODataRequest(event: H3Event, basePath = '/api/odx'): ODataR
     query: queryIndex === -1 ? '' : event.path.slice(queryIndex),
     segments,
   }
+}
+
+function formatODataStringKey(value: string): string {
+  return encodeURIComponent(value).replace(RE_SINGLE_QUOTE, '\'\'')
 }
 
 /**
@@ -75,7 +80,7 @@ export function resolveTargetUrl(
 
       // 2. Format ID correctly (quotes for strings, none for numbers)
       // Note: We use encodeURIComponent to handle special characters in the ID
-      const formattedId = (Number.isNaN(Number(id)) || id.trim() === '') ? `'${encodeURIComponent(id)}'` : id
+      const formattedId = (Number.isNaN(Number(id)) || id.trim() === '') ? `'${formatODataStringKey(id)}'` : id
 
       // 3. Append to path (ensure we don't double up parentheses if already present)
       if (!odataPath.endsWith(')')) {

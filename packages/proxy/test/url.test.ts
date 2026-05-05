@@ -91,5 +91,19 @@ describe('oData URL Utilities', () => {
       const result = resolveTargetUrl(event, targetBase, requestInfo, true, 'V2Service')
       expect(result).toBe('http://localhost:3000/sap/opu/odata/sap/V2Service/Products')
     })
+
+    it('escapes single quotes in explorer-style string IDs as OData string literals', () => {
+      const event = createMockEvent()
+      const requestInfo = {
+        serviceName: 'TestService',
+        odataPath: 'Products',
+        query: '?id=O%27Reilly',
+        segments: ['TestService', 'Products'],
+      }
+      const targetBase = 'https://sapes5.sapdevcenter.com/sap/opu/odata/sap/TEST_SERVICE'
+
+      const result = resolveTargetUrl(event, targetBase, requestInfo, false)
+      expect(result).toBe('https://sapes5.sapdevcenter.com/sap/opu/odata/sap/TEST_SERVICE/Products(\'O\'\'Reilly\')')
+    })
   })
 })
