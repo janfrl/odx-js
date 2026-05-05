@@ -13,7 +13,12 @@
     "verify": "pnpm run metadata:extract && pnpm --dir .. run docs:api"
   },
   "dependencies": {
-    "docus": "latest"
+    "@shikijs/twoslash": "^4.0.2",
+    "@shikijs/vitepress-twoslash": "4.0.2",
+    "comark": "^0.3.1",
+    "docus": "latest",
+    "floating-vue": "^5.2.2",
+    "shiki": "^4.0.2"
   },
   "devDependencies": {
     "@bc8-odx/nuxt": "workspace:*",

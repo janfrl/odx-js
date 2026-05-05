@@ -117,9 +117,24 @@ importers:
 
   docs:
     dependencies:
+      '@shikijs/twoslash':
+        specifier: ^4.0.2
+        version: 4.0.2(typescript@6.0.2)
+      '@shikijs/vitepress-twoslash':
+        specifier: 4.0.2
+        version: 4.0.2(@nuxt/kit@4.4.2(magicast@0.5.2))(typescript@6.0.2)
+      comark:
+        specifier: ^0.3.1
+        version: 0.3.1(@types/markdown-it@14.1.2)(markdown-it@14.1.1)(shiki@4.0.2)
       docus:
         specifier: latest
         version: 5.8.0(4a3971eb800284ae3f095329cbc513a7)
+      floating-vue:
+        specifier: ^5.2.2
+        version: 5.2.2(@nuxt/kit@4.4.2(magicast@0.5.2))(vue@3.5.30(typescript@6.0.2))
+      shiki:
+        specifier: ^4.0.2
+        version: 4.0.2
     devDependencies:
       '@bc8-odx/nuxt':
         specifier: workspace:*
