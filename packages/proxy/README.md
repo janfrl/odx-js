@@ -26,10 +26,14 @@ header forwarding through `@bc8-odx/proxy`.
 buffer and stream proxy responses match the fixture backend, then reports
 direct, proxied, concurrent, and DevTools logging timing baselines. Scenarios
 with a direct or logging baseline include both absolute average overhead and
-relative average overhead percentage. Use
+relative average overhead percentage. The table also reports the median
+per-round average and per-round standard deviation so local noise is visible.
+Use
 `ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark.json` to also write the
-same fields to a JSON summary; `reports/` is ignored by git. Use `pnpm.cmd` on
-Windows PowerShell in this repository when `.ps1` launchers are blocked.
+same fields and run metadata to a JSON summary; `reports/` is ignored by git.
+Use `ODX_PROXY_BENCHMARK_ROUNDS` to adjust the number of measurement rounds.
+Use `pnpm.cmd` on Windows PowerShell in this repository when `.ps1` launchers
+are blocked.
 
 To compare two generated benchmark reports:
 

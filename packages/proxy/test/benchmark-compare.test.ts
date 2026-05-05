@@ -26,6 +26,53 @@ describe('proxy benchmark comparison helper', () => {
     expect(output).toContain('-50.0%')
   })
 
+  it('uses metadata and median round averages when reports include them', () => {
+    const output = formatComparison(
+      {
+        createdAt: '2026-05-05T08:00:00.000Z',
+        metadata: {
+          node: 'v24.13.1',
+          iterations: 50,
+          rounds: 5,
+          defaultConcurrency: 5,
+        },
+        scenarios: [
+          { label: 'large conc stream', path: '/api/odx/StreamService/LargeProducts', avgMs: 10, medianRoundAvgMs: 8 },
+        ],
+      },
+      {
+        createdAt: '2026-05-05T08:05:00.000Z',
+        metadata: {
+          node: 'v24.13.1',
+          iterations: 50,
+          rounds: 5,
+          defaultConcurrency: 5,
+        },
+        scenarios: [
+          { label: 'large conc stream', path: '/api/odx/StreamService/LargeProducts', avgMs: 10, medianRoundAvgMs: 12 },
+        ],
+      },
+    )
+
+    expect(output).toContain('baseline: created=2026-05-05T08:00:00.000Z')
+    expect(output).toContain('candidate: created=2026-05-05T08:05:00.000Z')
+    expect(output).toContain('timing basis: median round average')
+    expect(output).toContain('8.00ms')
+    expect(output).toContain('12.00ms')
+    expect(output).toContain('+50.0%')
+  })
+
+  it('keeps old reports without metadata compatible', () => {
+    const output = formatComparison(
+      { scenarios: [{ label: 'small seq direct', avgMs: 1 }] },
+      { scenarios: [{ label: 'small seq direct', avgMs: 2 }] },
+    )
+
+    expect(output).not.toContain('baseline: created=')
+    expect(output).toContain('1.00ms')
+    expect(output).toContain('2.00ms')
+  })
+
   it('rejects missing candidate scenario labels', () => {
     expect(() => formatComparison(
       { scenarios: [{ label: 'small seq direct', avgMs: 1 }] },

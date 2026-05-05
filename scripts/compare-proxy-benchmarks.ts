@@ -5,11 +5,26 @@ import { pathToFileURL } from 'node:url'
 export interface BenchmarkScenario {
   label: string
   avgMs: number
+  medianRoundAvgMs?: number
+  roundStdDevMs?: number
   path?: string
+}
+
+export interface BenchmarkMetadata {
+  node?: string
+  platform?: string
+  arch?: string
+  iterations?: number
+  rounds?: number
+  warmupIterations?: number
+  defaultConcurrency?: number
+  lifecycleEvent?: string
 }
 
 export interface BenchmarkReport {
   name?: string
+  createdAt?: string
+  metadata?: BenchmarkMetadata
   scenarios?: BenchmarkScenario[]
 }
 
@@ -64,6 +79,25 @@ function formatPercent(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 }
 
+function comparisonMs(scenario: BenchmarkScenario): number {
+  return Number.isFinite(scenario.medianRoundAvgMs) ? scenario.medianRoundAvgMs! : scenario.avgMs
+}
+
+function metadataLine(role: string, report: BenchmarkReport): string | undefined {
+  if (!report.metadata && !report.createdAt)
+    return undefined
+
+  const fields = [
+    report.createdAt ? `created=${report.createdAt}` : undefined,
+    report.metadata?.node ? `node=${report.metadata.node}` : undefined,
+    report.metadata?.iterations ? `iterations=${report.metadata.iterations}` : undefined,
+    report.metadata?.rounds ? `rounds=${report.metadata.rounds}` : undefined,
+    report.metadata?.defaultConcurrency ? `concurrency=${report.metadata.defaultConcurrency}` : undefined,
+  ].filter(Boolean)
+
+  return `${role}: ${fields.join(', ')}`
+}
+
 export function formatComparison(baseline: BenchmarkReport, candidate: BenchmarkReport): string {
   const baselineScenarios = scenarioMap(baseline, 'baseline')
   const candidateScenarios = scenarioMap(candidate, 'candidate')
@@ -80,21 +114,30 @@ export function formatComparison(baseline: BenchmarkReport, candidate: Benchmark
 
   const rows = Array.from(baselineScenarios.entries(), ([label, base]) => {
     const next = candidateScenarios.get(label)!
-    const delta = next.avgMs - base.avgMs
-    const percent = base.avgMs === 0 ? Number.NaN : (delta / base.avgMs) * 100
+    const baseMs = comparisonMs(base)
+    const nextMs = comparisonMs(next)
+    const delta = nextMs - baseMs
+    const percent = baseMs === 0 ? Number.NaN : (delta / baseMs) * 100
     return [
       label.padEnd(28),
       (base.path || '').padEnd(43),
-      formatMs(base.avgMs).padStart(10),
-      formatMs(next.avgMs).padStart(10),
+      formatMs(baseMs).padStart(10),
+      formatMs(nextMs).padStart(10),
       `${delta >= 0 ? '+' : ''}${formatMs(delta)}`.padStart(10),
       (Number.isFinite(percent) ? formatPercent(percent) : 'n/a').padStart(9),
     ].join('  ')
   })
 
+  const metadata = [
+    metadataLine('baseline', baseline),
+    metadataLine('candidate', candidate),
+  ].filter(Boolean)
+
   return [
     '',
     'ODX proxy benchmark comparison',
+    ...metadata,
+    metadata.length > 0 ? 'timing basis: median round average when available, otherwise average' : undefined,
     [
       'scenario'.padEnd(28),
       'path'.padEnd(43),
@@ -105,7 +148,7 @@ export function formatComparison(baseline: BenchmarkReport, candidate: Benchmark
     ].join('  '),
     ...rows,
     '',
-  ].join('\n')
+  ].filter(line => line !== undefined).join('\n')
 }
 
 export async function runCli(args: string[] = process.argv.slice(2)): Promise<number> {

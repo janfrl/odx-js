@@ -1,7 +1,7 @@
 # Task: Add proxy benchmark report metadata
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -85,15 +85,48 @@ semantics, dependency wiring, or CI pass/fail behavior changes.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/proxy/test/performance.test.ts`
+  - `scripts/compare-proxy-benchmarks.ts`
+  - `packages/proxy/test/benchmark-compare.test.ts`
+  - `packages/proxy/README.md`
+- summary:
+  - Added multi-round benchmark measurement with `rounds`,
+    `medianRoundAvgMs`, and `roundStdDevMs` so local benchmark noise is visible.
+  - Added an adjacent `small seq devtools baseline` scenario so DevTools
+    overhead is compared against a nearby non-DevTools buffer run instead of a
+    stale earlier sample.
+  - Included benchmark metadata in JSON reports and made the compare helper
+    print concise metadata context.
+  - Compare output now uses median round average when available, while keeping
+    older reports without metadata or median fields compatible.
+  - Updated focused compare-helper tests and proxy benchmark documentation.
+- tests run:
+  - `$env:ODX_PROXY_BENCHMARK_OUTPUT='reports/proxy-benchmark-metadata.json'; pnpm.cmd run bench:proxy; Remove-Item Env:ODX_PROXY_BENCHMARK_OUTPUT`
+    - passed and wrote gitignored metadata/round report.
+  - `pnpm.cmd run bench:proxy:compare -- reports/proxy-benchmark-metadata.json reports/proxy-benchmark-metadata.json`
+    - passed and printed metadata plus median-round timing basis.
+  - `pnpm.cmd exec vitest run packages/proxy/test/benchmark-compare.test.ts packages/proxy/test/performance.test.ts`
+    - passed, with the performance test skipped by default outside
+    `bench:proxy`.
+  - `pnpm.cmd run lint` - passed.
+  - `pnpm.cmd run typecheck` - passed.
+- skipped checks and residual risk:
+  - none.
+- self-check result:
+  - Scope stayed limited to local benchmark tooling, tests, and proxy README
+    documentation. No production proxy code, scenario defaults beyond adding
+    repeated rounds, dependencies, performance budgets, or CI gates changed.
+- review requirement decision:
+  - Separate review is not required because this is local benchmark tooling and
+    documentation only.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - No change; it already points to the lowest-numbered remaining ready task
+    `.agents/tasks/ready/032-validate-btp-destination-url.md`.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - Local loopback benchmarks remain directional rather than production-grade;
+    the new round median and standard deviation make that noise visible.

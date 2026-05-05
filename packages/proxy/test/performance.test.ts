@@ -16,9 +16,12 @@ interface MeasurementSummary {
   label: string
   path: string
   iterations: number
+  rounds: number
   concurrency: number
   minMs: number
   avgMs: number
+  medianRoundAvgMs: number
+  roundStdDevMs: number
   p50Ms: number
   p95Ms: number
   maxMs: number
@@ -34,6 +37,7 @@ interface BenchmarkOutput {
     platform: string
     arch: string
     iterations: number
+    rounds: number
     warmupIterations: number
     defaultConcurrency: number
     lifecycleEvent?: string
@@ -45,6 +49,7 @@ interface BenchmarkOutput {
 
 const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || process.env.ODX_PROXY_BENCHMARK === '1'
 const benchmarkIterations = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ITERATIONS || '50', 10)
+const benchmarkRounds = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ROUNDS || '5', 10)
 const warmupIterations = 10
 const concurrentRequests = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_CONCURRENCY || '5', 10)
 const benchmarkOutputPath = process.env.ODX_PROXY_BENCHMARK_OUTPUT
@@ -85,25 +90,25 @@ async function measureSequential(label: string, path: string, request: () => Pro
   }
 
   const timings: number[] = []
-  for (let i = 0; i < benchmarkIterations; i++) {
-    const start = performance.now()
-    await request()
-    timings.push(performance.now() - start)
+  const roundAvgMs: number[] = []
+  for (let round = 0; round < benchmarkRounds; round++) {
+    const roundTimings: number[] = []
+    for (let i = 0; i < benchmarkIterations; i++) {
+      const start = performance.now()
+      await request()
+      roundTimings.push(performance.now() - start)
+    }
+    timings.push(...roundTimings)
+    roundAvgMs.push(mean(roundTimings))
   }
-
-  const sorted = [...timings].sort((a, b) => a - b)
-  const total = timings.reduce((sum, timing) => sum + timing, 0)
 
   return {
     label,
     path,
     iterations: benchmarkIterations,
+    rounds: benchmarkRounds,
     concurrency: 1,
-    minMs: sorted[0] ?? 0,
-    avgMs: total / timings.length,
-    p50Ms: percentile(sorted, 50),
-    p95Ms: percentile(sorted, 95),
-    maxMs: sorted.at(-1) ?? 0,
+    ...summarizeTimings(timings, roundAvgMs),
   }
 }
 
@@ -123,29 +128,59 @@ async function measureConcurrent(
   }
 
   const timings: number[] = []
-  for (let i = 0; i < benchmarkIterations; i += concurrency) {
-    const batchSize = Math.min(concurrency, benchmarkIterations - i)
-    await Promise.all(Array.from({ length: batchSize }, async () => {
-      const start = performance.now()
-      await request()
-      timings.push(performance.now() - start)
-    }))
+  const roundAvgMs: number[] = []
+  for (let round = 0; round < benchmarkRounds; round++) {
+    const roundTimings: number[] = []
+    for (let i = 0; i < benchmarkIterations; i += concurrency) {
+      const batchSize = Math.min(concurrency, benchmarkIterations - i)
+      await Promise.all(Array.from({ length: batchSize }, async () => {
+        const start = performance.now()
+        await request()
+        roundTimings.push(performance.now() - start)
+      }))
+    }
+    timings.push(...roundTimings)
+    roundAvgMs.push(mean(roundTimings))
   }
-
-  const sorted = [...timings].sort((a, b) => a - b)
-  const total = timings.reduce((sum, timing) => sum + timing, 0)
 
   return {
     label,
     path,
     iterations: benchmarkIterations,
+    rounds: benchmarkRounds,
     concurrency,
+    ...summarizeTimings(timings, roundAvgMs),
+  }
+}
+
+function summarizeTimings(timings: number[], roundAvgMs: number[]): Omit<MeasurementSummary, 'label' | 'path' | 'iterations' | 'rounds' | 'concurrency' | 'overheadAvgMs' | 'overheadAvgPercent'> {
+  const sorted = [...timings].sort((a, b) => a - b)
+  const sortedRoundAverages = [...roundAvgMs].sort((a, b) => a - b)
+
+  return {
     minMs: sorted[0] ?? 0,
-    avgMs: total / timings.length,
+    avgMs: mean(timings),
+    medianRoundAvgMs: percentile(sortedRoundAverages, 50),
+    roundStdDevMs: standardDeviation(roundAvgMs),
     p50Ms: percentile(sorted, 50),
     p95Ms: percentile(sorted, 95),
     maxMs: sorted.at(-1) ?? 0,
   }
+}
+
+function mean(values: number[]): number {
+  return values.length > 0
+    ? values.reduce((sum, value) => sum + value, 0) / values.length
+    : 0
+}
+
+function standardDeviation(values: number[]): number {
+  if (values.length < 2)
+    return 0
+
+  const average = mean(values)
+  const variance = mean(values.map(value => (value - average) ** 2))
+  return Math.sqrt(variance)
 }
 
 function percentile(sortedTimings: number[], percentileRank: number): number {
@@ -161,9 +196,12 @@ function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
     summary.label.padEnd(24),
     summary.path.padEnd(43),
     String(summary.iterations).padStart(10),
+    String(summary.rounds).padStart(6),
     String(summary.concurrency).padStart(11),
     formatMs(summary.minMs).padStart(10),
     formatMs(summary.avgMs).padStart(10),
+    formatMs(summary.medianRoundAvgMs).padStart(10),
+    formatMs(summary.roundStdDevMs).padStart(10),
     formatMs(summary.p50Ms).padStart(10),
     formatMs(summary.p95Ms).padStart(10),
     formatMs(summary.maxMs).padStart(10),
@@ -178,9 +216,12 @@ function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
       'scenario'.padEnd(24),
       'path'.padEnd(43),
       'iterations'.padStart(10),
+      'rounds'.padStart(6),
       'concurrency'.padStart(11),
       'min'.padStart(10),
       'avg'.padStart(10),
+      'round med'.padStart(10),
+      'round sd'.padStart(10),
       'p50'.padStart(10),
       'p95'.padStart(10),
       'max'.padStart(10),
@@ -204,6 +245,7 @@ async function writeBenchmarkOutput(summaries: MeasurementSummary[]): Promise<vo
       platform: process.platform,
       arch: process.arch,
       iterations: benchmarkIterations,
+      rounds: benchmarkRounds,
       warmupIterations,
       defaultConcurrency: concurrentRequests,
       lifecycleEvent: process.env.npm_lifecycle_event,
@@ -338,6 +380,7 @@ describeBenchmark('proxy performance baseline', () => {
     const concurrentStreamed = await measureConcurrent('large conc stream', '/api/odx/StreamService/LargeProducts', concurrentRequests, () => ofetch(`${proxyUrl}/api/odx/StreamService/LargeProducts`))
 
     clearODataLogs()
+    const devtoolsBaseline = await measureSequential('small seq devtools baseline', '/api/odx/BufferService/Products', () => ofetch(`${proxyUrl}/api/odx/BufferService/Products`))
     const devtoolsBuffered = await measureSequential('small seq devtools buffer', '/api/odx/DevToolsBufferService/Products', () => ofetch(`${devtoolsProxyUrl}/api/odx/DevToolsBufferService/Products`))
 
     const summaries = [
@@ -350,6 +393,7 @@ describeBenchmark('proxy performance baseline', () => {
       concurrentDirect,
       concurrentBuffered,
       concurrentStreamed,
+      devtoolsBaseline,
       devtoolsBuffered,
     ]
     for (const summary of summaries) {
@@ -367,7 +411,7 @@ describeBenchmark('proxy performance baseline', () => {
     assignAverageOverhead(largeStreamed, largeDirect)
     assignAverageOverhead(concurrentBuffered, concurrentDirect)
     assignAverageOverhead(concurrentStreamed, concurrentDirect)
-    assignAverageOverhead(devtoolsBuffered, smallBuffered)
+    assignAverageOverhead(devtoolsBuffered, devtoolsBaseline)
 
     for (const summary of [
       smallBuffered,
