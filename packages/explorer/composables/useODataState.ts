@@ -92,6 +92,13 @@ function serviceHasEntity(service: any, entity: string): boolean {
   )
 }
 
+function serviceMatchesLogFilter(service: any, filter: string): boolean {
+  const normalizedFilter = filter.toLowerCase()
+  return [service.name, service.route].some(value =>
+    typeof value === 'string' && value.toLowerCase() === normalizedFilter,
+  )
+}
+
 // Global Singleton state
 const activeTab = ref('overview')
 const logs = ref<ODataLog[]>([])
@@ -360,6 +367,10 @@ export function useSharedODataState(): SharedODataState {
         selectedService.value = null
         clearSelectedEntityState()
       }
+    }
+
+    if (logFilterService.value && !data.services.some((s: any) => serviceMatchesLogFilter(s, logFilterService.value!))) {
+      logFilterService.value = null
     }
   }, { deep: true })
 

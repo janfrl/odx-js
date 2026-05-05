@@ -288,6 +288,129 @@ describe('explorer State Composable', () => {
     expect(hasActiveLogFilters.value).toBe(false)
   })
 
+  it('preserves traffic log service filter when refreshed config still contains the service name', async () => {
+    const { config, logFilterService, logFilterStatus, logSearch, logs, selectedTraceLogId } = useSharedODataState()
+    logs.value = [
+      {
+        id: 'trace-1',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        status: 200,
+        duration: 12,
+        proxyTrace: [{ label: 'Proxy', duration: 1 }],
+      } as any,
+    ]
+    logFilterService.value = 'Northwind'
+    logFilterStatus.value = 'success'
+    logSearch.value = 'products'
+    selectedTraceLogId.value = 'trace-1'
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [{ name: 'Northwind', route: 'renamed-northwind' }],
+    }
+    await nextTick()
+
+    expect(logFilterService.value).toBe('Northwind')
+    expect(logFilterStatus.value).toBe('success')
+    expect(logSearch.value).toBe('products')
+    expect(selectedTraceLogId.value).toBe('trace-1')
+    expect(logs.value.map(log => log.id)).toEqual(['trace-1'])
+  })
+
+  it('preserves traffic log service filter when refreshed config still contains the route alias', async () => {
+    const { config, logFilterService, logFilterStatus, logSearch, logs, selectedTraceLogId } = useSharedODataState()
+    logs.value = [
+      {
+        id: 'trace-1',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        status: 200,
+        duration: 12,
+        proxyTrace: [{ label: 'Proxy', duration: 1 }],
+      } as any,
+    ]
+    logFilterService.value = 'northwind-api'
+    logFilterStatus.value = 'success'
+    logSearch.value = 'products'
+    selectedTraceLogId.value = 'trace-1'
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [{ name: 'RenamedNorthwind', route: 'northwind-api' }],
+    }
+    await nextTick()
+
+    expect(logFilterService.value).toBe('northwind-api')
+    expect(logFilterStatus.value).toBe('success')
+    expect(logSearch.value).toBe('products')
+    expect(selectedTraceLogId.value).toBe('trace-1')
+    expect(logs.value.map(log => log.id)).toEqual(['trace-1'])
+  })
+
+  it('clears only stale traffic log service filter after config refresh', async () => {
+    const {
+      config,
+      logFilterService,
+      logFilterStatus,
+      logSearch,
+      logs,
+      selectedEntity,
+      selectedService,
+      selectedTraceLogId,
+    } = useSharedODataState()
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ entities: [] }),
+    })
+    logs.value = [
+      {
+        id: 'trace-1',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        status: 200,
+        duration: 12,
+        proxyTrace: [{ label: 'Proxy', duration: 1 }],
+      } as any,
+    ]
+    selectedService.value = {
+      name: 'SAP',
+      route: 'sap',
+      entities: [{ name: 'BusinessPartner', entitySet: 'BusinessPartners' }],
+    } as any
+    selectedEntity.value = 'BusinessPartners'
+    logFilterService.value = 'old-northwind'
+    logFilterStatus.value = 'success'
+    logSearch.value = 'products'
+    selectedTraceLogId.value = 'trace-1'
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'SAP',
+          route: 'sap',
+          entities: [{ name: 'BusinessPartner', entitySet: 'BusinessPartners' }],
+        },
+      ],
+    }
+    await nextTick()
+
+    expect(logFilterService.value).toBeNull()
+    expect(logFilterStatus.value).toBe('success')
+    expect(logSearch.value).toBe('products')
+    expect(selectedTraceLogId.value).toBe('trace-1')
+    expect(selectedService.value?.name).toBe('SAP')
+    expect(selectedEntity.value).toBe('BusinessPartners')
+    expect(logs.value.map(log => log.id)).toEqual(['trace-1'])
+  })
+
   it('coordinates selected proxy trace log state', () => {
     const { activeTab, logs, selectedTraceLogId } = useSharedODataState()
     logs.value = [
