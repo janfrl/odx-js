@@ -42,3 +42,13 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Keep docs/package verification lightweight and runnable without dev servers.
 - Add automated tests around local benchmark tooling before extending it.
 - Prefer relative benchmark reporting before attempting runtime optimization.
+
+## Phase 6: Release Readiness Tightening
+
+- Ensure package-local verification commands include both focused tests and
+  package examples where practical.
+- Validate malformed BTP destination payloads before broader deployment work.
+- Keep Explorer confidence work state-driven and test-backed before browser
+  checks.
+- Add benchmark run metadata before comparing or optimizing proxy performance.
+- Keep package verification guidance close to each package README.

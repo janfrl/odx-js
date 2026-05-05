@@ -8,20 +8,19 @@ implementation phases.
 
 ## Now
 
-- Preserve buffered proxy `204 No Content` semantics with a focused regression.
-- Fix Explorer Traffic Monitor status filters so pending rows are not treated
-  as successful traffic.
-- Add automated coverage for the proxy benchmark comparison helper.
-- Add a package-local docs verification command.
-- Add relative overhead percentages to local proxy benchmark output.
+- Include focused core tests in the core package-local verify command.
+- Validate malformed BTP destination payloads before proxy target resolution.
+- Harden Explorer proxy trace selection state with tests and no UI churn.
+- Add run metadata to optional proxy benchmark JSON reports.
+- Add docs package README verification notes.
 
 ## Next
 
-- Run separate review for public proxy HTTP behavior changes from task 026.
+- Run separate review for BTP destination correctness changes from task 032.
 - Continue Explorer improvements only through narrow, test-backed state or UI
   fixes.
-- Consider performance optimizations only after benchmark output is easy to
-  compare across runs.
+- Consider performance optimizations only after benchmark reports include enough
+  local run context for fair comparison.
 - Batch a full checkpoint after the ready task queue is complete.
 
 ## Later

@@ -45,9 +45,11 @@ Candidate tasks:
 - `.agents/tasks/done/021-record-proxy-benchmark-baseline-output.md`
 - `.agents/tasks/done/022-preserve-buffer-proxy-success-status.md`
 - `.agents/tasks/done/025-add-proxy-benchmark-compare-helper.md`
-- `.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`
-- `.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`
-- `.agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md`
+- `.agents/tasks/done/026-preserve-buffer-proxy-204-empty-response.md`
+- `.agents/tasks/done/028-add-proxy-benchmark-compare-tests.md`
+- `.agents/tasks/done/030-add-proxy-benchmark-overhead-ratios.md`
+- `.agents/tasks/ready/032-validate-btp-destination-url.md`
+- `.agents/tasks/ready/034-add-proxy-benchmark-report-metadata.md`
 
 Exit criteria:
 
@@ -122,8 +124,11 @@ Candidate tasks:
 - `.agents/tasks/done/020-add-explorer-package-verification-command.md`
 - `.agents/tasks/done/023-add-package-local-verify-scripts.md`
 - `.agents/tasks/done/024-improve-explorer-filtered-empty-state.md`
-- `.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`
-- `.agents/tasks/ready/029-add-docs-package-verify-script.md`
+- `.agents/tasks/done/027-exclude-pending-logs-from-status-filters.md`
+- `.agents/tasks/done/029-add-docs-package-verify-script.md`
+- `.agents/tasks/ready/031-include-core-tests-in-package-verify.md`
+- `.agents/tasks/ready/033-harden-explorer-proxy-trace-selection-state.md`
+- `.agents/tasks/ready/035-add-docs-package-readme-verification-notes.md`
 
 Exit criteria:
 
@@ -156,11 +161,16 @@ Candidate tasks:
 - `.agents/tasks/done/023-add-package-local-verify-scripts.md`
 - `.agents/tasks/done/024-improve-explorer-filtered-empty-state.md`
 - `.agents/tasks/done/025-add-proxy-benchmark-compare-helper.md`
-- `.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`
-- `.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`
-- `.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`
-- `.agents/tasks/ready/029-add-docs-package-verify-script.md`
-- `.agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md`
+- `.agents/tasks/done/026-preserve-buffer-proxy-204-empty-response.md`
+- `.agents/tasks/done/027-exclude-pending-logs-from-status-filters.md`
+- `.agents/tasks/done/028-add-proxy-benchmark-compare-tests.md`
+- `.agents/tasks/done/029-add-docs-package-verify-script.md`
+- `.agents/tasks/done/030-add-proxy-benchmark-overhead-ratios.md`
+- `.agents/tasks/ready/031-include-core-tests-in-package-verify.md`
+- `.agents/tasks/ready/032-validate-btp-destination-url.md`
+- `.agents/tasks/ready/033-harden-explorer-proxy-trace-selection-state.md`
+- `.agents/tasks/ready/034-add-proxy-benchmark-report-metadata.md`
+- `.agents/tasks/ready/035-add-docs-package-readme-verification-notes.md`
 
 Exit criteria:
 
@@ -169,3 +179,5 @@ Exit criteria:
 - Explorer tests cover filtered-empty and pending status-filter behavior
 - proxy benchmark JSON output, comparison tooling, and relative overhead fields
   are optional and artifact-safe
+- destination payload validation fails clearly for malformed BTP targets
+- benchmark reports include enough local run metadata for fair comparisons

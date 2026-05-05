@@ -12,44 +12,46 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-No ready implementation tasks remain. Run the Planner to create the next small,
-reviewable tasks.
+Implement the lowest-numbered ready task:
+
+`.agents/tasks/ready/031-include-core-tests-in-package-verify.md`
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Planner for ODX.
+You are the Implementer for ODX.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- relevant root documentation
 - .agents/WORKFLOW.md
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/reviews/
 - .agents/decisions/
+- .agents/tasks/ready/031-include-core-tests-in-package-verify.md
+- ARCHITECTURE.md
+- .agents/PACKAGE_ISOLATION.md
+
+Implement exactly `.agents/tasks/ready/031-include-core-tests-in-package-verify.md`.
 
 Rules:
-- Create the next 3-5 implementation tasks.
-- Each task must be executable by one implementer chat.
-- Use `.agents/tasks/TASK_TEMPLATE.md`.
-- Put new tasks in `.agents/tasks/ready/`.
-- Keep tasks small and reviewable.
-- Include acceptance criteria and verification steps.
-- Focus on project value: package isolation, explorer confidence, proxy/BTP correctness, performance measurement, and documentation clarity.
-- Do not create vague or oversized tasks.
-- Update `.agents/BACKLOG.md`, `.agents/EPICS.md`, and `.agents/ROADMAP.md` only if needed.
+- Keep changes scoped to the task.
+- Do not start unrelated refactors.
+- Follow existing repository structure, style, and documented architecture boundaries.
+- Update the task handoff notes before finishing.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
+- Decide whether separate review is required using `.agents/WORKFLOW.md`.
+- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
 - Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- new tasks created
-- recommended next task
-- open decisions or blockers
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
+- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
