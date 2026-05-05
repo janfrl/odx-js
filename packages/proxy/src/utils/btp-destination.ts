@@ -174,10 +174,15 @@ export async function resolveBtpDestination(serviceName: string, userToken?: str
 
     const config = destData.destinationConfiguration
     const authTokens = destData.authTokens
+    const destinationUrl = typeof config?.URL === 'string' ? config.URL.trim() : ''
+
+    if (!destinationUrl) {
+      throw new Error('invalid destination URL: destinationConfiguration.URL is missing or blank')
+    }
 
     const resolvedDestination: BtpDestination = {
       name: serviceName,
-      url: config.URL,
+      url: destinationUrl,
       user: config.User,
       password: config.Password,
       authTokens: authTokens?.map((t: any) => ({ value: t.value })),

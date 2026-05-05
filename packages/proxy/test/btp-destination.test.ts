@@ -167,6 +167,63 @@ describe('btp Destination Resolution', () => {
     )
   })
 
+  it('throws in production when Destination Service omits the destination URL', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          ProxyType: 'Internet',
+        },
+      })
+
+    await expect(resolveBtpDestination('MissingUrlProductionService')).rejects.toThrow(
+      'Failed to resolve BTP destination "MissingUrlProductionService": invalid destination URL',
+    )
+  })
+
+  it('throws in production when Destination Service returns a blank destination URL', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: '   ',
+          ProxyType: 'Internet',
+        },
+      })
+
+    await expect(resolveBtpDestination('BlankUrlProductionService')).rejects.toThrow(
+      'Failed to resolve BTP destination "BlankUrlProductionService": invalid destination URL',
+    )
+  })
+
+  it('preserves local development fallback when Destination Service omits the destination URL', async () => {
+    process.env.NODE_ENV = 'development'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          ProxyType: 'Internet',
+        },
+      })
+
+    const result = await resolveBtpDestination('MissingUrlDevelopmentFallbackService')
+
+    expect(result).toEqual({
+      name: 'MissingUrlDevelopmentFallbackService',
+      url: '/sap/opu/odata/sap',
+      user: 'MOCK',
+      password: 'MOCK',
+    })
+  })
+
   it('keeps technical and user-token destination cache entries separate', async () => {
     mockBtpBindings()
 
