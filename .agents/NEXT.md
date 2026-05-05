@@ -12,45 +12,46 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Coordinate the workflow after approving the completed high-risk review:
-
-`.agents/reviews/032-validate-btp-destination-url-review.md`
-
-Note: the expected next ready task,
-`.agents/tasks/ready/035-add-docs-package-readme-verification-notes.md`, is
-already completed at `.agents/tasks/done/035-add-docs-package-readme-verification-notes.md`
-by concurrent work. Preserve those edits and reconcile the next action from the
-current repository state.
+No ready implementation tasks remain. Run the Planner to create the next small,
+reviewable stability and performance tasks.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Orchestrator for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Planner for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
+- relevant root documentation
 - .agents/WORKFLOW.md
-- .agents/roles/orchestrator.md
-- .agents/NEXT.md
-- .agents/reviews/032-validate-btp-destination-url-review.md
-- .agents/tasks/done/032-validate-btp-destination-url.md
-- .agents/tasks/done/035-add-docs-package-readme-verification-notes.md, if present
+- .agents/ROADMAP.md
+- .agents/EPICS.md
+- .agents/BACKLOG.md
+- .agents/tasks/
+- .agents/reviews/
+- .agents/decisions/
 
-Coordinate the next workflow step from the current repository state.
+Create the next 3-5 implementation tasks.
 
 Rules:
 - Do not revert edits made by others.
-- Treat task 032 as independently reviewed and approved.
-- Notice that task 035 appears to have been moved from ready to done by concurrent work; preserve it and verify whether that work needs follow-up.
-- If no ready tasks remain after reconciling concurrent work, use the Planner prompt from `.agents/WORKFLOW.md`.
-- Keep `.agents/NEXT.md` current and create a Conventional Commit only for your own coherent workflow changes unless existing staged work is intentionally part of your action.
+- Each task must be executable by one implementer chat.
+- Use `.agents/tasks/TASK_TEMPLATE.md`.
+- Put new tasks in `.agents/tasks/ready/`.
+- Keep tasks small, concrete, and reviewable.
+- Include acceptance criteria and verification steps.
+- Focus on stability first: proven bug fixes from failing tests, proxy/BTP correctness, Explorer/Nuxt state correctness, and performance measurement improvements that keep architecture clean.
+- Do not create vague or oversized tasks.
+- Update `.agents/BACKLOG.md`, `.agents/EPICS.md`, and `.agents/ROADMAP.md` only if needed.
+- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
+- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- role chats or sub-agents run
-- commits created or reviewed
-- current `.agents/NEXT.md` action
-- blockers or human decisions needed
+- new tasks created
+- recommended next task
+- open decisions or blockers
+- commit hash
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
