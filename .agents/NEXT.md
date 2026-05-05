@@ -12,46 +12,48 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-No ready implementation tasks remain. Run the Planner to create the next small,
-reviewable stability and performance tasks.
+Implement the lowest-numbered ready task:
+`.agents/tasks/ready/036-normalize-nuxt-service-url-joins.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Planner for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- relevant root documentation
 - .agents/WORKFLOW.md
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/reviews/
 - .agents/decisions/
+- .agents/tasks/ready/036-normalize-nuxt-service-url-joins.md
+- API.md
+- ARCHITECTURE.md
+- DOMAIN_MODEL.md
 
-Create the next 3-5 implementation tasks.
+Implement exactly `.agents/tasks/ready/036-normalize-nuxt-service-url-joins.md`.
 
 Rules:
 - Do not revert edits made by others.
-- Each task must be executable by one implementer chat.
-- Use `.agents/tasks/TASK_TEMPLATE.md`.
-- Put new tasks in `.agents/tasks/ready/`.
-- Keep tasks small, concrete, and reviewable.
-- Include acceptance criteria and verification steps.
-- Focus on stability first: proven bug fixes from failing tests, proxy/BTP correctness, Explorer/Nuxt state correctness, and performance measurement improvements that keep architecture clean.
-- Do not create vague or oversized tasks.
-- Update `.agents/BACKLOG.md`, `.agents/EPICS.md`, and `.agents/ROADMAP.md` only if needed.
+- Keep changes scoped to the task.
+- Before editing, inspect `git status --short` and preserve unrelated uncommitted edits, especially in `packages/nuxt/test/composables.test.ts`.
+- Add failing focused tests before changing runtime code.
+- Follow existing repository structure, style, and documented architecture boundaries.
+- Update the task handoff notes before finishing.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
+- Decide whether separate review is required using `.agents/WORKFLOW.md`.
+- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
 - Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- new tasks created
-- recommended next task
-- open decisions or blockers
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
+- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

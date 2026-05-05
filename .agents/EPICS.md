@@ -48,8 +48,10 @@ Candidate tasks:
 - `.agents/tasks/done/026-preserve-buffer-proxy-204-empty-response.md`
 - `.agents/tasks/done/028-add-proxy-benchmark-compare-tests.md`
 - `.agents/tasks/done/030-add-proxy-benchmark-overhead-ratios.md`
-- `.agents/tasks/ready/032-validate-btp-destination-url.md`
-- `.agents/tasks/ready/034-add-proxy-benchmark-report-metadata.md`
+- `.agents/tasks/done/032-validate-btp-destination-url.md`
+- `.agents/tasks/done/034-add-proxy-benchmark-report-metadata.md`
+- `.agents/tasks/ready/037-reject-non-http-btp-destination-url.md`
+- `.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`
 
 Exit criteria:
 
@@ -126,9 +128,12 @@ Candidate tasks:
 - `.agents/tasks/done/024-improve-explorer-filtered-empty-state.md`
 - `.agents/tasks/done/027-exclude-pending-logs-from-status-filters.md`
 - `.agents/tasks/done/029-add-docs-package-verify-script.md`
-- `.agents/tasks/ready/031-include-core-tests-in-package-verify.md`
-- `.agents/tasks/ready/033-harden-explorer-proxy-trace-selection-state.md`
-- `.agents/tasks/ready/035-add-docs-package-readme-verification-notes.md`
+- `.agents/tasks/done/031-include-core-tests-in-package-verify.md`
+- `.agents/tasks/done/033-harden-explorer-proxy-trace-selection-state.md`
+- `.agents/tasks/done/035-add-docs-package-readme-verification-notes.md`
+- `.agents/tasks/ready/036-normalize-nuxt-service-url-joins.md`
+- `.agents/tasks/ready/038-clear-stale-explorer-entity-selection.md`
+- `.agents/tasks/ready/040-cover-routed-nuxt-mutations.md`
 
 Exit criteria:
 
@@ -166,11 +171,16 @@ Candidate tasks:
 - `.agents/tasks/done/028-add-proxy-benchmark-compare-tests.md`
 - `.agents/tasks/done/029-add-docs-package-verify-script.md`
 - `.agents/tasks/done/030-add-proxy-benchmark-overhead-ratios.md`
-- `.agents/tasks/ready/031-include-core-tests-in-package-verify.md`
-- `.agents/tasks/ready/032-validate-btp-destination-url.md`
-- `.agents/tasks/ready/033-harden-explorer-proxy-trace-selection-state.md`
-- `.agents/tasks/ready/034-add-proxy-benchmark-report-metadata.md`
-- `.agents/tasks/ready/035-add-docs-package-readme-verification-notes.md`
+- `.agents/tasks/done/031-include-core-tests-in-package-verify.md`
+- `.agents/tasks/done/032-validate-btp-destination-url.md`
+- `.agents/tasks/done/033-harden-explorer-proxy-trace-selection-state.md`
+- `.agents/tasks/done/034-add-proxy-benchmark-report-metadata.md`
+- `.agents/tasks/done/035-add-docs-package-readme-verification-notes.md`
+- `.agents/tasks/ready/036-normalize-nuxt-service-url-joins.md`
+- `.agents/tasks/ready/037-reject-non-http-btp-destination-url.md`
+- `.agents/tasks/ready/038-clear-stale-explorer-entity-selection.md`
+- `.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`
+- `.agents/tasks/ready/040-cover-routed-nuxt-mutations.md`
 
 Exit criteria:
 
@@ -181,3 +191,5 @@ Exit criteria:
   are optional and artifact-safe
 - destination payload validation fails clearly for malformed BTP targets
 - benchmark reports include enough local run metadata for fair comparisons
+- Nuxt composable URL construction is covered for slashed config boundaries
+- benchmark comparison output calls out scenario mismatches

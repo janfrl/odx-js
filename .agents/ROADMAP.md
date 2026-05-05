@@ -52,3 +52,14 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
   checks.
 - Add benchmark run metadata before comparing or optimizing proxy performance.
 - Keep package verification guidance close to each package README.
+
+## Phase 7: Stability Queue Refinement
+
+- Normalize Nuxt composable URL joins without changing runtime config
+  contracts.
+- Reject non-HTTP(S) BTP destination targets with focused production-mode
+  tests and independent review.
+- Keep Explorer service/entity selection state reconciled after config refresh.
+- Make benchmark comparison output explicit about missing scenarios before
+  performance optimization work.
+- Pin route-alias behavior for Nuxt mutation helpers.

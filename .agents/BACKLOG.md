@@ -8,19 +8,21 @@ implementation phases.
 
 ## Now
 
-- Include focused core tests in the core package-local verify command.
-- Validate malformed BTP destination payloads before proxy target resolution.
-- Harden Explorer proxy trace selection state with tests and no UI churn.
-- Add run metadata to optional proxy benchmark JSON reports.
-- Add docs package README verification notes.
+- Normalize Nuxt composable URL joins for slashed base paths, routes, and
+  direct service URLs.
+- Reject non-HTTP(S) BTP destination URLs before production proxy target
+  resolution.
+- Clear stale Explorer selected entity state after service config refreshes.
+- Report missing scenarios in proxy benchmark comparisons.
+- Cover configured Nuxt service routes for mutation helpers.
 
 ## Next
 
-- Run separate review for BTP destination correctness changes from task 032.
+- Run separate review for BTP destination correctness changes from task 037.
 - Continue Explorer improvements only through narrow, test-backed state or UI
   fixes.
-- Consider performance optimizations only after benchmark reports include enough
-  local run context for fair comparison.
+- Consider performance optimizations only after benchmark comparison output
+  calls out missing scenarios and enough local run context for fair comparison.
 - Batch a full checkpoint after the ready task queue is complete.
 
 ## Later
