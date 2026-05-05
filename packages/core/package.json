@@ -8,6 +8,9 @@
     "./server": "./src/server.ts"
   },
   "main": "./src/index.ts",
+  "scripts": {
+    "verify": "tsx ../../examples/core-standalone.ts"
+  },
   "dependencies": {
     "hookable": "^6.1.0",
     "ofetch": "^1.5.1"

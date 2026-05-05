@@ -13,11 +13,12 @@ pnpm add @bc8-odx/proxy
 From the repository root:
 
 ```bash
-pnpm.cmd run example:proxy
+pnpm.cmd --filter @bc8-odx/proxy run verify
 pnpm.cmd run bench:proxy
 ```
 
-`pnpm.cmd run example:proxy` runs `examples/proxy-standalone.ts`. It starts a
+`pnpm.cmd --filter @bc8-odx/proxy run verify` runs the proxy Vitest suite and
+the same standalone fixture check as `pnpm.cmd run example:proxy`. It starts a
 local fixture backend and H3 proxy, then verifies proxied OData reads and
 header forwarding through `@bc8-odx/proxy`.
 

@@ -11,7 +11,8 @@
     "dev": "nuxi dev test/fixtures/isolated",
     "playground:check": "nuxi prepare playground/minimal && node playground/minimal/verify.mjs",
     "prepare": "nuxt-module-build prepare && nuxi prepare test/fixtures/isolated",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "vitest run test/generate.test.ts test/isolated.test.ts test/module.test.ts && pnpm run playground:check"
   },
   "dependencies": {
     "@bc8-odx/core": "workspace:*",

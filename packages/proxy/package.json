@@ -9,7 +9,8 @@
   "main": "./src/index.ts",
   "scripts": {
     "build": "nitropack build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify": "vitest run && tsx ../../examples/proxy-standalone.ts"
   },
   "dependencies": {
     "@bc8-odx/core": "workspace:*",

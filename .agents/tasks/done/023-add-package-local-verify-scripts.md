@@ -1,7 +1,7 @@
 # Task: Add package-local verify scripts
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -83,15 +83,45 @@ dependency wiring, or broad workspace scripts beyond the stated scope.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/core/package.json`
+  - `packages/proxy/package.json`
+  - `packages/nuxt/package.json`
+  - `packages/core/README.md`
+  - `packages/proxy/README.md`
+  - `packages/nuxt/README.md`
+  - `README.md`
+- summary:
+  - Added package-local `verify` scripts for core, proxy, and Nuxt.
+  - Core verify runs the existing standalone core fixture example.
+  - Proxy verify runs the proxy Vitest suite plus the existing standalone proxy
+    fixture example.
+  - Nuxt verify runs the existing generation/module e2e tests plus the minimal
+    playground check.
+  - Updated package READMEs and the root package verification table.
+- tests run:
+  - PASS: `pnpm.cmd --filter @bc8-odx/core run verify`.
+  - PASS: `pnpm.cmd --filter @bc8-odx/proxy run verify`.
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt run verify`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - `pnpm.cmd run typecheck` was not rerun for this script/docs-only task; it
+    passed earlier in the same checkpoint after task 022/021 changes.
+  - Nuxt verify intentionally targets package-local e2e/playground checks,
+    because `test/composables.test.ts` depends on root workspace aliases.
+- self-check result:
+  - Scope stayed limited to package scripts and documentation.
+  - No runtime code, dependencies, root command removals, or browser/visual
+    infrastructure were added.
+- review requirement decision:
+  - Separate review is not required because this is low-risk script/docs work.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Updated to task 024.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None.
