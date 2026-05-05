@@ -86,3 +86,13 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
   package-local checks and docs extraction.
 - Run a broad release confidence checkpoint before planning larger performance
   optimization or browser-level Explorer work.
+
+## Phase 10: Stability And Deployment Verification Polish
+
+- Keep Explorer state caches isolated for special service and entity names
+  without UI redesign.
+- Add deterministic local verification for deployment configuration invariants
+  before changing deployment behavior.
+- Continue improving benchmark comparison validation before runtime
+  optimization work.
+- Clarify generated metadata cache cleanup expectations in existing docs.

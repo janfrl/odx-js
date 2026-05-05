@@ -247,10 +247,10 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/046-encode-explorer-internal-endpoint-params.md`
-- `.agents/tasks/ready/047-reject-duplicate-benchmark-scenarios.md`
-- `.agents/tasks/ready/048-document-package-verification-artifacts.md`
-- `.agents/tasks/ready/049-run-release-confidence-checkpoint.md`
+- `.agents/tasks/done/046-encode-explorer-internal-endpoint-params.md`
+- `.agents/tasks/done/047-reject-duplicate-benchmark-scenarios.md`
+- `.agents/tasks/done/048-document-package-verification-artifacts.md`
+- `.agents/tasks/done/049-run-release-confidence-checkpoint.md`
 
 Exit criteria:
 
@@ -258,3 +258,35 @@ Exit criteria:
 - The Explorer endpoint encoding regression is covered without UI redesign.
 - Benchmark comparison validation has deterministic tests.
 - The checkpoint either passes or records bounded failures and residual risk.
+
+## Epic 09: Stability And Deployment Verification Polish
+
+Goal: tighten the next small stability and verification gaps after the release
+confidence checkpoint without starting broad runtime optimization or UI work.
+
+Deliverables:
+
+- Explorer entity preview cache state stays isolated for service/entity names
+  containing separator characters.
+- Deployment route/destination configuration has deterministic local
+  consistency coverage.
+- Proxy benchmark comparison rejects malformed timing fields before reporting
+  deltas.
+- Generated metadata cache cleanup expectations are documented in existing
+  contributor-facing docs.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/050-isolate-explorer-entity-cache-keys.md`
+- `.agents/tasks/ready/051-add-deployment-config-consistency-tests.md`
+- `.agents/tasks/ready/052-validate-benchmark-comparison-timing-fields.md`
+- `.agents/tasks/ready/053-document-generated-metadata-cache-cleanup.md`
+
+Exit criteria:
+
+- The ready task queue completes with task-local checks passing.
+- Required review is completed for deployment configuration verification.
+- No UI redesign or browser-mode work is introduced without a dedicated task
+  and a port `3000` verification plan.
+- Broad checkpoint checks are run or residual risk is recorded after the queue
+  completes.

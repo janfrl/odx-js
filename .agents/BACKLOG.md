@@ -8,12 +8,13 @@ implementation phases.
 
 ## Now
 
-- Encode Explorer internal endpoint query parameters for service and entity
-  names containing query separator characters.
-- Reject duplicate scenario labels in proxy benchmark comparison reports.
-- Clarify package verification docs around the aggregate command and generated
-  docs artifact drift.
-- Run a release confidence checkpoint after the current ready queue completes.
+- Isolate Explorer entity preview cache keys for service and entity names that
+  contain separator characters.
+- Add deterministic local verification that AppRouter destinations declared in
+  `xs-app.json` are provided by `mta.yaml`.
+- Reject malformed optional timing fields in proxy benchmark comparison
+  reports.
+- Clarify generated metadata cache cleanup expectations in existing docs.
 
 ## Next
 
@@ -21,14 +22,13 @@ implementation phases.
   unless UI changes are explicitly needed and browser-verified.
 - Consider runtime performance optimizations only after benchmark tooling keeps
   malformed reports visible and checkpoint checks remain green.
-- Batch a full checkpoint after tasks 046-048 are complete.
+- Batch a full checkpoint after tasks 050-053 are complete.
 
 ## Later
 
 - Revisit production TLS defaults as a documented security decision.
 - Add broader browser-level Explorer verification after package-level checks are
   stable.
-- Revisit generated metadata cache policy and cleanup expectations.
 - Revisit whether package isolation docs should be promoted from
   `.agents/PACKAGE_ISOLATION.md` into root or package documentation.
 
