@@ -102,30 +102,26 @@ export function formatComparison(baseline: BenchmarkReport, candidate: Benchmark
   const baselineScenarios = scenarioMap(baseline, 'baseline')
   const candidateScenarios = scenarioMap(candidate, 'candidate')
 
-  const missing = [...baselineScenarios.keys()].filter(label => !candidateScenarios.has(label))
-  const extra = [...candidateScenarios.keys()].filter(label => !baselineScenarios.has(label))
+  const missingFromCandidate = [...baselineScenarios.keys()].filter(label => !candidateScenarios.has(label))
+  const missingFromBaseline = [...candidateScenarios.keys()].filter(label => !baselineScenarios.has(label))
 
-  if (missing.length > 0) {
-    throw new Error(`Candidate report is missing scenario(s): ${missing.join(', ')}`)
-  }
-  if (extra.length > 0) {
-    throw new Error(`Candidate report has unexpected scenario(s): ${extra.join(', ')}`)
-  }
+  const rows = Array.from(baselineScenarios.entries()).flatMap(([label, base]) => {
+    const next = candidateScenarios.get(label)
+    if (!next)
+      return []
 
-  const rows = Array.from(baselineScenarios.entries(), ([label, base]) => {
-    const next = candidateScenarios.get(label)!
     const baseMs = comparisonMs(base)
     const nextMs = comparisonMs(next)
     const delta = nextMs - baseMs
     const percent = baseMs === 0 ? Number.NaN : (delta / baseMs) * 100
-    return [
+    return [[
       label.padEnd(28),
       (base.path || '').padEnd(43),
       formatMs(baseMs).padStart(10),
       formatMs(nextMs).padStart(10),
       `${delta >= 0 ? '+' : ''}${formatMs(delta)}`.padStart(10),
       (Number.isFinite(percent) ? formatPercent(percent) : 'n/a').padStart(9),
-    ].join('  ')
+    ].join('  ')]
   })
 
   const metadata = [
@@ -147,6 +143,8 @@ export function formatComparison(baseline: BenchmarkReport, candidate: Benchmark
       'delta %'.padStart(9),
     ].join('  '),
     ...rows,
+    ...missingFromCandidate.map(label => `missing from candidate: ${label}`),
+    ...missingFromBaseline.map(label => `missing from baseline: ${label}`),
     '',
   ].filter(line => line !== undefined).join('\n')
 }

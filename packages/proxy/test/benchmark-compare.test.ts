@@ -73,11 +73,44 @@ describe('proxy benchmark comparison helper', () => {
     expect(output).toContain('2.00ms')
   })
 
-  it('rejects missing candidate scenario labels', () => {
-    expect(() => formatComparison(
-      { scenarios: [{ label: 'small seq direct', avgMs: 1 }] },
-      { scenarios: [] },
-    )).toThrow('Candidate report is missing scenario(s): small seq direct')
+  it('reports scenarios that exist only in the baseline report', () => {
+    const output = formatComparison(
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1 },
+          { label: 'large seq direct', path: '/LargeProducts', avgMs: 4 },
+        ],
+      },
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1.5 },
+        ],
+      },
+    )
+
+    expect(output).toContain('small seq direct')
+    expect(output).toContain('+0.50ms')
+    expect(output).toContain('missing from candidate: large seq direct')
+  })
+
+  it('reports scenarios that exist only in the candidate report', () => {
+    const output = formatComparison(
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1 },
+        ],
+      },
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1.5 },
+          { label: 'small seq devtools buffer', path: '/api/odx/DevToolsBufferService/Products', avgMs: 2 },
+        ],
+      },
+    )
+
+    expect(output).toContain('small seq direct')
+    expect(output).toContain('+0.50ms')
+    expect(output).toContain('missing from baseline: small seq devtools buffer')
   })
 
   it('rejects malformed report shapes', () => {
