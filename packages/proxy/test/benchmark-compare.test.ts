@@ -155,4 +155,18 @@ describe('proxy benchmark comparison helper', () => {
       { scenarios: [{ label: 'small seq direct', avgMs: 1 }] },
     )).toThrow('baseline scenario "small seq direct" is missing a finite avgMs value')
   })
+
+  it('rejects baseline scenarios with present non-finite median round averages', () => {
+    expect(() => formatComparison(
+      { scenarios: [{ label: 'large conc stream', avgMs: 10, medianRoundAvgMs: Number.NaN }] },
+      { scenarios: [{ label: 'large conc stream', avgMs: 12, medianRoundAvgMs: 11 }] },
+    )).toThrow('baseline scenario "large conc stream" has a non-finite medianRoundAvgMs value')
+  })
+
+  it('rejects candidate scenarios with present non-finite median round averages', () => {
+    expect(() => formatComparison(
+      { scenarios: [{ label: 'large conc stream', avgMs: 10, medianRoundAvgMs: 9 }] },
+      { scenarios: [{ label: 'large conc stream', avgMs: 12, medianRoundAvgMs: Number.POSITIVE_INFINITY }] },
+    )).toThrow('candidate scenario "large conc stream" has a non-finite medianRoundAvgMs value')
+  })
 })

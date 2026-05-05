@@ -1,7 +1,7 @@
 # Task: Validate benchmark comparison timing fields
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -49,13 +49,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Present non-finite baseline `medianRoundAvgMs` values produce a clear
+- [x] Present non-finite baseline `medianRoundAvgMs` values produce a clear
   validation error.
-- [ ] Present non-finite candidate `medianRoundAvgMs` values produce a clear
+- [x] Present non-finite candidate `medianRoundAvgMs` values produce a clear
   validation error.
-- [ ] Reports without `medianRoundAvgMs` still compare using `avgMs`.
-- [ ] Existing benchmark comparison and report formatting tests remain green.
-- [ ] No production proxy runtime code changes are included.
+- [x] Reports without `medianRoundAvgMs` still compare using `avgMs`.
+- [x] Existing benchmark comparison and report formatting tests remain green.
+- [x] No production proxy runtime code changes are included.
 
 ## Verification
 
@@ -85,15 +85,42 @@ scenario semantics, dependencies, or CI gates change.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `scripts/compare-proxy-benchmarks.ts`
+  - `packages/proxy/test/benchmark-compare.test.ts`
+  - `.agents/tasks/done/052-validate-benchmark-comparison-timing-fields.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added focused tests for present non-finite baseline and candidate
+    `medianRoundAvgMs` values.
+  - Confirmed both tests failed before the fix because comparison silently
+    ignored malformed medians and fell back to `avgMs`.
+  - Added validation alongside existing scenario label, duplicate, and finite
+    `avgMs` checks so malformed medians fail with role-specific,
+    scenario-specific errors.
+  - Preserved old-report compatibility because absent `medianRoundAvgMs` still
+    falls back to `avgMs`.
 - tests run
+  - FAIL before fix: `pnpm.cmd exec vitest run packages/proxy/test/benchmark-compare.test.ts -t "non-finite median"` with both new tests failing because no error was thrown.
+  - PASS: `pnpm.cmd exec vitest run packages/proxy/test/benchmark-compare.test.ts packages/proxy/test/benchmark-report.test.ts`
+  - PASS: `pnpm.cmd run bench:proxy:compare -- reports/proxy-benchmark-a.json reports/proxy-benchmark-b.json`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `pnpm.cmd run typecheck`
 - skipped checks and residual risk
+  - Did not run the timing benchmark because this task intentionally changes
+    deterministic comparison validation only.
 - self-check result
+  - Scope stayed limited to benchmark comparison tooling and deterministic
+    tests. No production proxy runtime code, benchmark scenarios, JSON report
+    shape, dependencies, lockfiles, budgets, or CI gates changed.
 - review requirement decision
+  - Separate review is not required because the task is low-risk local tooling
+    validation and no production or public runtime contracts changed.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/053-document-generated-metadata-cache-cleanup.md`.
 - commit hash
+  - The task implementation commit is the commit containing this handoff.
 - known gaps
+  - None.

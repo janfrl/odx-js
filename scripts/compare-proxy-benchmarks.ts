@@ -69,6 +69,9 @@ function scenarioMap(report: BenchmarkReport, role: string): Map<string, Benchma
     if (!Number.isFinite(scenario.avgMs)) {
       throw new TypeError(`${role} scenario "${scenario.label}" is missing a finite avgMs value`)
     }
+    if (scenario.medianRoundAvgMs !== undefined && !Number.isFinite(scenario.medianRoundAvgMs)) {
+      throw new TypeError(`${role} scenario "${scenario.label}" has a non-finite medianRoundAvgMs value`)
+    }
     scenarios.set(scenario.label, scenario)
   }
   return scenarios

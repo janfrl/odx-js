@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/052-validate-benchmark-comparison-timing-fields.md`.
+Implement `.agents/tasks/ready/053-document-generated-metadata-cache-cleanup.md`.
 
 ## Prompt For Next Chat
 
@@ -25,15 +25,21 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/052-validate-benchmark-comparison-timing-fields.md
-- scripts/compare-proxy-benchmarks.ts
-- packages/proxy/test/benchmark-compare.test.ts
-- packages/proxy/test/benchmark-report.test.ts
+- .agents/tasks/ready/053-document-generated-metadata-cache-cleanup.md
+- DEPLOYMENT.md
+- docs/content/en/1.ecosystem/4.troubleshooting.md
+- docs/content/en/2.nuxt/1.getting-started.md
+- docs/content/en/2.nuxt/4.deployment.md
+- .agents/BACKLOG.md
 
-Implement exactly `.agents/tasks/ready/052-validate-benchmark-comparison-timing-fields.md`.
+Implement exactly `.agents/tasks/ready/053-document-generated-metadata-cache-cleanup.md`.
 
 Rules:
 - Keep changes scoped to the task.
+- Keep this documentation-only unless the task proves otherwise.
+- Do not change cache implementation, scripts, dependencies, lockfiles, or generated artifacts.
+- Do not add a new documentation page.
+- Do not run dev servers or browser verification.
 - Do not start unrelated refactors.
 - Do not revert edits made by others.
 - Follow existing repository structure, style, and documented architecture boundaries.
