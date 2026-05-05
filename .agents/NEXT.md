@@ -12,48 +12,47 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Review completed high-risk task:
-`.agents/tasks/done/037-reject-non-http-btp-destination-url.md`.
+Implement next ready task:
+`.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- API.md
-- ARCHITECTURE.md
-- SECURITY.md
-- DEPLOYMENT.md
-- .agents/tasks/done/037-reject-non-http-btp-destination-url.md
-- packages/proxy/src/utils/btp-destination.ts
-- packages/proxy/test/btp-destination.test.ts
-- .agents/tasks/done/032-validate-btp-destination-url.md
-- .agents/reviews/032-validate-btp-destination-url-review.md
+- .agents/tasks/ready/039-report-missing-benchmark-scenarios.md
+- scripts/compare-proxy-benchmarks.ts
+- packages/proxy/test/benchmark-compare.test.ts
+- packages/proxy/README.md
 
-Review completed task `.agents/tasks/done/037-reject-non-http-btp-destination-url.md`.
+Implement exactly `.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`.
 
-Review stance:
-- Findings first.
-- Prioritize correctness, security/privacy, BTP destination resolution behavior, cache safety, acceptance criteria gaps, and missing tests.
-- Check that production Destination Service payloads with non-empty non-HTTP(S) URLs are rejected before caching.
-- Check that local development fallback, cache key hashing, cache TTL, connectivity handling, auth token exchange, and successful HTTP(S) behavior were preserved.
-- Check that the implementation did not change proxy request handling, Explorer UI, Nuxt config, dependencies, or lockfiles.
+Rules:
+- Keep changes scoped to the benchmark compare helper, its tests, and docs only if output wording becomes inaccurate.
+- Write focused tests first for baseline-only and candidate-only scenarios; confirm they fail before changing implementation.
+- Keep old benchmark report compatibility.
+- Do not add performance budgets, thresholds, CI gates, production proxy code changes, dependencies, or committed benchmark JSON reports.
 - Do not revert edits made by others.
-- Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md` if present.
-- Update `.agents/NEXT.md` with the next workflow action and exact next-chat prompt.
-- Commit the review note and workflow state changes with a Conventional Commit unless a stop condition prevents committing.
+- Update task handoff notes, move the task to `.agents/tasks/done/` when complete, update `.agents/NEXT.md`, and commit with a Conventional Commit unless a stop condition prevents committing.
+
+Verification:
+- `pnpm.cmd exec vitest run packages/proxy/test/benchmark-compare.test.ts`
+- `pnpm.cmd run bench:proxy:compare -- <two local fixture reports if created>`
+- `pnpm.cmd run lint`
+- Run `pnpm.cmd run typecheck` if implementation touches typed helper behavior beyond test fixtures.
 
 When done, summarize:
-- findings with severity and file/line references
-- acceptance criteria status
-- verification performed or skipped
-- whether the task is approved or needs changes
+- changed files
+- what was implemented
+- failing-test evidence before the fix
+- verification performed
+- whether separate review is required and why
 - commit hash
-- residual risks
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
