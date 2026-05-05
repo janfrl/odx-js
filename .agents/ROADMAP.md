@@ -63,3 +63,15 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Make benchmark comparison output explicit about missing scenarios before
   performance optimization work.
 - Pin route-alias behavior for Nuxt mutation helpers.
+
+## Phase 8: Stability And Verification Tightening
+
+- Preserve core OData flattening behavior for entity fields that share names
+  with OData envelope keys.
+- Normalize proxy request parsing at base-path slash boundaries.
+- Make proxy benchmark report formatting and JSON output shape testable without
+  running full timing benchmarks.
+- Provide a single aggregate package verification command built from existing
+  package-local checks.
+- Keep Explorer config-backed state reconciled through focused state tests,
+  avoiding UI churn unless separately verified.

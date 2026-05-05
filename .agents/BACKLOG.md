@@ -8,21 +8,18 @@ implementation phases.
 
 ## Now
 
-- Normalize Nuxt composable URL joins for slashed base paths, routes, and
-  direct service URLs.
-- Reject non-HTTP(S) BTP destination URLs before production proxy target
-  resolution.
-- Clear stale Explorer selected entity state after service config refreshes.
-- Report missing scenarios in proxy benchmark comparisons.
-- Cover configured Nuxt service routes for mutation helpers.
+- Preserve ordinary entity properties named `value` in core OData flattening.
+- Normalize proxy `basePath` parsing at slash boundaries.
+- Add fast unit coverage for proxy benchmark report formatting/output shape.
+- Add an aggregate root command for existing package-local verification.
+- Clear stale Explorer traffic-log service filters after config refreshes.
 
 ## Next
 
-- Run separate review for BTP destination correctness changes from task 037.
-- Continue Explorer improvements only through narrow, test-backed state or UI
-  fixes.
-- Consider performance optimizations only after benchmark comparison output
-  calls out missing scenarios and enough local run context for fair comparison.
+- Continue Explorer improvements only through narrow, test-backed state fixes
+  unless UI changes are explicitly needed and browser-verified.
+- Consider runtime performance optimizations only after benchmark report
+  formatting/output has fast tests and benchmark comparisons remain clear.
 - Batch a full checkpoint after the ready task queue is complete.
 
 ## Later

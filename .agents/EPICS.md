@@ -50,8 +50,10 @@ Candidate tasks:
 - `.agents/tasks/done/030-add-proxy-benchmark-overhead-ratios.md`
 - `.agents/tasks/done/032-validate-btp-destination-url.md`
 - `.agents/tasks/done/034-add-proxy-benchmark-report-metadata.md`
-- `.agents/tasks/ready/037-reject-non-http-btp-destination-url.md`
-- `.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`
+- `.agents/tasks/done/037-reject-non-http-btp-destination-url.md`
+- `.agents/tasks/done/039-report-missing-benchmark-scenarios.md`
+- `.agents/tasks/ready/042-normalize-proxy-basepath-parsing.md`
+- `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`
 
 Exit criteria:
 
@@ -131,9 +133,11 @@ Candidate tasks:
 - `.agents/tasks/done/031-include-core-tests-in-package-verify.md`
 - `.agents/tasks/done/033-harden-explorer-proxy-trace-selection-state.md`
 - `.agents/tasks/done/035-add-docs-package-readme-verification-notes.md`
-- `.agents/tasks/ready/036-normalize-nuxt-service-url-joins.md`
-- `.agents/tasks/ready/038-clear-stale-explorer-entity-selection.md`
-- `.agents/tasks/ready/040-cover-routed-nuxt-mutations.md`
+- `.agents/tasks/done/036-normalize-nuxt-service-url-joins.md`
+- `.agents/tasks/done/038-clear-stale-explorer-entity-selection.md`
+- `.agents/tasks/done/040-cover-routed-nuxt-mutations.md`
+- `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`
+- `.agents/tasks/ready/045-clear-stale-explorer-log-service-filter.md`
 
 Exit criteria:
 
@@ -176,11 +180,16 @@ Candidate tasks:
 - `.agents/tasks/done/033-harden-explorer-proxy-trace-selection-state.md`
 - `.agents/tasks/done/034-add-proxy-benchmark-report-metadata.md`
 - `.agents/tasks/done/035-add-docs-package-readme-verification-notes.md`
-- `.agents/tasks/ready/036-normalize-nuxt-service-url-joins.md`
-- `.agents/tasks/ready/037-reject-non-http-btp-destination-url.md`
-- `.agents/tasks/ready/038-clear-stale-explorer-entity-selection.md`
-- `.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`
-- `.agents/tasks/ready/040-cover-routed-nuxt-mutations.md`
+- `.agents/tasks/done/036-normalize-nuxt-service-url-joins.md`
+- `.agents/tasks/done/037-reject-non-http-btp-destination-url.md`
+- `.agents/tasks/done/038-clear-stale-explorer-entity-selection.md`
+- `.agents/tasks/done/039-report-missing-benchmark-scenarios.md`
+- `.agents/tasks/done/040-cover-routed-nuxt-mutations.md`
+- `.agents/tasks/ready/041-preserve-flattened-value-properties.md`
+- `.agents/tasks/ready/042-normalize-proxy-basepath-parsing.md`
+- `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`
+- `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`
+- `.agents/tasks/ready/045-clear-stale-explorer-log-service-filter.md`
 
 Exit criteria:
 
@@ -193,3 +202,31 @@ Exit criteria:
 - benchmark reports include enough local run metadata for fair comparisons
 - Nuxt composable URL construction is covered for slashed config boundaries
 - benchmark comparison output calls out scenario mismatches
+
+## Epic 07: Core Stability And Package Verification Tightening
+
+Goal: close small correctness gaps while keeping isolated package verification
+easy to run.
+
+Deliverables:
+
+- Core flattening preserves ordinary entity fields whose names overlap OData
+  envelope keys.
+- Proxy request parsing handles base-path slash boundaries consistently.
+- Benchmark report formatting has fast deterministic tests.
+- Package-local verify scripts can be run together through one root command.
+- Explorer config-backed filters reconcile after service config refresh.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/041-preserve-flattened-value-properties.md`
+- `.agents/tasks/ready/042-normalize-proxy-basepath-parsing.md`
+- `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`
+- `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`
+- `.agents/tasks/ready/045-clear-stale-explorer-log-service-filter.md`
+
+Exit criteria:
+
+- The ready task queue completes with task-local checks passing.
+- No UI churn is introduced without explicit browser verification.
+- Broad checkpoint checks are run or residual risk is recorded.

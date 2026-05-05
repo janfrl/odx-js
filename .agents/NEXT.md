@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Implement next ready task:
-`.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`.
+`.agents/tasks/ready/041-preserve-flattened-value-properties.md`.
 
 ## Prompt For Next Chat
 
@@ -26,26 +26,28 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/039-report-missing-benchmark-scenarios.md
-- scripts/compare-proxy-benchmarks.ts
-- packages/proxy/test/benchmark-compare.test.ts
-- packages/proxy/README.md
+- .agents/tasks/ready/041-preserve-flattened-value-properties.md
+- ARCHITECTURE.md
+- DOMAIN_MODEL.md
+- packages/core/src/odata-utils.ts
+- packages/core/test/odata-utils.test.ts
+- examples/core-standalone.ts
 
-Implement exactly `.agents/tasks/ready/039-report-missing-benchmark-scenarios.md`.
+Implement exactly `.agents/tasks/ready/041-preserve-flattened-value-properties.md`.
 
 Rules:
-- Keep changes scoped to the benchmark compare helper, its tests, and docs only if output wording becomes inaccurate.
-- Write focused tests first for baseline-only and candidate-only scenarios; confirm they fail before changing implementation.
-- Keep old benchmark report compatibility.
-- Do not add performance budgets, thresholds, CI gates, production proxy code changes, dependencies, or committed benchmark JSON reports.
+- Keep changes scoped to core OData flattening behavior and tests.
+- Write focused tests first for ordinary entity properties named `value`; confirm at least one fails before changing implementation.
+- Preserve OData V4 collection envelope unwrapping, V2 `d.results`, metadata stripping, binary handling, and depth protection.
+- Do not change `$odata`, query stringification, EDMX parsing, proxy, Nuxt, Explorer, generated types, dependencies, or lockfiles.
 - Do not revert edits made by others.
 - Update task handoff notes, move the task to `.agents/tasks/done/` when complete, update `.agents/NEXT.md`, and commit with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- `pnpm.cmd exec vitest run packages/proxy/test/benchmark-compare.test.ts`
-- `pnpm.cmd run bench:proxy:compare -- <two local fixture reports if created>`
+- `pnpm.cmd exec vitest run packages/core/test/odata-utils.test.ts`
+- `pnpm.cmd --filter @bc8-odx/core run verify`
+- `pnpm.cmd run typecheck`
 - `pnpm.cmd run lint`
-- Run `pnpm.cmd run typecheck` if implementation touches typed helper behavior beyond test fixtures.
 
 When done, summarize:
 - changed files
