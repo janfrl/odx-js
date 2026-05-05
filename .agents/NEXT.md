@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/069-warn-on-benchmark-comparison-metadata-mismatches.md`.
+Implement `.agents/tasks/ready/070-test-deterministic-benchmark-summary-math.md`.
 
 ## Prompt For Next Chat
 
@@ -25,11 +25,11 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/069-warn-on-benchmark-comparison-metadata-mismatches.md
+- .agents/tasks/ready/070-test-deterministic-benchmark-summary-math.md
 - any root documentation referenced by the task
 
 Rules:
-- Implement exactly `.agents/tasks/ready/069-warn-on-benchmark-comparison-metadata-mismatches.md`.
+- Implement exactly `.agents/tasks/ready/070-test-deterministic-benchmark-summary-math.md`.
 - Keep changes scoped to the task.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.

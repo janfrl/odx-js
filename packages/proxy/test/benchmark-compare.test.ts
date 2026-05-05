@@ -69,8 +69,40 @@ describe('proxy benchmark comparison helper', () => {
     )
 
     expect(output).not.toContain('baseline: created=')
+    expect(output).not.toContain('warning: metadata mismatch:')
     expect(output).toContain('1.00ms')
     expect(output).toContain('2.00ms')
+  })
+
+  it('warns when shared benchmark metadata fields differ', () => {
+    const output = formatComparison(
+      {
+        metadata: {
+          node: 'v24.13.1',
+          platform: 'win32',
+          iterations: 50,
+          rounds: 5,
+          defaultConcurrency: 5,
+        },
+        scenarios: [{ label: 'small seq direct', avgMs: 1 }],
+      },
+      {
+        metadata: {
+          node: 'v24.14.0',
+          platform: 'linux',
+          iterations: 25,
+          rounds: 4,
+          defaultConcurrency: 10,
+        },
+        scenarios: [{ label: 'small seq direct', avgMs: 2 }],
+      },
+    )
+
+    expect(output).toContain('warning: metadata mismatch: node baseline=v24.13.1 candidate=v24.14.0')
+    expect(output).toContain('warning: metadata mismatch: platform baseline=win32 candidate=linux')
+    expect(output).toContain('warning: metadata mismatch: iterations baseline=50 candidate=25')
+    expect(output).toContain('warning: metadata mismatch: rounds baseline=5 candidate=4')
+    expect(output).toContain('warning: metadata mismatch: defaultConcurrency baseline=5 candidate=10')
   })
 
   it('reports scenarios that exist only in the baseline report', () => {

@@ -104,6 +104,27 @@ function metadataLine(role: string, report: BenchmarkReport): string | undefined
   return `${role}: ${fields.join(', ')}`
 }
 
+function metadataMismatchWarnings(baseline: BenchmarkReport, candidate: BenchmarkReport): string[] {
+  const fields: Array<keyof BenchmarkMetadata> = [
+    'node',
+    'platform',
+    'arch',
+    'iterations',
+    'rounds',
+    'warmupIterations',
+    'defaultConcurrency',
+  ]
+
+  return fields.flatMap((field) => {
+    const baselineValue = baseline.metadata?.[field]
+    const candidateValue = candidate.metadata?.[field]
+    if (baselineValue === undefined || candidateValue === undefined || baselineValue === candidateValue)
+      return []
+
+    return [`warning: metadata mismatch: ${field} baseline=${baselineValue} candidate=${candidateValue}`]
+  })
+}
+
 export function formatComparison(baseline: BenchmarkReport, candidate: BenchmarkReport): string {
   const baselineScenarios = scenarioMap(baseline, 'baseline')
   const candidateScenarios = scenarioMap(candidate, 'candidate')
@@ -134,11 +155,13 @@ export function formatComparison(baseline: BenchmarkReport, candidate: Benchmark
     metadataLine('baseline', baseline),
     metadataLine('candidate', candidate),
   ].filter(Boolean)
+  const metadataWarnings = metadataMismatchWarnings(baseline, candidate)
 
   return [
     '',
     'ODX proxy benchmark comparison',
     ...metadata,
+    ...metadataWarnings,
     metadata.length > 0 ? 'timing basis: median round average when available, otherwise average' : undefined,
     [
       'scenario'.padEnd(28),
