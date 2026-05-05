@@ -8,17 +8,19 @@ implementation phases.
 
 ## Now
 
-- Preserve non-200 successful backend statuses in buffered proxy responses.
-- Add package-local verification commands for core, proxy, and Nuxt.
-- Improve the Explorer Traffic Monitor empty state when filters hide existing
-  logs.
-- Add a local proxy benchmark comparison helper.
+- Preserve buffered proxy `204 No Content` semantics with a focused regression.
+- Fix Explorer Traffic Monitor status filters so pending rows are not treated
+  as successful traffic.
+- Add automated coverage for the proxy benchmark comparison helper.
+- Add a package-local docs verification command.
+- Add relative overhead percentages to local proxy benchmark output.
 
 ## Next
 
-- Run separate review for public proxy HTTP behavior changes.
-- Continue Explorer improvements through test-backed state and UI changes.
-- Consider performance optimizations only after benchmark baselines are easy to
+- Run separate review for public proxy HTTP behavior changes from task 026.
+- Continue Explorer improvements only through narrow, test-backed state or UI
+  fixes.
+- Consider performance optimizations only after benchmark output is easy to
   compare across runs.
 - Batch a full checkpoint after the ready task queue is complete.
 
@@ -28,6 +30,8 @@ implementation phases.
 - Add broader browser-level Explorer verification after package-level checks are
   stable.
 - Revisit generated metadata cache policy and cleanup expectations.
+- Revisit whether package isolation docs should be promoted from
+  `.agents/PACKAGE_ISOLATION.md` into root or package documentation.
 
 ## Questions
 

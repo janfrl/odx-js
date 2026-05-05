@@ -12,41 +12,42 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run the Planner because no implementation tasks remain in `.agents/tasks/ready/`.
+Implement the lowest-numbered ready task:
+`.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Planner for ODX.
+You are the Implementer for ODX.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- relevant root documentation
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/reviews/
+- .agents/WORKFLOW.md
 - .agents/decisions/
+- .agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md
+- ARCHITECTURE.md
+- API.md
+- SECURITY.md
 
 Rules:
-- Create the next 3-5 implementation tasks.
-- Each task must be executable by one implementer chat.
-- Use `.agents/tasks/TASK_TEMPLATE.md`.
-- Put new tasks in `.agents/tasks/ready/`.
-- Keep tasks small and reviewable.
-- Include acceptance criteria and verification steps.
-- Do not create vague or oversized tasks.
-- Update BACKLOG.md, EPICS.md, and ROADMAP.md only if needed.
-- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
+- Implement exactly `.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`.
+- Keep changes scoped to the buffered proxy 204 regression.
+- Add the integration test before changing implementation code.
+- Do not change authentication, destination resolution, proxy rules, stream mode, or DevTools redaction.
+- Run the verification steps listed in the task, or explain skipped checks and residual risk.
+- Update the task handoff notes before finishing.
+- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
+- Update `.agents/NEXT.md` with the required reviewer prompt because this task requires separate review.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- new tasks created
-- recommended next task
-- open decisions or blockers
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

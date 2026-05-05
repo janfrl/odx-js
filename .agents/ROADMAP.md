@@ -34,3 +34,11 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Improve Explorer diagnostics for larger local sessions with focused,
   test-backed polish.
 - Make benchmark results easy to compare before runtime optimization work.
+
+## Phase 5: Local Verification Polish
+
+- Add regression coverage for edge-case successful proxy responses such as
+  `204 No Content`.
+- Keep docs/package verification lightweight and runnable without dev servers.
+- Add automated tests around local benchmark tooling before extending it.
+- Prefer relative benchmark reporting before attempting runtime optimization.

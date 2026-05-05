@@ -43,8 +43,11 @@ Candidate tasks:
 - `.agents/tasks/done/015-expand-btp-destination-edge-tests.md`
 - `.agents/tasks/done/017-bound-btp-destination-cache-lifetime.md`
 - `.agents/tasks/done/021-record-proxy-benchmark-baseline-output.md`
-- `.agents/tasks/ready/022-preserve-buffer-proxy-success-status.md`
-- `.agents/tasks/ready/025-add-proxy-benchmark-compare-helper.md`
+- `.agents/tasks/done/022-preserve-buffer-proxy-success-status.md`
+- `.agents/tasks/done/025-add-proxy-benchmark-compare-helper.md`
+- `.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`
+- `.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`
+- `.agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md`
 
 Exit criteria:
 
@@ -117,8 +120,10 @@ Candidate tasks:
 - `.agents/tasks/done/018-add-explorer-traffic-search-and-status-filters.md`
 - `.agents/tasks/done/019-harden-explorer-query-builder-serialization.md`
 - `.agents/tasks/done/020-add-explorer-package-verification-command.md`
-- `.agents/tasks/ready/023-add-package-local-verify-scripts.md`
-- `.agents/tasks/ready/024-improve-explorer-filtered-empty-state.md`
+- `.agents/tasks/done/023-add-package-local-verify-scripts.md`
+- `.agents/tasks/done/024-improve-explorer-filtered-empty-state.md`
+- `.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`
+- `.agents/tasks/ready/029-add-docs-package-verify-script.md`
 
 Exit criteria:
 
@@ -134,11 +139,11 @@ Deliverables:
 
 - Buffered proxy mode preserves successful backend status codes.
 - Package-local verification commands are discoverable across core, proxy,
-  Nuxt, and Explorer.
-- Explorer diagnostics clearly distinguish filtered-empty from no-traffic
-  states.
+  Nuxt, Explorer, and docs.
+- Explorer diagnostics clearly distinguish filtered-empty, pending, success,
+  and failure states.
 - proxy benchmark output can be compared across local runs without spreadsheet
-  work.
+  work and includes relative overhead where useful.
 
 Candidate tasks:
 
@@ -147,15 +152,20 @@ Candidate tasks:
 - `.agents/tasks/done/019-harden-explorer-query-builder-serialization.md`
 - `.agents/tasks/done/020-add-explorer-package-verification-command.md`
 - `.agents/tasks/done/021-record-proxy-benchmark-baseline-output.md`
-- `.agents/tasks/ready/022-preserve-buffer-proxy-success-status.md`
-- `.agents/tasks/ready/023-add-package-local-verify-scripts.md`
-- `.agents/tasks/ready/024-improve-explorer-filtered-empty-state.md`
-- `.agents/tasks/ready/025-add-proxy-benchmark-compare-helper.md`
+- `.agents/tasks/done/022-preserve-buffer-proxy-success-status.md`
+- `.agents/tasks/done/023-add-package-local-verify-scripts.md`
+- `.agents/tasks/done/024-improve-explorer-filtered-empty-state.md`
+- `.agents/tasks/done/025-add-proxy-benchmark-compare-helper.md`
+- `.agents/tasks/ready/026-preserve-buffer-proxy-204-empty-response.md`
+- `.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`
+- `.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`
+- `.agents/tasks/ready/029-add-docs-package-verify-script.md`
+- `.agents/tasks/ready/030-add-proxy-benchmark-overhead-ratios.md`
 
 Exit criteria:
 
 - public proxy status behavior has focused tests and required review
-- package verification docs include package-local commands
-- Explorer tests cover filtered-empty state behavior
-- proxy benchmark JSON output and comparison tooling are optional and
-  artifact-safe
+- package verification docs include package-local commands, including docs
+- Explorer tests cover filtered-empty and pending status-filter behavior
+- proxy benchmark JSON output, comparison tooling, and relative overhead fields
+  are optional and artifact-safe
