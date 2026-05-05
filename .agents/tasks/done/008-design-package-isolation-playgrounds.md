@@ -1,7 +1,7 @@
 # Task: Design package isolation playgrounds
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: medium
 Review: not required for planning, required if implementation changes package
@@ -77,15 +77,22 @@ contracts are changed.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `.agents/PACKAGE_ISOLATION.md`,
+  `.agents/tasks/ready/010-add-core-proxy-standalone-examples.md`,
+  `.agents/tasks/ready/011-add-minimal-nuxt-package-playground.md`,
+  `.agents/tasks/ready/012-expand-explorer-state-tests.md`, and this task file
+- summary: audited package-level verification surfaces, chose examples/tests
+  over broad playground work, and created three concrete implementation tasks
+- tests run: `git diff --check`
+- skipped checks and residual risk: package checks skipped because this is
+  planning-only
+- self-check result: scope, acceptance criteria, maintenance tradeoffs, and
+  unrelated changes checked
+- review requirement decision: separate review not required; no package
+  contracts changed
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: not changed; task 007 remains the active
+  implementation task
+- commit hash: pending commit at handoff-note update time
+- known gaps: package-isolation examples are planned but not implemented
