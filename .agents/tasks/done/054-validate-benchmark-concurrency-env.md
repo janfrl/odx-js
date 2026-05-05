@@ -1,7 +1,7 @@
 # Task: Validate benchmark concurrency env
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -53,13 +53,13 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] A focused test fails before implementation for invalid concurrency env
+- [x] A focused test fails before implementation for invalid concurrency env
   values that currently reach loop controls.
-- [ ] Invalid concurrency values fail with a clear error that names
+- [x] Invalid concurrency values fail with a clear error that names
   `ODX_PROXY_BENCHMARK_CONCURRENCY`.
-- [ ] Absent concurrency env keeps the existing default.
-- [ ] Valid positive integer concurrency env values still work.
-- [ ] No production proxy runtime behavior or benchmark report schema changes
+- [x] Absent concurrency env keeps the existing default.
+- [x] Valid positive integer concurrency env values still work.
+- [x] No production proxy runtime behavior or benchmark report schema changes
   are included.
 
 ## Verification
@@ -92,16 +92,42 @@ budgets change.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/proxy/test/performance.test.ts`
+  - `packages/proxy/README.md`
+  - `.agents/tasks/done/054-validate-benchmark-concurrency-env.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added deterministic benchmark configuration tests outside the skipped
+    timing benchmark suite.
+  - Confirmed invalid values failed before the fix because no error was thrown.
+  - Added strict positive-integer parsing for
+    `ODX_PROXY_BENCHMARK_CONCURRENCY` while preserving default `5` and valid
+    integer overrides.
+  - Documented the concurrency env value as a positive integer in the proxy
+    README.
 - tests run
+  - FAIL before fix: `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts -t "benchmark concurrency"`; invalid-value cases did not throw.
+  - PASS: `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
+  - PASS: `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `pnpm.cmd run typecheck`
 - skipped checks and residual risk
+  - Did not run the full timing benchmark with `ODX_PROXY_BENCHMARK=1`
+    because the task targets deterministic env parsing before timing loops.
 - self-check result
+  - Scope stayed limited to benchmark test/tooling code, narrow README wording,
+    task handoff, and workflow state. No production proxy runtime behavior,
+    scenario definitions, timing measurement semantics, report JSON shape,
+    comparison tooling, dependencies, lockfiles, CI gates, or budgets changed.
 - review requirement decision
+  - Separate review is not required because this is low-risk local benchmark
+    tooling validation.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/done/`.
 - `.agents/NEXT.md` update
+  - Updated to point at `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`.
 - commit hash
+  - The task implementation commit is the commit containing this handoff.
 - known gaps
-
+  - None.

@@ -18,9 +18,21 @@ const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || 
 const benchmarkIterations = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ITERATIONS || '50', 10)
 const benchmarkRounds = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ROUNDS || '5', 10)
 const warmupIterations = 10
-const concurrentRequests = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_CONCURRENCY || '5', 10)
+const concurrentRequests = parseBenchmarkConcurrency(process.env.ODX_PROXY_BENCHMARK_CONCURRENCY)
 const benchmarkOutputPath = process.env.ODX_PROXY_BENCHMARK_OUTPUT
 const describeBenchmark = shouldRunBenchmark ? describe : describe.skip
+
+function parseBenchmarkConcurrency(value: string | undefined): number {
+  if (value === undefined) {
+    return 5
+  }
+
+  if (!/^[1-9]\d*$/.test(value)) {
+    throw new Error('ODX_PROXY_BENCHMARK_CONCURRENCY must be a positive integer')
+  }
+
+  return Number.parseInt(value, 10)
+}
 
 async function listen(app: ReturnType<typeof createBackend>): Promise<{ server: Server, url: string }> {
   const port = await getPort()
@@ -157,6 +169,23 @@ function percentile(sortedTimings: number[], percentileRank: number): number {
   )
   return sortedTimings[index] ?? 0
 }
+
+describe('proxy benchmark configuration', () => {
+  it('uses the default concurrency when the env var is absent', () => {
+    expect(parseBenchmarkConcurrency(undefined)).toBe(5)
+  })
+
+  it('uses valid positive integer concurrency overrides', () => {
+    expect(parseBenchmarkConcurrency('7')).toBe(7)
+  })
+
+  it.each(['0', '-1', '1.5', 'abc', '', '5abc'])(
+    'rejects invalid benchmark concurrency value %j',
+    (value) => {
+      expect(() => parseBenchmarkConcurrency(value)).toThrow('ODX_PROXY_BENCHMARK_CONCURRENCY')
+    },
+  )
+})
 
 async function writeBenchmarkOutput(summaries: MeasurementSummary[]): Promise<void> {
   if (!benchmarkOutputPath)

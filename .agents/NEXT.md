@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/054-validate-benchmark-concurrency-env.md`.
+Implement `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`.
 
 ## Prompt For Next Chat
 
@@ -25,15 +25,19 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/054-validate-benchmark-concurrency-env.md
+- .agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md
+- packages/nuxt/src/generate.ts
+- packages/nuxt/test/generate.test.ts
 
-Implement exactly `.agents/tasks/ready/054-validate-benchmark-concurrency-env.md`.
+Implement exactly `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`.
 
 Rules:
 - Keep changes scoped to the task.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
-- Add the focused failing test first for invalid benchmark concurrency env values.
+- Add the focused failing test first proving `http://` metadata URLs use `node:http`.
+- Preserve existing HTTPS behavior and headers.
+- Do not change cache fallback behavior, generated output, dependencies, lockfiles, proxy runtime behavior, or Nuxt runtime composables.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.

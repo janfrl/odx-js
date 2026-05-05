@@ -32,6 +32,8 @@ Use
 `ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark.json` to also write the
 same fields and run metadata to a JSON summary; `reports/` is ignored by git.
 Use `ODX_PROXY_BENCHMARK_ROUNDS` to adjust the number of measurement rounds.
+Use `ODX_PROXY_BENCHMARK_CONCURRENCY` with a positive integer to adjust
+concurrent large-response requests.
 Use `pnpm.cmd` on Windows PowerShell in this repository when `.ps1` launchers
 are blocked.
 
