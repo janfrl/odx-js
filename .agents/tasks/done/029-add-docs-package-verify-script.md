@@ -1,7 +1,7 @@
 # Task: Add docs package verify script
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex worker
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -86,15 +86,46 @@ that affects user-facing API documentation.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Codex worker.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `docs/package.json`
+  - `README.md`
+  - `scripts/extract-api-docs.ts`
+  - `.agents/tasks/done/029-add-docs-package-verify-script.md`
+  - `.agents/NEXT.md`
+- summary:
+  - Added a docs package-local `verify` script.
+  - The command runs docs metadata extraction and root API reference extraction
+    without starting a dev server.
+  - Updated the root README package verification table with the docs verify
+    command.
+  - Updated API reference extraction to write a trailing newline so the
+    generated tracked JSON remains lint-clean after `docs:api`.
+- tests run:
+  - PASS: `pnpm.cmd --filter docs run verify`.
+  - PASS: `pnpm.cmd run docs:api`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - `pnpm.cmd run typecheck` was not run because this is a low-risk docs
+    script/documentation change and task-local checks passed.
+- self-check result:
+  - Scope stayed limited to docs verification and documentation automation.
+  - No dev server, dependencies, docs content redesign, or runtime package code
+    changes were added.
+  - Existing unrelated proxy benchmark documentation/test edits were left
+    untouched.
+- review requirement decision:
+  - Separate review is not required because this is low-risk package script and
+    documentation automation work.
+- task state movement:
+  - Moved to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Updated to task 030.
+- commit hash:
+  - Pending at handoff update time; final response will report the created
+    commit hash if commit succeeds.
+- known gaps:
+  - Running `docs:api` in this workspace can refresh generated API content from
+    unrelated uncommitted package changes; those generated content changes were
+    not included in this task.

@@ -112,3 +112,4 @@ because `.ps1` launchers may be blocked by execution policy.
 | `pnpm.cmd --filter @bc8-odx/proxy run verify` | Runs the proxy package Vitest suite and standalone fixture check through the package-local script. |
 | `pnpm.cmd --filter @bc8-odx/nuxt run verify` | Runs the Nuxt package Vitest suite and minimal playground check through the package-local script. |
 | `pnpm.cmd --filter @bc8-odx/explorer run verify` | Runs the Explorer package Vitest suite without the full workspace test run. |
+| `pnpm.cmd --filter docs run verify` | Runs docs metadata extraction and API reference extraction without starting the docs dev server. |

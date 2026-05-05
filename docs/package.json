@@ -9,7 +9,8 @@
     "preview": "nuxi preview",
     "postinstall": "nuxi prepare",
     "clean": "nuxt cleanup",
-    "metadata:extract": "tsx scripts/extract-metadata.ts"
+    "metadata:extract": "tsx scripts/extract-metadata.ts",
+    "verify": "pnpm run metadata:extract && pnpm --dir .. run docs:api"
   },
   "dependencies": {
     "docus": "latest"

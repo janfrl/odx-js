@@ -212,7 +212,7 @@ async function main() {
   try {
     const outputPath = resolve(DEFAULT_OUTPUT_PATH)
     mkdirSync(dirname(outputPath), { recursive: true })
-    writeFileSync(outputPath, JSON.stringify(apiReference, null, 2), 'utf-8')
+    writeFileSync(outputPath, `${JSON.stringify(apiReference, null, 2)}\n`, 'utf-8')
 
     consola.success(`API Reference saved to ${DEFAULT_OUTPUT_PATH}`)
     consola.info(`Total items extracted: ${Object.keys(apiReference).length}`)
