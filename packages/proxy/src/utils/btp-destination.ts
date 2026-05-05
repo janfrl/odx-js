@@ -23,7 +23,14 @@ export interface BtpDestination {
   }
 }
 
-const destinationCache = new Map<string, BtpDestination>()
+interface DestinationCacheEntry {
+  destination: BtpDestination
+  expiresAt: number
+  evictionTimer: ReturnType<typeof setTimeout>
+}
+
+const DESTINATION_CACHE_TTL_MS = 60_000
+const destinationCache = new Map<string, DestinationCacheEntry>()
 
 function createDestinationCacheKey(serviceName: string, userToken?: string): string {
   if (!userToken) {
@@ -33,6 +40,41 @@ function createDestinationCacheKey(serviceName: string, userToken?: string): str
   const normalizedUserToken = userToken.replace('Bearer ', '')
   const userTokenHash = createHash('sha256').update(normalizedUserToken).digest('hex')
   return `${serviceName}:user:${userTokenHash}`
+}
+
+function getCachedDestination(cacheKey: string): BtpDestination | undefined {
+  const cacheEntry = destinationCache.get(cacheKey)
+  if (!cacheEntry) {
+    return undefined
+  }
+
+  if (cacheEntry.expiresAt <= Date.now()) {
+    clearTimeout(cacheEntry.evictionTimer)
+    destinationCache.delete(cacheKey)
+    return undefined
+  }
+
+  return cacheEntry.destination
+}
+
+function cacheDestination(cacheKey: string, destination: BtpDestination): void {
+  const existingEntry = destinationCache.get(cacheKey)
+  if (existingEntry) {
+    clearTimeout(existingEntry.evictionTimer)
+  }
+
+  const cacheEntry: DestinationCacheEntry = {
+    destination,
+    expiresAt: Date.now() + DESTINATION_CACHE_TTL_MS,
+    evictionTimer: setTimeout(() => {
+      if (destinationCache.get(cacheKey) === cacheEntry) {
+        destinationCache.delete(cacheKey)
+      }
+    }, DESTINATION_CACHE_TTL_MS),
+  }
+
+  cacheEntry.evictionTimer.unref?.()
+  destinationCache.set(cacheKey, cacheEntry)
 }
 
 /**
@@ -87,8 +129,9 @@ async function fetchXsuaaToken(credentials: any, grantType: string = 'client_cre
  */
 export async function resolveBtpDestination(serviceName: string, userToken?: string): Promise<BtpDestination> {
   const cacheKey = createDestinationCacheKey(serviceName, userToken)
-  if (destinationCache.has(cacheKey)) {
-    return destinationCache.get(cacheKey)!
+  const cachedDestination = getCachedDestination(cacheKey)
+  if (cachedDestination) {
+    return cachedDestination
   }
 
   const vcap = getVcapServices()
@@ -154,7 +197,7 @@ export async function resolveBtpDestination(serviceName: string, userToken?: str
       }
     }
 
-    destinationCache.set(cacheKey, resolvedDestination)
+    cacheDestination(cacheKey, resolvedDestination)
     return resolvedDestination
   }
   catch (err: any) {

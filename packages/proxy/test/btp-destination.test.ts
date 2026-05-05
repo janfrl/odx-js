@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { ofetch } from 'ofetch'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveBtpDestination } from '../src/utils/btp-destination'
 
 vi.mock('ofetch', () => ({
@@ -32,6 +32,10 @@ describe('btp Destination Resolution', () => {
     delete process.env.VCAP_SERVICES
     // Clear the internal cache by calling it with different params or just accept it for now
     // Since destinationCache is not exported, we'll test unique service names
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('returns mock destination when no VCAP_SERVICES are present', async () => {
@@ -206,6 +210,80 @@ describe('btp Destination Resolution', () => {
     expect(firstResult.authTokens?.[0].value).toBe('first-user-auth-token')
     expect(secondResult.url).toBe('https://second-user-backend.example')
     expect(secondResult.authTokens?.[0].value).toBe('second-user-auth-token')
+    expect(ofetch).toHaveBeenCalledTimes(4)
+  })
+
+  it('reuses user-token destination cache entries before the bounded lifetime expires', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-05T10:00:00.000Z'))
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'cached-user-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://cached-user-backend.example' },
+        authTokens: [{ value: 'cached-user-auth-token' }],
+      })
+
+    const firstResult = await resolveBtpDestination('UserCacheHitBeforeTtlService', 'Bearer cached-user-jwt')
+    vi.advanceTimersByTime(59_000)
+    const secondResult = await resolveBtpDestination('UserCacheHitBeforeTtlService', 'Bearer cached-user-jwt')
+
+    expect(firstResult.url).toBe('https://cached-user-backend.example')
+    expect(secondResult.url).toBe('https://cached-user-backend.example')
+    expect(secondResult.authTokens?.[0].value).toBe('cached-user-auth-token')
+    expect(ofetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('expires user-token destination cache entries after the bounded lifetime', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-05T11:00:00.000Z'))
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'first-user-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://first-expiring-user-backend.example' },
+        authTokens: [{ value: 'first-expiring-user-auth-token' }],
+      })
+      .mockResolvedValueOnce({ access_token: 'second-user-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://second-expiring-user-backend.example' },
+        authTokens: [{ value: 'second-expiring-user-auth-token' }],
+      })
+
+    const firstResult = await resolveBtpDestination('UserCacheExpiresAfterTtlService', 'Bearer expiring-user-jwt')
+    vi.advanceTimersByTime(60_001)
+    const secondResult = await resolveBtpDestination('UserCacheExpiresAfterTtlService', 'Bearer expiring-user-jwt')
+
+    expect(firstResult.url).toBe('https://first-expiring-user-backend.example')
+    expect(firstResult.authTokens?.[0].value).toBe('first-expiring-user-auth-token')
+    expect(secondResult.url).toBe('https://second-expiring-user-backend.example')
+    expect(secondResult.authTokens?.[0].value).toBe('second-expiring-user-auth-token')
+    expect(ofetch).toHaveBeenCalledTimes(4)
+  })
+
+  it('expires technical destination cache entries after the bounded lifetime', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-05T12:00:00.000Z'))
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'first-technical-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://first-expiring-technical-backend.example' },
+      })
+      .mockResolvedValueOnce({ access_token: 'second-technical-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://second-expiring-technical-backend.example' },
+      })
+
+    const firstResult = await resolveBtpDestination('TechnicalCacheExpiresAfterTtlService')
+    vi.advanceTimersByTime(60_001)
+    const secondResult = await resolveBtpDestination('TechnicalCacheExpiresAfterTtlService')
+
+    expect(firstResult.url).toBe('https://first-expiring-technical-backend.example')
+    expect(secondResult.url).toBe('https://second-expiring-technical-backend.example')
     expect(ofetch).toHaveBeenCalledTimes(4)
   })
 
