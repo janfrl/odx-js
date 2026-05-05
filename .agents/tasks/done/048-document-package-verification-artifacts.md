@@ -1,7 +1,7 @@
 # Task: Document package verification artifacts
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -49,12 +49,12 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] Root README package verification guidance clearly states when to use
+- [x] Root README package verification guidance clearly states when to use
   `verify:packages`.
-- [ ] Docs README mentions that verification can expose generated API reference
+- [x] Docs README mentions that verification can expose generated API reference
   drift without starting the dev server.
-- [ ] Package README guidance remains concise and consistent.
-- [ ] No code, script, lockfile, or generated artifact changes are included.
+- [x] Package README guidance remains concise and consistent.
+- [x] No code, script, lockfile, or generated artifact changes are included.
 
 ## Verification
 
@@ -83,15 +83,37 @@ package behavior change.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `README.md`
+  - `docs/README.md`
+  - `.agents/tasks/done/048-document-package-verification-artifacts.md`
+- summary:
+  - Added root README guidance for when to use `pnpm.cmd run verify:packages`
+    and clarified that it does not replace broad `lint`, `typecheck`, or
+    workspace `test`.
+  - Added docs README guidance that docs verification can expose generated API
+    reference drift in `docs/public/api-reference.json`.
+  - Left package README verify sections unchanged because they were already
+    concise and consistent.
+- tests run:
+  - Inspected changed Markdown for command accuracy and consistency.
+- skipped checks and residual risk:
+  - `pnpm.cmd run verify:packages` skipped because this task only clarifies
+    documentation and does not change command behavior.
+  - `pnpm.cmd run lint` skipped because only Markdown and `.agents` task notes
+    changed.
+- self-check result:
+  - Scope stayed documentation-only. No scripts, source code, generated docs
+    artifacts, package behavior, examples, dependencies, lockfiles, or CI
+    configuration changed.
+- review requirement decision:
+  - Separate review is not required because this is low-risk documentation-only
+    package isolation guidance.
+- task state movement:
+  - Moved this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Updated to task 049.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - None.

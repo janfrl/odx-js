@@ -12,10 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/048-document-package-verification-artifacts.md`.
-
-Task 046 has concurrent Explorer changes in the worktree. Do not pick task 046
-until that work is committed or otherwise resolved.
+Implement `.agents/tasks/ready/049-run-release-confidence-checkpoint.md`.
 
 ## Prompt For Next Chat
 
@@ -28,24 +25,20 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/048-document-package-verification-artifacts.md
-- docs/README.md
-- packages/core/README.md
-- packages/proxy/README.md
-- packages/nuxt/README.md
-- packages/explorer/README.md
-- package.json
-- .agents/tasks/done/044-add-aggregate-package-verification-script.md
+- .agents/tasks/ready/049-run-release-confidence-checkpoint.md
+- .agents/tasks/done/
+- .agents/reviews/
 
-Implement exactly `.agents/tasks/ready/048-document-package-verification-artifacts.md`.
+Implement exactly `.agents/tasks/ready/049-run-release-confidence-checkpoint.md`.
 
 Rules:
 - Keep changes scoped to the task.
-- Update documentation only where it improves discoverability of `pnpm.cmd run verify:packages`, package-local verify commands, and docs-generated API reference drift.
-- Keep wording concise and close to existing package verification sections.
-- Mention that `verify:packages` does not replace broad `lint`, `typecheck`, or workspace `test`.
-- Do not change scripts, source code, generated docs artifacts, package behavior, examples, dependencies, lockfiles, or CI configuration.
-- Do not touch Explorer task 046 files or other unrelated work already present in the worktree.
+- Run and record the checkpoint commands from the task.
+- Check task state consistency and `.agents/NEXT.md`.
+- If checks pass and no ready tasks remain, update `.agents/NEXT.md` to the Planner prompt.
+- If a check fails, record the failure and only update `.agents/NEXT.md` to a focused fix prompt when the fix is bounded.
+- Do not implement unrelated fixes while running the checkpoint.
+- Do not change production source, tests, scripts, dependencies, lockfiles, or documentation unless a bounded checkpoint-state note is required.
 - Use `pnpm.cmd`, not `pnpm`, on this Windows machine because PowerShell blocks `.ps1` launchers.
 - Do not revert edits made by others.
 - Update the task handoff notes before finishing.
@@ -58,7 +51,7 @@ Rules:
 
 When done, summarize:
 - changed files
-- what was implemented
+- checkpoint results
 - verification performed
 - self-check result
 - whether separate review is required and why

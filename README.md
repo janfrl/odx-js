@@ -102,6 +102,10 @@ The API reference is automatically updated during `pnpm run docs:prepare`.
 On Windows PowerShell in this repository, use `pnpm.cmd` instead of `pnpm`
 because `.ps1` launchers may be blocked by execution policy.
 
+Use `pnpm.cmd run verify:packages` when you want the package-local confidence
+checks in one command. It is additive: still run broad `lint`, `typecheck`, or
+workspace `test` when the change scope calls for them.
+
 | Command | What it verifies |
 | :--- | :--- |
 | `pnpm.cmd run example:core` | Runs the standalone core example against local fixtures, covering EDMX version detection, entity extraction, query stringification, OData response flattening, and the low-level `$odata` helper. |
