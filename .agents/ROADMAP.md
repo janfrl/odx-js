@@ -25,3 +25,11 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Expand Explorer tests carefully without visual churn.
 - Add BTP-oriented integration coverage where it can be verified locally.
 - Revisit production TLS defaults as a documented security decision.
+
+## Phase 4: Release Confidence Follow-Ups
+
+- Bound security-sensitive destination cache lifetimes.
+- Improve Explorer diagnostics for larger local sessions.
+- Make benchmark results easier to compare before runtime optimization work.
+- Keep package-level verification discoverable across core, proxy, Nuxt, and
+  Explorer.

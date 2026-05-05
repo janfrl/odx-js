@@ -15,7 +15,7 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/001-restore-lint-baseline.md`
+- `.agents/tasks/done/001-restore-lint-baseline.md`
 
 Exit criteria:
 
@@ -36,11 +36,13 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/002-audit-devtools-log-data-exposure.md`
-- `.agents/tasks/ready/003-await-async-rule-validation.md`
-- `.agents/tasks/ready/007-add-proxy-performance-benchmarks.md`
-- `.agents/tasks/ready/014-expand-proxy-performance-scenarios.md`
-- `.agents/tasks/ready/015-expand-btp-destination-edge-tests.md`
+- `.agents/tasks/done/002-audit-devtools-log-data-exposure.md`
+- `.agents/tasks/done/003-await-async-rule-validation.md`
+- `.agents/tasks/done/007-add-proxy-performance-benchmarks.md`
+- `.agents/tasks/done/014-expand-proxy-performance-scenarios.md`
+- `.agents/tasks/done/015-expand-btp-destination-edge-tests.md`
+- `.agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md`
+- `.agents/tasks/ready/021-record-proxy-benchmark-baseline-output.md`
 
 Exit criteria:
 
@@ -61,8 +63,8 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/004-harden-type-generation-process-exec.md`
-- `.agents/tasks/ready/005-escape-odata-key-literals.md`
+- `.agents/tasks/done/004-harden-type-generation-process-exec.md`
+- `.agents/tasks/done/005-escape-odata-key-literals.md`
 
 Exit criteria:
 
@@ -82,7 +84,7 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/006-finish-agent-workflow-adoption.md`
+- `.agents/tasks/done/006-finish-agent-workflow-adoption.md`
 
 Exit criteria:
 
@@ -103,11 +105,47 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/008-design-package-isolation-playgrounds.md`
-- `.agents/tasks/ready/009-expand-explorer-tests.md`
-- `.agents/tasks/ready/012-expand-explorer-state-tests.md`
+- `.agents/tasks/done/008-design-package-isolation-playgrounds.md`
+- `.agents/tasks/done/009-expand-explorer-tests.md`
+- `.agents/tasks/done/010-add-core-proxy-standalone-examples.md`
+- `.agents/tasks/done/011-add-minimal-nuxt-package-playground.md`
+- `.agents/tasks/done/012-expand-explorer-state-tests.md`
+- `.agents/tasks/done/013-fix-nuxt-e2e-node24-startup.md`
+- `.agents/tasks/done/016-document-package-verification-commands.md`
+- `.agents/tasks/ready/018-add-explorer-traffic-search-and-status-filters.md`
+- `.agents/tasks/ready/019-harden-explorer-query-builder-serialization.md`
+- `.agents/tasks/ready/020-add-explorer-package-verification-command.md`
 
 Exit criteria:
 
 - implementation tasks exist for package-level examples or playgrounds
 - Explorer additions are test-first and do not alter UI unless a bug is proven
+
+## Epic 06: Release Confidence Follow-Ups
+
+Goal: close recent residual risks before considering broader optimization or
+release work.
+
+Deliverables:
+
+- BTP destination cache entries have bounded lifetime and focused tests
+- Explorer diagnostics scale better for larger local sessions
+- Explorer query construction handles common literal edge cases
+- Explorer has the same package-level verification discoverability as core,
+  proxy, and Nuxt
+- proxy benchmark output can be compared without scraping console text
+
+Candidate tasks:
+
+- `.agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md`
+- `.agents/tasks/ready/018-add-explorer-traffic-search-and-status-filters.md`
+- `.agents/tasks/ready/019-harden-explorer-query-builder-serialization.md`
+- `.agents/tasks/ready/020-add-explorer-package-verification-command.md`
+- `.agents/tasks/ready/021-record-proxy-benchmark-baseline-output.md`
+
+Exit criteria:
+
+- security-sensitive cache work has independent review
+- Explorer tests cover the new state/query behavior
+- package verification docs include Explorer
+- proxy benchmark JSON output is optional and artifact-safe

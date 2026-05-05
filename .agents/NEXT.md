@@ -12,42 +12,42 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run the Planner to create the next project tasks.
+Implement `.agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Planner for ODX.
+You are the Implementer for ODX.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/reviews/
-
-Create the next 3-5 implementation tasks for ODX.
+- .agents/decisions/
+- .agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md
+- SECURITY.md
+- ARCHITECTURE.md
 
 Rules:
-- Each task must be executable by one implementer chat.
-- Use .agents/tasks/TASK_TEMPLATE.md.
-- Put new tasks in .agents/tasks/ready/.
-- Keep tasks small and reviewable.
-- Include acceptance criteria and verification steps.
-- Prefer project/product tasks over agent-workflow chores.
-- Include review requirements for security-sensitive proxy/auth work.
-- Update BACKLOG.md, EPICS.md, and ROADMAP.md only if needed.
-- Update .agents/NEXT.md with the next action and exact next-chat prompt.
-- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
+- Implement exactly `.agents/tasks/ready/017-bound-btp-destination-cache-lifetime.md`.
+- Keep changes scoped to BTP destination cache lifetime and focused tests.
+- Add failing tests first for cache expiry behavior.
+- Use mocks/local fixtures only; do not require real SAP/BTP services.
+- Use `pnpm.cmd`, not `pnpm`, on this Windows machine.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Request separate security-focused review when implementation is complete.
+- Move the task to `.agents/tasks/done/` only after implementation and verification.
+- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- new tasks created
-- recommended next task
-- open decisions or blockers
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
+- known gaps
 - exact next-chat prompt from .agents/NEXT.md
 ```

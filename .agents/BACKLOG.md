@@ -8,31 +8,28 @@ implementation phases.
 
 ## Now
 
-- Restore the lint baseline so all standard checks are green.
-- Verify and fix async custom validation in proxy rules with a failing test
-  first.
-- Verify and fix OData key literal escaping in the Nuxt composable with a
-  failing test first.
-- Audit DevTools log data exposure without broad header-name redaction.
-- Verify whether type generation command construction is actually brittle
-  before changing it.
+- Bound BTP destination cache lifetime after the user-token cache isolation
+  fix.
+- Improve Explorer Traffic Monitor filtering for larger local diagnostic
+  sessions.
+- Harden Explorer visual query builder serialization with focused tests.
+- Add a discoverable Explorer package verification command.
+- Make proxy benchmark output easier to compare across local runs.
 
 ## Next
 
-- Fix or bound the Nuxt e2e startup failure on Node 24.
-- Expand Explorer tests carefully without changing the UI unless a test proves
-  a bug.
-- Broaden proxy performance benchmarks before optimizing.
-- Add local BTP destination edge-case tests.
-- Review high-risk proxy and process-execution changes independently.
+- Run separate review for security-sensitive proxy/auth/cache work.
+- Continue Explorer improvements through test-backed state and UI changes.
+- Consider performance optimizations only after benchmark baselines are easy to
+  compare.
 - Batch a full checkpoint after the ready task queue is complete.
 
 ## Later
 
 - Revisit production TLS defaults as a documented security decision.
-- Consider performance optimizations only after baseline measurements exist.
-- Document or surface the new standalone package verification commands in
-  durable user-facing docs after the example shape settles.
+- Add broader browser-level Explorer verification after package-level checks are
+  stable.
+- Revisit generated metadata cache policy and cleanup expectations.
 
 ## Questions
 
@@ -40,3 +37,5 @@ implementation phases.
   or should the public docs restrict validators to synchronous callbacks?
 - For DevTools logs, which data sources are acceptable to store verbatim during
   local development, and which source-aware cases should be excluded?
+- What default TTL should ODX use for BTP destination cache entries in long-lived
+  production proxy processes?
