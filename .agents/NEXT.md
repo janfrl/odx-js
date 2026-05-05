@@ -12,51 +12,45 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement next ready task:
-`.agents/tasks/ready/044-add-aggregate-package-verification-script.md`.
+Create the next implementation tasks because `.agents/tasks/ready/` is empty.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Planner for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
+- .agents/ROADMAP.md
+- .agents/EPICS.md
+- .agents/BACKLOG.md
 - .agents/decisions/
-- .agents/tasks/ready/044-add-aggregate-package-verification-script.md
-- package.json
-- packages/core/package.json
-- packages/proxy/package.json
-- packages/nuxt/package.json
-- packages/explorer/package.json
-- docs/package.json
+- .agents/tasks/
+- .agents/reviews/
 - .agents/PACKAGE_ISOLATION.md
-- .agents/tasks/done/023-add-package-local-verify-scripts.md
-- .agents/tasks/done/029-add-docs-package-verify-script.md
-- .agents/tasks/done/031-include-core-tests-in-package-verify.md
 
-Implement exactly `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`.
+Create the next 3-5 implementation tasks.
 
 Rules:
-- Keep changes scoped to the root aggregate package verification script and README guidance if needed.
-- Do not change individual package `verify` scripts unless a mechanical script-name adjustment is strictly required.
-- Do not replace `lint`, `typecheck`, or workspace `test`; do not add dependencies, CI config, runtime code, or lockfile changes.
+- Each task must be executable by one implementer chat.
+- Use `.agents/tasks/TASK_TEMPLATE.md`.
+- Put new tasks in `.agents/tasks/ready/`.
+- Keep tasks small, concrete, reviewable, and test-first when bug-related.
+- Prefer stability, performance-test quality, package isolation, and narrow documentation improvements.
+- Include the verified Explorer internal endpoint query-encoding bug unless it is already covered by an equivalent ready task.
+- Avoid UI redesign and browser-mode work unless the task has a clear verification plan using port 3000.
+- Do not create vague or oversized tasks.
 - Do not revert edits made by others.
-- Update task handoff notes, move the task to `.agents/tasks/done/` when complete, update `.agents/NEXT.md`, and commit with a Conventional Commit unless a stop condition prevents committing.
-
-Verification:
-- `pnpm.cmd run verify:packages`
-- `pnpm.cmd run lint`
-- `pnpm.cmd run typecheck` if required by blast radius
+- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
+- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- whether separate review is required and why
+- new tasks created
+- recommended next task
+- open decisions or blockers
 - commit hash
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

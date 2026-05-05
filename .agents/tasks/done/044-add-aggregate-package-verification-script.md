@@ -1,7 +1,7 @@
 # Task: Add aggregate package verification script
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -57,11 +57,11 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] The root aggregate script runs all existing package-local verify scripts.
-- [ ] Individual package-local verify commands remain available.
-- [ ] README guidance clearly distinguishes package verification from broad
+- [x] The root aggregate script runs all existing package-local verify scripts.
+- [x] Individual package-local verify commands remain available.
+- [x] README guidance clearly distinguishes package verification from broad
   workspace checks.
-- [ ] No package runtime code changes are included.
+- [x] No package runtime code changes are included.
 
 ## Verification
 
@@ -90,16 +90,41 @@ configuration change.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
-
+- changed files:
+  - `package.json`
+  - `README.md`
+  - `.agents/tasks/done/044-add-aggregate-package-verification-script.md`
+  - `.agents/NEXT.md`
+- summary:
+  - Added root `verify:packages` script that runs existing package-local
+    verification scripts for core, proxy, Nuxt, Explorer, and docs.
+  - Added README package verification guidance for the aggregate command and
+    explicitly distinguished it from broad `lint`, `typecheck`, and workspace
+    `test`.
+  - Left individual package `verify` scripts, runtime code, dependencies,
+    lockfiles, CI config, and broad workspace checks unchanged.
+- tests run:
+  - PASS: `pnpm.cmd run verify:packages`
+    (core, proxy, Nuxt, Explorer, and docs verify scripts passed; Nuxt emitted
+    existing Node `DEP0155` dependency warnings).
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - `pnpm.cmd run typecheck` skipped because this task changes only package
+    scripts, README guidance, and workflow notes; no typed source changed.
+- self-check result:
+  - Scope stayed in developer tooling/docs. The aggregate command reuses
+    existing package-local scripts and does not replace `lint`, `typecheck`, or
+    workspace `test`.
+- review requirement decision:
+  - Separate review is not required because this is low-risk tooling and
+    documentation only.
+- task state movement:
+  - Moved this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Updated to Planner prompt because the ready queue is empty after this task.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - `verify:packages` runs docs extraction, which can rewrite generated docs
+    artifacts if API reference output is stale. No generated artifact changes
+    are included in this task.
