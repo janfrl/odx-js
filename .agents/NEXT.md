@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md`.
+Implement `.agents/tasks/ready/066-protect-devtools-log-storage-from-external-mutation.md`.
 
 ## Prompt For Next Chat
 
@@ -24,18 +24,18 @@ Read:
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/PACKAGE_ISOLATION.md
 - .agents/decisions/
-- .agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md
+- .agents/tasks/ready/066-protect-devtools-log-storage-from-external-mutation.md
 - any root documentation referenced by the task
 
 Rules:
-- Implement exactly .agents/tasks/ready/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md.
-- Keep changes scoped to the minimal Nuxt playground config, app usage, and verification assertions.
+- Implement exactly .agents/tasks/ready/066-protect-devtools-log-storage-from-external-mutation.md.
+- Keep changes scoped to returned-array mutation protection for DevTools log storage and focused tests.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.
-- Update verify.mjs first with a failing-first assertion for a quoted non-identifier registry key.
-- Do not change generated declaration implementation, metadata output layout, production runtime code, dependencies, lockfiles, or generated files.
+- Add a failing test first that mutates the array returned by `getODataLogs()` and expects a later read to remain unchanged.
+- Preserve log entry contents, ordering, retention behavior, clearing behavior, and existing DevTools logging tests.
+- Do not deep-freeze log entries, redesign DevTools logging, alter log payload shape, change Explorer UI, change proxy trace behavior, add dependencies, modify package scripts, lockfiles, or generated files.
 - Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
 - Self-check against scope, acceptance criteria, relevant docs/decisions,

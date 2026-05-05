@@ -1,7 +1,7 @@
 # Task: Verify non-identifier service names in minimal Nuxt playground
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: conditional - required if generation contracts or playground output layout change
@@ -58,14 +58,14 @@ Relevant docs and files:
 
 ## Acceptance Criteria
 
-- [ ] `verify.mjs` has a failing-first assertion for a quoted non-identifier
+- [x] `verify.mjs` has a failing-first assertion for a quoted non-identifier
   registry key.
-- [ ] The minimal Nuxt playground includes a non-identifier service name using
+- [x] The minimal Nuxt playground includes a non-identifier service name using
   existing local fixtures.
-- [ ] The app or verification path demonstrates bracket-notation or literal
+- [x] The app or verification path demonstrates bracket-notation or literal
   `useOData('Sales-Order')` access.
-- [ ] Existing minimal playground behavior remains covered.
-- [ ] Nuxt package verification remains green.
+- [x] Existing minimal playground behavior remains covered.
+- [x] Nuxt package verification remains green.
 
 ## Verification
 
@@ -101,16 +101,55 @@ documentation beyond narrow verification notes.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `packages/nuxt/playground/minimal/verify.mjs`
+  - `packages/nuxt/playground/minimal/nuxt.config.ts`
+  - `packages/nuxt/playground/minimal/app.vue`
+  - `.agents/tasks/done/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md`
+  - `.agents/NEXT.md`
 - summary
+  - Added a failing-first minimal playground verifier assertion for the quoted
+    generated registry key `"Sales-Order"`.
+  - Added a `Sales-Order` service to the minimal Nuxt playground using the
+    existing `edmx/minimal.edmx` local fixture.
+  - Added typed app usage for `ODataServiceRegistry['Sales-Order']`,
+    `useOData('Sales-Order')`, and the service's `Products` entity set while
+    preserving the existing `MinimalLocal` coverage.
+- failing-first proof
+  - FAIL before config/app update: `node packages\nuxt\playground\minimal\verify.mjs`
+  - Failure output included:
+    `Error: Expected generated registry to include: "Sales-Order": ODataService<"Products"`
 - tests run
+  - Initial sandboxed pnpm runs failed with `EPERM: operation not permitted,
+    opendir 'C:\Users\janfr\AppData\Local\node\corepack\v1\pnpm'`; reran the
+    required pnpm commands with escalation for Corepack cache access.
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt run verify`
+  - PASS: `pnpm.cmd --filter @bc8-odx/nuxt exec vitest run test/generate.test.ts`
+  - PASS: `pnpm.cmd run typecheck`
+  - PASS: `pnpm.cmd run lint`
+  - PASS: `git diff --check`
 - skipped checks and residual risk
+  - No required checks were skipped.
+  - Nuxt verification emitted existing Node `DEP0155` trailing slash pattern
+    deprecation warnings from dependencies.
+  - `docs/public/api-reference.json` exists in the worktree but was not
+    modified by this task. `packages/explorer/.nuxtrc` was not present.
 - self-check result
+  - Scope stayed limited to the minimal Nuxt playground config, app usage, and
+    verification assertions. No production generator/runtime code, Explorer UI,
+    dependencies, lockfiles, generated files, metadata output layout, or model
+    generation contracts were changed.
 - review requirement decision
+  - Separate review is not required because this is low-risk playground
+    verification only, the required checks passed, and no generation contracts
+    or output layout changed.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` at start.
+  - Moved to `.agents/tasks/done/` after implementation and verification.
 - `.agents/NEXT.md` update
+  - Updated to point at
+    `.agents/tasks/ready/066-protect-devtools-log-storage-from-external-mutation.md`.
 - commit hash
+  - Commit containing this handoff.
 - known gaps
-
+  - None.

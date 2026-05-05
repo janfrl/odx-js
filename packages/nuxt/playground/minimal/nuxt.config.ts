@@ -15,6 +15,11 @@ export default defineNuxtConfig({
           url: 'edmx/minimal.edmx',
           route: 'minimal',
         },
+        {
+          name: 'Sales-Order',
+          url: 'edmx/minimal.edmx',
+          route: 'sales-order',
+        },
       ],
     }],
   ],
