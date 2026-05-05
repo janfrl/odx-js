@@ -8,12 +8,13 @@ import { addODataLog, updateODataLog } from '@bc8-odx/core'
 export class DevToolsTracer {
   readonly id = Math.random().toString(36).substring(7)
   readonly startTime = Date.now()
-  readonly trace: any[] = []
+  readonly trace: any[]
   readonly enabled: boolean
 
   constructor(event: H3Event) {
     const config = event.context.odataConfig
     this.enabled = !!(config?.devtools?.enabled && process.env.NODE_ENV !== 'production')
+    this.trace = []
     event.context.proxyTrace = this.addTrace.bind(this)
   }
 
@@ -21,6 +22,9 @@ export class DevToolsTracer {
    * Adds a new trace entry for the current request.
    */
   addTrace(label: string, message: string, details?: any, status: 'success' | 'error' | 'info' = 'info'): void {
+    if (!this.enabled)
+      return
+
     this.trace.push({
       timestamp: Date.now(),
       duration: Date.now() - this.startTime,

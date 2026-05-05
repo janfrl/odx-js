@@ -20,12 +20,16 @@ export default defineNitroPlugin((nitro) => {
       return
     }
 
-    // Initialize telemetry trace array
-    const startTime = Date.now()
-    const trace: any[] = []
-    event.context.proxyTrace = trace
+    // Initialize telemetry trace array only when DevTools can consume it.
+    const traceEnabled = !!(config.devtools?.enabled && process.env.NODE_ENV !== 'production')
+    const startTime = traceEnabled ? Date.now() : 0
+    const trace: any[] | undefined = traceEnabled ? [] : undefined
+    event.context.proxyTrace = trace || []
 
     const addTrace = (label: string, message: string, details?: any, status: 'success' | 'error' | 'info' = 'info'): void => {
+      if (!trace)
+        return
+
       trace.push({
         timestamp: Date.now(),
         duration: Date.now() - startTime,

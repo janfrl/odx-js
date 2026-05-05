@@ -131,6 +131,26 @@ describe('proxy integration', () => {
     })
   })
 
+  it('stores proxy trace entries in enabled DevTools logs', async () => {
+    clearODataLogs()
+
+    await ofetch(`${proxyUrl}/api/odx/TestService/Products`)
+
+    const [log] = getODataLogs()
+    expect(log?.proxyTrace).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        label: 'Proxy',
+        message: expect.stringContaining('Forwarding request to:'),
+        status: 'info',
+      }),
+      expect.objectContaining({
+        label: 'Response',
+        message: 'Request successful',
+        status: 'success',
+      }),
+    ]))
+  })
+
   it('preserves 204 No Content in buffered responses and DevTools logs', async () => {
     clearODataLogs()
 

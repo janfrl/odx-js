@@ -4,10 +4,21 @@ import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
 import { ofetch } from 'ofetch'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { odataGuard } from '../src'
+import btpAuthPlugin from '../src/plugins/btp-auth'
+import { DevToolsTracer } from '../src/utils/trace'
 import { createBackend } from './fixtures/backend'
 import { createProxyServer } from './fixtures/server'
+
+const useRuntimeConfigMock = vi.hoisted(() => vi.fn())
+
+vi.mock('nitropack/runtime', () => {
+  return {
+    defineNitroPlugin: (plugin: any) => plugin,
+    useRuntimeConfig: useRuntimeConfigMock,
+  }
+})
 
 describe('proxy rules', () => {
   let backendServer: any
@@ -290,5 +301,146 @@ describe('proxy rules', () => {
 
     const res = await ofetch(`${proxyUrl}/api/odx/HookService/Products`)
     expect(res).toBeDefined()
+  })
+})
+
+describe('disabled DevTools proxy tracing', () => {
+  it('keeps proxyTrace callable without retaining trace entries', () => {
+    const event = {
+      context: {
+        odataConfig: {
+          devtools: {
+            enabled: false,
+          },
+        },
+      },
+    } as any
+
+    const tracer = new DevToolsTracer(event)
+
+    event.context.proxyTrace('Rules', 'Rule trace should be a no-op')
+    tracer.addTrace('Proxy', 'Proxy trace should be a no-op')
+
+    expect(tracer.enabled).toBe(false)
+    expect(tracer.trace).toEqual([])
+  })
+
+  it('uses isolated trace arrays for disabled tracer instances', () => {
+    const createDisabledTracer = () => {
+      const event = {
+        context: {
+          odataConfig: {
+            devtools: {
+              enabled: false,
+            },
+          },
+        },
+      } as any
+
+      return new DevToolsTracer(event)
+    }
+
+    const firstTracer = createDisabledTracer()
+    const secondTracer = createDisabledTracer()
+
+    firstTracer.trace.push({ label: 'External mutation' })
+
+    expect(firstTracer.trace).toHaveLength(1)
+    expect(secondTracer.trace).toEqual([])
+  })
+
+  it('does not accumulate Nitro plugin trace entries when DevTools are disabled', async () => {
+    const requestHooks: Array<(event: any) => Promise<void>> = []
+    const nitro = {
+      hooks: {
+        hook(name: string, callback: (event: any) => Promise<void>) {
+          if (name === 'request')
+            requestHooks.push(callback)
+        },
+      },
+    }
+
+    btpAuthPlugin(nitro as any)
+    useRuntimeConfigMock.mockReturnValue({
+      odata: {
+        basePath: '/api/odx',
+        devtools: {
+          enabled: false,
+        },
+        services: [
+          {
+            name: 'TestService',
+            url: 'https://example.test/odata',
+            strategy: 'proxied',
+            proxyMode: 'buffer',
+          },
+        ],
+      },
+    })
+
+    const event = {
+      path: '/api/odx/TestService/Products',
+      headers: new Headers(),
+      context: {},
+    } as any
+
+    await requestHooks[0](event)
+
+    expect(event.context.proxyTarget).toMatchObject({
+      url: 'https://example.test/odata',
+      isRelative: false,
+    })
+    expect(event.context.proxyTrace).toEqual([])
+  })
+
+  it('does not accumulate Nitro plugin trace entries in production', async () => {
+    const originalNodeEnv = process.env.NODE_ENV
+    const requestHooks: Array<(event: any) => Promise<void>> = []
+    const nitro = {
+      hooks: {
+        hook(name: string, callback: (event: any) => Promise<void>) {
+          if (name === 'request')
+            requestHooks.push(callback)
+        },
+      },
+    }
+
+    btpAuthPlugin(nitro as any)
+    useRuntimeConfigMock.mockReturnValue({
+      odata: {
+        basePath: '/api/odx',
+        devtools: {
+          enabled: true,
+        },
+        services: [
+          {
+            name: 'TestService',
+            url: 'https://example.test/odata',
+            strategy: 'proxied',
+            proxyMode: 'buffer',
+          },
+        ],
+      },
+    })
+
+    const event = {
+      path: '/api/odx/TestService/Products',
+      headers: new Headers(),
+      context: {},
+    } as any
+
+    try {
+      process.env.NODE_ENV = 'production'
+      await requestHooks[0](event)
+    }
+    finally {
+      process.env.NODE_ENV = originalNodeEnv
+    }
+
+    expect(event.context.proxyTarget).toMatchObject({
+      url: 'https://example.test/odata',
+      isRelative: false,
+    })
+    expect(event.context.proxyTrace).toEqual([])
   })
 })
