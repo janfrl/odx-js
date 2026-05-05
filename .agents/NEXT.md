@@ -12,43 +12,46 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run Planner to create the next 3-5 implementation tasks because
-`.agents/tasks/ready/` is empty except `.gitkeep`.
+Run Implementer on
+`.agents/tasks/ready/072-run-post-runtime-optimization-checkpoint.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Planner for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- relevant root documentation
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/reviews/
+- .agents/WORKFLOW.md
 - .agents/decisions/
+- .agents/tasks/ready/072-run-post-runtime-optimization-checkpoint.md
+- .agents/tasks/done/067-encode-explorer-delete-item-id.md
+- .agents/tasks/done/068-validate-benchmark-count-fields.md
+- .agents/tasks/done/069-warn-on-benchmark-comparison-metadata-mismatches.md
+- .agents/tasks/done/070-test-deterministic-benchmark-summary-math.md
+- .agents/tasks/done/071-skip-devtools-trace-allocation-when-disabled.md
+- .agents/reviews/071-skip-devtools-trace-allocation-when-disabled-review.md
 
-Create the next 3-5 implementation tasks.
+Implement exactly .agents/tasks/ready/072-run-post-runtime-optimization-checkpoint.md.
 
 Rules:
-- Each task must be executable by one implementer chat.
-- Use .agents/tasks/TASK_TEMPLATE.md.
-- Put new tasks in .agents/tasks/ready/.
-- Keep tasks small and reviewable.
-- Include acceptance criteria and verification steps.
-- Do not create vague or oversized tasks.
-- Update BACKLOG.md, EPICS.md, and ROADMAP.md only if needed.
+- Keep changes scoped to .agents workflow state.
+- Do not modify production source/tests/docs outside .agents, dependencies, lockfiles, or generated files.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
+- Decide whether separate review is required using .agents/WORKFLOW.md.
+- Move the task to .agents/tasks/done/ when implementation and verification are complete.
 - Update .agents/NEXT.md with the next action and exact next-chat prompt.
-- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- new tasks created
-- recommended next task
-- open decisions or blockers
-- commit hash, unless no commit was created because of a stop condition
+- changed files
+- what was verified
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
 - exact next-chat prompt from .agents/NEXT.md
 ```
