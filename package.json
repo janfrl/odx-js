@@ -41,6 +41,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "bench:proxy": "vitest run packages/proxy/test/performance.test.ts",
+    "bench:proxy:compare": "tsx scripts/compare-proxy-benchmarks.ts",
     "test": "vitest run",
     "test:unit": "vitest run packages/core packages/proxy packages/explorer",
     "test:watch": "vitest watch",

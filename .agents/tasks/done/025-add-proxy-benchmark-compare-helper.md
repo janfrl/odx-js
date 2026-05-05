@@ -1,7 +1,7 @@
 # Task: Add proxy benchmark compare helper
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -83,15 +83,50 @@ dependency wiring changes.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `scripts/compare-proxy-benchmarks.ts`
+  - `package.json`
+  - `packages/proxy/README.md`
+- summary:
+  - Added `pnpm.cmd run bench:proxy:compare -- <baseline> <candidate>`.
+  - The helper reads two proxy benchmark JSON reports, requires matching
+    scenario labels, and prints baseline average, candidate average, absolute
+    delta, and percent delta.
+  - Invalid paths, malformed report shape, missing labels, and missing average
+    timings fail with non-zero exit codes and clear messages.
+  - Documented how to generate two gitignored reports under `reports/` and
+    compare them.
+- tests run:
+  - PASS:
+    `ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-a.json pnpm.cmd run bench:proxy`.
+  - PASS:
+    `ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-b.json pnpm.cmd run bench:proxy`.
+  - PASS:
+    `pnpm.cmd run bench:proxy:compare -- reports/proxy-benchmark-a.json reports/proxy-benchmark-b.json`.
+  - PASS expected failure:
+    `pnpm.cmd run bench:proxy:compare -- reports/does-not-exist.json reports/proxy-benchmark-b.json`
+    exited non-zero with a useful missing-file message.
+  - PASS: `pnpm.cmd run lint`.
+  - PASS: `pnpm.cmd run typecheck`.
+- skipped checks and residual risk:
+  - No task-local checks were skipped.
+  - The generated `reports/` JSON files are intentionally gitignored and not
+    committed.
+- self-check result:
+  - Scope stayed limited to local tooling and docs.
+  - No production proxy code, benchmark scenario definitions, dependencies, or
+    normal test behavior changed.
+  - No budgets or thresholds were added.
+- review requirement decision:
+  - Separate review is not required because this is low-risk local tooling.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Updated to planner mode because no implementation tasks remain in
+    `.agents/tasks/ready/`.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None.

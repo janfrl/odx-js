@@ -1,0 +1,121 @@
+import { readFile } from 'node:fs/promises'
+import process from 'node:process'
+
+interface BenchmarkScenario {
+  label: string
+  avgMs: number
+  path?: string
+}
+
+interface BenchmarkReport {
+  name?: string
+  scenarios?: BenchmarkScenario[]
+}
+
+function usage(): string {
+  return 'Usage: pnpm.cmd run bench:proxy:compare -- <baseline.json> <candidate.json>'
+}
+
+async function readReport(path: string, role: string): Promise<BenchmarkReport> {
+  let raw: string
+  try {
+    raw = await readFile(path, 'utf8')
+  }
+  catch (error: any) {
+    throw new Error(`Could not read ${role} report at ${path}: ${error.message}`)
+  }
+
+  try {
+    const report = JSON.parse(raw) as BenchmarkReport
+    if (!Array.isArray(report.scenarios)) {
+      throw new TypeError('missing scenarios array')
+    }
+    return report
+  }
+  catch (error: any) {
+    throw new Error(`Invalid ${role} report at ${path}: ${error.message}`)
+  }
+}
+
+function scenarioMap(report: BenchmarkReport, role: string): Map<string, BenchmarkScenario> {
+  const scenarios = new Map<string, BenchmarkScenario>()
+  for (const scenario of report.scenarios || []) {
+    if (!scenario.label) {
+      throw new TypeError(`${role} report contains a scenario without a label`)
+    }
+    if (!Number.isFinite(scenario.avgMs)) {
+      throw new TypeError(`${role} scenario "${scenario.label}" is missing a finite avgMs value`)
+    }
+    scenarios.set(scenario.label, scenario)
+  }
+  return scenarios
+}
+
+function formatMs(value: number): string {
+  return `${value.toFixed(2)}ms`
+}
+
+function formatPercent(value: number): string {
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+}
+
+function printComparison(baseline: BenchmarkReport, candidate: BenchmarkReport): void {
+  const baselineScenarios = scenarioMap(baseline, 'baseline')
+  const candidateScenarios = scenarioMap(candidate, 'candidate')
+
+  const missing = [...baselineScenarios.keys()].filter(label => !candidateScenarios.has(label))
+  const extra = [...candidateScenarios.keys()].filter(label => !baselineScenarios.has(label))
+
+  if (missing.length > 0) {
+    throw new Error(`Candidate report is missing scenario(s): ${missing.join(', ')}`)
+  }
+  if (extra.length > 0) {
+    throw new Error(`Candidate report has unexpected scenario(s): ${extra.join(', ')}`)
+  }
+
+  const rows = Array.from(baselineScenarios.entries(), ([label, base]) => {
+    const next = candidateScenarios.get(label)!
+    const delta = next.avgMs - base.avgMs
+    const percent = base.avgMs === 0 ? Number.NaN : (delta / base.avgMs) * 100
+    return [
+      label.padEnd(28),
+      (base.path || '').padEnd(43),
+      formatMs(base.avgMs).padStart(10),
+      formatMs(next.avgMs).padStart(10),
+      `${delta >= 0 ? '+' : ''}${formatMs(delta)}`.padStart(10),
+      (Number.isFinite(percent) ? formatPercent(percent) : 'n/a').padStart(9),
+    ].join('  ')
+  })
+
+  process.stdout.write([
+    '',
+    'ODX proxy benchmark comparison',
+    [
+      'scenario'.padEnd(28),
+      'path'.padEnd(43),
+      'baseline'.padStart(10),
+      'candidate'.padStart(10),
+      'delta'.padStart(10),
+      'delta %'.padStart(9),
+    ].join('  '),
+    ...rows,
+    '',
+  ].join('\n'))
+}
+
+const [baselinePath, candidatePath] = process.argv.slice(2).filter(arg => arg !== '--')
+if (!baselinePath || !candidatePath) {
+  console.error(usage())
+  process.exitCode = 1
+}
+else {
+  try {
+    const baseline = await readReport(baselinePath, 'baseline')
+    const candidate = await readReport(candidatePath, 'candidate')
+    printComparison(baseline, candidate)
+  }
+  catch (error: any) {
+    console.error(error.message)
+    process.exitCode = 1
+  }
+}

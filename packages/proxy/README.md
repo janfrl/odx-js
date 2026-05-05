@@ -29,4 +29,12 @@ direct, proxied, concurrent, and DevTools logging timing baselines. Use
 summary; `reports/` is ignored by git. Use `pnpm.cmd` on Windows PowerShell in
 this repository when `.ps1` launchers are blocked.
 
+To compare two generated benchmark reports:
+
+```bash
+ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-a.json pnpm.cmd run bench:proxy
+ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-b.json pnpm.cmd run bench:proxy
+pnpm.cmd run bench:proxy:compare -- reports/proxy-benchmark-a.json reports/proxy-benchmark-b.json
+```
+
 **For full documentation, server-side configuration, and security guides, please visit: [odx-js.io/packages/proxy](https://odx-js.io/packages/proxy)**
