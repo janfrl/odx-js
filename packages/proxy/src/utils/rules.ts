@@ -25,6 +25,15 @@ export class ODataGuard {
     }
   }
 
+  private rejectValidation(name: string, reason?: string): never {
+    const message = reason || `Validation failed: ${name}`
+    this.addTrace('Rules', `Access DENIED: ${message}`, { validator: name, action: 'REJECT' }, 'error')
+    throw createError({
+      statusCode: 403,
+      statusMessage: message,
+    })
+  }
+
   /**
    * Restricts the service to an explicit list of methods.
    */
@@ -189,17 +198,23 @@ export class ODataGuard {
   /**
    * Custom validation rule. If the callback returns false, the request is rejected.
    */
-  validate(name: string, cb: (ctx: ODataRuleContext) => boolean | Promise<boolean>, reason?: string): this {
+  validate(name: string, cb: (ctx: ODataRuleContext) => boolean, reason?: string): this
+  validate(name: string, cb: (ctx: ODataRuleContext) => Promise<boolean>, reason?: string): Promise<this>
+  validate(name: string, cb: (ctx: ODataRuleContext) => boolean | Promise<boolean>, reason?: string): this | Promise<this> {
     this.addTrace('Rules', `Running custom validation: "${name}"`, { policy: 'CustomValidator' })
 
     const result = cb(this.ctx)
-    if (result === false) {
-      const message = reason || `Validation failed: ${name}`
-      this.addTrace('Rules', `Access DENIED: ${message}`, { validator: name, action: 'REJECT' }, 'error')
-      throw createError({
-        statusCode: 403,
-        statusMessage: message,
+    if (result && typeof (result as Promise<boolean>).then === 'function') {
+      return (result as Promise<boolean>).then((resolved) => {
+        if (resolved === false) {
+          this.rejectValidation(name, reason)
+        }
+        return this
       })
+    }
+
+    if (result === false) {
+      this.rejectValidation(name, reason)
     }
     return this
   }

@@ -1,7 +1,7 @@
 # Task: Await async proxy rule validation
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: delegated implementer
 Created: 2026-05-04
 Risk: high
 Review: required
@@ -80,15 +80,26 @@ Separate review is required under `.agents/WORKFLOW.md`.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `packages/proxy/src/utils/rules.ts`,
+  `packages/proxy/test/rules.test.ts`, and this task file
+- summary: added async deny/allow tests for `ODataGuard.validate`; synchronous
+  validators still return `this`, async validators return `Promise<this>` and
+  reject through the existing 403 validation path when they resolve `false`
+- tests run:
+  - failing-test evidence before fix: async denial test failed because the
+    request was not rejected
+  - `pnpm.cmd exec vitest run packages/proxy/test/rules.test.ts`
+  - `pnpm.cmd run typecheck`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run test`
+- skipped checks and residual risk: none
+- self-check result: scope, acceptance criteria, security guidance, and
+  unrelated changes checked
+- review requirement decision: separate review required because proxy rule
+  enforcement is security-sensitive policy behavior
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: pending orchestrator integration
+- commit hash: pending commit at handoff-note update time
+- known gaps: async validation only blocks when the caller awaits or returns
+  the promise from hook code

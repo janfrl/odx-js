@@ -245,6 +245,30 @@ describe('proxy rules', () => {
     }
   })
 
+  it('rejects async custom validation rules that resolve false', async () => {
+    hooks.hookOnce('odx:proxy:request:HookService', async (ctx: any) => {
+      await odataGuard(ctx).validate('AsyncDeny', async () => false, 'Async failure')
+    })
+
+    try {
+      await ofetch(`${proxyUrl}/api/odx/HookService/Products`)
+      expect.fail('Should have failed async validation')
+    }
+    catch (err: any) {
+      expect(err.status).toBe(403)
+      expect(err.statusMessage).toContain('Async failure')
+    }
+  })
+
+  it('allows async custom validation rules that resolve true', async () => {
+    hooks.hookOnce('odx:proxy:request:HookService', async (ctx: any) => {
+      await odataGuard(ctx).validate('AsyncAllow', async () => true, 'Should not fail')
+    })
+
+    const res = await ofetch(`${proxyUrl}/api/odx/HookService/Products`)
+    expect(res).toBeDefined()
+  })
+
   it('allows programmatic rules via Nitro hooks', async () => {
     hooks.hook('odx:proxy:request:HookService', (ctx: any) => {
       odataGuard(ctx).denyIfPathIncludes('/HookRestricted')
