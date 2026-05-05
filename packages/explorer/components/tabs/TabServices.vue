@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'
-import { useSharedODataState } from '../../composables/useODataState'
+import { buildSchemaEndpointUrl, useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
 import ServiceSettings from '../ServiceSettings.vue'
@@ -35,7 +35,7 @@ const tabs = [
 const metadataUrl = computed((): string => {
   if (!selectedService.value)
     return ''
-  return `/__odx__/schema?service=${selectedService.value.name}&raw=true`
+  return buildSchemaEndpointUrl(selectedService.value.name, { raw: true })
 })
 
 async function onRegenerate() {

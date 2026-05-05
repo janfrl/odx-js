@@ -12,7 +12,10 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/046-encode-explorer-internal-endpoint-params.md`.
+Implement `.agents/tasks/ready/048-document-package-verification-artifacts.md`.
+
+Task 046 has concurrent Explorer changes in the worktree. Do not pick task 046
+until that work is committed or otherwise resolved.
 
 ## Prompt For Next Chat
 
@@ -25,18 +28,24 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/046-encode-explorer-internal-endpoint-params.md
-- ARCHITECTURE.md
-- API.md
-- DESIGN.md
+- .agents/tasks/ready/048-document-package-verification-artifacts.md
+- docs/README.md
+- packages/core/README.md
+- packages/proxy/README.md
+- packages/nuxt/README.md
+- packages/explorer/README.md
+- package.json
+- .agents/tasks/done/044-add-aggregate-package-verification-script.md
 
-Implement exactly `.agents/tasks/ready/046-encode-explorer-internal-endpoint-params.md`.
+Implement exactly `.agents/tasks/ready/048-document-package-verification-artifacts.md`.
 
 Rules:
 - Keep changes scoped to the task.
-- Add failing tests first for Explorer internal endpoint query values containing `&`, `#`, spaces, or `?`.
-- Encode service/entity query values for schema, generate, mock-data delete, and raw metadata URL construction.
-- Do not change server-side internal endpoint contracts, public proxied OData URLs, visible UI layout, dependencies, or lockfiles.
+- Update documentation only where it improves discoverability of `pnpm.cmd run verify:packages`, package-local verify commands, and docs-generated API reference drift.
+- Keep wording concise and close to existing package verification sections.
+- Mention that `verify:packages` does not replace broad `lint`, `typecheck`, or workspace `test`.
+- Do not change scripts, source code, generated docs artifacts, package behavior, examples, dependencies, lockfiles, or CI configuration.
+- Do not touch Explorer task 046 files or other unrelated work already present in the worktree.
 - Use `pnpm.cmd`, not `pnpm`, on this Windows machine because PowerShell blocks `.ps1` launchers.
 - Do not revert edits made by others.
 - Update the task handoff notes before finishing.

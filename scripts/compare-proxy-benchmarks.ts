@@ -63,6 +63,9 @@ function scenarioMap(report: BenchmarkReport, role: string): Map<string, Benchma
     if (!scenario.label) {
       throw new TypeError(`${role} report contains a scenario without a label`)
     }
+    if (scenarios.has(scenario.label)) {
+      throw new TypeError(`${role} report contains duplicate scenario label "${scenario.label}"`)
+    }
     if (!Number.isFinite(scenario.avgMs)) {
       throw new TypeError(`${role} scenario "${scenario.label}" is missing a finite avgMs value`)
     }

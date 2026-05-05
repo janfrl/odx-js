@@ -113,6 +113,38 @@ describe('proxy benchmark comparison helper', () => {
     expect(output).toContain('missing from baseline: small seq devtools buffer')
   })
 
+  it('rejects duplicate baseline scenario labels', () => {
+    expect(() => formatComparison(
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1 },
+          { label: 'small seq direct', path: '/Products', avgMs: 2 },
+        ],
+      },
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1.5 },
+        ],
+      },
+    )).toThrow('baseline report contains duplicate scenario label "small seq direct"')
+  })
+
+  it('rejects duplicate candidate scenario labels', () => {
+    expect(() => formatComparison(
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1 },
+        ],
+      },
+      {
+        scenarios: [
+          { label: 'small seq direct', path: '/Products', avgMs: 1.5 },
+          { label: 'small seq direct', path: '/Products', avgMs: 2 },
+        ],
+      },
+    )).toThrow('candidate report contains duplicate scenario label "small seq direct"')
+  })
+
   it('rejects malformed report shapes', () => {
     expect(() => parseBenchmarkReport('{}', 'baseline')).toThrow('baseline report is missing scenarios array')
   })

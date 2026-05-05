@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { useEntityExplorer } from '../composables/useEntityExplorer'
-import { useSharedODataState } from '../composables/useODataState'
+import { buildSchemaEndpointUrl, useSharedODataState } from '../composables/useODataState'
 
 // Mock global fetch
 globalThis.fetch = vi.fn()
@@ -114,6 +114,44 @@ describe('explorer State Composable', () => {
 
     expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/logs', { method: 'DELETE' })
     expect(logs.value).toEqual([])
+  })
+
+  it('encodes service names when checking service health and generating a service', async () => {
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ services: [{ name: 'R&D #1?', route: 'rd' }] }),
+    })
+
+    const { fetchConfig, generateService } = useSharedODataState()
+    await fetchConfig()
+    await nextTick()
+
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/schema?service=R%26D%20%231%3F')
+
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    })
+
+    await generateService('R&D #1?')
+
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/generate?service=R%26D%20%231%3F')
+  })
+
+  it('encodes service and entity set names when clearing mock data', async () => {
+    ;(globalThis.fetch as any).mockResolvedValue({ ok: true })
+
+    const { clearEntityMockData } = useSharedODataState()
+    await clearEntityMockData('R&D #1?', 'Sales Orders?#&')
+
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      '/__odx__/mockdata?service=R%26D%20%231%3F&entitySet=Sales%20Orders%3F%23%26',
+      { method: 'DELETE' },
+    )
+  })
+
+  it('builds raw metadata URLs with encoded service names and raw=true preserved', () => {
+    expect(buildSchemaEndpointUrl('R&D #1?', { raw: true })).toBe('/__odx__/schema?service=R%26D%20%231%3F&raw=true')
   })
 
   it('filters traffic logs by service, search text, and failure status', () => {

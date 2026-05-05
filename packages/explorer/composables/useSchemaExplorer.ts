@@ -3,6 +3,7 @@ import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'
 import SchemaNode from '../components/SchemaNode.vue'
+import { buildSchemaEndpointUrl } from './useODataState'
 
 const elk = new ELK()
 
@@ -98,7 +99,7 @@ export function useSchemaExplorer(): SchemaExplorer {
     loading.value = true
     isReady.value = false
     try {
-      const res = await fetch(`/__odx__/schema?service=${serviceName}`)
+      const res = await fetch(buildSchemaEndpointUrl(serviceName))
       if (res.ok) {
         schemaData.value = await res.json()
         updateServiceHealth(serviceName, 'online')

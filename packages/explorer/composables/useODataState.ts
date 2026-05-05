@@ -99,6 +99,26 @@ function serviceMatchesLogFilter(service: any, filter: string): boolean {
   )
 }
 
+function encodeInternalQueryValue(value: string): string {
+  return encodeURIComponent(value)
+}
+
+export function buildSchemaEndpointUrl(service: string, options: { raw?: boolean } = {}): string {
+  const query = [`service=${encodeInternalQueryValue(service)}`]
+  if (options.raw) {
+    query.push('raw=true')
+  }
+  return `/__odx__/schema?${query.join('&')}`
+}
+
+function buildGenerateEndpointUrl(service: string): string {
+  return `/__odx__/generate?service=${encodeInternalQueryValue(service)}`
+}
+
+function buildMockDataEndpointUrl(service: string, entitySet: string): string {
+  return `/__odx__/mockdata?service=${encodeInternalQueryValue(service)}&entitySet=${encodeInternalQueryValue(entitySet)}`
+}
+
 // Global Singleton state
 const activeTab = ref('overview')
 const logs = ref<ODataLog[]>([])
@@ -225,7 +245,7 @@ export function useSharedODataState(): SharedODataState {
 
   async function checkServiceHealth(name: string): Promise<void> {
     try {
-      const res = await fetch(`/__odx__/schema?service=${name}`)
+      const res = await fetch(buildSchemaEndpointUrl(name))
       updateServiceHealth(name, res.ok ? 'online' : 'offline')
     }
     catch {
@@ -377,7 +397,7 @@ export function useSharedODataState(): SharedODataState {
   async function generateService(name: string): Promise<void> {
     generatingStatus.value[name] = true
     try {
-      const res = await fetch(`/__odx__/generate?service=${name}`)
+      const res = await fetch(buildGenerateEndpointUrl(name))
       if (!res.ok) {
         const body = await res.json().catch(() => null)
         const msg = body?.message || body?.statusMessage || `Generation failed (${res.status})`
@@ -419,7 +439,7 @@ export function useSharedODataState(): SharedODataState {
 
   async function clearEntityMockData(service: string, entitySet: string): Promise<void> {
     try {
-      await fetch(`/__odx__/mockdata?service=${service}&entitySet=${entitySet}`, { method: 'DELETE' })
+      await fetch(buildMockDataEndpointUrl(service, entitySet), { method: 'DELETE' })
     }
     catch (e) {
       console.error(`[ODataState] Failed to clear mock data for ${entitySet}`, e)
@@ -499,7 +519,7 @@ watch(selectedEntity, async (newEntity) => {
 
   entitySchemaLoading.value = true
   try {
-    const res = await fetch(`/__odx__/schema?service=${svcName}`)
+    const res = await fetch(buildSchemaEndpointUrl(svcName))
     if (res.ok) {
       entitySchema.value = await res.json()
       updateServiceHealth(svcName, 'online')
