@@ -52,8 +52,8 @@ Candidate tasks:
 - `.agents/tasks/done/034-add-proxy-benchmark-report-metadata.md`
 - `.agents/tasks/done/037-reject-non-http-btp-destination-url.md`
 - `.agents/tasks/done/039-report-missing-benchmark-scenarios.md`
-- `.agents/tasks/ready/042-normalize-proxy-basepath-parsing.md`
-- `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`
+- `.agents/tasks/done/042-normalize-proxy-basepath-parsing.md`
+- `.agents/tasks/done/043-test-proxy-benchmark-report-formatting.md`
 
 Exit criteria:
 
@@ -136,8 +136,8 @@ Candidate tasks:
 - `.agents/tasks/done/036-normalize-nuxt-service-url-joins.md`
 - `.agents/tasks/done/038-clear-stale-explorer-entity-selection.md`
 - `.agents/tasks/done/040-cover-routed-nuxt-mutations.md`
-- `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`
-- `.agents/tasks/ready/045-clear-stale-explorer-log-service-filter.md`
+- `.agents/tasks/done/044-add-aggregate-package-verification-script.md`
+- `.agents/tasks/done/045-clear-stale-explorer-log-service-filter.md`
 
 Exit criteria:
 
@@ -185,11 +185,11 @@ Candidate tasks:
 - `.agents/tasks/done/038-clear-stale-explorer-entity-selection.md`
 - `.agents/tasks/done/039-report-missing-benchmark-scenarios.md`
 - `.agents/tasks/done/040-cover-routed-nuxt-mutations.md`
-- `.agents/tasks/ready/041-preserve-flattened-value-properties.md`
-- `.agents/tasks/ready/042-normalize-proxy-basepath-parsing.md`
-- `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`
-- `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`
-- `.agents/tasks/ready/045-clear-stale-explorer-log-service-filter.md`
+- `.agents/tasks/done/041-preserve-flattened-value-properties.md`
+- `.agents/tasks/done/042-normalize-proxy-basepath-parsing.md`
+- `.agents/tasks/done/043-test-proxy-benchmark-report-formatting.md`
+- `.agents/tasks/done/044-add-aggregate-package-verification-script.md`
+- `.agents/tasks/done/045-clear-stale-explorer-log-service-filter.md`
 
 Exit criteria:
 
@@ -219,14 +219,42 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/041-preserve-flattened-value-properties.md`
-- `.agents/tasks/ready/042-normalize-proxy-basepath-parsing.md`
-- `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`
-- `.agents/tasks/ready/044-add-aggregate-package-verification-script.md`
-- `.agents/tasks/ready/045-clear-stale-explorer-log-service-filter.md`
+- `.agents/tasks/done/041-preserve-flattened-value-properties.md`
+- `.agents/tasks/done/042-normalize-proxy-basepath-parsing.md`
+- `.agents/tasks/done/043-test-proxy-benchmark-report-formatting.md`
+- `.agents/tasks/done/044-add-aggregate-package-verification-script.md`
+- `.agents/tasks/done/045-clear-stale-explorer-log-service-filter.md`
 
 Exit criteria:
 
 - The ready task queue completes with task-local checks passing.
 - No UI churn is introduced without explicit browser verification.
 - Broad checkpoint checks are run or residual risk is recorded.
+
+## Epic 08: Endpoint Encoding And Checkpoint Confidence
+
+Goal: close the verified Explorer endpoint encoding bug and keep verification
+outputs trustworthy before broader optimization work.
+
+Deliverables:
+
+- Explorer internal endpoint calls encode service and entity query values.
+- Proxy benchmark comparison rejects malformed reports with duplicate scenario
+  labels.
+- Package verification documentation explains the aggregate command and docs
+  artifact drift.
+- A release confidence checkpoint records package and workspace check results.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/046-encode-explorer-internal-endpoint-params.md`
+- `.agents/tasks/ready/047-reject-duplicate-benchmark-scenarios.md`
+- `.agents/tasks/ready/048-document-package-verification-artifacts.md`
+- `.agents/tasks/ready/049-run-release-confidence-checkpoint.md`
+
+Exit criteria:
+
+- The ready task queue completes with task-local checks passing.
+- The Explorer endpoint encoding regression is covered without UI redesign.
+- Benchmark comparison validation has deterministic tests.
+- The checkpoint either passes or records bounded failures and residual risk.

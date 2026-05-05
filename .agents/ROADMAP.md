@@ -75,3 +75,14 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
   package-local checks.
 - Keep Explorer config-backed state reconciled through focused state tests,
   avoiding UI churn unless separately verified.
+
+## Phase 9: Endpoint Encoding And Checkpoint Confidence
+
+- Encode Explorer internal endpoint query values so special service and entity
+  names reach internal handlers intact.
+- Keep proxy benchmark comparison tooling strict enough to reject malformed
+  duplicate scenario labels.
+- Clarify package verification documentation now that an aggregate command runs
+  package-local checks and docs extraction.
+- Run a broad release confidence checkpoint before planning larger performance
+  optimization or browser-level Explorer work.

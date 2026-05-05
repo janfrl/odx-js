@@ -8,19 +8,20 @@ implementation phases.
 
 ## Now
 
-- Preserve ordinary entity properties named `value` in core OData flattening.
-- Normalize proxy `basePath` parsing at slash boundaries.
-- Add fast unit coverage for proxy benchmark report formatting/output shape.
-- Add an aggregate root command for existing package-local verification.
-- Clear stale Explorer traffic-log service filters after config refreshes.
+- Encode Explorer internal endpoint query parameters for service and entity
+  names containing query separator characters.
+- Reject duplicate scenario labels in proxy benchmark comparison reports.
+- Clarify package verification docs around the aggregate command and generated
+  docs artifact drift.
+- Run a release confidence checkpoint after the current ready queue completes.
 
 ## Next
 
 - Continue Explorer improvements only through narrow, test-backed state fixes
   unless UI changes are explicitly needed and browser-verified.
-- Consider runtime performance optimizations only after benchmark report
-  formatting/output has fast tests and benchmark comparisons remain clear.
-- Batch a full checkpoint after the ready task queue is complete.
+- Consider runtime performance optimizations only after benchmark tooling keeps
+  malformed reports visible and checkpoint checks remain green.
+- Batch a full checkpoint after tasks 046-048 are complete.
 
 ## Later
 
