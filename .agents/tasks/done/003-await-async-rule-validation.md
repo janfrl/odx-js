@@ -103,3 +103,11 @@ Separate review is required under `.agents/WORKFLOW.md`.
 - commit hash: pending commit at handoff-note update time
 - known gaps: async validation only blocks when the caller awaits or returns
   the promise from hook code
+
+Review update:
+
+- initial review requested durable API documentation for the async await/return
+  requirement
+- `API.md` now documents the requirement and includes an async validation
+  example
+- focused re-review approved the change

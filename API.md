@@ -156,6 +156,20 @@ Declarative service rules currently include:
 
 Rules are applied only for non-direct proxy flows.
 
+Programmatic validators may be synchronous or asynchronous. Async validators
+must be awaited or returned from the hook so proxying waits for the decision:
+
+```ts
+nitro.hooks.hook('odx:proxy:request', async (ctx) => {
+  await odataGuard(ctx).validate('tenant-check', async () => {
+    return await canAccessTenant(ctx.event)
+  })
+})
+```
+
+Calling an async validator without awaiting or returning the promise starts the
+check but does not block the proxy request.
+
 ## Nitro Hooks
 
 Proxy hooks are available through Nitro runtime hooks:
