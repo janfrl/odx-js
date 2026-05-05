@@ -1,7 +1,7 @@
 # Task: Add docs package README verification notes
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -81,15 +81,29 @@ content, or package behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `docs/README.md`
+- summary:
+  - Added a concise docs package README describing the docs workspace purpose,
+    package-local verification command, no-dev-server expectation, and Windows
+    `pnpm.cmd` launcher note.
+- tests run:
+  - `pnpm.cmd --filter docs run verify` - passed.
+  - `git diff --check` - passed.
+- skipped checks and residual risk:
+  - `pnpm.cmd run lint` skipped because this is README-only documentation and
+    task-local verification passed. Residual risk is low.
+- self-check result:
+  - Scope is documentation-only. No docs scripts, generated docs content,
+    dependencies, navigation, or site behavior changed.
+- review requirement decision:
+  - Separate review is not required because this is documentation-only package
+    clarity work.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - No change while high-risk task 032 review remains the active workflow gate.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - none.
