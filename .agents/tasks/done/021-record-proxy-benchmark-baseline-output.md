@@ -1,7 +1,7 @@
 # Task: Record proxy benchmark baseline output
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if production proxy behavior changes
@@ -82,15 +82,42 @@ runtime logging, or package scripts used by normal tests change materially.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/proxy/test/performance.test.ts`
+  - `packages/proxy/README.md`
+- summary:
+  - Added optional JSON benchmark output controlled by
+    `ODX_PROXY_BENCHMARK_OUTPUT`.
+  - Kept the existing console report unchanged for normal `bench:proxy` runs.
+  - JSON output includes run metadata plus all ten reported benchmark scenarios
+    with label, category, path, iterations, concurrency, timing summary, and
+    overhead where applicable.
+  - Documented `reports/proxy-benchmark.json` as a gitignored example output
+    path.
+- tests run:
+  - PASS:
+    `ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark.json pnpm.cmd run bench:proxy`.
+  - PASS: `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
+    confirmed the benchmark remains skipped by default.
+  - PASS: `pnpm.cmd run typecheck`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - No task-local checks were skipped.
+  - Benchmark numbers are machine-local and not treated as budgets.
+- self-check result:
+  - Scope stayed limited to benchmark output and package README documentation.
+  - No production proxy runtime code, logging semantics, package scripts, or
+    dependencies changed.
+- review requirement decision:
+  - Separate review is not required because production proxy behavior and
+    normal test behavior were unchanged.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Left pointing at task 019, which was already in progress.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None.

@@ -24,7 +24,8 @@ header forwarding through `@bc8-odx/proxy`.
 `pnpm.cmd run bench:proxy` runs the proxy performance benchmark. It verifies
 buffer and stream proxy responses match the fixture backend, then reports
 direct, proxied, concurrent, and DevTools logging timing baselines. Use
-`pnpm.cmd` on Windows PowerShell in this repository when `.ps1` launchers are
-blocked.
+`ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark.json` to also write a JSON
+summary; `reports/` is ignored by git. Use `pnpm.cmd` on Windows PowerShell in
+this repository when `.ps1` launchers are blocked.
 
 **For full documentation, server-side configuration, and security guides, please visit: [odx-js.io/packages/proxy](https://odx-js.io/packages/proxy)**

@@ -1,6 +1,8 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
 import type { Server } from 'node:http'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
+import { dirname } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { clearODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
@@ -23,10 +25,28 @@ interface MeasurementSummary {
   overheadAvgMs?: number
 }
 
+interface BenchmarkOutput {
+  name: string
+  createdAt: string
+  metadata: {
+    node: string
+    platform: string
+    arch: string
+    iterations: number
+    warmupIterations: number
+    defaultConcurrency: number
+    lifecycleEvent?: string
+  }
+  scenarios: Array<MeasurementSummary & {
+    category: string
+  }>
+}
+
 const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || process.env.ODX_PROXY_BENCHMARK === '1'
 const benchmarkIterations = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_ITERATIONS || '50', 10)
 const warmupIterations = 10
 const concurrentRequests = Number.parseInt(process.env.ODX_PROXY_BENCHMARK_CONCURRENCY || '5', 10)
+const benchmarkOutputPath = process.env.ODX_PROXY_BENCHMARK_OUTPUT
 const describeBenchmark = shouldRunBenchmark ? describe : describe.skip
 
 async function listen(app: ReturnType<typeof createBackend>): Promise<{ server: Server, url: string }> {
@@ -169,6 +189,36 @@ function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
   ].join('\n')
 }
 
+async function writeBenchmarkOutput(summaries: MeasurementSummary[]): Promise<void> {
+  if (!benchmarkOutputPath)
+    return
+
+  const output: BenchmarkOutput = {
+    name: 'ODX proxy performance baseline',
+    createdAt: new Date().toISOString(),
+    metadata: {
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      iterations: benchmarkIterations,
+      warmupIterations,
+      defaultConcurrency: concurrentRequests,
+      lifecycleEvent: process.env.npm_lifecycle_event,
+    },
+    scenarios: summaries.map(summary => ({
+      ...summary,
+      category: summary.path.includes('LargeProducts')
+        ? 'large'
+        : summary.label.includes('devtools')
+          ? 'devtools'
+          : 'small',
+    })),
+  }
+
+  await mkdir(dirname(benchmarkOutputPath), { recursive: true })
+  await writeFile(benchmarkOutputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8')
+}
+
 function formatMs(value: number): string {
   return `${value.toFixed(2)}ms`
 }
@@ -305,5 +355,6 @@ describeBenchmark('proxy performance baseline', () => {
     devtoolsBuffered.overheadAvgMs = devtoolsBuffered.avgMs - smallBuffered.avgMs
 
     process.stdout.write(formatBenchmarkReport(summaries))
+    await writeBenchmarkOutput(summaries)
   }, 120000)
 })
