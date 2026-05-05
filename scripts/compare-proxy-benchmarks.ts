@@ -1,22 +1,31 @@
 import { readFile } from 'node:fs/promises'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 
-interface BenchmarkScenario {
+export interface BenchmarkScenario {
   label: string
   avgMs: number
   path?: string
 }
 
-interface BenchmarkReport {
+export interface BenchmarkReport {
   name?: string
   scenarios?: BenchmarkScenario[]
 }
 
-function usage(): string {
+export function usage(): string {
   return 'Usage: pnpm.cmd run bench:proxy:compare -- <baseline.json> <candidate.json>'
 }
 
-async function readReport(path: string, role: string): Promise<BenchmarkReport> {
+export function parseBenchmarkReport(raw: string, role: string): BenchmarkReport {
+  const report = JSON.parse(raw) as BenchmarkReport
+  if (!Array.isArray(report.scenarios)) {
+    throw new TypeError(`${role} report is missing scenarios array`)
+  }
+  return report
+}
+
+export async function readReport(path: string, role: string): Promise<BenchmarkReport> {
   let raw: string
   try {
     raw = await readFile(path, 'utf8')
@@ -26,11 +35,7 @@ async function readReport(path: string, role: string): Promise<BenchmarkReport> 
   }
 
   try {
-    const report = JSON.parse(raw) as BenchmarkReport
-    if (!Array.isArray(report.scenarios)) {
-      throw new TypeError('missing scenarios array')
-    }
-    return report
+    return parseBenchmarkReport(raw, role)
   }
   catch (error: any) {
     throw new Error(`Invalid ${role} report at ${path}: ${error.message}`)
@@ -59,7 +64,7 @@ function formatPercent(value: number): string {
   return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 }
 
-function printComparison(baseline: BenchmarkReport, candidate: BenchmarkReport): void {
+export function formatComparison(baseline: BenchmarkReport, candidate: BenchmarkReport): string {
   const baselineScenarios = scenarioMap(baseline, 'baseline')
   const candidateScenarios = scenarioMap(candidate, 'candidate')
 
@@ -87,7 +92,7 @@ function printComparison(baseline: BenchmarkReport, candidate: BenchmarkReport):
     ].join('  ')
   })
 
-  process.stdout.write([
+  return [
     '',
     'ODX proxy benchmark comparison',
     [
@@ -100,22 +105,28 @@ function printComparison(baseline: BenchmarkReport, candidate: BenchmarkReport):
     ].join('  '),
     ...rows,
     '',
-  ].join('\n'))
+  ].join('\n')
 }
 
-const [baselinePath, candidatePath] = process.argv.slice(2).filter(arg => arg !== '--')
-if (!baselinePath || !candidatePath) {
-  console.error(usage())
-  process.exitCode = 1
-}
-else {
+export async function runCli(args: string[] = process.argv.slice(2)): Promise<number> {
+  const [baselinePath, candidatePath] = args.filter(arg => arg !== '--')
+  if (!baselinePath || !candidatePath) {
+    console.error(usage())
+    return 1
+  }
+
   try {
     const baseline = await readReport(baselinePath, 'baseline')
     const candidate = await readReport(candidatePath, 'candidate')
-    printComparison(baseline, candidate)
+    process.stdout.write(formatComparison(baseline, candidate))
+    return 0
   }
   catch (error: any) {
     console.error(error.message)
-    process.exitCode = 1
+    return 1
   }
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
+  process.exitCode = await runCli()
 }

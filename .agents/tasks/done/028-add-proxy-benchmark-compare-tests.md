@@ -1,7 +1,7 @@
 # Task: Add proxy benchmark compare tests
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -83,15 +83,35 @@ runtime code, benchmark semantics, or dependency wiring.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `scripts/compare-proxy-benchmarks.ts`
+  - `packages/proxy/test/benchmark-compare.test.ts`
+- summary:
+  - Extracted testable benchmark report parsing and comparison helpers while
+    preserving the existing CLI command and output shape.
+  - Added focused proxy-package tests for valid deltas, missing candidate
+    scenarios, malformed reports, and non-finite `avgMs` values.
+- tests run:
+  - `pnpm.cmd exec vitest run test` - passed, 17 files and 120 tests passed,
+    1 file and 1 test skipped by existing suite behavior.
+  - `pnpm.cmd run bench:proxy:compare -- reports/does-not-exist.json reports/does-not-exist.json`
+    - exited non-zero as expected with `Could not read baseline report at
+    reports/does-not-exist.json: ENOENT...`.
+  - `pnpm.cmd run lint` - passed.
+  - `pnpm.cmd run typecheck` - passed.
+- skipped checks and residual risk:
+  - none.
+- self-check result:
+  - Scope is limited to local benchmark comparison tooling and tests. No
+    generated benchmark reports are committed.
+- review requirement decision:
+  - Separate review is not required because no production runtime behavior,
+    benchmark scenario definitions, or dependency wiring changed.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Point to `.agents/tasks/ready/029-add-docs-package-verify-script.md`.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - none.

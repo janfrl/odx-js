@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Implement the lowest-numbered ready task:
-`.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`.
+`.agents/tasks/ready/029-add-docs-package-verify-script.md`.
 
 ## Prompt For Next Chat
 
@@ -26,21 +26,23 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md
-- scripts/compare-proxy-benchmarks.ts
-- package.json
+- .agents/tasks/ready/029-add-docs-package-verify-script.md
+- docs/package.json
+- README.md
+- scripts/extract-api-docs.ts
+- docs/scripts/extract-metadata.ts
 
 Rules:
-- Implement exactly `.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`.
-- Keep changes scoped to automated tests for the benchmark compare helper.
-- Do not change production proxy runtime behavior, benchmark scenario definitions, dependencies, or normal test behavior.
-- Prefer extracting pure helper functions if needed to make the comparison logic testable.
+- Implement exactly `.agents/tasks/ready/029-add-docs-package-verify-script.md`.
+- Keep changes scoped to docs package verification and root documentation for the command.
+- Do not redesign docs content, start a dev server, add dependencies, or require browser verification.
+- Prefer existing metadata/API extraction checks and existing tests.
 - Run the verification steps listed in the task, or explain skipped checks and residual risk.
 - Update the task handoff notes before finishing.
 - Move the task to `.agents/tasks/done/` when implementation and verification are complete.
 - Update `.agents/NEXT.md` with the next concrete workflow action.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
-- Separate review is not required unless benchmark semantics, production proxy behavior, or dependency wiring changes.
+- Separate review is not required unless generated public docs content changes in a way that affects user-facing API documentation.
 
 When done, summarize:
 - changed files
