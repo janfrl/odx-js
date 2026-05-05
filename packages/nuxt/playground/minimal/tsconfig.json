@@ -1,0 +1,14 @@
+{
+  "extends": "./.nuxt/tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noUncheckedIndexedAccess": false
+  },
+  "include": [
+    ".nuxt/nuxt.d.ts",
+    ".nuxt/odx-types/index.d.ts",
+    ".nuxt/odx-types/**/*.ts",
+    "app.vue",
+    "nuxt.config.ts"
+  ]
+}

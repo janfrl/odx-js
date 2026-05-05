@@ -9,6 +9,7 @@
   "main": "./src/module.ts",
   "scripts": {
     "dev": "nuxi dev test/fixtures/isolated",
+    "playground:check": "nuxi prepare playground/minimal && node playground/minimal/verify.mjs",
     "prepare": "nuxt-module-build prepare && nuxi prepare test/fixtures/isolated",
     "test": "vitest run"
   },
