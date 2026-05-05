@@ -3,7 +3,7 @@ const siteUrl = 'https://odx.nuxt.com'
 export default defineNuxtConfig({
   extends: ['docus'],
   css: ['~/assets/css/main.css'],
-  modules: ['./modules/disabled-docus-assistant', '@bc8-odx/nuxt', '@nuxtjs/i18n'],
+  modules: ['@bc8-odx/nuxt', '@nuxtjs/i18n'],
   i18n: {
     defaultLocale: 'en',
     locales: [
@@ -54,7 +54,6 @@ export default defineNuxtConfig({
   llms: {
     domain: siteUrl,
   },
-  assistant: false,
   odata: {
     devtools: {
       enabled: false,
