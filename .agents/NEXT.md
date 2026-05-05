@@ -12,47 +12,50 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Review completed task `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`.
+Implement ready task `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-- `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`
+Implement exactly:
+- `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- API.md
-- docs/content/en/3.proxy/4.reference.md
-- packages/proxy/src/api/odata.ts
-- packages/proxy/test/integration.test.ts
-- the changed files and diff
+- `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`
+- `.agents/tasks/done/054-validate-benchmark-concurrency-env.md`
+- `packages/proxy/test/performance.test.ts`
+- `packages/proxy/README.md`
 
-Review stance:
-- Findings first.
-- Prioritize correctness, architecture boundaries, security/privacy, public proxy hook contracts, missing tests, and acceptance criteria gaps.
-- Confirm buffered responses call and await both generic and service-specific response hooks.
-- Confirm stream proxy behavior, direct-strategy hook bypass, request hooks, status forwarding, DevTools logging, and error forwarding were preserved.
-- Check that docs accurately describe buffered response-hook behavior without broadening the stream contract.
+Rules:
+- Keep changes scoped to benchmark iteration and round env validation.
+- Do not change production proxy runtime code, benchmark scenario semantics, report JSON shape, dependencies, lockfiles, CI gates, or performance budgets.
+- Add focused tests that fail before implementation for invalid `ODX_PROXY_BENCHMARK_ITERATIONS` and `ODX_PROXY_BENCHMARK_ROUNDS` values.
+- Preserve absent-env defaults and valid positive integer overrides.
+- Update the proxy README only if accepted env value rules need to be discoverable.
+- Move the task to `.agents/tasks/done/` only after implementation and verification.
+- Update `.agents/NEXT.md` with the next workflow action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
-Verification to consider:
-- `pnpm.cmd --filter @bc8-odx/proxy exec vitest run test/integration.test.ts`
+Verification:
+- `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
 - `pnpm.cmd --filter @bc8-odx/proxy run verify`
-- `pnpm.cmd run typecheck`
 - `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck` if the change scope warrants it
 
 Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether the task is approved or needs changes
-
-Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md`.
-Update `.agents/NEXT.md` and commit the review note and workflow state changes.
-Include the exact next-chat prompt the operator should paste into a new chat.
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from `.agents/NEXT.md`
 ```
