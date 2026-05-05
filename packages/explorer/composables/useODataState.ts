@@ -241,10 +241,17 @@ export function useSharedODataState(): SharedODataState {
       const res = await fetch('/__odx__/logs')
       if (res.ok) {
         logs.value = await res.json()
+        reconcileSelectedTraceLog()
       }
     }
     catch (e) {
       console.error('[ODataState] Failed to refresh logs', e)
+    }
+  }
+
+  function reconcileSelectedTraceLog(): void {
+    if (selectedTraceLogId.value && !logs.value.some(log => log.id === selectedTraceLogId.value)) {
+      selectedTraceLogId.value = null
     }
   }
 
@@ -363,6 +370,7 @@ export function useSharedODataState(): SharedODataState {
     try {
       await fetch('/__odx__/logs', { method: 'DELETE' })
       logs.value = []
+      selectedTraceLogId.value = null
     }
     catch (e) {
       console.error('[ODataState] Failed to clear logs', e)

@@ -1,7 +1,7 @@
 # Task: Harden Explorer proxy trace selection state
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if proxy logging or `/__odx__/logs` contracts change
@@ -88,15 +88,40 @@ display, or broad UI behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/explorer/test/state.test.ts`
+  - `packages/explorer/composables/useODataState.ts`
+- summary:
+  - Added state-level tests proving selected proxy trace behavior across log
+    refresh and clear flows.
+  - Confirmed selected trace is preserved when the refreshed logs still contain
+    the selected log.
+  - Fixed stale selected trace state when refreshed logs no longer contain the
+    selected log or when logs are cleared.
+- tests run:
+  - Before fix: `pnpm.cmd --filter @bc8-odx/explorer exec vitest run test/state.test.ts -t "selected proxy trace"`
+    failed for stale selected trace after refresh and clear.
+  - After fix: same targeted command passed, 4 selected-trace tests passed.
+  - `pnpm.cmd --filter @bc8-odx/explorer run verify` - passed, 21 tests.
+  - `pnpm.cmd run test -- packages/explorer` - passed, 17 files / 130 tests,
+    1 skipped by existing suite behavior.
+  - `pnpm.cmd run typecheck` - passed.
+- skipped checks and residual risk:
+  - `pnpm.cmd run lint` skipped; changes are small TypeScript test/composable
+    edits, typecheck and focused verification passed. Residual risk is low.
+- self-check result:
+  - Scope stayed client-side in Explorer state. No proxy logging payload,
+    `/__odx__/logs` endpoint contract, sensitive data display, or broad UI
+    behavior changed.
+- review requirement decision:
+  - Separate review is not required because proxy logging contracts and
+    internal endpoints were not changed.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - No change; it should remain pointed at the lower-numbered ready task
+    `.agents/tasks/ready/032-validate-btp-destination-url.md`.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - none.

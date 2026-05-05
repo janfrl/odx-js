@@ -308,6 +308,76 @@ describe('explorer State Composable', () => {
     expect(logs.value[0]?.proxyTrace).toHaveLength(1)
   })
 
+  it('preserves selected proxy trace when refreshed logs still contain it', async () => {
+    const refreshedLogs = [
+      {
+        id: 'trace-1',
+        method: 'GET',
+        url: '/api/odx/S/Products',
+        service: 'S',
+        proxyTrace: [{ label: 'Proxy', duration: 1 }],
+      },
+      {
+        id: 'trace-2',
+        method: 'GET',
+        url: '/api/odx/S/Orders',
+        service: 'S',
+        proxyTrace: [{ label: 'Proxy', duration: 2 }],
+      },
+    ] as any[]
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => refreshedLogs,
+    })
+    const { refreshLogs, selectedTraceLogId } = useSharedODataState()
+    selectedTraceLogId.value = 'trace-1'
+
+    await refreshLogs()
+
+    expect(selectedTraceLogId.value).toBe('trace-1')
+  })
+
+  it('clears selected proxy trace when refreshed logs no longer contain it', async () => {
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          id: 'trace-2',
+          method: 'GET',
+          url: '/api/odx/S/Orders',
+          service: 'S',
+          proxyTrace: [{ label: 'Proxy', duration: 2 }],
+        },
+      ],
+    })
+    const { refreshLogs, selectedTraceLogId } = useSharedODataState()
+    selectedTraceLogId.value = 'trace-1'
+
+    await refreshLogs()
+
+    expect(selectedTraceLogId.value).toBeNull()
+  })
+
+  it('clears selected proxy trace when traffic logs are cleared', async () => {
+    ;(globalThis.fetch as any).mockResolvedValue({ ok: true })
+    const { clearLogs, logs, selectedTraceLogId } = useSharedODataState()
+    logs.value = [
+      {
+        id: 'trace-1',
+        method: 'GET',
+        url: '/api/odx/S/Products',
+        service: 'S',
+        proxyTrace: [{ label: 'Proxy', duration: 1 }],
+      },
+    ] as any[]
+    selectedTraceLogId.value = 'trace-1'
+
+    await clearLogs()
+
+    expect(logs.value).toEqual([])
+    expect(selectedTraceLogId.value).toBeNull()
+  })
+
   it('keeps degraded service health until a forced online update', () => {
     const { config, services, updateServiceHealth } = useSharedODataState()
     config.value = {
