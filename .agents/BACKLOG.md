@@ -19,20 +19,20 @@ implementation phases.
 
 ## Next
 
-- Add local proxy performance benchmarks before optimizing.
-- Design package-isolation playgrounds or examples so individual packages can
-  be verified independently.
+- Fix or bound the Nuxt e2e startup failure on Node 24.
 - Expand Explorer tests carefully without changing the UI unless a test proves
   a bug.
+- Broaden proxy performance benchmarks before optimizing.
+- Add local BTP destination edge-case tests.
 - Review high-risk proxy and process-execution changes independently.
 - Batch a full checkpoint after the ready task queue is complete.
 
 ## Later
 
-- Add broader integration coverage for BTP destination edge cases.
 - Revisit production TLS defaults as a documented security decision.
 - Consider performance optimizations only after baseline measurements exist.
-- Implement selected package playgrounds/examples from the isolation design.
+- Document or surface the new standalone package verification commands in
+  durable user-facing docs after the example shape settles.
 
 ## Questions
 

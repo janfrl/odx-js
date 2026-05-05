@@ -1,7 +1,7 @@
 # Task: Fix Nuxt e2e startup on Node 24
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Erdos + Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if Nuxt module runtime contracts change
@@ -56,12 +56,12 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] The failing Nuxt e2e startup is reproduced with a narrow command.
-- [ ] Root cause is documented in handoff notes.
-- [ ] Either the Nuxt e2e tests pass again or a bounded blocker/follow-up is
+- [x] The failing Nuxt e2e startup is reproduced with a narrow command.
+- [x] Root cause is documented in handoff notes.
+- [x] Either the Nuxt e2e tests pass again or a bounded blocker/follow-up is
       documented.
-- [ ] Existing focused Nuxt unit tests still pass.
-- [ ] `pnpm.cmd run typecheck` still passes.
+- [x] Existing focused Nuxt unit tests still pass.
+- [x] `pnpm.cmd run typecheck` still passes.
 
 ## Verification
 
@@ -91,4 +91,31 @@ runtime contracts or production middleware behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer.
+- Reproduced on Node 24.13.1 with:
+  - `pnpm.cmd exec vitest run packages/nuxt/test/isolated.test.ts`
+  - `pnpm.cmd exec vitest run packages/nuxt/test/module.test.ts`
+- Root cause: Nitro 2.13.2 emits `createRequire("file:///_entry.js")`
+  for non-entry server chunks. Node 24 rejects that placeholder because it is
+  not a file URL object, file URL string, or absolute path. `@nuxt/test-utils`
+  then waits for the generated server port until timeout.
+- Fix: added a test-local `nuxtConfig.nitro` override in both Nuxt e2e setup
+  calls with `inlineDynamicImports: true` and `preset: "node-server"`. This
+  keeps the generated test server in a single Node entry bundle and avoids the
+  invalid placeholder without changing production module behavior or deleting
+  e2e coverage.
+- Verification passed:
+  - `pnpm.cmd exec vitest run packages/nuxt/test/isolated.test.ts`
+  - `pnpm.cmd exec vitest run packages/nuxt/test/module.test.ts`
+  - `pnpm.cmd exec vitest run packages/nuxt/test/composables.test.ts packages/nuxt/test/generate.test.ts`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run typecheck`
+- Notes:
+  - The e2e runs still print upstream Vue/Nuxt `DEP0155` deprecation warnings
+    about trailing slash exports mappings on Node 24; they do not fail the
+    tests.
+  - Separate review is optional under `.agents/WORKFLOW.md` because the change
+    is test-only and does not alter Nuxt module runtime contracts.
+  - No commit was created because the operator explicitly instructed that the
+    orchestrator will commit.
+  - Orchestrator re-ran the focused e2e/unit checks plus lint/typecheck before
+    moving the task to done.

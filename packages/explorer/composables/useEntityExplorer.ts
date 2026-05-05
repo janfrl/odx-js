@@ -58,8 +58,6 @@ export function useEntityExplorer(): EntityExplorer {
     entityDataCache,
   } = useSharedODataState()
 
-  const toast = useToast()
-
   let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
   // Watch queryState and generate queryInput string
@@ -415,6 +413,7 @@ export function useEntityExplorer(): EntityExplorer {
       const route = selectedService.value.route || selectedService.value.name.toLowerCase()
       const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
       if (res.ok) {
+        const toast = useToast()
         toast.add({
           title: `Item ${id} deleted successfully`,
           icon: 'i-lucide-circle-check',
@@ -424,6 +423,7 @@ export function useEntityExplorer(): EntityExplorer {
       }
     }
     catch (e: unknown) {
+      const toast = useToast()
       toast.add({
         title: (e as Error).message,
         icon: 'i-lucide-circle-x',
@@ -444,6 +444,7 @@ export function useEntityExplorer(): EntityExplorer {
 
     try {
       await clearEntityMockData(selectedService.value.name, selectedEntity.value)
+      const toast = useToast()
       toast.add({
         title: `All mock data for ${selectedEntity.value} cleared`,
         icon: 'i-lucide-trash-2',
@@ -452,6 +453,7 @@ export function useEntityExplorer(): EntityExplorer {
       await refreshEntityData()
     }
     catch (e: unknown) {
+      const toast = useToast()
       toast.add({
         title: (e as Error).message,
         icon: 'i-lucide-circle-x',

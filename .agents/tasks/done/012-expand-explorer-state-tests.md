@@ -1,7 +1,7 @@
 # Task: Expand Explorer state tests
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Turing + Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if UI behavior changes
@@ -38,9 +38,9 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] Explorer state/composable coverage increases.
-- [ ] No UI files change unless a test proves a bug.
-- [ ] Existing Explorer tests pass.
+- [x] Explorer state/composable coverage increases.
+- [x] No UI files change unless a test proves a bug.
+- [x] Existing Explorer tests pass.
 
 ## Verification
 
@@ -56,4 +56,10 @@ UI behavior or visual structure changes.
 
 ## Handoff Notes
 
-To be completed by the implementer.
+- Added focused Explorer state/composable tests in `packages/explorer/test/state.test.ts`.
+- Covered service health mapping, visual query serialization/reset, proxied entity data fetch caching, and cached entity preview restoration.
+- Made `useEntityExplorer` resolve Nuxt UI toast lazily in toast-producing actions so pure state/query paths can be instantiated in composable tests without a Nuxt app instance.
+- Verified with `pnpm.cmd --filter @bc8-odx/explorer exec vitest run`, `pnpm.cmd run test -- packages/explorer`, `pnpm.cmd run lint`, and `pnpm.cmd run typecheck`.
+- No UI files changed; separate review remains optional under the task policy.
+- Commit hash:
+  - To be filled after commit.

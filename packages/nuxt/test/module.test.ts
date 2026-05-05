@@ -5,6 +5,13 @@ import { describe, expect, it } from 'vitest'
 describe('nuxt ODX Module Integration', async () => {
   await setup({
     rootDir: fileURLToPath(new URL('../../../test/fixtures/basic', import.meta.url)),
+    nuxtConfig: {
+      // Node 24 rejects Nitro's file:///_entry.js placeholder in split chunks.
+      nitro: {
+        inlineDynamicImports: true,
+        preset: 'node-server',
+      },
+    } as any,
   })
 
   it('proxies basic GET requests correctly to the destination', async () => {

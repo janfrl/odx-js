@@ -39,6 +39,8 @@ Candidate tasks:
 - `.agents/tasks/ready/002-audit-devtools-log-data-exposure.md`
 - `.agents/tasks/ready/003-await-async-rule-validation.md`
 - `.agents/tasks/ready/007-add-proxy-performance-benchmarks.md`
+- `.agents/tasks/ready/014-expand-proxy-performance-scenarios.md`
+- `.agents/tasks/ready/015-expand-btp-destination-edge-tests.md`
 
 Exit criteria:
 
@@ -103,6 +105,7 @@ Candidate tasks:
 
 - `.agents/tasks/ready/008-design-package-isolation-playgrounds.md`
 - `.agents/tasks/ready/009-expand-explorer-tests.md`
+- `.agents/tasks/ready/012-expand-explorer-state-tests.md`
 
 Exit criteria:
 

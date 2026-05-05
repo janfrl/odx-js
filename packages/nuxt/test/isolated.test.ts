@@ -7,6 +7,13 @@ describe('isolated production e2e', async () => {
     rootDir: fileURLToPath(new URL('./fixtures/isolated', import.meta.url)),
     build: true,
     server: true,
+    nuxtConfig: {
+      // Node 24 rejects Nitro's file:///_entry.js placeholder in split chunks.
+      nitro: {
+        inlineDynamicImports: true,
+        preset: 'node-server',
+      },
+    } as any,
   })
 
   it('renders data from direct odata fetch in production build', async () => {

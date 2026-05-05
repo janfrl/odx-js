@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
+import { useEntityExplorer } from '../composables/useEntityExplorer'
 import { useSharedODataState } from '../composables/useODataState'
 
 // Mock global fetch
@@ -13,10 +15,25 @@ describe('explorer State Composable', () => {
       config,
       logFilterService,
       logs,
+      previewData,
+      previewError,
+      previewLoading,
+      queryInput,
+      queryMethod,
+      queryState,
       selectedEntity,
       selectedService,
       selectedTraceLogId,
+      sessionHeaders,
+      useCORSBridge,
+      entityDataCache,
+      entitySchema,
+      entitySchemaLoading,
+      updateServiceHealth,
     } = useSharedODataState()
+    vi.stubGlobal('useSharedODataState', useSharedODataState)
+    vi.stubGlobal('useToast', () => ({ add: vi.fn() }))
+    ;['Northwind', 'SAP'].forEach(name => updateServiceHealth(name, 'checking', true))
     activeTab.value = 'overview'
     config.value = { basePath: '/__odx__', services: [] }
     logFilterService.value = null
@@ -24,6 +41,28 @@ describe('explorer State Composable', () => {
     selectedService.value = null
     selectedEntity.value = null
     selectedTraceLogId.value = null
+    previewLoading.value = false
+    previewError.value = null
+    previewData.value = null
+    queryInput.value = '?'
+    queryMethod.value = 'GET'
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    }
+    entitySchema.value = null
+    entitySchemaLoading.value = false
+    entityDataCache.value = {}
+    sessionHeaders.value = {}
+    useCORSBridge.value = true
   })
 
   it('fetches config correctly', async () => {
@@ -102,5 +141,181 @@ describe('explorer State Composable', () => {
     updateServiceHealth('Northwind', 'online', true)
 
     expect(services.value[0]?.health).toBe('online')
+  })
+
+  it('maps configured services with default and overridden health states', () => {
+    const { config, services, updateServiceHealth } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        { name: 'Northwind', route: 'northwind' },
+        { name: 'SAP', route: 'sap', health: 'online' },
+      ],
+    }
+
+    expect(services.value.map(s => [s.name, s.health])).toEqual([
+      ['Northwind', 'checking'],
+      ['SAP', 'checking'],
+    ])
+
+    updateServiceHealth('Northwind', 'offline')
+    updateServiceHealth('SAP', 'online')
+
+    expect(services.value.map(s => [s.name, s.health])).toEqual([
+      ['Northwind', 'offline'],
+      ['SAP', 'online'],
+    ])
+  })
+
+  it('serializes visual query state into an OData query string', async () => {
+    const { queryInput, queryState } = useEntityExplorer()
+
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [
+          { type: 'rule', field: 'Name', operator: 'contains', value: 'Tea' },
+          { type: 'rule', field: 'Price', operator: 'gt', value: 10 },
+        ],
+      },
+      select: ['ID', 'Name'],
+      expand: ['Category'],
+      sortBy: [{ field: 'Name', direction: 'asc' }],
+      top: 5,
+      skip: 10,
+    }
+    await nextTick()
+
+    expect(queryInput.value).toBe('?$select=ID,Name&$expand=Category&$filter=contains(Name,\'Tea\') and Price gt 10&$orderby=Name asc&$top=5&$skip=10')
+  })
+
+  it('resets visual query state back to the entity browser default', async () => {
+    const { queryInput, queryState, resetQuery } = useEntityExplorer()
+    queryState.value = {
+      filters: {
+        type: 'group',
+        logic: 'or',
+        items: [{ type: 'rule', field: 'Name', operator: 'eq', value: 'Tea' }],
+      },
+      select: ['ID'],
+      expand: ['Category'],
+      sortBy: [{ field: 'Name', direction: 'desc' }],
+      top: 1,
+      skip: 2,
+    }
+    await nextTick()
+
+    resetQuery()
+
+    expect(queryInput.value).toBe('?')
+    expect(queryState.value).toEqual({
+      filters: {
+        type: 'group',
+        logic: 'and',
+        items: [],
+      },
+      select: [],
+      expand: [],
+      sortBy: [],
+      top: null,
+      skip: null,
+    })
+  })
+
+  it('fetches entity data through the proxied route and caches the query state', async () => {
+    const { config, entityDataCache, queryInput, queryState, selectedEntity, selectedService, sessionHeaders } = useSharedODataState()
+    config.value = { basePath: '/api/odx', services: [] }
+    ;(globalThis.fetch as any).mockImplementation(async (url: string) => {
+      if (url === '/__odx__/schema?service=Northwind') {
+        return {
+          ok: true,
+          json: async () => ({ entities: [] }),
+        }
+      }
+      return {
+        ok: true,
+        text: async () => JSON.stringify({ value: [{ ID: 1, Name: 'Tea' }] }),
+      }
+    })
+    selectedService.value = {
+      name: 'Northwind',
+      route: 'northwind',
+      strategy: 'proxied',
+    } as any
+    selectedEntity.value = 'Products'
+    await nextTick()
+    queryInput.value = '?$top=1'
+    queryState.value = {
+      filters: { type: 'group', logic: 'and', items: [] },
+      select: ['ID'],
+      expand: [],
+      sortBy: [],
+      top: 1,
+      skip: null,
+    }
+    await nextTick()
+    sessionHeaders.value = { 'x-session': 'abc' }
+
+    const { previewData, refreshEntityData } = useEntityExplorer()
+    await refreshEntityData()
+
+    expect(globalThis.fetch).toHaveBeenCalledWith('/api/odx/northwind/Products?$select=ID&$top=1', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'x-session': 'abc',
+      },
+    })
+    expect(previewData.value).toEqual([{ ID: 1, Name: 'Tea' }])
+    expect(entityDataCache.value['Northwind:Products']).toEqual({
+      data: [{ ID: 1, Name: 'Tea' }],
+      error: null,
+      query: '?$select=ID&$top=1',
+      method: 'GET',
+      queryState: {
+        filters: { type: 'group', logic: 'and', items: [] },
+        select: ['ID'],
+        expand: [],
+        sortBy: [],
+        top: 1,
+        skip: null,
+      },
+    })
+  })
+
+  it('restores cached entity preview state when reselecting an entity', async () => {
+    const { entityDataCache, previewData, previewError, queryInput, queryMethod, queryState, selectedEntity, selectedService } = useSharedODataState()
+    selectedService.value = { name: 'Northwind', route: 'northwind' } as any
+    entityDataCache.value['Northwind:Products'] = {
+      data: [{ ID: 1, Name: 'Tea' }],
+      error: null,
+      query: '?$select=ID',
+      method: 'GET',
+      queryState: {
+        filters: { type: 'group', logic: 'and', items: [] },
+        select: ['ID'],
+        expand: [],
+        sortBy: [],
+        top: null,
+        skip: null,
+      },
+    }
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ entities: [] }),
+    })
+
+    selectedEntity.value = 'Products'
+    await nextTick()
+    await nextTick()
+
+    expect(previewData.value).toEqual([{ ID: 1, Name: 'Tea' }])
+    expect(previewError.value).toBeNull()
+    expect(queryInput.value).toBe('?$select=ID')
+    expect(queryMethod.value).toBe('GET')
+    expect(queryState.value.select).toEqual(['ID'])
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/schema?service=Northwind')
   })
 })
