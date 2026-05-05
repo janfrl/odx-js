@@ -419,6 +419,92 @@ describe('explorer State Composable', () => {
     ])
   })
 
+  it('preserves selected entity when refreshed config still contains it', async () => {
+    const { config, selectedEntity, selectedService } = useSharedODataState()
+    selectedService.value = {
+      name: 'Northwind',
+      route: 'northwind',
+      entities: [{ name: 'Product', entitySet: 'Products' }],
+    } as any
+    selectedEntity.value = 'Products'
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'Northwind',
+          route: 'northwind',
+          entities: [
+            { name: 'Product', entitySet: 'Products' },
+            { name: 'Order', entitySet: 'Orders' },
+          ],
+        },
+      ],
+    }
+    await nextTick()
+
+    expect(selectedService.value?.name).toBe('Northwind')
+    expect(selectedEntity.value).toBe('Products')
+  })
+
+  it('clears stale selected entity when refreshed config no longer contains it', async () => {
+    const { config, previewData, queryInput, queryMethod, selectedEntity, selectedService } = useSharedODataState()
+    selectedService.value = {
+      name: 'Northwind',
+      route: 'northwind',
+      entities: [{ name: 'Product', entitySet: 'Products' }],
+    } as any
+    selectedEntity.value = 'Products'
+    previewData.value = [{ ID: 1 }]
+    queryInput.value = '?$top=1'
+    queryMethod.value = 'POST'
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'Northwind',
+          route: 'northwind',
+          entities: [{ name: 'Order', entitySet: 'Orders' }],
+        },
+      ],
+    }
+    await nextTick()
+
+    expect(selectedService.value?.name).toBe('Northwind')
+    expect(selectedEntity.value).toBeNull()
+    expect(previewData.value).toBeNull()
+    expect(queryInput.value).toBe('?')
+    expect(queryMethod.value).toBe('GET')
+  })
+
+  it('clears selected service and entity when refreshed config removes the service', async () => {
+    const { config, previewData, selectedEntity, selectedService } = useSharedODataState()
+    selectedService.value = {
+      name: 'Northwind',
+      route: 'northwind',
+      entities: [{ name: 'Product', entitySet: 'Products' }],
+    } as any
+    selectedEntity.value = 'Products'
+    previewData.value = [{ ID: 1 }]
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'SAP',
+          route: 'sap',
+          entities: [{ name: 'BusinessPartner', entitySet: 'BusinessPartners' }],
+        },
+      ],
+    }
+    await nextTick()
+
+    expect(selectedService.value).toBeNull()
+    expect(selectedEntity.value).toBeNull()
+    expect(previewData.value).toBeNull()
+  })
+
   it('serializes visual query state into an OData query string', async () => {
     const { queryInput, queryState } = useEntityExplorer()
 
@@ -588,7 +674,17 @@ describe('explorer State Composable', () => {
 
   it('fetches entity data through the proxied route and caches the query state', async () => {
     const { config, entityDataCache, queryInput, queryState, selectedEntity, selectedService, sessionHeaders } = useSharedODataState()
-    config.value = { basePath: '/api/odx', services: [] }
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'Northwind',
+          route: 'northwind',
+          strategy: 'proxied',
+          entities: [{ name: 'Product', entitySet: 'Products' }],
+        },
+      ],
+    }
     ;(globalThis.fetch as any).mockImplementation(async (url: string) => {
       if (url === '/__odx__/schema?service=Northwind') {
         return {

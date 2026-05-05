@@ -86,6 +86,12 @@ function getDefaultQueryState(): VisualQueryState {
   }
 }
 
+function serviceHasEntity(service: any, entity: string): boolean {
+  return (service.entities || []).some((item: any) =>
+    item.entitySet === entity || item.name === entity,
+  )
+}
+
 // Global Singleton state
 const activeTab = ref('overview')
 const logs = ref<ODataLog[]>([])
@@ -255,6 +261,16 @@ export function useSharedODataState(): SharedODataState {
     }
   }
 
+  function clearSelectedEntityState(): void {
+    selectedEntity.value = null
+    entitySchema.value = null
+    previewData.value = null
+    previewError.value = null
+    queryInput.value = '?'
+    queryMethod.value = 'GET'
+    queryState.value = getDefaultQueryState()
+  }
+
   const services = computed(() => {
     const data = config.value.services || []
     return data.map((s: any) => {
@@ -336,6 +352,13 @@ export function useSharedODataState(): SharedODataState {
       const updated = data.services.find((s: any) => s.name === currentService.name)
       if (updated) {
         selectedService.value = updated
+        if (selectedEntity.value && !serviceHasEntity(updated, selectedEntity.value)) {
+          clearSelectedEntityState()
+        }
+      }
+      else {
+        selectedService.value = null
+        clearSelectedEntityState()
       }
     }
   }, { deep: true })
