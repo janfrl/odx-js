@@ -1,7 +1,7 @@
 # Task: Include core tests in package verify
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -83,15 +83,34 @@ core behavior or shared workspace script semantics.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/core/package.json`
+  - `packages/core/README.md`
+  - `README.md`
+- summary:
+  - Updated the core package-local `verify` script to run focused core Vitest
+    tests before the standalone framework-free example.
+  - Updated core and root README verification wording to describe both checks.
+- tests run:
+  - `pnpm.cmd --filter @bc8-odx/core run verify` - passed, including 5 core
+    test files / 23 tests and the standalone example.
+  - `pnpm.cmd run example:core` - passed.
+  - `pnpm.cmd run lint` - passed.
+- skipped checks and residual risk:
+  - `pnpm.cmd run typecheck` skipped because the task is package script/docs
+    wiring only and task-local verification plus lint passed.
+- self-check result:
+  - Scope stayed limited to core package verification and documentation. No
+    core runtime, proxy, Nuxt, Explorer, docs package, dependencies, or root
+    example command behavior changed.
+- review requirement decision:
+  - Separate review is not required because this is low-risk package-local
+    verification and documentation work.
+- task state movement:
+  - Move this task to `.agents/tasks/done/`.
+- `.agents/NEXT.md` update:
+  - Point to `.agents/tasks/ready/032-validate-btp-destination-url.md`.
+- commit hash:
+  - pending commit.
+- known gaps:
+  - none.

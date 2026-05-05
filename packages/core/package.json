@@ -9,7 +9,7 @@
   },
   "main": "./src/index.ts",
   "scripts": {
-    "verify": "tsx ../../examples/core-standalone.ts"
+    "verify": "vitest run && tsx ../../examples/core-standalone.ts"
   },
   "dependencies": {
     "hookable": "^6.1.0",
