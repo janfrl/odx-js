@@ -1,37 +1,17 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useEntityExplorer } from '../../composables/useEntityExplorer'
 import FilterGroup from './FilterGroup.vue'
 
 const { queryState, currentEntitySchema, resetQuery } = useEntityExplorer()
 
-interface FieldMenuItem {
-  label: string
-  value: string
-  tooltip?: string
-}
-
 const properties = computed(() => {
   return currentEntitySchema.value?.properties?.map((p: any) => p.name) || []
 })
 
-const propertyItems = computed<FieldMenuItem[]>(() => {
-  return currentEntitySchema.value?.properties?.map((p: any) => ({
-    label: p.name,
-    value: p.name,
-    tooltip: getFieldTooltip(p),
-  })) || []
+const navigationProperties = computed(() => {
+  return currentEntitySchema.value?.navigationProperties?.map((np: any) => np.name) || []
 })
-
-const navigationPropertyItems = computed<FieldMenuItem[]>(() => {
-  return currentEntitySchema.value?.navigationProperties?.map((np: any) => ({
-    label: np.name,
-    value: np.name,
-    tooltip: getFieldTooltip(np),
-  })) || []
-})
-
-const showResetConfirm = ref(false)
 
 function addSort() {
   queryState.value.sortBy.push({ field: properties.value[0] || '', direction: 'asc' })
@@ -39,16 +19,6 @@ function addSort() {
 
 function removeSort(index: number) {
   queryState.value.sortBy.splice(index, 1)
-}
-
-function getFieldTooltip(field: any): string | undefined {
-  const description = field.description || field.documentation || field.summary
-  return typeof description === 'string' && description.trim() ? description : undefined
-}
-
-function confirmReset() {
-  resetQuery()
-  showResetConfirm.value = false
 }
 </script>
 
@@ -80,20 +50,12 @@ function confirmReset() {
         <div class="min-h-8">
           <USelectMenu
             v-model="queryState.select"
-            :items="propertyItems"
-            value-key="value"
+            :items="properties"
             multiple
             size="xs"
             placeholder="Select specific fields..."
             class="w-full"
-          >
-            <template #item-label="{ item }">
-              <UTooltip v-if="item.tooltip" :text="item.tooltip" :content="{ side: 'right' }">
-                <span class="truncate">{{ item.label }}</span>
-              </UTooltip>
-              <span v-else class="truncate">{{ item.label }}</span>
-            </template>
-          </USelectMenu>
+          />
         </div>
       </div>
 
@@ -121,18 +83,10 @@ function confirmReset() {
           <div v-for="(sort, index) in queryState.sortBy" :key="index" class="grid grid-cols-[1fr_auto_40px] items-center gap-2 h-8">
             <USelectMenu
               v-model="sort.field"
-              :items="propertyItems"
-              value-key="value"
+              :items="properties"
               size="xs"
               class="min-w-0"
-            >
-              <template #item-label="{ item }">
-                <UTooltip v-if="item.tooltip" :text="item.tooltip" :content="{ side: 'right' }">
-                  <span class="truncate">{{ item.label }}</span>
-                </UTooltip>
-                <span v-else class="truncate">{{ item.label }}</span>
-              </template>
-            </USelectMenu>
+            />
             <USelect
               v-model="sort.direction"
               :items="['asc', 'desc']"
@@ -164,20 +118,12 @@ function confirmReset() {
         <div class="min-h-8">
           <USelectMenu
             v-model="queryState.expand"
-            :items="navigationPropertyItems"
-            value-key="value"
+            :items="navigationProperties"
             multiple
             size="xs"
             placeholder="Expand navigation properties..."
             class="w-full"
-          >
-            <template #item-label="{ item }">
-              <UTooltip v-if="item.tooltip" :text="item.tooltip" :content="{ side: 'right' }">
-                <span class="truncate">{{ item.label }}</span>
-              </UTooltip>
-              <span v-else class="truncate">{{ item.label }}</span>
-            </template>
-          </USelectMenu>
+          />
         </div>
       </div>
 
@@ -203,33 +149,8 @@ function confirmReset() {
         variant="ghost"
         color="neutral"
         class="font-bold opacity-70 hover:opacity-100 transition-opacity"
-        @click="showResetConfirm = true"
+        @click="resetQuery"
       />
     </div>
-
-    <UModal
-      v-model:open="showResetConfirm"
-      title="Reset query builder?"
-      description="This clears selected fields, filters, sorting, expansion, and pagination."
-    >
-      <template #footer>
-        <div class="flex items-center justify-end gap-3 w-full">
-          <UButton
-            label="Cancel"
-            color="neutral"
-            variant="soft"
-            size="sm"
-            @click="showResetConfirm = false"
-          />
-          <UButton
-            label="Reset"
-            icon="i-lucide-rotate-ccw"
-            color="error"
-            size="sm"
-            @click="confirmReset"
-          />
-        </div>
-      </template>
-    </UModal>
   </div>
 </template>
