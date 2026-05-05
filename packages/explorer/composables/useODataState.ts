@@ -279,7 +279,9 @@ export function useSharedODataState(): SharedODataState {
       }
 
       if (statusFilter !== 'all') {
-        const status = Number(log.status || 0)
+        if (log.isPending || log.status === undefined || log.status === null)
+          return false
+        const status = Number(log.status)
         const failed = status >= 400
         if (statusFilter === 'failures' && !failed)
           return false

@@ -1,7 +1,7 @@
 # Task: Exclude pending logs from status filters
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if proxy logging or `/__odx__/logs` contracts change
@@ -81,15 +81,41 @@ does not touch proxy logging, internal endpoints, or displayed sensitive data.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/explorer/composables/useODataState.ts`
+  - `packages/explorer/test/state.test.ts`
+- failing-test evidence:
+  - Added the pending-row state test first, then ran
+    `pnpm.cmd --filter @bc8-odx/explorer run verify`.
+  - The new test failed because `success` included the pending row:
+    expected `['ok-products']`, received
+    `['pending-products', 'ok-products']`.
+- summary:
+  - Status filters now leave pending/no-final-status rows visible for `all`.
+  - `success` and `failures` filters exclude rows with `isPending: true` or no
+    final status.
+  - Existing service/search/status and filtered-empty tests remain intact.
+- tests run:
+  - PASS: `pnpm.cmd --filter @bc8-odx/explorer run verify`.
+  - PASS: `pnpm.cmd run test -- packages/explorer`.
+  - PASS: `pnpm.cmd run typecheck`.
+- skipped checks and residual risk:
+  - `pnpm.cmd run lint` passed during the task 026/027 combined checkpoint
+    before this task was integrated.
+- self-check result:
+  - Scope stayed local to Explorer state filtering and tests.
+  - No proxy logging behavior, `/__odx__/logs` payload contracts, UI redesign,
+    or displayed sensitive fields changed.
+- review requirement decision:
+  - Separate review is not required because the change stays in Explorer state
+    and tests.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Updated to task 028.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None.

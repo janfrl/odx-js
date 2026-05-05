@@ -204,6 +204,52 @@ describe('explorer State Composable', () => {
     expect(filteredLogs.value.map(log => log.id)).toEqual(['ok-products'])
   })
 
+  it('keeps pending traffic visible only in the all status filter', () => {
+    const { filteredLogs, logFilterStatus, logs } = useSharedODataState()
+    logs.value = [
+      {
+        id: 'pending-products',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        entitySet: 'Products',
+        status: undefined,
+        duration: 0,
+        isPending: true,
+      } as any,
+      {
+        id: 'ok-products',
+        timestamp: '2026-05-05T09:01:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        entitySet: 'Products',
+        status: 200,
+        duration: 12,
+      } as any,
+      {
+        id: 'failed-products',
+        timestamp: '2026-05-05T09:02:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        entitySet: 'Products',
+        status: 500,
+        duration: 16,
+      } as any,
+    ]
+
+    logFilterStatus.value = 'all'
+    expect(filteredLogs.value.map(log => log.id)).toEqual(['pending-products', 'ok-products', 'failed-products'])
+
+    logFilterStatus.value = 'success'
+    expect(filteredLogs.value.map(log => log.id)).toEqual(['ok-products'])
+
+    logFilterStatus.value = 'failures'
+    expect(filteredLogs.value.map(log => log.id)).toEqual(['failed-products'])
+  })
+
   it('detects when active traffic filters hide existing logs', () => {
     const { filteredLogs, hasActiveLogFilters, hasFilteredOutLogs, logFilterStatus, logs } = useSharedODataState()
     logs.value = [

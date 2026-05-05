@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Implement the lowest-numbered ready task:
-`.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`.
+`.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`.
 
 ## Prompt For Next Chat
 
@@ -26,22 +26,21 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md
-- DESIGN.md
-- packages/explorer/composables/useODataState.ts
-- packages/explorer/test/state.test.ts
+- .agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md
+- scripts/compare-proxy-benchmarks.ts
+- package.json
 
 Rules:
-- Implement exactly `.agents/tasks/ready/027-exclude-pending-logs-from-status-filters.md`.
-- Keep changes scoped to Explorer Traffic Monitor status filter behavior.
-- Add focused state tests before changing implementation code.
-- Do not change proxy logging behavior, `/__odx__/logs` payloads, or displayed sensitive fields.
+- Implement exactly `.agents/tasks/ready/028-add-proxy-benchmark-compare-tests.md`.
+- Keep changes scoped to automated tests for the benchmark compare helper.
+- Do not change production proxy runtime behavior, benchmark scenario definitions, dependencies, or normal test behavior.
+- Prefer extracting pure helper functions if needed to make the comparison logic testable.
 - Run the verification steps listed in the task, or explain skipped checks and residual risk.
 - Update the task handoff notes before finishing.
 - Move the task to `.agents/tasks/done/` when implementation and verification are complete.
 - Update `.agents/NEXT.md` with the next concrete workflow action.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
-- Separate review is not required unless proxy logging, endpoint contracts, or displayed sensitive data changes.
+- Separate review is not required unless benchmark semantics, production proxy behavior, or dependency wiring changes.
 
 When done, summarize:
 - changed files
