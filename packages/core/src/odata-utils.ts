@@ -25,8 +25,12 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   }
 
   // 2. Handle OData Results (V2 results or V4 value)
-  const results = data.results || data.value
-  if (results && Array.isArray(results)) {
+  const results = Array.isArray(data.results)
+    ? data.results
+    : Array.isArray(data.value)
+      ? data.value
+      : undefined
+  if (results) {
     const count = data.__count || data['@odata.count'] || data.count
     const flattened = results.map((item: any) => flattenOData(item, depth + 1, maxDepth))
     if (count !== undefined) {
@@ -44,7 +48,7 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   const flattened: any = {}
   let hasProperties = false
   for (const key in data) {
-    if (key === '__metadata' || key === '__deferred' || key === 'results' || key === 'value')
+    if (key === '__metadata' || key === '__deferred' || key === 'results')
       continue
 
     flattened[key] = flattenOData(data[key], depth + 1, maxDepth)

@@ -73,6 +73,49 @@ describe('oData Utils', () => {
       expect(flattened[0].Name).toBe('A')
     })
 
+    it('unwraps OData V4 value collection envelopes', () => {
+      const data = {
+        '@odata.count': 2,
+        'value': [{ ID: 1, Name: 'A' }, { ID: 2, Name: 'B' }],
+      }
+
+      const flattened = flattenOData(data)
+
+      expect(Array.isArray(flattened)).toBe(true)
+      expect(flattened).toHaveLength(2)
+      expect(flattened[0].Name).toBe('A')
+      expect(flattened.totalCount).toBe(2)
+    })
+
+    it('preserves scalar entity properties named value', () => {
+      const flattened = flattenOData({
+        ID: 1,
+        value: 'retail',
+      })
+
+      expect(flattened).toEqual({
+        ID: 1,
+        value: 'retail',
+      })
+    })
+
+    it('preserves and flattens nested entity properties named value', () => {
+      const flattened = flattenOData({
+        ID: 1,
+        value: {
+          amount: 12,
+          __metadata: { type: 'Ignored' },
+        },
+      })
+
+      expect(flattened).toEqual({
+        ID: 1,
+        value: {
+          amount: 12,
+        },
+      })
+    })
+
     it('preserves __count as totalCount', () => {
       const data = {
         results: [{ ID: 1 }],
