@@ -202,6 +202,72 @@ describe('btp Destination Resolution', () => {
     )
   })
 
+  it('throws in production when Destination Service returns a javascript destination URL', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'javascript:alert(1)',
+          ProxyType: 'Internet',
+        },
+      })
+
+    await expect(resolveBtpDestination('JavascriptUrlProductionService')).rejects.toThrow(
+      'Failed to resolve BTP destination "JavascriptUrlProductionService": invalid destination URL',
+    )
+  })
+
+  it('throws in production when Destination Service returns arbitrary text as the destination URL', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'not a url',
+          ProxyType: 'Internet',
+        },
+      })
+
+    await expect(resolveBtpDestination('ArbitraryTextUrlProductionService')).rejects.toThrow(
+      'Failed to resolve BTP destination "ArbitraryTextUrlProductionService": invalid destination URL',
+    )
+  })
+
+  it('does not cache invalid production destination URLs', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'first-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'file:///etc/passwd',
+          ProxyType: 'Internet',
+        },
+      })
+      .mockResolvedValueOnce({ access_token: 'second-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'https://valid-after-invalid.example',
+          ProxyType: 'Internet',
+        },
+      })
+
+    await expect(resolveBtpDestination('InvalidUrlNotCachedService')).rejects.toThrow(
+      'Failed to resolve BTP destination "InvalidUrlNotCachedService": invalid destination URL',
+    )
+
+    const result = await resolveBtpDestination('InvalidUrlNotCachedService')
+
+    expect(result.url).toBe('https://valid-after-invalid.example')
+    expect(ofetch).toHaveBeenCalledTimes(4)
+  })
+
   it('preserves local development fallback when Destination Service omits the destination URL', async () => {
     process.env.NODE_ENV = 'development'
     mockBtpBindings()
@@ -218,6 +284,29 @@ describe('btp Destination Resolution', () => {
 
     expect(result).toEqual({
       name: 'MissingUrlDevelopmentFallbackService',
+      url: '/sap/opu/odata/sap',
+      user: 'MOCK',
+      password: 'MOCK',
+    })
+  })
+
+  it('preserves local development fallback when Destination Service returns a non-http destination URL', async () => {
+    process.env.NODE_ENV = 'development'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'file:///etc/passwd',
+          ProxyType: 'Internet',
+        },
+      })
+
+    const result = await resolveBtpDestination('NonHttpUrlDevelopmentFallbackService')
+
+    expect(result).toEqual({
+      name: 'NonHttpUrlDevelopmentFallbackService',
       url: '/sap/opu/odata/sap',
       user: 'MOCK',
       password: 'MOCK',

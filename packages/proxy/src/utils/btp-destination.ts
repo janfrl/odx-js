@@ -77,6 +77,16 @@ function cacheDestination(cacheKey: string, destination: BtpDestination): void {
   destinationCache.set(cacheKey, cacheEntry)
 }
 
+function isAbsoluteHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  }
+  catch {
+    return false
+  }
+}
+
 /**
  * Loads VCAP_SERVICES from the environment or local default-env.json.
  */
@@ -178,6 +188,10 @@ export async function resolveBtpDestination(serviceName: string, userToken?: str
 
     if (!destinationUrl) {
       throw new Error('invalid destination URL: destinationConfiguration.URL is missing or blank')
+    }
+
+    if (!isAbsoluteHttpUrl(destinationUrl)) {
+      throw new Error('invalid destination URL: destinationConfiguration.URL must be an absolute HTTP(S) URL')
     }
 
     const resolvedDestination: BtpDestination = {
