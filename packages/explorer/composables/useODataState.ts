@@ -38,10 +38,16 @@ export interface ODataLog {
   method: string
   service: string
   path: string
+  url?: string
+  targetUrl?: string
+  entitySet?: string
   status: number
   duration: number
+  isPending?: boolean
   proxyTrace?: ProxyTraceEntry[]
 }
+
+export type LogFilterStatus = 'all' | 'success' | 'failures'
 
 export interface VisualQueryState {
   filters: {
@@ -89,6 +95,8 @@ const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})
 const sessionHeaders = ref<Record<string, string>>({})
 const logFilterService = ref<string | null>(null)
+const logFilterStatus = ref<LogFilterStatus>('all')
+const logSearch = ref('')
 const useCORSBridge = ref(true)
 const selectedTraceLogId = ref<string | null>(null)
 const globalViewMode = ref<'explorer' | 'schema'>('explorer')
@@ -118,6 +126,7 @@ const schemaFocusedServices = ref(new Set<string>())
 const lastSelectedServiceForGraph = ref<string | null>(null)
 
 const DEGRADED_STORAGE_KEY = 'odx:degraded-services'
+const LOG_SEARCH_SEPARATOR_RE = /\s+/
 
 function loadDegradedServices(): Record<string, 'degraded'> {
   try {
@@ -152,6 +161,9 @@ export interface SharedODataState {
   generatingStatus: Ref<Record<string, boolean>>
   sessionHeaders: Ref<Record<string, string>>
   logFilterService: Ref<string | null>
+  logFilterStatus: Ref<LogFilterStatus>
+  logSearch: Ref<string>
+  filteredLogs: ComputedRef<ODataLog[]>
   useCORSBridge: Ref<boolean>
   selectedTraceLogId: Ref<string | null>
   previewLoading: Ref<boolean>
@@ -243,6 +255,57 @@ export function useSharedODataState(): SharedODataState {
     })
   })
 
+  const filteredLogs = computed(() => {
+    const serviceFilter = logFilterService.value?.toLowerCase()
+    const statusFilter = logFilterStatus.value
+    const searchTokens = logSearch.value
+      .trim()
+      .toLowerCase()
+      .split(LOG_SEARCH_SEPARATOR_RE)
+      .filter(Boolean)
+
+    return logs.value.filter((log: ODataLog) => {
+      if (serviceFilter) {
+        if (!log.service)
+          return false
+        const serviceName = log.service.toLowerCase()
+        const matchesService = serviceName === serviceFilter
+          || services.value.some(service => service.name.toLowerCase() === serviceName && service.route?.toLowerCase() === serviceFilter)
+        if (!matchesService)
+          return false
+      }
+
+      if (statusFilter !== 'all') {
+        const status = Number(log.status || 0)
+        const failed = status >= 400
+        if (statusFilter === 'failures' && !failed)
+          return false
+        if (statusFilter === 'success' && failed)
+          return false
+      }
+
+      if (searchTokens.length > 0) {
+        const searchable = [
+          log.service,
+          log.entitySet,
+          log.path,
+          log.url,
+          log.targetUrl,
+          log.method,
+          log.status,
+        ]
+          .filter(value => value !== undefined && value !== null)
+          .join(' ')
+          .toLowerCase()
+
+        if (!searchTokens.every(token => searchable.includes(token)))
+          return false
+      }
+
+      return true
+    })
+  })
+
   watch(config, (data) => {
     if (selectedService.value) {
       const currentService = selectedService.value
@@ -309,6 +372,9 @@ export function useSharedODataState(): SharedODataState {
     generatingStatus,
     sessionHeaders,
     logFilterService,
+    logFilterStatus,
+    logSearch,
+    filteredLogs,
     useCORSBridge,
     selectedTraceLogId,
     previewLoading,

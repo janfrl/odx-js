@@ -13,7 +13,10 @@ describe('explorer State Composable', () => {
     const {
       activeTab,
       config,
+      filteredLogs,
       logFilterService,
+      logFilterStatus,
+      logSearch,
       logs,
       previewData,
       previewError,
@@ -37,6 +40,8 @@ describe('explorer State Composable', () => {
     activeTab.value = 'overview'
     config.value = { basePath: '/__odx__', services: [] }
     logFilterService.value = null
+    logFilterStatus.value = 'all'
+    logSearch.value = ''
     logs.value = []
     selectedService.value = null
     selectedEntity.value = null
@@ -63,6 +68,7 @@ describe('explorer State Composable', () => {
     entityDataCache.value = {}
     sessionHeaders.value = {}
     useCORSBridge.value = true
+    expect(filteredLogs.value).toEqual([])
   })
 
   it('fetches config correctly', async () => {
@@ -104,6 +110,94 @@ describe('explorer State Composable', () => {
 
     expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/logs', { method: 'DELETE' })
     expect(logs.value).toEqual([])
+  })
+
+  it('filters traffic logs by service, search text, and failure status', () => {
+    const { config, filteredLogs, logFilterService, logFilterStatus, logSearch, logs } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        { name: 'Northwind', route: 'northwind' },
+        { name: 'SAP', route: 'sap' },
+      ],
+    }
+    logs.value = [
+      {
+        id: 'ok-products',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        entitySet: 'Products',
+        status: 200,
+        duration: 12,
+        targetUrl: 'https://example.test/odata/Products',
+      } as any,
+      {
+        id: 'failed-orders',
+        timestamp: '2026-05-05T09:01:00.000Z',
+        method: 'PATCH',
+        service: 'Northwind',
+        path: '/Orders(1)',
+        entitySet: 'Orders',
+        status: 500,
+        duration: 31,
+        targetUrl: 'https://example.test/odata/Orders(1)',
+      } as any,
+      {
+        id: 'sap-business-partners',
+        timestamp: '2026-05-05T09:02:00.000Z',
+        method: 'GET',
+        service: 'SAP',
+        path: '/BusinessPartner',
+        entitySet: 'BusinessPartner',
+        status: 404,
+        duration: 20,
+        targetUrl: 'https://sap.test/BusinessPartner',
+      } as any,
+    ]
+
+    logFilterService.value = 'northwind'
+    logFilterStatus.value = 'failures'
+    logSearch.value = 'orders patch'
+
+    expect(filteredLogs.value.map(log => log.id)).toEqual(['failed-orders'])
+  })
+
+  it('filters traffic logs to non-failures and matches service route aliases', () => {
+    const { config, filteredLogs, logFilterService, logFilterStatus, logSearch, logs } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [{ name: 'Northwind', route: 'northwind-api' }],
+    }
+    logs.value = [
+      {
+        id: 'ok-products',
+        timestamp: '2026-05-05T09:00:00.000Z',
+        method: 'GET',
+        service: 'Northwind',
+        path: '/Products',
+        entitySet: 'Products',
+        status: 204,
+        duration: 12,
+      } as any,
+      {
+        id: 'failed-products',
+        timestamp: '2026-05-05T09:01:00.000Z',
+        method: 'DELETE',
+        service: 'Northwind',
+        path: '/Products(1)',
+        entitySet: 'Products',
+        status: 403,
+        duration: 18,
+      } as any,
+    ]
+
+    logFilterService.value = 'northwind-api'
+    logFilterStatus.value = 'success'
+    logSearch.value = 'products'
+
+    expect(filteredLogs.value.map(log => log.id)).toEqual(['ok-products'])
   })
 
   it('coordinates selected proxy trace log state', () => {

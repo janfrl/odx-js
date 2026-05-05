@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { UBadge, UButton, UIcon } from '#components'
 
-const { logs, clearLogs, services, logFilterService, activeTab, selectedTraceLogId } = useSharedODataState()
+const { filteredLogs, clearLogs, services, logFilterService, logFilterStatus, logSearch, activeTab, selectedTraceLogId } = useSharedODataState()
 const toast = useToast()
 
 const expanded = ref<Record<string, boolean>>({})
@@ -33,18 +33,6 @@ function copyToClipboard(text: string) {
   })
 }
 
-const filteredLogs = computed(() => {
-  if (!logFilterService.value)
-    return logs.value
-  const filter = logFilterService.value.toLowerCase()
-  return logs.value.filter((l: any) => {
-    if (!l.service)
-      return false
-    const svcName = l.service.toLowerCase()
-    return svcName === filter || services.value.find(s => s.name.toLowerCase() === svcName && s.route?.toLowerCase() === filter)
-  })
-})
-
 const serviceOptions = computed(() => {
   return [
     { label: 'All Services', value: null },
@@ -54,6 +42,12 @@ const serviceOptions = computed(() => {
     })),
   ]
 })
+
+const statusOptions = [
+  { label: 'All Status', value: 'all' },
+  { label: 'Success', value: 'success' },
+  { label: 'Failures', value: 'failures' },
+]
 
 function safeStringify(data: any): string {
   if (!data)
@@ -184,6 +178,22 @@ async function runClear() {
         variant="subtle"
         class="w-40 font-bold"
         icon="i-lucide-filter"
+      />
+      <USelect
+        v-model="logFilterStatus"
+        :items="statusOptions"
+        size="sm"
+        variant="subtle"
+        class="w-34 font-bold"
+        icon="i-lucide-circle-alert"
+      />
+      <UInput
+        v-model="logSearch"
+        placeholder="Search traffic"
+        size="sm"
+        variant="subtle"
+        class="w-48"
+        icon="i-lucide-search"
       />
       <UButton
         label="Purge History"

@@ -1,7 +1,7 @@
 # Task: Add Explorer traffic search and status filters
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex orchestrator
 Created: 2026-05-05
 Risk: medium
 Review: conditional - required if internal log endpoint contracts change
@@ -83,15 +83,42 @@ contracts or touches proxy logging/security behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
+Completed 2026-05-05 by Orchestrator.
 
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files:
+  - `packages/explorer/composables/useODataState.ts`
+  - `packages/explorer/components/tabs/TabLogs.vue`
+  - `packages/explorer/test/state.test.ts`
+- failing-test evidence:
+  - Added state tests first for composed service/search/status filters.
+  - Initial run failed because `logFilterStatus`, `logSearch`, and
+    `filteredLogs` did not exist in shared state.
+- summary:
+  - Added shared `logSearch`, `logFilterStatus`, and `filteredLogs` state.
+  - Preserved the existing service filter and route-alias matching.
+  - Added compact Traffic Monitor controls for status category and search.
+  - Search matches service, entity set/path, method, status, URL, and target URL.
+- tests run:
+  - PASS: `pnpm.cmd --filter @bc8-odx/explorer exec vitest run`.
+  - PASS: `pnpm.cmd run test -- packages/explorer`.
+  - PASS: `pnpm.cmd run typecheck`.
+  - PASS: `pnpm.cmd run lint`.
+- skipped checks and residual risk:
+  - Browser visual verification was not run because no in-app browser tool was
+    exposed in this session. The UI change is compact and scoped to existing
+    header controls.
+- self-check result:
+  - Scope stayed local to Explorer state/UI/tests.
+  - No proxy logging behavior or `/__odx__/logs` payload contracts changed.
+  - Clear-log behavior still uses the existing `clearLogs()` flow.
+- review requirement decision:
+  - Separate review is not required because no endpoint contracts, proxy
+    logging, or security-sensitive behavior changed.
+- task state movement:
+  - Moved to `.agents/tasks/done/` by Orchestrator.
+- `.agents/NEXT.md` update:
+  - Updated to task 019.
+- commit hash:
+  - Pending at handoff update time.
+- known gaps:
+  - None beyond skipped browser visual verification noted above.
