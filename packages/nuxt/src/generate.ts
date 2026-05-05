@@ -1,9 +1,10 @@
 import type { EntityMapping, ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
 import type { Nuxt } from '@nuxt/schema'
 import { Buffer } from 'node:buffer'
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import https from 'node:https'
+import process from 'node:process'
 import { extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { consola } from 'consola'
 import { join, resolve } from 'pathe'
@@ -11,14 +12,26 @@ import { join, resolve } from 'pathe'
 const logger = consola.withTag('@bc8-odx/nuxt')
 
 /**
- * Core function to generate TypeScript types from an EDMX metadata file using odata2ts via execSync.
+ * Core function to generate TypeScript types from an EDMX metadata file using odata2ts.
  */
 export async function generateODataTypes(xmlFilePath: string, outputDir: string, serviceName: string): Promise<void> {
   // Use pnpm odata2ts to use the locally installed version in the workspace
-  const command = `pnpm odata2ts --source ${xmlFilePath} --output ${outputDir} --mode models --emit-mode ts --prettier`
+  const command = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+  const args = [
+    'odata2ts',
+    '--source',
+    xmlFilePath,
+    '--output',
+    outputDir,
+    '--mode',
+    'models',
+    '--emit-mode',
+    'ts',
+    '--prettier',
+  ]
 
   try {
-    execSync(command, { stdio: 'pipe' })
+    execFileSync(command, args, { stdio: 'pipe' })
     logger.success(`Generated SDK for ${serviceName}`)
   }
   catch (err: any) {

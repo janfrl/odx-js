@@ -1,7 +1,7 @@
 # Task: Harden type generation process execution
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-04
 Risk: high
 Review: required
@@ -82,15 +82,26 @@ separate review.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `packages/nuxt/src/generate.ts`,
+  `packages/nuxt/test/generate.test.ts`, and this task file
+- summary: verified the shell-string invocation issue with a failing test, then
+  replaced `execSync` command construction with `execFileSync` and discrete
+  process arguments while preserving the existing `odata2ts` options and error
+  reporting path
+- tests run:
+  - failing-test evidence before fix: process invocation test failed because
+    `execFileSync` was not called with discrete arguments
+  - `pnpm.cmd exec vitest run packages/nuxt/test/generate.test.ts`
+  - `pnpm.cmd run typecheck`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run test`
+- skipped checks and residual risk: none
+- self-check result: scope, acceptance criteria, generation contract, and
+  unrelated changes checked
+- review requirement decision: separate review required because this changes
+  setup/build process execution
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: pending orchestrator integration
+- commit hash: pending commit at handoff-note update time
+- known gaps: none

@@ -1,14 +1,45 @@
 import { Buffer } from 'node:buffer'
+import { execFileSync } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import https from 'node:https'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { downloadMetadata, generateRegistryDts } from '../src/generate'
+import { downloadMetadata, generateODataTypes, generateRegistryDts } from '../src/generate'
 
+vi.mock('node:child_process', () => ({
+  execFileSync: vi.fn(),
+  execSync: vi.fn(),
+}))
 vi.mock('node:https')
 
 describe('type Generation Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  describe('generateODataTypes', () => {
+    it('invokes odata2ts with discrete process arguments', async () => {
+      const sourcePath = 'C:/tmp/metadata file.edmx'
+      const outputDir = 'C:/tmp/generated types'
+
+      await generateODataTypes(sourcePath, outputDir, 'SpacedService')
+
+      expect(execFileSync).toHaveBeenCalledWith(
+        expect.stringMatching(/^pnpm(\.cmd)?$/),
+        [
+          'odata2ts',
+          '--source',
+          sourcePath,
+          '--output',
+          outputDir,
+          '--mode',
+          'models',
+          '--emit-mode',
+          'ts',
+          '--prettier',
+        ],
+        { stdio: 'pipe' },
+      )
+    })
   })
 
   describe('downloadMetadata', () => {
