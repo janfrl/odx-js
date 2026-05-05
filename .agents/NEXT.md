@@ -12,13 +12,12 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Run Implementer on
-`.agents/tasks/ready/072-run-post-runtime-optimization-checkpoint.md`.
+Implement `.agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js.
+You are the Implementer for ODX in C:\Users\janfr\Documents\GitHub\2.bechtle\odx-js on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
@@ -26,29 +25,29 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/072-run-post-runtime-optimization-checkpoint.md
-- .agents/tasks/done/067-encode-explorer-delete-item-id.md
-- .agents/tasks/done/068-validate-benchmark-count-fields.md
-- .agents/tasks/done/069-warn-on-benchmark-comparison-metadata-mismatches.md
-- .agents/tasks/done/070-test-deterministic-benchmark-summary-math.md
-- .agents/tasks/done/071-skip-devtools-trace-allocation-when-disabled.md
-- .agents/reviews/071-skip-devtools-trace-allocation-when-disabled-review.md
-
-Implement exactly .agents/tasks/ready/072-run-post-runtime-optimization-checkpoint.md.
+- .agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md
+- .agents/tasks/done/058-quote-generated-registry-service-keys.md
+- .agents/tasks/done/061-document-service-name-type-generation-limits.md
+- .agents/tasks/done/065-verify-non-identifier-service-names-in-minimal-nuxt-playground.md
+- any root documentation referenced by the task
 
 Rules:
-- Keep changes scoped to .agents workflow state.
-- Do not modify production source/tests/docs outside .agents, dependencies, lockfiles, or generated files.
+- Implement exactly `.agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md`.
+- Keep changes scoped to Nuxt type-generation validation and focused tests.
+- Add failing tests first for `/` and `\` service names.
+- Preserve safe non-identifier service names such as `Sales-Order`.
+- Do not change generated registry declaration quoting, model output layout for valid services, metadata download behavior, runtime composable lookup, Explorer behavior, proxy behavior, dependencies, lockfiles, or generated files.
+- Update the task handoff notes before finishing.
 - Run the verification steps listed in the task, or explain why they could not be run.
-- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
-- Decide whether separate review is required using .agents/WORKFLOW.md.
+- Decide whether separate review is required using .agents/WORKFLOW.md and the task risk notes.
 - Move the task to .agents/tasks/done/ when implementation and verification are complete.
-- Update .agents/NEXT.md with the next action and exact next-chat prompt.
+- Update .agents/NEXT.md with a Reviewer prompt because task 073 requires separate review.
 - Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
 - changed files
-- what was verified
+- what was implemented
+- verification performed
 - self-check result
 - whether separate review is required and why
 - commit hash

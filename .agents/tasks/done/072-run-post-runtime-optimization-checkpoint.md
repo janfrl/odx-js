@@ -1,7 +1,7 @@
 # Task: Run post-runtime optimization checkpoint
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-05
 Risk: low
 Review: not required
@@ -95,15 +95,46 @@ generated, or durable documentation files.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
 - changed files
+  - `.agents/tasks/done/072-run-post-runtime-optimization-checkpoint.md`
+  - `.agents/NEXT.md`
 - summary
+  - Verified the post-optimization batch after tasks 067-071.
+  - Confirmed tasks 067, 068, 069, 070, and 071 are in `.agents/tasks/done/`.
+  - Confirmed task 071 has an approved review note at
+    `.agents/reviews/071-skip-devtools-trace-allocation-when-disabled-review.md`.
+  - Cleaned generated verification byproducts after checks:
+    `docs/public/api-reference.json` and `packages/explorer/.nuxtrc`.
 - tests run
+  - `pnpm.cmd run verify:packages` - passed. Core 28 tests, proxy 127 passed
+    and 1 skipped plus standalone proxy example, Nuxt 14 tests plus minimal
+    playground check, Explorer 33 tests, AppRouter deployment config test, and
+    docs metadata/API extraction passed.
+  - `pnpm.cmd run typecheck` - passed.
+  - `pnpm.cmd run lint` - passed.
+  - `git diff --check` - passed.
+  - `git status --short` - after cleanup, only checkpoint task movement and
+    `.agents/NEXT.md` workflow updates remained.
 - skipped checks and residual risk
+  - No required checkpoint checks were skipped.
+  - Full `ODX_PROXY_BENCHMARK=1` timing runs were not required by this
+    checkpoint. Existing benchmark timing tests remain guarded by their env.
+  - Existing Node DEP0155 warnings from Nuxt/Vue transitive package exports
+    appeared during Nuxt verification and match prior checkpoint noise.
 - self-check result
+  - Scope stayed limited to `.agents` workflow state. No production source,
+    tests, root docs, dependencies, lockfiles, generated files, or benchmark
+    outputs were modified.
 - review requirement decision
+  - Separate review is not required for this low-risk checkpoint. The required
+    independent review for task 071 is complete and approved.
 - task state movement
+  - Moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` before
+    verification and to `.agents/tasks/done/` after all checks passed.
 - `.agents/NEXT.md` update
+  - Updated to point at
+    `.agents/tasks/ready/073-reject-path-separator-service-names-before-type-generation.md`.
 - commit hash
+  - Commit containing this handoff.
 - known gaps
+  - None.
