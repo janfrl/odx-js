@@ -12,7 +12,7 @@ Adaptive Teamflow.
 
 ## Current Next Step
 
-Implement `.agents/tasks/ready/067-encode-explorer-delete-item-id.md`.
+Implement `.agents/tasks/ready/068-validate-benchmark-count-fields.md`.
 
 ## Prompt For Next Chat
 
@@ -25,11 +25,11 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/067-encode-explorer-delete-item-id.md
+- .agents/tasks/ready/068-validate-benchmark-count-fields.md
 - any root documentation referenced by the task
 
 Rules:
-- Implement exactly `.agents/tasks/ready/067-encode-explorer-delete-item-id.md`.
+- Implement exactly `.agents/tasks/ready/068-validate-benchmark-count-fields.md`.
 - Keep changes scoped to the task.
 - Do not start unrelated refactors.
 - Follow existing repository structure, style, and documented architecture boundaries.

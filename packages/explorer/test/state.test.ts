@@ -1,5 +1,6 @@
+import { createNuxtApp } from 'nuxt/app'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { createApp, nextTick } from 'vue'
 import { useEntityExplorer } from '../composables/useEntityExplorer'
 import { buildEntityPreviewCacheKey, buildSchemaEndpointUrl, useSharedODataState } from '../composables/useODataState'
 
@@ -903,6 +904,69 @@ describe('explorer State Composable', () => {
         skip: null,
       },
     })
+  })
+
+  it('encodes delete item IDs while preserving delete success behavior', async () => {
+    vi.stubGlobal('confirm', vi.fn(() => true))
+    const { config, previewData, selectedEntity, selectedService } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'Northwind',
+          route: 'northwind-api',
+          strategy: 'proxied',
+          entities: [{ name: 'Product', entitySet: 'Products' }],
+        },
+      ],
+    }
+    selectedService.value = {
+      name: 'Northwind',
+      route: 'northwind-api',
+      strategy: 'proxied',
+    } as any
+    ;(globalThis.fetch as any).mockResolvedValue({
+      ok: true,
+      json: async () => ({ entities: [] }),
+    })
+    selectedEntity.value = 'Products'
+    await nextTick()
+    await nextTick()
+
+    ;(globalThis.fetch as any).mockClear()
+    ;(globalThis.fetch as any)
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({ value: [{ ID: 'refreshed' }] }),
+      })
+
+    const { deleteItem } = useEntityExplorer()
+    const nuxtApp = createNuxtApp({
+      vueApp: createApp({}),
+      payload: { config: { public: {}, app: {} }, state: {} },
+    } as any)
+    await nuxtApp.runWithContext(() => deleteItem('A/B?x=1&R #2'))
+    await nextTick()
+
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(
+      1,
+      '/api/odx/northwind-api/Products?id=A%2FB%3Fx%3D1%26R%20%232',
+      { method: 'DELETE' },
+    )
+    expect(nuxtApp.payload.state.$stoasts).toMatchObject([{
+      title: 'Item A/B?x=1&R #2 deleted successfully',
+      icon: 'i-lucide-circle-check',
+      color: 'success',
+    }])
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(2, '/api/odx/northwind-api/Products', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    })
+    expect(previewData.value).toEqual([{ ID: 'refreshed' }])
   })
 
   it('restores cached entity preview state when reselecting an entity', async () => {

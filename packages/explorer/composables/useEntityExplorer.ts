@@ -430,7 +430,8 @@ export function useEntityExplorer(): EntityExplorer {
     }
     try {
       const route = selectedService.value.route || selectedService.value.name.toLowerCase()
-      const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${id}`, { method: 'DELETE' })
+      const encodedId = encodeURIComponent(String(id))
+      const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${encodedId}`, { method: 'DELETE' })
       if (res.ok) {
         const toast = useToast()
         toast.add({
