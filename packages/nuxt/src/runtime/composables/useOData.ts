@@ -3,6 +3,8 @@ import { useFetch } from '#imports'
 import { $odata, flattenOData, stringifyQuery } from '@bc8-odx/core'
 import { useODataBasePath } from './useODataBasePath'
 
+const RE_SINGLE_QUOTE = /'/g
+
 /**
  * Composable for interacting with OData services.
  * Provides autocomplete for registered services and their entity sets via dot notation
@@ -13,15 +15,17 @@ export function useOData<T extends RegisteredServiceNames>(service: T): T extend
 export function useOData(service?: string): any {
   const client = globalThis.$fetch
 
+  const formatStringKeyLiteral = (value: string): string => `'${value.replace(RE_SINGLE_QUOTE, '\'\'')}'`
+
   /**
    * Formats a single or composite key for OData URLs.
    */
   const formatKey = (key: ODataKey): string => {
     if (typeof key !== 'object') {
-      return typeof key === 'string' ? `'${key}'` : String(key)
+      return typeof key === 'string' ? formatStringKeyLiteral(key) : String(key)
     }
     return Object.entries(key)
-      .map(([k, v]) => `${k}=${typeof v === 'string' ? `'${v}'` : v}`)
+      .map(([k, v]) => `${k}=${typeof v === 'string' ? formatStringKeyLiteral(v) : v}`)
       .join(',')
   }
 

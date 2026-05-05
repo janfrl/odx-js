@@ -41,6 +41,12 @@ describe('useOData Composable', () => {
       expect(result.url).toBe('/api/odx/MyService/Products(\'abc\')')
     })
 
+    it('escapes single quotes in string keys', () => {
+      const api = useOData('MyService')
+      const result = api.entitySet('Products').get('O\'Brien') as any
+      expect(result.url).toBe('/api/odx/MyService/Products(\'O\'\'Brien\')')
+    })
+
     it('formats numeric keys without quotes', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').get(123) as any
@@ -51,6 +57,12 @@ describe('useOData Composable', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Items').get({ ID: 1, Type: 'A' }) as any
       expect(result.url).toBe('/api/odx/MyService/Items(ID=1,Type=\'A\')')
+    })
+
+    it('escapes single quotes in composite string keys', () => {
+      const api = useOData('MyService')
+      const result = api.entitySet('Items').get({ ID: 1, Type: 'Bob\'s' }) as any
+      expect(result.url).toBe('/api/odx/MyService/Items(ID=1,Type=\'Bob\'\'s\')')
     })
   })
 
@@ -100,6 +112,18 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('escapes single quotes in update keys', async () => {
+      const api = useOData('MyService')
+      await api.entitySet('Products').update('O\'Brien', { Name: 'Updated' })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(\'O\'\'Brien\')',
+        'PATCH',
+        { body: { Name: 'Updated' } },
+      )
+    })
+
     it('calls $odata for remove (DELETE)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').remove('key1')
@@ -107,6 +131,17 @@ describe('useOData Composable', () => {
       expect(core.$odata).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/MyService/Products(\'key1\')',
+        'DELETE',
+      )
+    })
+
+    it('escapes single quotes in remove keys', async () => {
+      const api = useOData('MyService')
+      await api.entitySet('Products').remove({ ID: 'Bob\'s', Locale: 'en' })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(ID=\'Bob\'\'s\',Locale=\'en\')',
         'DELETE',
       )
     })

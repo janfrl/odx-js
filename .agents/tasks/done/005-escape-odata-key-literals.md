@@ -1,7 +1,7 @@
 # Task: Escape OData key literals
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: delegated implementer
 Created: 2026-05-04
 Risk: medium
 Review: conditional - required only if the fix changes public composable shape
@@ -78,15 +78,26 @@ the implementer changes broader composable semantics.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `packages/nuxt/src/runtime/composables/useOData.ts`,
+  `packages/nuxt/test/composables.test.ts`, and this task file
+- summary: added OData string key literal escaping that doubles embedded single
+  quotes for single and composite keys; added coverage for `get`, `update`, and
+  `remove`
+- tests run:
+  - failing-test evidence before fix: embedded quote test failed because
+    `O'Brien` was emitted as `'O'Brien'` instead of `'O''Brien'`
+  - `pnpm.cmd exec vitest run packages/nuxt/test/composables.test.ts`
+  - `pnpm.cmd run typecheck`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run test`
+- skipped checks and residual risk: none
+- self-check result: scope, acceptance criteria, public composable behavior,
+  and unrelated changes checked
+- review requirement decision: separate review not required; the API shape did
+  not change and URL behavior change is narrowly limited to valid OData string
+  literal escaping
+- task state movement: move from `.agents/tasks/ready/` to
+  `.agents/tasks/done/`
+- `.agents/NEXT.md` update: pending orchestrator integration
+- commit hash: pending commit at handoff-note update time
+- known gaps: none
