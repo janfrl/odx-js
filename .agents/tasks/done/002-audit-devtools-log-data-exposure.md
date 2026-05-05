@@ -111,3 +111,11 @@ and require separate review.
 - commit hash: pending commit at handoff-note update time
 - known gaps: independent review is still required before this change should be
   considered merge-ready
+
+Review update:
+
+- initial review found that hook/rule-injected non-auth headers were no longer
+  reflected in DevTools logs
+- focused fix preserved those log updates while still omitting the exact
+  ODX-managed authorization value
+- focused re-review approved the change

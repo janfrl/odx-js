@@ -179,6 +179,13 @@ describe('proxy integration', () => {
   it('does not store ODX-managed authorization values in DevTools logs', async () => {
     clearODataLogs()
 
+    hooks.hookOnce('odx:proxy:request:AuthLogService', ({ fetchOptions }) => {
+      fetchOptions.headers = {
+        ...fetchOptions.headers,
+        'x-hook-visible': 'logged',
+      }
+    })
+
     const response = await ofetch(`${proxyUrl}/api/odx/AuthLogService/HeaderEcho`, {
       headers: {
         'x-debug-test': 'visible',
@@ -186,9 +193,11 @@ describe('proxy integration', () => {
     })
 
     expect(response.receivedHeaders.authorization).toMatch(/^Basic /)
+    expect(response.receivedHeaders['x-hook-visible']).toBe('logged')
 
     const [log] = getODataLogs()
     expect(log?.requestHeaders?.['x-debug-test']).toBe('visible')
+    expect(log?.requestHeaders?.['x-hook-visible']).toBe('logged')
     expect(log?.requestHeaders?.authorization).toBeUndefined()
   })
 

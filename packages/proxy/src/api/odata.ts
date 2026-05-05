@@ -8,6 +8,12 @@ import { odataGuard } from '../utils/rules'
 import { DevToolsTracer } from '../utils/trace'
 import { parseODataRequest, resolveTargetUrl } from '../utils/url'
 
+function omitManagedAuthorization(headers: Record<string, string>, authHeader?: string): void {
+  if (authHeader && headers.authorization === authHeader) {
+    delete headers.authorization
+  }
+}
+
 /**
  * Handles incoming OData requests by proxying them to the resolved target destination.
  * Supports both streaming (high performance) and buffering (for DevTools/interception).
@@ -49,9 +55,7 @@ export default defineEventHandler(async (event): Promise<any> => {
     // 3. Header Preparation
     const finalHeaders = prepareProxyHeaders(getHeaders(event), matched?.headers, targetConfig.authHeader)
     const loggedHeaders = { ...finalHeaders }
-    if (targetConfig.authHeader && loggedHeaders.authorization === targetConfig.authHeader) {
-      delete loggedHeaders.authorization
-    }
+    omitManagedAuthorization(loggedHeaders, targetConfig.authHeader)
 
     // 4. DevTools Logging Initialization
     let requestBody: any = null
@@ -87,6 +91,8 @@ export default defineEventHandler(async (event): Promise<any> => {
 
       // Sync changes back from Guard/Hooks
       Object.assign(finalHeaders, fetchOptions.headers || {})
+      Object.assign(loggedHeaders, finalHeaders)
+      omitManagedAuthorization(loggedHeaders, targetConfig.authHeader)
       targetUrl = hookCtx.url || targetUrl
     }
 
