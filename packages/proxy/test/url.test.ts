@@ -30,6 +30,33 @@ describe('oData URL Utilities', () => {
       expect(result.odataPath).toBe('Products')
       expect(result.query).toBe('?$filter=contains(Name,\'?\')&$top=1')
     })
+
+    it('normalizes base paths configured with trailing slashes', () => {
+      const event = { path: '/api/odx/TestService/Products' } as any
+      const result = parseODataRequest(event, '/api/odx//')
+
+      expect(result.serviceName).toBe('TestService')
+      expect(result.odataPath).toBe('Products')
+      expect(result.query).toBe('')
+    })
+
+    it('normalizes an extra slash after the base path boundary', () => {
+      const event = { path: '/api/odx//TestService/Products' } as any
+      const result = parseODataRequest(event, '/api/odx')
+
+      expect(result.serviceName).toBe('TestService')
+      expect(result.odataPath).toBe('Products')
+      expect(result.query).toBe('')
+    })
+
+    it('preserves query strings after normalizing path boundaries', () => {
+      const event = { path: '/api/odx//TestService/Products?$filter=contains(Name,\'?\')&next=/foo?bar=baz' } as any
+      const result = parseODataRequest(event, '/api/odx/')
+
+      expect(result.serviceName).toBe('TestService')
+      expect(result.odataPath).toBe('Products')
+      expect(result.query).toBe('?$filter=contains(Name,\'?\')&next=/foo?bar=baz')
+    })
   })
 
   describe('resolveTargetUrl', () => {

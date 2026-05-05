@@ -13,7 +13,7 @@ Adaptive Teamflow.
 ## Current Next Step
 
 Implement next ready task:
-`.agents/tasks/ready/041-preserve-flattened-value-properties.md`.
+`.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`.
 
 ## Prompt For Next Chat
 
@@ -26,33 +26,32 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/
-- .agents/tasks/ready/041-preserve-flattened-value-properties.md
-- ARCHITECTURE.md
-- DOMAIN_MODEL.md
-- packages/core/src/odata-utils.ts
-- packages/core/test/odata-utils.test.ts
-- examples/core-standalone.ts
+- .agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md
+- packages/proxy/test/performance.test.ts
+- packages/proxy/test/benchmark-compare.test.ts
+- packages/proxy/README.md
+- .agents/tasks/done/030-add-proxy-benchmark-overhead-ratios.md
+- .agents/tasks/done/034-add-proxy-benchmark-report-metadata.md
 
-Implement exactly `.agents/tasks/ready/041-preserve-flattened-value-properties.md`.
+Implement exactly `.agents/tasks/ready/043-test-proxy-benchmark-report-formatting.md`.
 
 Rules:
-- Keep changes scoped to core OData flattening behavior and tests.
-- Write focused tests first for ordinary entity properties named `value`; confirm at least one fails before changing implementation.
-- Preserve OData V4 collection envelope unwrapping, V2 `d.results`, metadata stripping, binary handling, and depth protection.
-- Do not change `$odata`, query stringification, EDMX parsing, proxy, Nuxt, Explorer, generated types, dependencies, or lockfiles.
+- Keep changes scoped to proxy benchmark report formatting helpers and tests.
+- Add focused deterministic tests for overhead table formatting and JSON metadata shape.
+- Extract only pure helper logic from `packages/proxy/test/performance.test.ts` if needed.
+- Keep benchmark scenario definitions, environment variables, timing measurement, compare-helper behavior, production proxy code, dependencies, and CI gates unchanged.
 - Do not revert edits made by others.
 - Update task handoff notes, move the task to `.agents/tasks/done/` when complete, update `.agents/NEXT.md`, and commit with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- `pnpm.cmd exec vitest run packages/core/test/odata-utils.test.ts`
-- `pnpm.cmd --filter @bc8-odx/core run verify`
-- `pnpm.cmd run typecheck`
+- `pnpm.cmd exec vitest run packages/proxy/test/benchmark-compare.test.ts packages/proxy/test/benchmark-report.test.ts`
+- `pnpm.cmd exec vitest run packages/proxy/test/performance.test.ts`
 - `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck` if implementation touches typed shared helper behavior
 
 When done, summarize:
 - changed files
 - what was implemented
-- failing-test evidence before the fix
 - verification performed
 - whether separate review is required and why
 - commit hash
