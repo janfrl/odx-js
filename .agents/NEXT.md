@@ -13,73 +13,56 @@ auth, privacy, deployment runtime behavior, and internal HTTP contracts.
 
 ## Current Next Step
 
-Focused re-review of the integration fix for task
-`.agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md`.
+Implement documentation task
+`.agents/tasks/ready/084-document-dev-prod-explorer-runtime-differences.md`
+before continuing the remaining production runtime sequence:
+
+1. `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`
+2. `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
+3. `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
+4. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
+5. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
+6. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the integration fix for the completed task:
-.agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md
+Implement exactly this task:
+.agents/tasks/ready/084-document-dev-prod-explorer-runtime-differences.md
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
+- .agents/WORKFLOW.md
+- .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md
 - ARCHITECTURE.md
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- DOMAIN_MODEL.md
-- .agents/WORKFLOW.md
-- .agents/decisions/001-production-explorer-runtime-apis.md
-- .agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md
-- packages/core/src/types.ts
-- packages/proxy/src/utils/explorer-policy.ts
-- packages/proxy/src/api/config.ts
-- packages/proxy/src/api/logs.ts
-- packages/proxy/src/api/generate.ts
-- packages/proxy/src/api/schema.ts
-- packages/proxy/src/api/types.ts
-- packages/proxy/src/api/me.ts
-- packages/proxy/src/plugins/auth-btp.ts
-- packages/proxy/test/explorer-policy.test.ts
-- packages/explorer/composables/useODataState.ts
-- packages/explorer/test/state.test.ts
-- packages/approuter/xs-app.json
-- packages/approuter/test/deployment-config.test.ts
-- the original reviewed commit `1b07b23aa94eac56563db15c1ff08378d7343084`
-- the latest integration fix commit diff
+- relevant existing docs under docs/content/en and docs/content/de
 
-Review stance:
-- Findings first.
-- Focus only on the two review findings that were fixed.
-- P1: Confirm AppRouter sends `/__odx__/client` and `/__odx__/client/*` to `odx-explorer-ui`, while `/__odx__/config`, `/__odx__/logs`, `/__odx__/schema`, `/__odx__/generate`, `/__odx__/types`, and `/__odx__/me` go to `odx-proxy-backend`.
-- P1: Confirm the runtime API route is narrow enough not to swallow Explorer client routes/assets.
-- P3: Confirm production `/__odx__/config` intentionally exposes top-level `basePath`, `mode`, and `services`, and that tests/docs treat `basePath` and `mode` as production-whitelisted fields.
-- P3: Confirm config redaction remains strict for backend URLs, destinations, auth, headers, rules, unknown service fields, global secrets, runtime paths, hooks, devtools config, `forwardAuthHeader`, and `versions.node`.
-- Check that no db0, evlog, persistence, metadata refresh, SDK generation behavior, public basePath proxy behavior, or Explorer UI redesign scope was added.
+Rules:
+- Make only documentation changes required by task 084.
+- Do not change runtime code, tests, package configuration, or remaining task ordering.
+- Keep current behavior and planned future behavior clearly separated.
+- Document development versus production Explorer behavior, auth differences, production `/__odx__` endpoint policies, production config redaction allowlist, runtime metadata refresh versus SDK generation, production-disabled logs, planned db0 follow-up, and development redaction/payload limits.
+- Keep English and German docs aligned when both language trees contain relevant pages.
+- Run `git diff --check`; run `pnpm.cmd --filter docs run verify` if practical.
+- Move the task to `.agents/tasks/done/` only after implementation and verification.
+- Update `.agents/NEXT.md` to continue with `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md` unless a stop condition applies.
+- Commit the completed documentation task with a Conventional Commit unless a stop condition prevents committing.
 
-Verification performed by integrator:
-- pnpm.cmd --filter odx-approuter run verify
-- pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts
-- pnpm.cmd --filter @bc8-odx/explorer run verify
-- pnpm.cmd run lint
-- pnpm.cmd run typecheck
-- git diff --check
-
-Note:
-- Direct root-level `pnpm.cmd exec vitest run packages/explorer/test/state.test.ts` failed before test collection with a Nuxt import-resolution error; the documented package-local Explorer verify passed.
-- Initial sandboxed Vitest commands hit Windows process spawning restrictions (`EPERM`) or could not launch `vitest`; elevated reruns passed.
-
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether the focused fix is approved or needs changes
-
-Create or update a review note under .agents/reviews/ using REVIEW_TEMPLATE.md.
-Update .agents/NEXT.md and commit the review note and workflow state changes.
-Include the exact next-chat prompt the operator should paste into a new chat.
+When done, summarize:
+- changed files
+- what was documented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from .agents/NEXT.md
 ```

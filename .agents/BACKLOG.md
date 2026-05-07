@@ -11,6 +11,7 @@ implementation phases.
 - Prioritize production Explorer runtime hardening before broader benchmark or
   polish work:
   - endpoint policy and config redaction
+  - development versus production Explorer runtime documentation
   - log storage abstraction and redaction
   - db0-backed Explorer traffic history
   - runtime metadata refresh separated from SDK generation

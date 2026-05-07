@@ -365,6 +365,8 @@ Deliverables:
 
 - `/__odx__` production endpoint policy is explicit and reviewed.
 - Production config responses are sanitized.
+- Development and production Explorer runtime differences are documented in
+  durable and user-facing docs.
 - Explorer traffic logs use a redacted ODX log store abstraction.
 - db0 is available as the first persistent log store backend.
 - Runtime metadata refresh is separated from TypeScript SDK generation.
@@ -375,7 +377,8 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/077-harden-production-explorer-endpoints-and-config.md`
+- `.agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md`
+- `.agents/tasks/ready/084-document-dev-prod-explorer-runtime-differences.md`
 - `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`
 - `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
 - `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
