@@ -220,6 +220,8 @@ export interface ODataProxyConfig {
   devtools?: {
     enabled?: boolean
     maxLogs?: number
+    logPayloads?: boolean
+    maxPayloadBytes?: number
   }
 }
 
@@ -298,6 +300,18 @@ export interface ModuleOptions {
     enabled?: boolean
     /** @default 100 */
     maxLogs?: number
+    /**
+     * Store bounded request and response payload previews in development logs.
+     * Production proxy tracing remains disabled by default.
+     * @default true
+     */
+    logPayloads?: boolean
+    /**
+     * Maximum serialized bytes retained for each logged request/response payload.
+     * Larger payloads are replaced with a truncated preview marker.
+     * @default 32768
+     */
+    maxPayloadBytes?: number
   }
 }
 

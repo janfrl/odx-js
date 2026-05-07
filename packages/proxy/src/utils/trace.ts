@@ -1,6 +1,15 @@
+import type { OdxLogPayloadPolicy } from '@bc8-odx/core'
 import type { H3Event } from 'h3'
 import process from 'node:process'
 import { addODataLog, updateODataLog } from '@bc8-odx/core'
+
+function resolvePayloadPolicy(event: H3Event): OdxLogPayloadPolicy {
+  const devtools = event.context.odataConfig?.devtools
+  return {
+    storePayloads: !!devtools?.enabled && devtools.logPayloads !== false && process.env.NODE_ENV !== 'production',
+    maxPayloadBytes: devtools?.maxPayloadBytes,
+  }
+}
 
 /**
  * Encapsulates the tracing and logging state for a single proxy request.
@@ -10,10 +19,12 @@ export class DevToolsTracer {
   readonly startTime = Date.now()
   readonly trace: any[]
   readonly enabled: boolean
+  readonly payloadPolicy: OdxLogPayloadPolicy
 
   constructor(event: H3Event) {
     const config = event.context.odataConfig
     this.enabled = !!(config?.devtools?.enabled && process.env.NODE_ENV !== 'production')
+    this.payloadPolicy = resolvePayloadPolicy(event)
     this.trace = []
     event.context.proxyTrace = this.addTrace.bind(this)
   }
@@ -38,12 +49,12 @@ export class DevToolsTracer {
   /**
    * Creates an initial log entry for the request.
    */
-  initLog(event: H3Event, targetUrl: string, serviceName: string, entitySet: string, requestBody?: any, requestHeaders?: any): void {
+  async initLog(event: H3Event, targetUrl: string, serviceName: string, entitySet: string, requestBody?: any, requestHeaders?: any): Promise<void> {
     if (!this.enabled)
       return
 
     const config = event.context.odataConfig
-    addODataLog({
+    await addODataLog({
       id: this.id,
       timestamp: Date.now(),
       method: event.method,
@@ -57,23 +68,30 @@ export class DevToolsTracer {
       requestBody,
       requestHeaders,
       proxyTrace: this.trace,
-    }, config?.devtools?.maxLogs)
+    }, config?.devtools?.maxLogs, this.payloadPolicy)
   }
 
   /**
    * Updates the existing log entry with final response data.
    */
-  updateLog(status: number, responseBody?: any): void {
+  async updateLog(status: number, responseBody?: any): Promise<void> {
     if (!this.enabled)
       return
 
-    updateODataLog(this.id, {
+    await updateODataLog(this.id, {
       status,
       duration: Date.now() - this.startTime,
       isPending: false,
       responseBody,
       proxyTrace: [...this.trace],
-    })
+    }, this.payloadPolicy)
+  }
+
+  async updateLogContext(updates: { targetUrl?: string, requestHeaders?: any }): Promise<void> {
+    if (!this.enabled)
+      return
+
+    await updateODataLog(this.id, updates, this.payloadPolicy)
   }
 
   /**
@@ -84,7 +102,7 @@ export class DevToolsTracer {
       return
 
     event.node.res.on('finish', () => {
-      this.updateLog(event.node.res.statusCode, '[Streamed Response]')
+      void this.updateLog(event.node.res.statusCode, '[Streamed Response]')
     })
   }
 }

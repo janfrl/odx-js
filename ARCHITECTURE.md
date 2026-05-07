@@ -27,7 +27,8 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
   `mergeHeaders`, and `sanitizeBaseURL`.
 - EDMX parsing utilities from the `./server` export.
 - CSRF-aware request support through `fetchWithCsrf`.
-- In-memory development logs used by the proxy and Explorer.
+- The `OdxLogStore` traffic-log boundary, default in-memory store, redaction
+  helpers, and bounded payload utilities used by the proxy and Explorer.
 
 Add low-level OData behavior here when it is useful outside Nuxt or Nitro.
 
@@ -110,9 +111,9 @@ Planned follow-up work keeps runtime metadata refresh separate from TypeScript
 SDK generation. Production may later refresh runtime metadata cache state for
 Explorer schema/config views, but SDK/type file generation remains a
 development, build, or CI workflow that requires a new deployment to affect
-application code. Production traffic history also remains disabled until the
-planned `OdxLogStore` and db0-backed persistence work define redaction,
-retention, payload limits, and clear behavior.
+application code. Production traffic history also remains disabled until
+db0-backed persistence work defines deployment storage, retention, and clear
+behavior behind the existing `OdxLogStore` boundary.
 
 ### `docs`
 
@@ -136,10 +137,14 @@ The normal Nuxt runtime path is:
 7. Responses are returned to the application. In development, request telemetry
    is stored for the Explorer.
 
-Development telemetry is still a sensitive surface. Traffic logs, outbound
-headers, auth/session/CSRF material, and large request or response bodies must
-be redacted or bounded before they are displayed, stored, exported, or copied
-into tests. Production payload logging is currently disabled.
+Development telemetry is still a sensitive surface. Traffic logs now pass
+through the core `OdxLogStore` boundary before storage. The default store is
+memory-backed for local development and tests, supports append, update, list,
+get, clear, and retention-friendly filters, and redacts or bounds sensitive log
+fields before persisting entries. Outbound headers, auth/session/CSRF material,
+and large request or response bodies must be redacted or bounded before they
+are displayed, stored, exported, or copied into tests. Production payload
+logging remains disabled by default.
 
 Direct services can be addressed by the browser, but the Explorer defaults to a
 CORS bridge path for usability during development.

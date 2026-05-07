@@ -159,7 +159,11 @@ its default.
 
 ## Logging And Telemetry
 
-Development logging stores OData traffic in memory for Explorer inspection.
+Development logging stores OData traffic in memory for Explorer inspection
+through the core `OdxLogStore` boundary. The default store is
+`OdxMemoryLogStore`; future persistent adapters must implement the same append,
+update, list, get, clear, and retention-friendly query behavior without
+bypassing redaction.
 Logs may include:
 
 - request URLs
@@ -173,25 +177,30 @@ Logs may include:
 behavior. Do not add production payload logging without a documented security
 review.
 
-If headers are displayed or stored in development, redact sensitive values such
-as:
+Headers are redacted before storage when their names contain or match sensitive
+credential/session material, including:
 
 - `authorization`
+- `proxy-authorization`
 - `cookie`
 - `set-cookie`
 - API keys
 - SAP session tokens
+- CSRF/XSRF tokens
 
 Development logs must also limit or truncate large request and response bodies
-before they are displayed, retained, exported, or copied into fixtures. Treat
-request bodies, response bodies, outbound headers, auth/session/CSRF data, and
-proxy traces as potentially sensitive even when they are local-only.
+before they are displayed, retained, exported, or copied into fixtures. The
+default payload policy stores bounded previews locally, omits payloads when
+`devtools.logPayloads` is `false`, and replaces payloads larger than
+`devtools.maxPayloadBytes` with an ODX truncation marker containing byte counts
+and a preview. Treat request bodies, response bodies, outbound headers,
+auth/session/CSRF data, and proxy traces as potentially sensitive even when
+they are local-only.
 
 Production Explorer traffic history is currently disabled by policy:
 `/__odx__/logs` returns an empty list and rejects clearing. The planned
-db0-backed `OdxLogStore` follow-up must define production redaction, payload
-limits, retention, and clear behavior before enabling persisted traffic
-history.
+db0-backed follow-up must define production storage, retention, and clear
+behavior behind `OdxLogStore` before enabling persisted traffic history.
 
 ## Direct Strategy
 

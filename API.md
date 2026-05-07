@@ -43,6 +43,8 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `btpConfigService` | User-provided service name for BTP config overrides. | `odx-config` |
 | `devtools.enabled` | Enable the Explorer in Nuxt DevTools during development. | `true` |
 | `devtools.maxLogs` | Maximum in-memory traffic log entries. | `100` |
+| `devtools.logPayloads` | Store bounded request/response payload previews in development traffic logs. | `true` |
+| `devtools.maxPayloadBytes` | Maximum serialized bytes kept per logged request/response payload before replacing it with a truncated preview marker. | `32768` |
 
 Only safe public fields are exposed through `runtimeConfig.public.odata`. Secrets
 must stay in private runtime config, environment variables, or BTP services.
@@ -138,6 +140,13 @@ Keys may be strings, numbers, or composite key objects.
 - `odataGuard(ctx)` and `ODataGuard` rule utilities.
 - OData client/log/CSRF helpers re-exported from core.
 
+Core log helpers include the `OdxLogStore` interface, `OdxMemoryLogStore`,
+`setOdxLogStore`, `getOdxLogStore`, `resetOdxLogStore`, `addODataLog`,
+`updateODataLog`, `getODataLogs`, `getODataLog`, `clearODataLogs`,
+`redactSensitiveHeaders`, `boundLogPayload`, and `sanitizeODataLog`. Store
+implementations must redact sensitive headers and bound or omit payloads before
+entries are persisted.
+
 The Nitro module is available as `@bc8-odx/proxy/nitro`.
 
 ## Proxy Rules
@@ -215,7 +224,7 @@ DevTools config, `forwardAuthHeader`, or `versions.node`.
 | Endpoint | Development behavior | Current production policy |
 | --- | --- | --- |
 | `/__odx__/config` | Resolved service config, entities, versions, and generation status for DevTools inspection. | Authenticated. Returns only top-level `basePath`, `mode`, and sanitized `services` entries. |
-| `/__odx__/logs` | In-memory traffic logs. `DELETE` clears local logs. Logs must redact secrets and bound large payloads before display, storage, export, or test use. | Authenticated. Returns `[]`; `DELETE` returns `403` until persistent log policy exists. |
+| `/__odx__/logs` | Memory-backed traffic logs through `OdxLogStore`. `GET` supports retention-friendly filters such as `limit`, `offset`, `service`, `method`, `status`, `from`, `to`, `before`, `after`, `includePending=false`, and `order=asc\|desc`; `DELETE` clears all local logs or a bounded subset with `service`, `before`, or `to`. Logs redact secrets and bound large payloads before storage, display, export, or test use. | Authenticated. Returns `[]`; `DELETE` returns `403` until persistent log policy exists. |
 | `/__odx__/generate?service=<name>` | Development SDK/type regeneration for one service. | Authenticated but disabled. Returns `403`; production does not regenerate SDK files. |
 | `/__odx__/schema?service=<name>` | Parsed EDMX schema. `raw=true` can return XML locally. | Authenticated. Uses cached parsed metadata only and rejects raw XML. |
 | `/__odx__/types?service=<name>` | Local generated TypeScript model files. | Authenticated but disabled. Returns `403`. |
@@ -227,9 +236,9 @@ metadata only; a later endpoint may refresh runtime metadata cache state for the
 Explorer, but generated SDK/type files remain development, build, or CI
 artifacts.
 
-Production traffic history is intentionally disabled. A later `OdxLogStore`
-implementation is planned with db0 as the first persistent adapter candidate;
-that follow-up must define redaction, retention, payload limits, and clear
+Production traffic history is intentionally disabled. The `OdxLogStore`
+boundary, memory implementation, redaction rules, and payload limits exist now;
+a later db0 adapter task must define deployment storage, retention, and clear
 semantics before production logs are enabled.
 
 Do not expose secrets from these endpoints. Treat them as development and

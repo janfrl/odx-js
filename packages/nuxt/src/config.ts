@@ -150,6 +150,8 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     devtools: {
       enabled: options.devtools?.enabled !== false,
       maxLogs: options.devtools?.maxLogs ?? 100,
+      logPayloads: options.devtools?.logPayloads !== false,
+      maxPayloadBytes: options.devtools?.maxPayloadBytes ?? 32 * 1024,
     },
   }
 }

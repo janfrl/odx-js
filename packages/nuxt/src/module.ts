@@ -24,6 +24,8 @@ export default defineNuxtModule<ModuleOptions>({
     devtools: {
       enabled: true,
       maxLogs: 100,
+      logPayloads: true,
+      maxPayloadBytes: 32 * 1024,
     },
   },
   async setup(options, nuxt) {

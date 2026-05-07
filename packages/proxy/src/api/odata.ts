@@ -62,7 +62,7 @@ export default defineEventHandler(async (event): Promise<any> => {
     if (tracer.enabled && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
       requestBody = await readBody(event).catch(() => null)
     }
-    tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, loggedHeaders)
+    await tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, loggedHeaders)
 
     // 5. Rule & Hook Execution
     const isDirect = targetConfig.strategy === 'direct'
@@ -94,6 +94,7 @@ export default defineEventHandler(async (event): Promise<any> => {
       Object.assign(loggedHeaders, finalHeaders)
       omitManagedAuthorization(loggedHeaders, targetConfig.authHeader)
       targetUrl = hookCtx.url || targetUrl
+      await tracer.updateLogContext({ targetUrl, requestHeaders: loggedHeaders })
     }
 
     // 6. Proxy Execution (Hybrid Mode)
@@ -122,13 +123,13 @@ export default defineEventHandler(async (event): Promise<any> => {
 
         setResponseStatus(event, responseStatus)
         tracer.addTrace('Response', 'Request successful', { status: responseStatus }, 'success')
-        tracer.updateLog(responseStatus, responseStatus === 204 ? undefined : flattenOData(responseData))
+        await tracer.updateLog(responseStatus, responseStatus === 204 ? undefined : flattenOData(responseData))
         return responseStatus === 204 ? '' : responseData
       }
       catch (err: any) {
         const status = err.response?.status || 500
         tracer.addTrace('Response', `Backend request failed with status ${status}`, { error: err.message }, 'error')
-        tracer.updateLog(status, { error: err.message })
+        await tracer.updateLog(status, { error: err.message })
         // Re-throw as an h3 error so that the original SAP response body (e.g. permission
         // denied) is forwarded to the client instead of being swallowed by Nitro's error
         // serializer, which would strip the structured error payload.
@@ -146,7 +147,7 @@ export default defineEventHandler(async (event): Promise<any> => {
   catch (err: any) {
     const status = err.statusCode || err.status || 500
     const message = err.statusMessage || err.message || 'Internal Proxy Error'
-    tracer.updateLog(status, { error: message })
+    await tracer.updateLog(status, { error: message })
     throw err
   }
 })

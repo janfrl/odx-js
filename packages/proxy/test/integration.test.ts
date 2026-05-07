@@ -123,7 +123,7 @@ describe('proxy integration', () => {
       Name: 'Created Product',
     })
 
-    const [log] = getODataLogs()
+    const [log] = await getODataLogs()
     expect(log?.status).toBe(201)
     expect(log?.responseBody).toMatchObject({
       ID: 'created-1',
@@ -136,7 +136,7 @@ describe('proxy integration', () => {
 
     await ofetch(`${proxyUrl}/api/odx/TestService/Products`)
 
-    const [log] = getODataLogs()
+    const [log] = await getODataLogs()
     expect(log?.proxyTrace).toEqual(expect.arrayContaining([
       expect.objectContaining({
         label: 'Proxy',
@@ -164,7 +164,7 @@ describe('proxy integration', () => {
     expect(response.status).toBe(204)
     expect(response._data).toBeUndefined()
 
-    const [log] = getODataLogs()
+    const [log] = await getODataLogs()
     expect(log?.status).toBe(204)
     expect(log?.responseBody).toBeUndefined()
   })
@@ -283,15 +283,19 @@ describe('proxy integration', () => {
     const response = await ofetch(`${proxyUrl}/api/odx/AuthLogService/HeaderEcho`, {
       headers: {
         'x-debug-test': 'visible',
+        'x-api-key': 'client-secret',
+        'cookie': 'sap-session=secret',
       },
     })
 
     expect(response.receivedHeaders.authorization).toMatch(/^Basic /)
     expect(response.receivedHeaders['x-hook-visible']).toBe('logged')
 
-    const [log] = getODataLogs()
+    const [log] = await getODataLogs()
     expect(log?.requestHeaders?.['x-debug-test']).toBe('visible')
     expect(log?.requestHeaders?.['x-hook-visible']).toBe('logged')
+    expect(log?.requestHeaders?.['x-api-key']).toBe('[Redacted]')
+    expect(log?.requestHeaders?.cookie).toBe('[Redacted]')
     expect(log?.requestHeaders?.authorization).toBeUndefined()
   })
 

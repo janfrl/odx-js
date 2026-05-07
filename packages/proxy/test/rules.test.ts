@@ -1,5 +1,6 @@
 import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
 import { createServer } from 'node:http'
+import { clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
@@ -323,6 +324,78 @@ describe('disabled DevTools proxy tracing', () => {
 
     expect(tracer.enabled).toBe(false)
     expect(tracer.trace).toEqual([])
+  })
+
+  it('does not persist payload logs when DevTools are disabled', async () => {
+    await clearODataLogs()
+    const event = {
+      method: 'POST',
+      path: '/api/odx/TestService/Products',
+      context: {
+        odataConfig: {
+          devtools: {
+            enabled: false,
+          },
+        },
+      },
+    } as any
+    const tracer = new DevToolsTracer(event)
+
+    await tracer.initLog(
+      event,
+      'https://example.test/odata/Products',
+      'TestService',
+      'Products',
+      { secret: 'request-payload' },
+      { authorization: 'Bearer secret' },
+    )
+    await tracer.updateLog(200, { secret: 'response-payload' })
+
+    expect(await getODataLogs()).toEqual([])
+  })
+
+  it('omits request and response bodies when payload logging policy is disabled', async () => {
+    await clearODataLogs()
+    const event = {
+      method: 'POST',
+      path: '/api/odx/TestService/Products',
+      context: {
+        odataConfig: {
+          devtools: {
+            enabled: true,
+            logPayloads: false,
+          },
+        },
+      },
+      node: {
+        res: {
+          on: vi.fn(),
+        },
+      },
+    } as any
+    const tracer = new DevToolsTracer(event)
+
+    await tracer.initLog(
+      event,
+      'https://example.test/odata/Products',
+      'TestService',
+      'Products',
+      { secret: 'request-payload' },
+      { 'authorization': 'Bearer secret', 'x-visible': 'visible' },
+    )
+    await tracer.updateLog(200, { secret: 'response-payload' })
+
+    const [log] = await getODataLogs()
+    expect(log).toMatchObject({
+      service: 'TestService',
+      status: 200,
+      requestHeaders: {
+        'authorization': '[Redacted]',
+        'x-visible': 'visible',
+      },
+    })
+    expect(log?.requestBody).toBeUndefined()
+    expect(log?.responseBody).toBeUndefined()
   })
 
   it('uses isolated trace arrays for disabled tracer instances', () => {

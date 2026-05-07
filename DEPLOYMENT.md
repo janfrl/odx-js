@@ -43,6 +43,10 @@ Local Explorer endpoints are optimized for developer feedback. They can expose
 resolved config, local generated types, raw metadata XML, and in-memory traffic
 logs. Development logs still need secret redaction and payload limits for
 outbound headers, auth/session/CSRF data, request bodies, and response bodies.
+Traffic logs use the core `OdxLogStore` boundary with the memory store by
+default. `devtools.maxLogs` controls local retention count, `devtools.logPayloads`
+can omit request/response bodies, and `devtools.maxPayloadBytes` bounds each
+stored payload preview.
 
 ## Build
 
@@ -162,7 +166,8 @@ endpoint policy:
 - `/__odx__/generate` and `/__odx__/types` return `403`; production does not
   regenerate SDK files.
 - `/__odx__/logs` returns an empty list and rejects `DELETE` until the planned
-  db0-backed log store and redaction policy are implemented.
+  db0-backed adapter defines production storage, retention, and clear behavior
+  behind the existing log store and redaction boundary.
 - `/__odx__/me` returns sanitized SAP user context without raw token data.
 
 ## Service Configuration In Deployment

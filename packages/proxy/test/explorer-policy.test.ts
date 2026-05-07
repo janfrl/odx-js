@@ -1,5 +1,6 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
 import { createServer } from 'node:http'
+import { addODataLog, clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
 import { createApp, createRouter, defineEventHandler, toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
@@ -249,6 +250,16 @@ describe('production Explorer endpoint policy', () => {
 
   it('keeps production logs disabled until persistent log policy is configured', async () => {
     process.env.NODE_ENV = 'production'
+    await clearODataLogs()
+    await addODataLog({
+      id: 'production-hidden',
+      timestamp: Date.now(),
+      method: 'POST',
+      url: '/api/odx/SensitiveService/Products',
+      service: 'SensitiveService',
+      requestBody: { secret: 'payload' },
+      responseBody: { secret: 'payload' },
+    })
     const server = await listenExplorerApi(createConfig(), { authenticated: true })
 
     try {
@@ -256,8 +267,10 @@ describe('production Explorer endpoint policy', () => {
       await expect(ofetch(`${server.url}/__odx__/logs`, { method: 'DELETE' })).rejects.toMatchObject({
         status: 403,
       })
+      expect(await getODataLogs()).toHaveLength(1)
     }
     finally {
+      await clearODataLogs()
       await server.close()
     }
   })

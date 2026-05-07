@@ -5,7 +5,33 @@ import { resolveProxyTarget } from './utils/target'
 import { parseODataRequest } from './utils/url'
 
 export { odataGuard } from './utils/rules'
-export { addODataLog, clearODataLogs, createODataClient, fetchWithCsrf, getODataLogs } from '@bc8-odx/core'
+export {
+  addODataLog,
+  boundLogPayload,
+  clearODataLogs,
+  createODataClient,
+  fetchWithCsrf,
+  getODataLog,
+  getODataLogs,
+  getOdxLogStore,
+  OdxMemoryLogStore,
+  redactSensitiveHeaders,
+  resetOdxLogStore,
+  sanitizeODataLog,
+  setOdxLogStore,
+  updateODataLog,
+} from '@bc8-odx/core'
+export type {
+  ODataLog,
+  OdxBoundedPayload,
+  OdxLogAppendOptions,
+  OdxLogClearOptions,
+  OdxLogPayloadPolicy,
+  OdxLogQueryOptions,
+  OdxLogStore,
+  OdxLogUpdateOptions,
+  ProxyTraceEntry,
+} from '@bc8-odx/core'
 
 /**
  * Creates a standalone h3 event handler for OData proxying.
