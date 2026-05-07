@@ -13,7 +13,7 @@ pnpm add @bc8-odx/explorer
 Run the Explorer package tests without the full workspace test suite:
 
 ```bash
-pnpm.cmd --filter @bc8-odx/explorer run verify
+pnpm --filter @bc8-odx/explorer run verify
 ```
 
 **For documentation on the DevTools UI and debugging patterns, please visit: [odx-js.io/packages/explorer](https://odx-js.io/packages/explorer)**

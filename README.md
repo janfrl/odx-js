@@ -99,23 +99,20 @@ The API reference is automatically updated during `pnpm run docs:prepare`.
 
 ### Package verification
 
-On Windows PowerShell in this repository, use `pnpm.cmd` instead of `pnpm`
-because `.ps1` launchers may be blocked by execution policy.
-
-Use `pnpm.cmd run verify:packages` when you want the package-local confidence
-checks in one command. It is additive: still run broad `lint`, `typecheck`, or
+Use `pnpm run verify:packages` when you want the package-local confidence checks
+in one command. It is additive: still run broad `lint`, `typecheck`, or
 workspace `test` when the change scope calls for them.
 
 | Command | What it verifies |
 | :--- | :--- |
-| `pnpm.cmd run example:core` | Runs the standalone core example against local fixtures, covering EDMX version detection, entity extraction, query stringification, OData response flattening, and the low-level `$odata` helper. |
-| `pnpm.cmd run example:proxy` | Starts a local fixture backend and H3 proxy, then verifies proxied OData reads and header forwarding through `@bc8-odx/proxy`. |
-| `pnpm.cmd run examples` | Runs the core and proxy standalone examples together for a quick package isolation smoke check. |
-| `pnpm.cmd run verify:packages` | Runs the existing package-local verify scripts for core, proxy, Nuxt, Explorer, AppRouter, and docs without replacing broad `lint`, `typecheck`, or workspace `test`. |
-| `pnpm.cmd run bench:proxy` | Runs the proxy performance benchmark and reports direct, buffered proxy, streamed proxy, concurrent, and DevTools logging timing baselines. |
-| `pnpm.cmd --filter @bc8-odx/core run verify` | Runs the focused core Vitest tests and standalone fixture check through the package-local script. |
-| `pnpm.cmd --filter @bc8-odx/proxy run verify` | Runs the proxy package Vitest suite and standalone fixture check through the package-local script. |
-| `pnpm.cmd --filter @bc8-odx/nuxt run verify` | Runs the Nuxt package Vitest suite and minimal playground check through the package-local script. |
-| `pnpm.cmd --filter @bc8-odx/explorer run verify` | Runs the Explorer package Vitest suite without the full workspace test run. |
-| `pnpm.cmd --filter odx-approuter run verify` | Runs the AppRouter deployment config consistency check against `mta.yaml`. |
-| `pnpm.cmd --filter docs run verify` | Runs docs metadata extraction and API reference extraction without starting the docs dev server. |
+| `pnpm run example:core` | Runs the standalone core example against local fixtures, covering EDMX version detection, entity extraction, query stringification, OData response flattening, and the low-level `$odata` helper. |
+| `pnpm run example:proxy` | Starts a local fixture backend and H3 proxy, then verifies proxied OData reads and header forwarding through `@bc8-odx/proxy`. |
+| `pnpm run examples` | Runs the core and proxy standalone examples together for a quick package isolation smoke check. |
+| `pnpm run verify:packages` | Runs the existing package-local verify scripts for core, proxy, Nuxt, Explorer, AppRouter, and docs without replacing broad `lint`, `typecheck`, or workspace `test`. |
+| `pnpm run bench:proxy` | Runs the proxy performance benchmark and reports direct, buffered proxy, streamed proxy, concurrent, and DevTools logging timing baselines. |
+| `pnpm --filter @bc8-odx/core run verify` | Runs the focused core Vitest tests and standalone fixture check through the package-local script. |
+| `pnpm --filter @bc8-odx/proxy run verify` | Runs the proxy package Vitest suite and standalone fixture check through the package-local script. |
+| `pnpm --filter @bc8-odx/nuxt run verify` | Runs the Nuxt package Vitest suite and minimal playground check through the package-local script. |
+| `pnpm --filter @bc8-odx/explorer run verify` | Runs the Explorer package Vitest suite without the full workspace test run. |
+| `pnpm --filter odx-approuter run verify` | Runs the AppRouter deployment config consistency check against `mta.yaml`. |
+| `pnpm --filter docs run verify` | Runs docs metadata extraction and API reference extraction without starting the docs dev server. |

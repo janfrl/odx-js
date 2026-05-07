@@ -13,16 +13,16 @@ pnpm add @bc8-odx/proxy
 From the repository root:
 
 ```bash
-pnpm.cmd --filter @bc8-odx/proxy run verify
-pnpm.cmd run bench:proxy
+pnpm --filter @bc8-odx/proxy run verify
+pnpm run bench:proxy
 ```
 
-`pnpm.cmd --filter @bc8-odx/proxy run verify` runs the proxy Vitest suite and
-the same standalone fixture check as `pnpm.cmd run example:proxy`. It starts a
+`pnpm --filter @bc8-odx/proxy run verify` runs the proxy Vitest suite and
+the same standalone fixture check as `pnpm run example:proxy`. It starts a
 local fixture backend and H3 proxy, then verifies proxied OData reads and
 header forwarding through `@bc8-odx/proxy`.
 
-`pnpm.cmd run bench:proxy` runs the proxy performance benchmark. It verifies
+`pnpm run bench:proxy` runs the proxy performance benchmark. It verifies
 buffer and stream proxy responses match the fixture backend, then reports
 direct, proxied, concurrent, and DevTools logging timing baselines. Scenarios
 with a direct or logging baseline include both absolute average overhead and
@@ -36,15 +36,13 @@ positive integers to adjust the number of measured requests and measurement
 rounds.
 Use `ODX_PROXY_BENCHMARK_CONCURRENCY` with a positive integer to adjust
 concurrent large-response requests.
-Use `pnpm.cmd` on Windows PowerShell in this repository when `.ps1` launchers
-are blocked.
 
 To compare two generated benchmark reports:
 
 ```bash
-ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-a.json pnpm.cmd run bench:proxy
-ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-b.json pnpm.cmd run bench:proxy
-pnpm.cmd run bench:proxy:compare -- reports/proxy-benchmark-a.json reports/proxy-benchmark-b.json
+ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-a.json pnpm run bench:proxy
+ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark-b.json pnpm run bench:proxy
+pnpm run bench:proxy:compare -- reports/proxy-benchmark-a.json reports/proxy-benchmark-b.json
 ```
 
 **For full documentation, server-side configuration, and security guides, please visit: [odx-js.io/packages/proxy](https://odx-js.io/packages/proxy)**
