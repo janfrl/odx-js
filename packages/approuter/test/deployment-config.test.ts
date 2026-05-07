@@ -4,8 +4,10 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 interface XsAppRoute {
+  authenticationType?: unknown
   destination?: unknown
   source?: unknown
+  target?: unknown
 }
 
 interface XsAppConfig {
@@ -104,5 +106,19 @@ describe('deployment config', () => {
       routeDestinations.filter(route => !mtaDestinationNames.has(route.destination)),
       'missing MTA destination entries for AppRouter routes',
     ).toEqual([])
+  })
+
+  it('routes internal Explorer APIs to the proxy behind XSUAA', async () => {
+    const xsAppText = await readFile(resolve(repoRoot, 'packages/approuter/xs-app.json'), 'utf8')
+    const xsApp = JSON.parse(xsAppText) as XsAppConfig
+
+    expect(xsApp.routes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        source: '^/__odx__/(.*)$',
+        target: '/__odx__/$1',
+        destination: 'odx-proxy-backend',
+        authenticationType: 'xsuaa',
+      }),
+    ]))
   })
 })

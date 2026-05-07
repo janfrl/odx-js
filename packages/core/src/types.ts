@@ -223,6 +223,28 @@ export interface ODataProxyConfig {
   }
 }
 
+export interface ODataExplorerServiceInfo {
+  name: string
+  route?: string
+  icon?: string
+  strategy?: 'proxied' | 'direct'
+  proxyMode?: 'stream' | 'buffer'
+  entities?: EntityMapping[]
+  isGenerated?: boolean
+  version?: 'v2' | 'v4' | null
+}
+
+export interface ODataExplorerConfigResponse {
+  basePath: string
+  mode: string
+  services: ODataExplorerServiceInfo[]
+  forwardAuthHeader?: boolean
+  versions?: {
+    node: string
+    module: string
+  }
+}
+
 export interface ODataPublicConfig {
   basePath?: string
   mode?: string

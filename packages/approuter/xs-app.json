@@ -10,6 +10,13 @@
       "csrfProtection": false
     },
     {
+      "source": "^/__odx__/(.*)$",
+      "target": "/__odx__/$1",
+      "destination": "odx-proxy-backend",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
       "source": "^/explorer/(.*)$",
       "target": "/$1",
       "destination": "odx-explorer-ui",

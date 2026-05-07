@@ -2,7 +2,7 @@ import type { EntityMapping } from '@bc8-odx/core'
 
 export interface ODataServiceState {
   name: string
-  url: string
+  url?: string
   route: string
   strategy: 'proxied' | 'direct'
   entities: EntityMapping[]

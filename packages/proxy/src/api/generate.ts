@@ -4,8 +4,11 @@ import fs from 'node:fs'
 import https from 'node:https'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { join, resolve } from 'pathe'
+import { enforceExplorerEndpointPolicy } from '../utils/explorer-policy'
 
 export default defineEventHandler(async (event) => {
+  enforceExplorerEndpointPolicy(event, 'generate')
+
   const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''

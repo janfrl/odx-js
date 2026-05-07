@@ -1,4 +1,4 @@
-import type { EntityMapping, ODataProxyConfig } from '@bc8-odx/core'
+import type { EntityMapping, ODataExplorerConfigResponse, ODataExplorerServiceInfo, ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -6,8 +6,24 @@ import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/serve
 import { defineEventHandler } from 'h3'
 import { createJiti } from 'jiti'
 import { join, resolve } from 'pathe'
+import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
+
+function sanitizeServiceForProduction(service: any): ODataExplorerServiceInfo {
+  return {
+    name: service.name,
+    route: service.route,
+    icon: service.icon,
+    strategy: service.strategy,
+    proxyMode: service.proxyMode,
+    entities: service.entities,
+    isGenerated: service.isGenerated,
+    version: service.version,
+  }
+}
 
 export default defineEventHandler(async (event) => {
+  enforceExplorerEndpointPolicy(event, 'config')
+
   const config = event.context.odataConfig as ODataProxyConfig
   const buildDir = config.buildDir ?? ''
   const rootDir = config.rootDir ?? ''
@@ -82,6 +98,14 @@ export default defineEventHandler(async (event) => {
       version,
     }
   }))
+
+  if (isProductionExplorerRuntime()) {
+    return {
+      basePath: config.basePath || '/api/odx',
+      mode: config.mode || 'sdk',
+      services: enhancedServices.map(sanitizeServiceForProduction),
+    } satisfies ODataExplorerConfigResponse
+  }
 
   return {
     basePath: config.basePath || '/api/odx',

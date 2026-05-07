@@ -1,12 +1,16 @@
 import process from 'node:process'
 import { defineEventHandler, getHeader } from 'h3'
+import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 
 /**
  * Returns the current user's identity details using the official SAP security context methods.
  */
 export default defineEventHandler(async (event) => {
+  enforceExplorerEndpointPolicy(event, 'me')
+
   const authHeader = getHeader(event, 'authorization')
   const sc = event.context.securityContext
+  const isProduction = isProductionExplorerRuntime()
 
   // 1. Unified Return via SAP Security Context (Real Cloud Flow)
   if (sc) {
@@ -20,13 +24,14 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    return {
+    const user = {
       Usermail: sc.getEmail() || '',
       Userid: sc.getAttribute('employee_id')?.[0] || sc.getLogonName() || '',
       Usercompany: sc.getAttribute('company_id')?.[0] || '',
       Usercompanies: userCompanies,
-      _raw: sc.getTokenInfo(),
     }
+
+    return isProduction ? user : { ...user, _raw: sc.getTokenInfo() }
   }
 
   // 2. Manual decoding fallback (Approuter present but plugin skipped)

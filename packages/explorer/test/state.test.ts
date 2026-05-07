@@ -581,6 +581,36 @@ describe('explorer State Composable', () => {
     ])
   })
 
+  it('accepts sanitized production service config without secret-bearing fields', () => {
+    const { config, services } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'Northwind',
+          route: 'northwind',
+          strategy: 'proxied',
+          entities: [{ name: 'Product', type: 'Product', properties: [], navigationProperties: [] }],
+          isGenerated: false,
+          version: 'v2',
+        },
+      ],
+    }
+
+    expect(services.value[0]).toMatchObject({
+      name: 'Northwind',
+      route: 'northwind',
+      strategy: 'proxied',
+      health: 'checking',
+      entities: [{ name: 'Product' }],
+      isGenerated: false,
+      version: 'v2',
+    })
+    expect(services.value[0]?.url).toBeUndefined()
+    expect(services.value[0]?.headers).toBeUndefined()
+    expect(services.value[0]?.config).toBeUndefined()
+  })
+
   it('preserves selected entity when refreshed config still contains it', async () => {
     const { config, selectedEntity, selectedService } = useSharedODataState()
     selectedService.value = {

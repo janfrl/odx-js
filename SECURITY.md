@@ -25,14 +25,15 @@ the approuter and proxy Nitro plugins.
 Relevant behavior:
 
 - `packages/approuter/xs-app.json` requires XSUAA for `/api/odx/*` and
-  `/explorer/*`.
+  `/__odx__/*` on the proxy and `/explorer/*` on the Explorer UI.
 - `packages/proxy/src/plugins/auth-btp.ts` validates SAP security context for
   `/api/*` and `/__odx__/*` when `NODE_ENV=production`, `VCAP_SERVICES` exists,
   and XSUAA credentials are available.
 - `packages/proxy/src/api/odata.ts` also validates BTP auth in production.
 - `/__odx__/me` returns the official SAP security context when available,
-  decodes a bearer token as fallback, and returns a synthetic local user only
-  outside production.
+  decodes a bearer token as fallback outside production, and returns a
+  synthetic local user only outside production. Production responses omit raw
+  token data.
 
 If authentication behavior changes, update `xs-security.json`,
 `packages/approuter/xs-app.json`, and this file together.
@@ -52,6 +53,23 @@ Service-level `rules` can enforce common proxy policies:
 Rules are applied to non-direct proxy flows before the outbound request is sent.
 For complex policy, prefer Nitro hooks or `ODataGuard.validate` over scattering
 authorization logic through UI components.
+
+Production Explorer endpoints require an authenticated SAP security context
+before returning runtime data. The current policy is authenticated-user only;
+no additional XSUAA role or scope is defined for task 077. If a stricter
+Explorer role is required later, add that as an explicit security decision and
+update `xs-security.json`, AppRouter routes, proxy policy, and tests together.
+
+Production `/__odx__/config` uses a whitelist and exposes only service name,
+route, icon, strategy, proxy mode, entity metadata, generation state, and OData
+version. It must not expose backend URLs, destinations, auth, outbound headers,
+rules, unknown service fields, runtime paths, hooks, DevTools config, TLS
+settings, or Node runtime versions.
+
+Production `/__odx__/schema` returns parsed cached metadata only and rejects raw
+XML. Production `/__odx__/generate` and `/__odx__/types` are development-only.
+Production `/__odx__/logs` returns an empty list and rejects clearing until a
+persistent log and redaction policy is implemented.
 
 ## Header Handling
 

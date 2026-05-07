@@ -4,6 +4,7 @@ import https from 'node:https'
 import { detectODataVersion, extractAssociationsFromEdmx, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { dirname, resolve } from 'pathe'
+import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 
 const RE_SCHEMA_NAMESPACE = /<Schema\s+Namespace="([^"]+)"/
 const RE_ENTITY_TYPE = /<EntityType Name="([^"]+)">/g
@@ -25,10 +26,13 @@ async function downloadEdmx(url: string, rejectUnauthorized: boolean): Promise<s
 }
 
 export default defineEventHandler(async (event) => {
+  enforceExplorerEndpointPolicy(event, 'schema')
+
   const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''
   const isRaw = query.raw === 'true'
+  const isProduction = isProductionExplorerRuntime()
 
   if (!serviceName) {
     throw createError({ statusCode: 400, message: 'Missing service name' })
@@ -39,6 +43,13 @@ export default defineEventHandler(async (event) => {
 
   if (!svc) {
     throw createError({ statusCode: 404, message: `Service ${serviceName} not found` })
+  }
+
+  if (isProduction && isRaw) {
+    throw createError({
+      statusCode: 403,
+      message: 'Raw production metadata XML is not exposed by Explorer runtime endpoints',
+    })
   }
 
   const buildDir = config.buildDir ?? ''
@@ -56,8 +67,9 @@ export default defineEventHandler(async (event) => {
       fs.copyFileSync(persistentCacheFile, edmxPath)
     }
 
-    // If still missing, try live fetch
-    if (!fs.existsSync(edmxPath)) {
+    // In production, schema is read from existing cache only. Runtime metadata
+    // refresh is handled by a later task with its own policy.
+    if (!fs.existsSync(edmxPath) && !isProduction) {
       try {
         const metadataUrl = svc.url.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
         const xml = await downloadEdmx(metadataUrl, config.rejectUnauthorized !== false)
@@ -80,7 +92,12 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!fs.existsSync(edmxPath)) {
-    throw createError({ statusCode: 404, message: `EDMX file for ${serviceName} not found at ${edmxPath}` })
+    throw createError({
+      statusCode: 404,
+      message: isProduction
+        ? `Cached EDMX metadata for ${serviceName} not found`
+        : `EDMX file for ${serviceName} not found at ${edmxPath}`,
+    })
   }
 
   // Handle RAW XML request

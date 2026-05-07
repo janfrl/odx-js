@@ -2,8 +2,11 @@ import type { ODataProxyConfig } from '@bc8-odx/core'
 import fs from 'node:fs'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { join, resolve } from 'pathe'
+import { enforceExplorerEndpointPolicy } from '../utils/explorer-policy'
 
 export default defineEventHandler((event) => {
+  enforceExplorerEndpointPolicy(event, 'types')
+
   const config = event.context.odataConfig as ODataProxyConfig
   const query = getQuery(event)
   const serviceName = (query.service as string) ?? ''

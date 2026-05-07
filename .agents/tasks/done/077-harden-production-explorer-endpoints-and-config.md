@@ -1,7 +1,7 @@
 # Task: Harden production Explorer endpoints and config
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-07
 Risk: high
 Review: required
@@ -63,12 +63,12 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] Production `/__odx__/config` returns only sanitized service information.
-- [ ] Tests prove auth, headers, rules, and other sensitive fields are not
+- [x] Production `/__odx__/config` returns only sanitized service information.
+- [x] Tests prove auth, headers, rules, and other sensitive fields are not
   exposed in production config responses.
-- [ ] Local development Explorer behavior is preserved.
-- [ ] The internal Explorer endpoint contract is documented.
-- [ ] Independent review is requested before continuing to persistence work.
+- [x] Local development Explorer behavior is preserved.
+- [x] The internal Explorer endpoint contract is documented.
+- [x] Independent review is requested before continuing to persistence work.
 
 ## Verification
 
@@ -93,15 +93,43 @@ contracts. Secure Teamflow is required. Separate review is required.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `ARCHITECTURE.md`, `API.md`, `SECURITY.md`,
+  `DEPLOYMENT.md`, `packages/core/src/types.ts`,
+  `packages/proxy/src/utils/explorer-policy.ts`,
+  `packages/proxy/src/api/config.ts`, `packages/proxy/src/api/logs.ts`,
+  `packages/proxy/src/api/generate.ts`, `packages/proxy/src/api/schema.ts`,
+  `packages/proxy/src/api/types.ts`, `packages/proxy/src/api/me.ts`,
+  `packages/proxy/test/explorer-policy.test.ts`,
+  `packages/explorer/composables/useODataState.ts`,
+  `packages/explorer/test/state.test.ts`,
+  `packages/approuter/xs-app.json`, and
+  `packages/approuter/test/deployment-config.test.ts`.
+- summary: Added a proxy-owned production Explorer endpoint policy, requiring
+  production SAP security context for `/__odx__/*`; made production
+  `/__odx__/config` whitelist sanitized service fields only; disabled
+  production generation/types endpoints; blocked production raw schema XML and
+  live schema fetches; made production logs return `[]` and reject clearing;
+  sanitized production `/__odx__/me`; added the authenticated AppRouter
+  `/__odx__/*` route; documented the internal endpoint contract.
+- tests run:
+  - `pnpm.cmd exec vitest run packages/proxy/test`
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - `pnpm.cmd --filter @bc8-odx/explorer run verify`
+  - `pnpm.cmd --filter odx-approuter run verify`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run typecheck`
+  - `git diff --check`
+- skipped checks and residual risk: None. Some commands required elevated
+  execution because sandboxed Windows process spawning returned `EPERM` for
+  Vitest/esbuild; reruns passed.
+- self-check result: Scope matches task 077 and architect memo. No db0, evlog,
+  persistence, metadata refresh, SDK generation behavior changes, Explorer UI
+  redesign, or public basePath proxy behavior changes were added.
+- review requirement decision: Separate review is required because this changes
+  auth, privacy, production configuration, deployment routing, and internal HTTP
+  contracts.
+- task state movement: Moved from `ready/` to `in-progress/` to `done/`.
+- `.agents/NEXT.md` update: Updated to a Reviewer prompt for this task.
+- commit hash: pending commit.
+- known gaps: Production traffic history remains intentionally disabled until
+  the later persistent log/redaction tasks define storage and retention policy.

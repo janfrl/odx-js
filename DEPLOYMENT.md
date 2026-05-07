@@ -129,9 +129,16 @@ Purpose:
 | Source | Destination | Auth |
 | --- | --- | --- |
 | `^/api/odx/(.*)$` | `odx-proxy-backend` | XSUAA |
+| `^/__odx__/(.*)$` | `odx-proxy-backend` | XSUAA |
 | `^/explorer/(.*)$` | `odx-explorer-ui` | XSUAA |
 
 The welcome file is `/explorer/`.
+
+The `/__odx__/*` route supports the standalone Explorer's same-origin runtime
+API calls. The proxy still enforces production Explorer endpoint policy after
+AppRouter authentication: sanitized config only, parsed cached schema only, no
+raw metadata XML, no SDK/type generation endpoints, sanitized `/me`, and
+disabled in-memory traffic logs until persistent log policy is implemented.
 
 ## Service Configuration In Deployment
 

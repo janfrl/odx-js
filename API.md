@@ -201,14 +201,22 @@ current public contract.
 These endpoints are internal to ODX Explorer and may change faster than the
 public composable and module APIs.
 
+In local development they preserve DevTools ergonomics. In production every
+`/__odx__/*` endpoint requires validated SAP security context. Production
+`/__odx__/config` returns only sanitized service information: `name`, `route`,
+`icon`, `strategy`, `proxyMode`, `entities`, `isGenerated`, and `version`.
+It does not return backend URLs, destinations, auth, headers, rules, unknown
+service fields, global secrets, runtime paths, DevTools settings, or Node
+runtime versions.
+
 | Endpoint | Purpose |
 | --- | --- |
-| `/__odx__/config` | Resolved service config, entities, versions, and generation status. |
-| `/__odx__/logs` | Development traffic logs. `DELETE` clears logs. |
-| `/__odx__/generate?service=<name>` | Regenerates SDK/types for one service. |
-| `/__odx__/schema?service=<name>` | Parsed EDMX schema; `raw=true` returns XML. |
-| `/__odx__/types?service=<name>` | Generated TypeScript model files. |
-| `/__odx__/me` | Current user info from SAP security context or local fallback. |
+| `/__odx__/config` | Local: resolved service config, entities, versions, and generation status. Production: sanitized service information only. |
+| `/__odx__/logs` | Local development traffic logs. `DELETE` clears local logs. Production returns an empty list and rejects `DELETE` until persistent log policy is implemented. |
+| `/__odx__/generate?service=<name>` | Local development SDK/type regeneration for one service. Production returns `403`. |
+| `/__odx__/schema?service=<name>` | Parsed EDMX schema. Local `raw=true` returns XML. Production requires cached metadata and rejects raw XML. |
+| `/__odx__/types?service=<name>` | Local generated TypeScript model files. Production returns `403`. |
+| `/__odx__/me` | Current user info from SAP security context or local fallback. Production omits raw token data. |
 
 Do not expose secrets from these endpoints. Treat them as development and
 authenticated tool surfaces, not public product APIs.
