@@ -157,7 +157,7 @@ task 077 behavior and does not over-promise later runtime work.
   through the final patch after implementation and verification.
 - `.agents/NEXT.md` update: Updated to request a fresh Reviewer for this
   completed documentation task before continuing to task 078.
-- commit hash: pending commit.
+- commit hash: `d754437`.
 - known gaps: No live SAP BTP/AppRouter smoke test was performed; this was a
   documentation task. Production logs, db0 persistence, runtime metadata
   refresh, and standalone UI alignment remain planned follow-up tasks.

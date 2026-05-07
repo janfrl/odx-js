@@ -13,11 +13,10 @@ auth, privacy, deployment runtime behavior, and internal HTTP contracts.
 
 ## Current Next Step
 
-Review completed documentation task
-`.agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md`
-before continuing to the remaining production runtime sequence.
+Implement the next production runtime task:
+`.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`.
 
-After review approval, continue with:
+Continue the remaining production runtime sequence in this order:
 
 1. `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`
 2. `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
@@ -29,43 +28,56 @@ After review approval, continue with:
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-.agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md
+Implement exactly this task:
+.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
 - .agents/reviews/077-harden-production-explorer-endpoints-and-config-review.md
+- .agents/reviews/084-document-dev-prod-explorer-runtime-differences-review.md
 - .agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md
 - .agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md
+- .agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md
 - ARCHITECTURE.md
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- relevant changed docs under docs/content/en and docs/content/de
-- the changed diff
+- relevant package source and tests referenced by the task
 
-Review stance:
-- Findings first.
-- Check that the docs match task 077 behavior and do not over-promise db0, production logs, runtime metadata refresh, SDK generation, or UI behavior.
-- Check English and German docs stay aligned where both language trees contain relevant pages.
-- Check that the change is documentation/workflow-only and does not reorder remaining tasks.
-- Verify or inspect the recorded checks: `git diff --check` and `pnpm.cmd --filter docs run verify`.
+Rules:
+- Keep changes scoped to task 078.
+- Introduce the `OdxLogStore` boundary and redaction policy before any db0
+  adapter work.
+- Do not add db0, evlog, production persistence, metadata refresh, SDK
+  generation, or unrelated Explorer UI changes.
+- Preserve local development Explorer ergonomics unless the task explicitly
+  calls for a security hardening change.
+- Add focused tests for log store behavior, redaction, retention, payload
+  limits, production endpoint policy, and development compatibility as required
+  by the task.
+- Update root docs only where the implemented log boundary/redaction contract
+  changes durable behavior.
+- Run the verification steps listed in the task, or explain skipped checks and
+  residual risk in the handoff notes.
+- Move the task to `.agents/tasks/done/` only after implementation and
+  verification.
+- Update `.agents/NEXT.md` with the next workflow action.
+- Commit the completed task with a Conventional Commit unless a stop condition
+  prevents committing.
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- verification gaps
-- whether the task is approved or needs changes
-
-Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md`.
-Update `.agents/NEXT.md` with the next workflow action. If approved, point it to
-`.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`. Commit the
-review note and workflow state changes with a Conventional Commit unless a stop
-condition prevents committing. Include the exact next-chat prompt the operator
-should paste into a new chat.
+When done, summarize:
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from .agents/NEXT.md
 ```
