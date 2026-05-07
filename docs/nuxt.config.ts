@@ -1,4 +1,16 @@
+import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 const siteUrl = 'https://odx.nuxt.com'
+const docsDir = dirname(fileURLToPath(import.meta.url))
+const payloadCacheDir = resolve(docsDir, '.nuxt/cache/nuxt/payload')
+
+if (existsSync(payloadCacheDir) && !statSync(payloadCacheDir).isDirectory()) {
+  rmSync(payloadCacheDir)
+}
+
+mkdirSync(payloadCacheDir, { recursive: true })
 
 export default defineNuxtConfig({
   extends: ['docus'],
