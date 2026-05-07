@@ -39,6 +39,11 @@ The Nuxt module starts the Explorer DevTools UI from `packages/explorer` during
 local development. The Explorer dev server uses port `3300` and is mounted in
 the host app at `/__odx__/client/`.
 
+Local Explorer endpoints are optimized for developer feedback. They can expose
+resolved config, local generated types, raw metadata XML, and in-memory traffic
+logs. Development logs still need secret redaction and payload limits for
+outbound headers, auth/session/CSRF data, request bodies, and response bodies.
+
 ## Build
 
 The root build script builds the Explorer, builds the proxy, adjusts generated
@@ -81,6 +86,8 @@ Purpose:
 - Authenticated edge entry point.
 - Routes `/api/odx/*` to the proxy.
 - Routes `/explorer/*` to the Explorer UI.
+- Routes deployed Explorer client assets under `/__odx__/client`.
+- Routes only the supported `/__odx__` runtime APIs to the proxy.
 - Forwards auth tokens to backend destinations.
 
 ### `odx-proxy`
@@ -136,13 +143,27 @@ Purpose:
 
 The welcome file is `/explorer/`.
 
-The `/__odx__/client/*` route serves the standalone Explorer UI. The narrowed
-`/__odx__/<endpoint>` proxy route supports the standalone Explorer's same-origin
-runtime API calls without swallowing client assets. The proxy still enforces
-production Explorer endpoint policy after AppRouter authentication: sanitized
-config only, parsed cached schema only, no raw metadata XML, no SDK/type
-generation endpoints, sanitized `/me`, and disabled in-memory traffic logs until
-persistent log policy is implemented.
+The deployed Explorer is not the Nuxt DevTools integration. It is a standalone
+browser app served behind AppRouter/XSUAA. The `/__odx__/client/*` route serves
+that UI. The narrowed `/__odx__/<endpoint>` proxy route supports the standalone
+Explorer's same-origin runtime API calls without swallowing client assets.
+
+After AppRouter authentication, the proxy still enforces production Explorer
+endpoint policy:
+
+- `/__odx__/config` returns only top-level `basePath`, `mode`, and `services`.
+  Service entries are limited to `name`, `route`, `icon`, `strategy`,
+  `proxyMode`, `entities`, `isGenerated`, and `version`.
+- Backend URLs, destinations, auth, outbound headers, rules, unknown service
+  fields, global secrets, runtime paths, hooks, DevTools config,
+  `forwardAuthHeader`, and `versions.node` are redacted or omitted.
+- `/__odx__/schema` serves parsed cached metadata only and rejects raw metadata
+  XML.
+- `/__odx__/generate` and `/__odx__/types` return `403`; production does not
+  regenerate SDK files.
+- `/__odx__/logs` returns an empty list and rejects `DELETE` until the planned
+  db0-backed log store and redaction policy are implemented.
+- `/__odx__/me` returns sanitized SAP user context without raw token data.
 
 ## Service Configuration In Deployment
 
@@ -171,6 +192,12 @@ generation or runtime schema checks to disagree with the backend, delete
 `.nuxt/odx/temp/` first. Delete the matching `.odx/cache/<service>.edmx` file as
 well only when you want the next prepare/build to refetch metadata instead of
 using the local fallback.
+
+Current production Explorer behavior uses cached parsed metadata for schema
+inspection only. Runtime metadata refresh is planned as a separate production
+follow-up and must not be confused with TypeScript SDK generation. Generated
+SDK files remain development/build/CI artifacts and require a new deployment to
+change application types.
 
 ## Operational Checks
 

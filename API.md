@@ -201,23 +201,36 @@ current public contract.
 These endpoints are internal to ODX Explorer and may change faster than the
 public composable and module APIs.
 
-In local development they preserve DevTools ergonomics. In production every
-`/__odx__/*` endpoint requires validated SAP security context. Production
-`/__odx__/config` returns only the top-level Explorer runtime fields
+In local development they preserve Nuxt DevTools ergonomics and can expose more
+diagnostic state to the local developer. In production every `/__odx__/*`
+endpoint requires validated SAP security context before returning runtime data.
+
+Production `/__odx__/config` returns only the top-level Explorer runtime fields
 `basePath`, `mode`, and `services`; each service entry is limited to `name`,
 `route`, `icon`, `strategy`, `proxyMode`, `entities`, `isGenerated`, and
-`version`. It does not return backend URLs, destinations, auth, headers, rules,
-unknown service fields, global secrets, runtime paths, DevTools settings, or
-Node runtime versions.
+`version`. It does not return backend URLs, destinations, auth, outbound
+headers, rules, unknown service fields, global secrets, runtime paths, hooks,
+DevTools config, `forwardAuthHeader`, or `versions.node`.
 
-| Endpoint | Purpose |
-| --- | --- |
-| `/__odx__/config` | Local: resolved service config, entities, versions, and generation status. Production: top-level `basePath`, `mode`, and sanitized service information only. |
-| `/__odx__/logs` | Local development traffic logs. `DELETE` clears local logs. Production returns an empty list and rejects `DELETE` until persistent log policy is implemented. |
-| `/__odx__/generate?service=<name>` | Local development SDK/type regeneration for one service. Production returns `403`. |
-| `/__odx__/schema?service=<name>` | Parsed EDMX schema. Local `raw=true` returns XML. Production requires cached metadata and rejects raw XML. |
-| `/__odx__/types?service=<name>` | Local generated TypeScript model files. Production returns `403`. |
-| `/__odx__/me` | Current user info from SAP security context or local fallback. Production omits raw token data. |
+| Endpoint | Development behavior | Current production policy |
+| --- | --- | --- |
+| `/__odx__/config` | Resolved service config, entities, versions, and generation status for DevTools inspection. | Authenticated. Returns only top-level `basePath`, `mode`, and sanitized `services` entries. |
+| `/__odx__/logs` | In-memory traffic logs. `DELETE` clears local logs. Logs must redact secrets and bound large payloads before display, storage, export, or test use. | Authenticated. Returns `[]`; `DELETE` returns `403` until persistent log policy exists. |
+| `/__odx__/generate?service=<name>` | Development SDK/type regeneration for one service. | Authenticated but disabled. Returns `403`; production does not regenerate SDK files. |
+| `/__odx__/schema?service=<name>` | Parsed EDMX schema. `raw=true` can return XML locally. | Authenticated. Uses cached parsed metadata only and rejects raw XML. |
+| `/__odx__/types?service=<name>` | Local generated TypeScript model files. | Authenticated but disabled. Returns `403`. |
+| `/__odx__/me` | Current user info from SAP security context or local fallback. | Authenticated. Returns sanitized SAP user context and omits raw token data. |
+
+Runtime metadata refresh and TypeScript SDK generation are intentionally
+separate contracts. The current production API can inspect cached runtime
+metadata only; a later endpoint may refresh runtime metadata cache state for the
+Explorer, but generated SDK/type files remain development, build, or CI
+artifacts.
+
+Production traffic history is intentionally disabled. A later `OdxLogStore`
+implementation is planned with db0 as the first persistent adapter candidate;
+that follow-up must define redaction, retention, payload limits, and clear
+semantics before production logs are enabled.
 
 Do not expose secrets from these endpoints. Treat them as development and
 authenticated tool surfaces, not public product APIs.

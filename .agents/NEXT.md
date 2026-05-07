@@ -13,9 +13,11 @@ auth, privacy, deployment runtime behavior, and internal HTTP contracts.
 
 ## Current Next Step
 
-Implement documentation task
-`.agents/tasks/ready/084-document-dev-prod-explorer-runtime-differences.md`
-before continuing the remaining production runtime sequence:
+Review completed documentation task
+`.agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md`
+before continuing to the remaining production runtime sequence.
+
+After review approval, continue with:
 
 1. `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`
 2. `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
@@ -27,42 +29,43 @@ before continuing the remaining production runtime sequence:
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Implement exactly this task:
-.agents/tasks/ready/084-document-dev-prod-explorer-runtime-differences.md
+Review the completed task:
+.agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md
 
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/reviews/077-harden-production-explorer-endpoints-and-config-review.md
 - .agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md
+- .agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md
 - ARCHITECTURE.md
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- relevant existing docs under docs/content/en and docs/content/de
+- relevant changed docs under docs/content/en and docs/content/de
+- the changed diff
 
-Rules:
-- Make only documentation changes required by task 084.
-- Do not change runtime code, tests, package configuration, or remaining task ordering.
-- Keep current behavior and planned future behavior clearly separated.
-- Document development versus production Explorer behavior, auth differences, production `/__odx__` endpoint policies, production config redaction allowlist, runtime metadata refresh versus SDK generation, production-disabled logs, planned db0 follow-up, and development redaction/payload limits.
-- Keep English and German docs aligned when both language trees contain relevant pages.
-- Run `git diff --check`; run `pnpm.cmd --filter docs run verify` if practical.
-- Move the task to `.agents/tasks/done/` only after implementation and verification.
-- Update `.agents/NEXT.md` to continue with `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md` unless a stop condition applies.
-- Commit the completed documentation task with a Conventional Commit unless a stop condition prevents committing.
+Review stance:
+- Findings first.
+- Check that the docs match task 077 behavior and do not over-promise db0, production logs, runtime metadata refresh, SDK generation, or UI behavior.
+- Check English and German docs stay aligned where both language trees contain relevant pages.
+- Check that the change is documentation/workflow-only and does not reorder remaining tasks.
+- Verify or inspect the recorded checks: `git diff --check` and `pnpm.cmd --filter docs run verify`.
 
-When done, summarize:
-- changed files
-- what was documented
-- verification performed
-- self-check result
-- whether separate review is required and why
-- commit hash
-- known gaps
-- exact next-chat prompt from .agents/NEXT.md
+Output:
+- findings with severity and file/line references
+- acceptance criteria status
+- verification gaps
+- whether the task is approved or needs changes
+
+Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md`.
+Update `.agents/NEXT.md` with the next workflow action. If approved, point it to
+`.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`. Commit the
+review note and workflow state changes with a Conventional Commit unless a stop
+condition prevents committing. Include the exact next-chat prompt the operator
+should paste into a new chat.
 ```

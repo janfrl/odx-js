@@ -66,10 +66,16 @@ OData behavior belongs in `core`; server request behavior belongs in `proxy`.
 
 ### `packages/explorer`
 
-Explorer is a Nuxt UI application mounted in Nuxt DevTools at
-`/__odx__/client/`. In local module development, the host module starts the
-Explorer dev server on port `3300` and proxies DevTools traffic to it. In
-published builds, a built client can be served directly.
+Explorer has two delivery modes:
+
+- In local Nuxt development, it is embedded as a Nuxt DevTools tab at
+  `/__odx__/client/`. The host module starts the Explorer dev server on port
+  `3300` and proxies DevTools traffic to it.
+- In SAP BTP production deployments, it is a standalone Nitro-built browser app
+  served by the `odx-explorer` module behind the AppRouter. AppRouter routes
+  `/__odx__/client` and `/__odx__/client/*` to the Explorer UI, and narrowly
+  routes only `/__odx__/{config,logs,schema,generate,types,me}` to the proxy
+  runtime API.
 
 Explorer reads from the internal proxy APIs:
 
@@ -84,15 +90,29 @@ Explorer state is intentionally client-side and session-oriented. Durable
 business rules, security behavior, and OData parsing logic do not belong in the
 Explorer.
 
-In production, `/__odx__` endpoints are a proxy-owned runtime boundary behind
-validated SAP security context. `/__odx__/config` uses a whitelist response:
-top-level `basePath`, `mode`, and sanitized service entries with service name,
-route, icon, strategy, proxy mode, extracted entities, generation state, and
-OData version only. It does not expose backend URLs, destinations, auth,
-headers, rules, runtime paths, hooks, DevTools config, or Node runtime versions.
-Production `/__odx__/generate` and `/__odx__/types` are development only,
-production `/__odx__/schema` returns parsed cached schema only, and production
-traffic logs are disabled until a persistent log policy exists.
+Current production behavior after task 077:
+
+- `/__odx__` endpoints are a proxy-owned runtime boundary behind validated SAP
+  security context.
+- `/__odx__/config` uses a whitelist response: top-level `basePath`, `mode`,
+  and `services`; each service entry is limited to `name`, `route`, `icon`,
+  `strategy`, `proxyMode`, `entities`, `isGenerated`, and `version`.
+- Production config omits backend URLs, destinations, auth, outbound headers,
+  rules, unknown service fields, global secrets, runtime paths, hooks, DevTools
+  config, `forwardAuthHeader`, and `versions.node`.
+- `/__odx__/schema` returns parsed cached schema only and rejects raw XML.
+- `/__odx__/generate` and `/__odx__/types` are development-only and return
+  `403` in production.
+- `/__odx__/logs` returns an empty list and rejects `DELETE` in production.
+- `/__odx__/me` returns sanitized SAP user context without raw token data.
+
+Planned follow-up work keeps runtime metadata refresh separate from TypeScript
+SDK generation. Production may later refresh runtime metadata cache state for
+Explorer schema/config views, but SDK/type file generation remains a
+development, build, or CI workflow that requires a new deployment to affect
+application code. Production traffic history also remains disabled until the
+planned `OdxLogStore` and db0-backed persistence work define redaction,
+retention, payload limits, and clear behavior.
 
 ### `docs`
 
@@ -116,12 +136,17 @@ The normal Nuxt runtime path is:
 7. Responses are returned to the application. In development, request telemetry
    is stored for the Explorer.
 
+Development telemetry is still a sensitive surface. Traffic logs, outbound
+headers, auth/session/CSRF material, and large request or response bodies must
+be redacted or bounded before they are displayed, stored, exported, or copied
+into tests. Production payload logging is currently disabled.
+
 Direct services can be addressed by the browser, but the Explorer defaults to a
 CORS bridge path for usability during development.
 
 ## Type Generation Flow
 
-Type generation is driven by `packages/nuxt/src/generate.ts`:
+TypeScript SDK generation is driven by `packages/nuxt/src/generate.ts`:
 
 1. During `prepare:types`, each configured service is inspected.
 2. Remote service metadata is downloaded from `$metadata`; local service
@@ -134,6 +159,11 @@ Type generation is driven by `packages/nuxt/src/generate.ts`:
 
 Agents changing generation must preserve the registry augmentation behavior,
 because it is what powers typed `useOData().Service.EntitySet` access.
+
+Runtime metadata refresh is a separate concern from SDK generation. Current
+production Explorer endpoints do not regenerate `.nuxt/odx-types` files and do
+not update deployed application types. Later production work may refresh
+runtime metadata cache state for Explorer inspection only.
 
 ## Deployment Shape
 

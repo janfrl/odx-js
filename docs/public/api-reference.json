@@ -795,6 +795,81 @@
       }
     ]
   },
+  "ODataExplorerServiceInfo": {
+    "title": "ODataExplorerServiceInfo",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "route",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "icon",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "strategy",
+        "type": "\"proxied\" | \"direct\" | undefined",
+        "required": false
+      },
+      {
+        "name": "proxyMode",
+        "type": "\"stream\" | \"buffer\" | undefined",
+        "required": false
+      },
+      {
+        "name": "entities",
+        "type": "EntityMapping[] | undefined",
+        "required": false
+      },
+      {
+        "name": "isGenerated",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "version",
+        "type": "\"v2\" | \"v4\" | null | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataExplorerConfigResponse": {
+    "title": "ODataExplorerConfigResponse",
+    "properties": [
+      {
+        "name": "basePath",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "mode",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "services",
+        "type": "ODataExplorerServiceInfo[]",
+        "required": true
+      },
+      {
+        "name": "forwardAuthHeader",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "versions",
+        "type": "{ node: string; module: string; } | undefined",
+        "required": false
+      }
+    ]
+  },
   "ODataPublicConfig": {
     "title": "ODataPublicConfig",
     "properties": [

@@ -16,6 +16,9 @@ Important boundaries:
 
 Do not treat Explorer endpoints as public APIs. They expose operational state
 that is appropriate for authenticated development and inspection workflows.
+Local Nuxt DevTools Explorer access is a developer convenience surface. The
+deployed standalone Explorer is a production operations surface and must run
+behind AppRouter/XSUAA and proxy-side SAP security-context validation.
 
 ## Authentication
 
@@ -34,6 +37,12 @@ Relevant behavior:
   decodes a bearer token as fallback outside production, and returns a
   synthetic local user only outside production. Production responses omit raw
   token data.
+
+Development and production authentication are intentionally different:
+development DevTools endpoints favor local debugging and may use local fallback
+identity, while production `/__odx__` runtime APIs require SAP security context
+before returning config, schema, logs, generation status, type artifacts, or
+user information.
 
 If authentication behavior changes, update `xs-security.json`,
 `packages/approuter/xs-app.json`, and this file together.
@@ -72,6 +81,12 @@ Production `/__odx__/schema` returns parsed cached metadata only and rejects raw
 XML. Production `/__odx__/generate` and `/__odx__/types` are development-only.
 Production `/__odx__/logs` returns an empty list and rejects clearing until a
 persistent log and redaction policy is implemented.
+
+Production metadata inspection is not SDK generation. Current production
+behavior can read cached parsed metadata for Explorer views only. A planned
+runtime metadata refresh endpoint may update runtime cache state later, but
+production must not write generated TypeScript SDK files or imply application
+type changes without a build and deployment.
 
 ## Header Handling
 
@@ -158,13 +173,25 @@ Logs may include:
 behavior. Do not add production payload logging without a documented security
 review.
 
-If headers are displayed or stored, consider redacting sensitive values such as:
+If headers are displayed or stored in development, redact sensitive values such
+as:
 
 - `authorization`
 - `cookie`
 - `set-cookie`
 - API keys
 - SAP session tokens
+
+Development logs must also limit or truncate large request and response bodies
+before they are displayed, retained, exported, or copied into fixtures. Treat
+request bodies, response bodies, outbound headers, auth/session/CSRF data, and
+proxy traces as potentially sensitive even when they are local-only.
+
+Production Explorer traffic history is currently disabled by policy:
+`/__odx__/logs` returns an empty list and rejects clearing. The planned
+db0-backed `OdxLogStore` follow-up must define production redaction, payload
+limits, retention, and clear behavior before enabling persisted traffic
+history.
 
 ## Direct Strategy
 
