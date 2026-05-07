@@ -12,16 +12,20 @@ import { consola } from 'consola'
 import { join, resolve } from 'pathe'
 
 const logger = consola.withTag('@bc8-odx/nuxt')
-const require = createRequire(import.meta.url)
 const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
 const RE_PATH_SEPARATOR = /[/\\]/
+
+function resolveOData2TsCliPath(): string {
+  const projectRequire = createRequire(resolve(process.cwd(), 'package.json'))
+  return projectRequire.resolve('@odata2ts/odata2ts/lib/run-cli.js')
+}
 
 /**
  * Core function to generate TypeScript types from an EDMX metadata file using odata2ts.
  */
 export async function generateODataTypes(xmlFilePath: string, outputDir: string, serviceName: string): Promise<void> {
-  const cliPath = require.resolve('@odata2ts/odata2ts/lib/run-cli.js')
+  const cliPath = resolveOData2TsCliPath()
   const args = [
     cliPath,
     '--source',

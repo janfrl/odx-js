@@ -16,11 +16,11 @@
   },
   "dependencies": {
     "@bc8-odx/core": "workspace:*",
-    "@bc8-odx/proxy": "workspace:*"
+    "@bc8-odx/proxy": "workspace:*",
+    "@odata2ts/odata2ts": "^0.40.1"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.0.0",
-    "@odata2ts/odata2ts": "^0.40.1",
     "nuxt": "^4.4.2",
     "playwright-core": "^1.58.2",
     "vitest": "^4.1.1"

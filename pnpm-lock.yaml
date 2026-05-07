@@ -206,13 +206,13 @@ importers:
       '@bc8-odx/proxy':
         specifier: workspace:*
         version: link:../proxy
+      '@odata2ts/odata2ts':
+        specifier: ^0.40.1
+        version: 0.40.1(@odata2ts/odata-query-objects@0.28.1)(@odata2ts/odata-service@0.23.1)(@types/node@25.5.0)(typescript@6.0.2)
     devDependencies:
       '@nuxt/test-utils':
         specifier: ^4.0.0
         version: 4.0.0(@vue/test-utils@2.4.6)(happy-dom@20.8.8)(magicast@0.5.2)(playwright-core@1.58.2)(typescript@6.0.2)(vite@7.3.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(vitest@4.1.1(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(happy-dom@20.8.8)(vite@7.3.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
-      '@odata2ts/odata2ts':
-        specifier: ^0.40.1
-        version: 0.40.1(@odata2ts/odata-query-objects@0.28.1)(@odata2ts/odata-service@0.23.1)(@types/node@25.5.0)(typescript@6.0.2)
       nuxt:
         specifier: ^4.4.2
         version: 4.4.2(@babel/core@7.29.0)(@babel/plugin-syntax-jsx@7.28.6(@babel/core@7.29.0))(@parcel/watcher@2.5.6)(@types/node@25.5.0)(@vue/compiler-sfc@3.5.30)(better-sqlite3@12.6.2)(cac@6.7.14)(db0@0.3.4(better-sqlite3@12.6.2))(eslint@10.1.0(jiti@2.6.1))(ioredis@5.10.1)(lightningcss@1.32.0)(magicast@0.5.2)(optionator@0.9.4)(rollup-plugin-visualizer@7.0.1(rollup@4.59.0))(rollup@4.59.0)(terser@5.46.0)(tsx@4.21.0)(typescript@6.0.2)(vite@7.3.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))(vue-tsc@3.2.6(typescript@6.0.2))(xml2js@0.6.2)(yaml@2.8.2)
