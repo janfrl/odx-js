@@ -8,11 +8,18 @@ implementation phases.
 
 ## Now
 
-- Complete the task 058-062 registry, hook-contract, benchmark-validation, and
-  checkpoint queue.
+- Prioritize production Explorer runtime hardening before broader benchmark or
+  polish work:
+  - endpoint policy and config redaction
+  - log storage abstraction and redaction
+  - db0-backed Explorer traffic history
+  - runtime metadata refresh separated from SDK generation
+  - schema/config endpoints backed by runtime metadata cache
 
 ## Next
 
+- Continue the older benchmark and package-polish queue after the production
+  Explorer runtime sequence has a safe endpoint and storage foundation.
 - Continue Explorer improvements only through narrow, test-backed state fixes
   unless UI changes are explicitly needed and browser-verified.
 - Revisit stream proxy response-hook behavior only after the expected contract
@@ -38,3 +45,5 @@ implementation phases.
   local development, and which source-aware cases should be excluded?
 - Should the fixed 60-second BTP destination cache TTL become operator
   configurable, or remain an internal conservative default?
+- Which BTP SQL backing service should be the first documented db0 production
+  connector target?

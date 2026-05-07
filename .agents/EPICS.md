@@ -354,3 +354,40 @@ Exit criteria:
   contract is clarified in docs or tests.
 - Broad checkpoint checks are run or residual risk is recorded after the queue
   completes.
+
+## Epic 12: Production Explorer Runtime
+
+Goal: make the standalone Explorer work as an authenticated deployed runtime
+tool without treating TypeScript SDK generation or local `.nuxt` state as
+production behavior.
+
+Deliverables:
+
+- `/__odx__` production endpoint policy is explicit and reviewed.
+- Production config responses are sanitized.
+- Explorer traffic logs use a redacted ODX log store abstraction.
+- db0 is available as the first persistent log store backend.
+- Runtime metadata refresh is separated from TypeScript SDK generation.
+- Schema/config endpoints read from runtime metadata cache state.
+- Standalone Explorer UI reflects Refresh Metadata versus Regenerate SDK
+  semantics.
+- The mockdata endpoint/UI mismatch is resolved.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/077-harden-production-explorer-endpoints-and-config.md`
+- `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`
+- `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
+- `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
+- `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
+- `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
+- `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
+
+Exit criteria:
+
+- Secure Teamflow review notes exist for high-risk endpoint, logging,
+  persistence, and metadata-refresh tasks.
+- Production Explorer runtime APIs do not leak secrets or unredacted payloads.
+- BTP deployment docs describe the database/logging and metadata-refresh
+  expectations.
+- TypeScript SDK generation remains a development/build/CI concern.
