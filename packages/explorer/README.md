@@ -16,4 +16,5 @@ Run the Explorer package tests without the full workspace test suite:
 pnpm --filter @bc8-odx/explorer run verify
 ```
 
-**For documentation on the DevTools UI and debugging patterns, please visit: [odx-js.io/packages/explorer](https://odx-js.io/packages/explorer)**
+For documentation on the DevTools UI and debugging patterns, see the root
+documentation in this repository.

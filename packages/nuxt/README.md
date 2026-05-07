@@ -20,7 +20,8 @@ This runs the Nuxt package generation/module e2e tests, then prepares the
 minimal Nuxt playground and verifies the generated ODX service registry types
 plus typed composable usage in the playground app.
 
-**For full documentation, getting started guides, and module configuration, please visit: [odx-js.io/packages/nuxt](https://odx-js.io/packages/nuxt)**
+For full documentation, getting started guides, and module configuration, see
+the root documentation in this repository.
 
 ## Service Names And Generated Types
 

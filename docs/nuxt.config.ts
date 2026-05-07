@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const siteUrl = 'https://odx.nuxt.com'
+const siteUrl = 'http://localhost:3000'
 const docsDir = dirname(fileURLToPath(import.meta.url))
 const payloadCacheDir = resolve(docsDir, '.nuxt/cache/nuxt/payload')
 

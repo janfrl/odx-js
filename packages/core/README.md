@@ -22,4 +22,5 @@ parsing behavior, plus framework-free usage for EDMX version detection, entity
 extraction, query stringification, OData response flattening, and the low-level
 `$odata` helper.
 
-**For full documentation, architecture details, and API reference, please visit: [odx-js.io/packages/core](https://odx-js.io/packages/core)**
+For full documentation, architecture details, and API reference, see the root
+documentation in this repository.
