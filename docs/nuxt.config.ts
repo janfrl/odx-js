@@ -1,17 +1,6 @@
-import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || process.env.NUXT_SITE_URL
-const docsDir = dirname(fileURLToPath(import.meta.url))
-const payloadCacheDir = resolve(docsDir, '.nuxt/cache/nuxt/payload')
-
-if (existsSync(payloadCacheDir) && !statSync(payloadCacheDir).isDirectory()) {
-  rmSync(payloadCacheDir)
-}
-
-mkdirSync(payloadCacheDir, { recursive: true })
 
 export default defineNuxtConfig({
   extends: ['docus'],
