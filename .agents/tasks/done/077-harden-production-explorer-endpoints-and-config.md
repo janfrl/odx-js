@@ -133,3 +133,40 @@ contracts. Secure Teamflow is required. Separate review is required.
 - commit hash: pending commit.
 - known gaps: Production traffic history remains intentionally disabled until
   the later persistent log/redaction tasks define storage and retention policy.
+
+### Integrator Notes
+
+- addressed review findings:
+  - P1: Split deployed Explorer client routing from runtime API routing in
+    `packages/approuter/xs-app.json`. `/__odx__/client` and
+    `/__odx__/client/*` now route to `odx-explorer-ui`; only
+    `/__odx__/{config,logs,schema,generate,types,me}` routes to
+    `odx-proxy-backend`.
+  - P3: Kept production `/__odx__/config` top-level `basePath` and `mode`
+    intentionally exposed for the Explorer config contract, and made docs/tests
+    explicit that they are part of the production whitelist.
+- changed files:
+  - `API.md`
+  - `ARCHITECTURE.md`
+  - `DEPLOYMENT.md`
+  - `SECURITY.md`
+  - `packages/approuter/xs-app.json`
+  - `packages/approuter/test/deployment-config.test.ts`
+  - `packages/explorer/composables/useODataState.ts`
+  - `packages/proxy/test/explorer-policy.test.ts`
+  - `.agents/NEXT.md`
+- tests run:
+  - `pnpm.cmd --filter odx-approuter run verify`
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
+  - `pnpm.cmd --filter @bc8-odx/explorer run verify`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run typecheck`
+  - `git diff --check`
+- skipped checks and residual risk:
+  - Direct root-level `pnpm.cmd exec vitest run packages/explorer/test/state.test.ts`
+    failed before test collection with a Nuxt import-resolution error; the
+    documented package-local Explorer verify passed the same test file.
+  - Initial sandboxed Vitest commands hit Windows process spawning restrictions
+    (`EPERM`) or could not launch `vitest`; elevated reruns passed.
+- focused re-review required: Yes, because these fixes affect deployment
+  routing and the production Explorer config contract.

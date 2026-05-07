@@ -10,8 +10,20 @@
       "csrfProtection": false
     },
     {
-      "source": "^/__odx__/(.*)$",
-      "target": "/__odx__/$1",
+      "source": "^/__odx__/client$",
+      "target": "/",
+      "destination": "odx-explorer-ui",
+      "authenticationType": "xsuaa"
+    },
+    {
+      "source": "^/__odx__/client/(.*)$",
+      "target": "/$1",
+      "destination": "odx-explorer-ui",
+      "authenticationType": "xsuaa"
+    },
+    {
+      "source": "^/__odx__/(config|logs|schema|generate|types|me)(/.*|)$",
+      "target": "/__odx__/$1$2",
       "destination": "odx-proxy-backend",
       "authenticationType": "xsuaa",
       "csrfProtection": false

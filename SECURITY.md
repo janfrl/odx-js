@@ -60,11 +60,13 @@ no additional XSUAA role or scope is defined for task 077. If a stricter
 Explorer role is required later, add that as an explicit security decision and
 update `xs-security.json`, AppRouter routes, proxy policy, and tests together.
 
-Production `/__odx__/config` uses a whitelist and exposes only service name,
-route, icon, strategy, proxy mode, entity metadata, generation state, and OData
+Production `/__odx__/config` uses a whitelist and exposes only top-level
+`basePath`, `mode`, and sanitized service entries with service name, route,
+icon, strategy, proxy mode, entity metadata, generation state, and OData
 version. It must not expose backend URLs, destinations, auth, outbound headers,
 rules, unknown service fields, runtime paths, hooks, DevTools config, TLS
-settings, or Node runtime versions.
+settings, global auth, global headers, `forwardAuthHeader`, or Node runtime
+versions.
 
 Production `/__odx__/schema` returns parsed cached metadata only and rejects raw
 XML. Production `/__odx__/generate` and `/__odx__/types` are development-only.

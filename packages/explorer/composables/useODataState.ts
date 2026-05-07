@@ -17,6 +17,7 @@ export interface ODataServiceState {
 
 export interface ODataConfig {
   basePath: string
+  mode?: string
   services: any[]
   versions?: {
     node: string
@@ -126,7 +127,7 @@ export function buildEntityPreviewCacheKey(service: string, entity: string): str
 // Global Singleton state
 const activeTab = ref('overview')
 const logs = ref<ODataLog[]>([])
-const config = ref<ODataConfig>({ basePath: '/__odx__', services: [] })
+const config = ref<ODataConfig>({ basePath: '/__odx__', mode: 'sdk', services: [] })
 const selectedService = ref<ODataServiceState | null>(null)
 const selectedEntity = ref<string | null>(null)
 const generatingStatus = ref<Record<string, boolean>>({})

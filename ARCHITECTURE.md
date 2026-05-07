@@ -86,12 +86,13 @@ Explorer.
 
 In production, `/__odx__` endpoints are a proxy-owned runtime boundary behind
 validated SAP security context. `/__odx__/config` uses a whitelist response:
-service name, route, icon, strategy, proxy mode, extracted entities, generation
-state, and OData version only. It does not expose backend URLs, destinations,
-auth, headers, rules, runtime paths, hooks, DevTools config, or Node runtime
-versions. Production `/__odx__/generate` and `/__odx__/types` are development
-only, production `/__odx__/schema` returns parsed cached schema only, and
-production traffic logs are disabled until a persistent log policy exists.
+top-level `basePath`, `mode`, and sanitized service entries with service name,
+route, icon, strategy, proxy mode, extracted entities, generation state, and
+OData version only. It does not expose backend URLs, destinations, auth,
+headers, rules, runtime paths, hooks, DevTools config, or Node runtime versions.
+Production `/__odx__/generate` and `/__odx__/types` are development only,
+production `/__odx__/schema` returns parsed cached schema only, and production
+traffic logs are disabled until a persistent log policy exists.
 
 ### `docs`
 

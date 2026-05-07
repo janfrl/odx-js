@@ -91,6 +91,13 @@ function getRouteDestinations(xsApp: XsAppConfig): Array<{ destination: string, 
     }))
 }
 
+function resolveRoute(xsApp: XsAppConfig, path: string): XsAppRoute | undefined {
+  const [pathname = path] = path.split('?')
+  return (xsApp.routes ?? []).find((route) => {
+    return typeof route.source === 'string' && new RegExp(route.source).test(pathname)
+  })
+}
+
 describe('deployment config', () => {
   it('provides every AppRouter route destination from the odx-approuter MTA module', async () => {
     const [xsAppText, mtaYaml] = await Promise.all([
@@ -108,17 +115,67 @@ describe('deployment config', () => {
     ).toEqual([])
   })
 
+  it('routes deployed Explorer client paths to the Explorer UI behind XSUAA', async () => {
+    const xsAppText = await readFile(resolve(repoRoot, 'packages/approuter/xs-app.json'), 'utf8')
+    const xsApp = JSON.parse(xsAppText) as XsAppConfig
+
+    expect(xsApp.routes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        source: '^/__odx__/client$',
+        target: '/',
+        destination: 'odx-explorer-ui',
+        authenticationType: 'xsuaa',
+      }),
+      expect.objectContaining({
+        source: '^/__odx__/client/(.*)$',
+        target: '/$1',
+        destination: 'odx-explorer-ui',
+        authenticationType: 'xsuaa',
+      }),
+    ]))
+
+    for (const path of [
+      '/__odx__/client',
+      '/__odx__/client/',
+      '/__odx__/client/_nuxt/app.js',
+      '/__odx__/client/schema/Northwind',
+    ]) {
+      expect(resolveRoute(xsApp, path), `${path} should resolve to Explorer UI`).toEqual(expect.objectContaining({
+        destination: 'odx-explorer-ui',
+        authenticationType: 'xsuaa',
+      }))
+    }
+
+    expect(resolveRoute(xsApp, '/__odx__/client-assets/app.js')).toBeUndefined()
+  })
+
   it('routes internal Explorer APIs to the proxy behind XSUAA', async () => {
     const xsAppText = await readFile(resolve(repoRoot, 'packages/approuter/xs-app.json'), 'utf8')
     const xsApp = JSON.parse(xsAppText) as XsAppConfig
 
     expect(xsApp.routes).toEqual(expect.arrayContaining([
       expect.objectContaining({
-        source: '^/__odx__/(.*)$',
-        target: '/__odx__/$1',
+        source: '^/__odx__/(config|logs|schema|generate|types|me)(/.*|)$',
+        target: '/__odx__/$1$2',
         destination: 'odx-proxy-backend',
         authenticationType: 'xsuaa',
       }),
     ]))
+
+    for (const path of [
+      '/__odx__/config',
+      '/__odx__/logs',
+      '/__odx__/schema?service=Northwind',
+      '/__odx__/generate?service=Northwind',
+      '/__odx__/types?service=Northwind',
+      '/__odx__/me',
+    ]) {
+      expect(resolveRoute(xsApp, path), `${path} should resolve to proxy`).toEqual(expect.objectContaining({
+        destination: 'odx-proxy-backend',
+        authenticationType: 'xsuaa',
+      }))
+    }
+
+    expect(resolveRoute(xsApp, '/__odx__/config-client.js')).toBeUndefined()
   })
 })

@@ -173,6 +173,17 @@ describe('production Explorer endpoint policy', () => {
           },
         ],
       })
+      expect(Object.keys(response).sort()).toEqual(['basePath', 'mode', 'services'])
+      expect(Object.keys(service).sort()).toEqual([
+        'entities',
+        'icon',
+        'isGenerated',
+        'name',
+        'proxyMode',
+        'route',
+        'strategy',
+        'version',
+      ])
       expect(response.forwardAuthHeader).toBeUndefined()
       expect(response.versions).toBeUndefined()
       expect(service.url).toBeUndefined()

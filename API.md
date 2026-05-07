@@ -203,15 +203,16 @@ public composable and module APIs.
 
 In local development they preserve DevTools ergonomics. In production every
 `/__odx__/*` endpoint requires validated SAP security context. Production
-`/__odx__/config` returns only sanitized service information: `name`, `route`,
-`icon`, `strategy`, `proxyMode`, `entities`, `isGenerated`, and `version`.
-It does not return backend URLs, destinations, auth, headers, rules, unknown
-service fields, global secrets, runtime paths, DevTools settings, or Node
-runtime versions.
+`/__odx__/config` returns only the top-level Explorer runtime fields
+`basePath`, `mode`, and `services`; each service entry is limited to `name`,
+`route`, `icon`, `strategy`, `proxyMode`, `entities`, `isGenerated`, and
+`version`. It does not return backend URLs, destinations, auth, headers, rules,
+unknown service fields, global secrets, runtime paths, DevTools settings, or
+Node runtime versions.
 
 | Endpoint | Purpose |
 | --- | --- |
-| `/__odx__/config` | Local: resolved service config, entities, versions, and generation status. Production: sanitized service information only. |
+| `/__odx__/config` | Local: resolved service config, entities, versions, and generation status. Production: top-level `basePath`, `mode`, and sanitized service information only. |
 | `/__odx__/logs` | Local development traffic logs. `DELETE` clears local logs. Production returns an empty list and rejects `DELETE` until persistent log policy is implemented. |
 | `/__odx__/generate?service=<name>` | Local development SDK/type regeneration for one service. Production returns `403`. |
 | `/__odx__/schema?service=<name>` | Parsed EDMX schema. Local `raw=true` returns XML. Production requires cached metadata and rejects raw XML. |
