@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-const siteUrl = 'http://localhost:3000'
+const siteUrl = process.env.NUXT_PUBLIC_SITE_URL || process.env.NUXT_SITE_URL
 const docsDir = dirname(fileURLToPath(import.meta.url))
 const payloadCacheDir = resolve(docsDir, '.nuxt/cache/nuxt/payload')
 
@@ -59,13 +60,11 @@ export default defineNuxtConfig({
   },
   compatibilityDate: 'latest',
   site: {
-    url: siteUrl,
+    ...(siteUrl ? { url: siteUrl } : {}),
     name: 'ODX',
     description: 'Modern OData Developer Experience for Nuxt and SAP BTP',
   },
-  llms: {
-    domain: siteUrl,
-  },
+  ...(siteUrl ? { llms: { domain: siteUrl } } : {}),
   odata: {
     devtools: {
       enabled: false,
