@@ -29,7 +29,7 @@ export interface BenchmarkReport {
 }
 
 export function usage(): string {
-  return 'Usage: pnpm.cmd run bench:proxy:compare -- <baseline.json> <candidate.json>'
+  return 'Usage: pnpm run bench:proxy:compare -- <baseline.json> <candidate.json>'
 }
 
 export function parseBenchmarkReport(raw: string, role: string): BenchmarkReport {
