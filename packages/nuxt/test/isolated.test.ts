@@ -1,19 +1,14 @@
 import { fileURLToPath } from 'node:url'
 import { $fetch, setup } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
+import { createNitroE2ETestConfig } from './nitro-test-config'
 
 describe('isolated production e2e', async () => {
   await setup({
     rootDir: fileURLToPath(new URL('./fixtures/isolated', import.meta.url)),
     build: true,
     server: true,
-    nuxtConfig: {
-      // Node 24 rejects Nitro's file:///_entry.js placeholder in split chunks.
-      nitro: {
-        inlineDynamicImports: true,
-        preset: 'node-server',
-      },
-    } as any,
+    nuxtConfig: createNitroE2ETestConfig() as any,
   })
 
   it('renders data from direct odata fetch in production build', async () => {

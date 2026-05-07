@@ -1,17 +1,12 @@
 import { fileURLToPath } from 'node:url'
 import { $fetch, setup } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
+import { createNitroE2ETestConfig } from './nitro-test-config'
 
 describe('nuxt ODX Module Integration', async () => {
   await setup({
     rootDir: fileURLToPath(new URL('../../../test/fixtures/basic', import.meta.url)),
-    nuxtConfig: {
-      // Node 24 rejects Nitro's file:///_entry.js placeholder in split chunks.
-      nitro: {
-        inlineDynamicImports: true,
-        preset: 'node-server',
-      },
-    } as any,
+    nuxtConfig: createNitroE2ETestConfig() as any,
   })
 
   it('proxies basic GET requests correctly to the destination', async () => {
