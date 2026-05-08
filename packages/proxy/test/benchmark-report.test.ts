@@ -83,6 +83,28 @@ describe('proxy benchmark report formatting', () => {
     expect(output.scenarios.map(item => item.category)).toEqual(['small', 'large', 'devtools'])
   })
 
+  it('rejects duplicate scenario labels before formatting the report', () => {
+    expect(() => formatBenchmarkReport([
+      summary({ label: 'duplicate scenario', path: '/api/odx/BufferService/Products' }),
+      summary({ label: 'duplicate scenario', path: '/api/odx/StreamService/Products' }),
+    ])).toThrow('Duplicate benchmark scenario label: "duplicate scenario"')
+  })
+
+  it('rejects duplicate scenario labels before creating JSON output', () => {
+    expect(() => createBenchmarkOutput(
+      [
+        summary({ label: 'duplicate output', path: '/api/odx/BufferService/Products' }),
+        summary({ label: 'duplicate output', path: '/api/odx/StreamService/Products' }),
+      ],
+      {
+        iterations: 50,
+        rounds: 7,
+        warmupIterations: 10,
+        defaultConcurrency: 5,
+      },
+    )).toThrow('Duplicate benchmark scenario label: "duplicate output"')
+  })
+
   it.each([
     ['minMs', Number.NaN],
     ['avgMs', Number.POSITIVE_INFINITY],

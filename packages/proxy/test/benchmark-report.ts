@@ -73,6 +73,17 @@ const countFields = [
   'concurrency',
 ] as const
 
+function assertUniqueScenarioLabels(summaries: MeasurementSummary[]): void {
+  const labels = new Set<string>()
+
+  for (const summary of summaries) {
+    if (labels.has(summary.label)) {
+      throw new TypeError(`Duplicate benchmark scenario label: "${summary.label}"`)
+    }
+    labels.add(summary.label)
+  }
+}
+
 function assertValidCountFields(summaries: MeasurementSummary[]): void {
   for (const summary of summaries) {
     for (const field of countFields) {
@@ -95,9 +106,14 @@ function assertFiniteDisplayedTimings(summaries: MeasurementSummary[]): void {
   }
 }
 
-export function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
+function assertValidBenchmarkSummaries(summaries: MeasurementSummary[]): void {
+  assertUniqueScenarioLabels(summaries)
   assertValidCountFields(summaries)
   assertFiniteDisplayedTimings(summaries)
+}
+
+export function formatBenchmarkReport(summaries: MeasurementSummary[]): string {
+  assertValidBenchmarkSummaries(summaries)
 
   const rows = summaries.map(summary => [
     summary.label.padEnd(24),
@@ -158,8 +174,7 @@ export function createBenchmarkOutput(
   },
   options: BenchmarkOutputOptions = {},
 ): BenchmarkOutput {
-  assertValidCountFields(summaries)
-  assertFiniteDisplayedTimings(summaries)
+  assertValidBenchmarkSummaries(summaries)
 
   return {
     name: 'ODX proxy performance baseline',
