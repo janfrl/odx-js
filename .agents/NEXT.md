@@ -8,32 +8,38 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 088 implementation is complete and requires separate
-review because it touches production BTP destination resolution behavior for
-runtime metadata refresh.
+Adaptive Teamflow. Task 088 review found one bounded production BTP destination
+resolution gap and needs a focused Integrator fix.
 
 ## Current Next Step
 
-Start a fresh Reviewer for task 088:
-`.agents/tasks/done/088-cover-btp-destination-metadata-refresh.md`.
+Start a fresh Integrator for task 088 using review note:
+`.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
+Address review findings for:
 .agents/tasks/done/088-cover-btp-destination-metadata-refresh.md
+
+Review note:
+.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md
+
+Reviewed implementation commit:
+4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/integrator.md
 - .agents/decisions/
 - .agents/NEXT.md
 - .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
+- .agents/reviews/088-cover-btp-destination-metadata-refresh-review.md
 - SECURITY.md
 - DEPLOYMENT.md
 - .agents/tasks/done/088-cover-btp-destination-metadata-refresh.md
@@ -43,58 +49,48 @@ Read:
 - packages/proxy/src/api/generate.ts
 - packages/proxy/test/explorer-policy.test.ts
 - packages/proxy/test/btp-destination.test.ts
-- the latest implementation diff/commit for task 088
+- the latest diff since reviewed commit 4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
 
-Review stance:
-- Findings first.
-- Prioritize correctness, production runtime behavior, BTP destination
-  resolution, Authorization/header handling, stale-cache fallback, SDK
-  generation separation, security/privacy, architecture boundaries, and
-  acceptance criteria gaps.
-- Check that the implementation stays scoped to task 088 and does not alter
-  Explorer UI, unrelated direct-service behavior, dependencies, lockfiles,
-  generated files, or unrelated docs.
-- Check that tests are deterministic and do not require live SAP BTP services
-  or external network access.
-- Check that durable docs do not need updates for the implemented behavior.
+Rules:
+- Fix only the concrete review finding in the task 088 review note.
+- Keep the fix scoped to production runtime metadata refresh and BTP
+  destination resolution failure handling.
+- Preserve local development BTP fallback behavior unless the focused fix
+  requires a strict-mode branch for metadata refresh.
+- Preserve normal OData proxy resolver default behavior unless the review
+  finding cannot be fixed safely without a shared helper option.
+- Add a deterministic regression test for a production destination-backed
+  `/__odx__/generate?service=<name>` refresh with stale cache present and no
+  usable Destination/XSUAA binding. Assert the response remains
+  `operation: "metadata-refresh"`, `generated: false`, `source: "cache"`, does
+  not invoke the injected generator, and reports a BTP binding/resolution
+  stale reason instead of a local fallback 404/path.
+- Do not require live SAP BTP services or external network access.
+- Do not alter Explorer UI, unrelated direct-service behavior, dependencies,
+  lockfiles, generated files, or unrelated docs.
 
-Implementation summary to review:
-- Added local fixture coverage for production `/__odx__/generate` metadata
-  refresh through mocked BTP Destination/XSUAA resolution.
-- Verified the resolved destination URL is used for `$metadata`, destination
-  auth overrides incoming/service/global auth, metadata `Accept` is sent, and
-  restricted proxy headers remain governed by `prepareProxyHeaders`.
-- Added stale-cache fallback coverage for destination-backed metadata fetch
-  failure and BTP destination resolution failure without production SDK
-  generation.
-- Narrow runtime fix: metadata refresh opts out of the target resolver's local
-  BTP fallback so destination resolution failures reach stale-cache fallback
-  with the BTP failure reason instead of a local fallback 404.
+Verification:
+- Run `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`.
+- Run `pnpm.cmd --filter @bc8-odx/proxy run verify`.
+- Run `pnpm.cmd run lint`.
+- Run `pnpm.cmd run typecheck`.
+- Run `git diff --check`.
 
-Verification already run by Implementer:
-- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`
-  - pass outside sandbox, 2 files, 43 tests.
-- `pnpm.cmd --filter @bc8-odx/proxy run verify`
-  - pass outside sandbox, 11 files, 167 passed, 1 skipped, plus proxy
-    standalone example.
-- `pnpm.cmd run lint` - pass.
-- `pnpm.cmd run typecheck` - pass.
-- `git diff --check` - pass, with Git CRLF working-copy warnings only.
+Before finishing:
+- Update the task handoff notes if the fix changes implementation details or
+  verification results.
+- Update `.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`
+  with an Integrator Update.
+- Update `.agents/NEXT.md` with a focused re-review prompt.
+- Commit the integration fix with a Conventional Commit unless a stop condition
+  prevents committing.
 
-Pre-fix failing result to consider:
-- The focused suite failed after adding the destination-resolution stale-cache
-  test because `staleReason` was `Status: 404 Cannot find any path matching
-  [metadata-path]` instead of the BTP destination failure. It passed after the
-  metadata-refresh target-resolution fix.
-
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether the task is approved or needs changes
-
-Create or update a review note under `.agents/reviews/` using
-`.agents/reviews/REVIEW_TEMPLATE.md`.
-Update `.agents/NEXT.md` and commit the review note and workflow state changes.
-Include the exact next-chat prompt the operator should paste into a new chat.
+When done, summarize:
+- findings addressed
+- changed files
+- verification performed
+- whether focused re-review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from `.agents/NEXT.md`
 ```
