@@ -313,7 +313,6 @@ export interface SharedODataState {
   lastSelectedServiceForGraph: Ref<string | null>
   fetchConfig: () => Promise<void>
   refreshLogs: () => Promise<void>
-  generateService: (name: string) => Promise<any>
   refreshServiceMetadata: (name: string) => Promise<any>
   clearLogFilters: () => void
   clearLogs: () => Promise<void>
@@ -534,8 +533,6 @@ export function useSharedODataState(): SharedODataState {
     }
   }
 
-  const generateService = refreshServiceMetadata
-
   async function clearLogs(): Promise<void> {
     try {
       await fetch(buildOdxApiEndpoint('/__odx__/logs'), { method: 'DELETE' })
@@ -585,7 +582,6 @@ export function useSharedODataState(): SharedODataState {
     lastSelectedServiceForGraph,
     fetchConfig,
     refreshLogs,
-    generateService,
     refreshServiceMetadata,
     clearLogFilters,
     clearLogs,

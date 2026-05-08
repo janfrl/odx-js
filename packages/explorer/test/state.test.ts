@@ -117,13 +117,13 @@ describe('explorer State Composable', () => {
     expect(logs.value).toEqual([])
   })
 
-  it('encodes service names when checking service health and generating a service', async () => {
+  it('encodes service names when checking service health and refreshing service metadata', async () => {
     ;(globalThis.fetch as any).mockResolvedValue({
       ok: true,
       json: async () => ({ services: [{ name: 'R&D #1?', route: 'rd' }] }),
     })
 
-    const { fetchConfig, generateService } = useSharedODataState()
+    const { fetchConfig, refreshServiceMetadata } = useSharedODataState()
     await fetchConfig()
     await nextTick()
 
@@ -134,7 +134,7 @@ describe('explorer State Composable', () => {
       json: async () => ({}),
     })
 
-    await generateService('R&D #1?')
+    await refreshServiceMetadata('R&D #1?')
 
     expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/generate?service=R%26D%20%231%3F')
   })

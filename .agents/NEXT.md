@@ -8,66 +8,49 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 090 separate review is complete and approved. The next
-lowest ready task is low-risk task 091.
+Adaptive Teamflow. Task 091 implementation is complete, no separate review is
+required, and no ready implementation tasks remain.
 
 ## Current Next Step
 
-Start an Implementer for:
-`.agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md`.
+Start a Planner chat to create the next 3-5 ready implementation tasks.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
-
-Implement exactly:
-.agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md
+You are the Planner for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
+- relevant root documentation
 - .agents/WORKFLOW.md
-- .agents/roles/implementer.md
+- .agents/ROADMAP.md
+- .agents/EPICS.md
+- .agents/BACKLOG.md
+- .agents/tasks/
+- .agents/reviews/
 - .agents/decisions/
 - .agents/NEXT.md
-- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
-- .agents/tasks/done/082-align-standalone-explorer-runtime-ui.md
-- .agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md
-- packages/explorer/composables/useODataState.ts
-- packages/explorer/test/state.test.ts
+
+Create the next 3-5 implementation tasks.
 
 Rules:
-- Keep changes scoped to task 091.
-- Remove the remaining internal `generateService` alias from Explorer state and
-  tests.
-- Preserve the existing `/__odx__/generate` endpoint path and metadata refresh
-  behavior.
-- Do not change SDK generation behavior, redesign Explorer UI, or change
-  runtime metadata refresh response semantics.
-- Move task 091 to `.agents/tasks/in-progress/` when starting and to
-  `.agents/tasks/done/` only after implementation and verification.
-- Update task handoff notes and `.agents/NEXT.md`.
-- Commit the completed task with a Conventional Commit unless a stop condition
-  prevents committing.
-- Separate review is not required if the task stays within its low-risk,
-  internal naming cleanup scope and verification passes.
-
-Verification:
-- `pnpm.cmd --filter @bc8-odx/explorer run verify`
-- `git grep -n "generateService" -- packages/explorer`
-- `pnpm.cmd run lint`
-- `pnpm.cmd run typecheck`
-- `git diff --check`
+- Each task must be executable by one implementer chat.
+- Use .agents/tasks/TASK_TEMPLATE.md.
+- Put new tasks in .agents/tasks/ready/.
+- Keep tasks small and reviewable.
+- Include acceptance criteria and verification steps.
+- Do not create vague or oversized tasks.
+- Update BACKLOG.md, EPICS.md, and ROADMAP.md only if needed.
+- Update .agents/NEXT.md with the next action and exact next-chat prompt.
+- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
+- new tasks created
+- recommended next task
+- open decisions or blockers
 - commit hash
-- known gaps
-- exact next-chat prompt from `.agents/NEXT.md`
+- exact next-chat prompt from .agents/NEXT.md
 ```

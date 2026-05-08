@@ -1,7 +1,7 @@
 # Task: Remove stale Explorer generateService alias
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-08
 Risk: low
 Review: not required
@@ -47,11 +47,11 @@ Include:
 
 ## Acceptance Criteria
 
-- [ ] `generateService` no longer appears in Explorer source or tests except in
+- [x] `generateService` no longer appears in Explorer source or tests except in
       historical `.agents` notes.
-- [ ] Explorer components and tests use `refreshServiceMetadata`.
-- [ ] Existing metadata refresh behavior and endpoint URLs are unchanged.
-- [ ] Explorer package verification passes.
+- [x] Explorer components and tests use `refreshServiceMetadata`.
+- [x] Existing metadata refresh behavior and endpoint URLs are unchanged.
+- [x] Explorer package verification passes.
 
 ## Verification
 
@@ -81,15 +81,37 @@ the task stays within the stated scope.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `packages/explorer/composables/useODataState.ts`,
+  `packages/explorer/test/state.test.ts`, `.agents/NEXT.md`, and this task
+  file.
+- summary: Removed the internal `generateService` compatibility alias from the
+  Explorer shared state interface and return object. Updated the remaining
+  Explorer state test to call `refreshServiceMetadata` while preserving the
+  `/__odx__/generate` endpoint URL and existing metadata refresh behavior.
+- tests run:
+  - `pnpm.cmd --filter @bc8-odx/explorer run verify` - passed outside the
+    sandbox; the first sandboxed run failed with Windows `spawn EPERM` while
+    loading Vitest/esbuild.
+  - `git grep -n "generateService" -- packages/explorer` - no matches, exit
+    code 1 as expected for the successful no-match result.
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run typecheck`
+  - `git diff --check`
+- skipped checks and residual risk: No requested check was skipped. The
+  generated `packages/explorer/.nuxtrc` test artifact was removed and is not
+  part of this task.
+- self-check result: Scope stayed on Explorer internal naming and focused
+  tests. The proxy `/__odx__/generate` endpoint path, SDK generation behavior,
+  Explorer UI design, and runtime metadata refresh response semantics were not
+  changed.
+- review requirement decision: Separate review is not required because task 091
+  stayed within its low-risk internal naming cleanup scope and all requested
+  verification passed.
+- task state movement: Moved from `.agents/tasks/ready/` to
+  `.agents/tasks/in-progress/` when starting, then to `.agents/tasks/done/`
+  after implementation and verification.
+- `.agents/NEXT.md` update: Updated to request a Planner chat because no ready
+  task remains after task 091.
+- commit hash: Pending until the final commit is created; recorded in the final
+  implementer summary.
+- known gaps: None.
