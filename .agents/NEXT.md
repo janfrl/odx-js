@@ -14,57 +14,82 @@ contracts.
 
 ## Current Next Step
 
-Task 079 received a focused Integrator fix for the missing PostgreSQL runtime
-dependency documented in
-`.agents/reviews/079-add-db0-backed-explorer-log-store-review.md`.
+Task 079 is approved after focused re-review. Continue with the next high-risk
+production runtime sequence task:
+`.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`.
 
-Use a fresh Reviewer to perform focused re-review of only that fix before task
-079 can be approved and before continuing the remaining production runtime
-sequence:
+Continue the remaining production runtime sequence in this order after task
+080:
 
-1. `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
-2. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
-3. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
-4. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
+1. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
+2. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
+3. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Perform focused re-review of the task 079 Integrator fix:
-- Task: .agents/tasks/done/079-add-db0-backed-explorer-log-store.md
-- Review: .agents/reviews/079-add-db0-backed-explorer-log-store-review.md
-- Reviewed commit: 48e9432c2daa05e8aeb073979f06119f34c83491
+Implement exactly:
+.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/implementer.md
+- .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md
 - .agents/tasks/done/079-add-db0-backed-explorer-log-store.md
 - .agents/reviews/079-add-db0-backed-explorer-log-store-review.md
-- packages/proxy/package.json
-- pnpm-lock.yaml
+- .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
+- ARCHITECTURE.md
+- API.md
+- DEPLOYMENT.md
+- SECURITY.md
+- packages/nuxt/src/generate.ts
+- packages/nuxt/src/runtime/server-middleware.ts
+- packages/proxy/src/api/generate.ts
+- packages/proxy/src/api/schema.ts
+- packages/proxy/src/plugins/btp-auth.ts
+- packages/proxy/src/utils/btp-destination.ts
+- packages/proxy/src/utils/target.ts
+- packages/explorer/composables/useODataState.ts
 
 Rules:
-- Review only the focused Integrator fix for the task 079 needs-changes finding.
-- Confirm `@bc8-odx/proxy` declares the required `pg` runtime dependency for the documented `db0/connectors/postgresql` path.
-- Confirm `pnpm-lock.yaml` changes are limited to the required PostgreSQL dependency graph and do not introduce unrelated package churn.
-- Confirm `@types/pg` is absent unless the package or type flow actually requires it.
-- Do not reopen unrelated task 079 design, Explorer UI, public contracts, production payload policy, metadata refresh, or unrelated source.
-- Update the review note and `.agents/NEXT.md`.
-- Commit the focused re-review/workflow notes with a Conventional Commit unless a stop condition prevents committing.
+- Keep changes scoped to task 080.
+- Separate runtime metadata refresh from TypeScript SDK generation.
+- Production refresh must update metadata cache state only and must not run
+  `odata2ts` or write generated TypeScript files.
+- Development SDK regeneration must keep working when the Nuxt generator is
+  present.
+- Use production-compatible service resolution, auth, headers, and TLS behavior
+  for runtime metadata fetching.
+- Preserve stale-cache fallback behavior.
+- Do not add db0, evlog, unrelated Explorer UI redesign, or normal data proxy
+  behavior changes.
+- Update docs where the Refresh Metadata versus Regenerate SDK contract changes.
+- Move the task to done only after implementation and verification.
+- Update `.agents/NEXT.md` with the next workflow action.
+- Commit with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- `pnpm.cmd --filter @bc8-odx/proxy exec node -e "import('db0/connectors/postgresql').then(()=>console.log('ok')).catch(e=>{console.error(e.code||e.message); process.exit(1)})"`
+- `pnpm.cmd exec vitest run packages/proxy/test`
+- `pnpm.cmd exec vitest run packages/nuxt/test/generate.test.ts`
+- `pnpm.cmd --filter @bc8-odx/proxy run verify`
+- `pnpm.cmd --filter @bc8-odx/nuxt run playground:check`
+- `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck`
 - `git diff --check`
 
 When done, summarize:
-- findings
-- acceptance status for the focused fix
+- changed files
+- what was implemented
 - verification performed
-- whether task 079 is approved or still needs changes
+- self-check result
+- whether separate review is required and why
 - commit hash
+- known gaps
 - exact next-chat prompt from .agents/NEXT.md
 ```

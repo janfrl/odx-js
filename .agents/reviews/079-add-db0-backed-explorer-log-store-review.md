@@ -5,7 +5,7 @@ Date: 2026-05-08
 Reviewer: Codex
 Task: `.agents/tasks/done/079-add-db0-backed-explorer-log-store.md`
 Reviewed commit: `48e9432c2daa05e8aeb073979f06119f34c83491`
-Decision: needs changes
+Decision: approved after focused fix
 
 ## Findings
 
@@ -111,5 +111,9 @@ is not deployable without the required `pg` runtime dependency.
   Verification passed for the PostgreSQL connector import, focused db0
   log-store test, proxy verify, workspace lint, workspace typecheck, and
   `git diff --check`.
-- `.agents/NEXT.md` was updated to request focused re-review of only the
-  missing PostgreSQL runtime dependency fix before task 079 can be approved.
+- Focused re-review 2026-05-08: approved. `packages/proxy/package.json` now
+  declares `pg` as a runtime dependency, `pnpm-lock.yaml` contains only the
+  expected PostgreSQL dependency graph, `@types/pg` remains absent because the
+  package does not import `pg` types, the PostgreSQL db0 connector import
+  passed, and `git diff --check` passed.
+- `.agents/NEXT.md` was updated to continue with task 080.
