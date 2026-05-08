@@ -14,52 +14,56 @@ contracts.
 
 ## Current Next Step
 
-Task 085 implementation is complete and requires a fresh independent review.
-Review:
-`.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`.
+Task 085 review found one focused documentation consistency issue. Integrate
+only the review finding in:
+`.agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
+Address the review finding for completed task 085:
 - `.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`
+- `.agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md`
+
+Reviewed implementation commit:
+- `1396a2984d1b8621527fd6276a35984b49cef003`
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
+- .agents/roles/integrator.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
-- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
-- .agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md
-- .agents/reviews/082-align-standalone-explorer-runtime-ui-review.md
-- .agents/reviews/083-complete-or-remove-explorer-mockdata-api-review.md
+- .agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md
 - .agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md
 - ARCHITECTURE.md
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- changed files and diff
+- relevant changed Docus docs
 
 Rules:
-- Use a fresh review stance and do not rely on the Implementer conversation.
-- Findings first, ordered by severity with file/line references.
-- Check the diff against task 085 scope and acceptance criteria.
-- Verify English and German docs are semantically aligned for touched topics.
-- Check that docs match approved behavior from tasks 080-083 and do not document unapproved behavior.
-- Check that docs do not expose customer-specific BTP routes, credentials, destinations, or backend URLs.
-- Check root docs and Docus docs for contradictions on production versus development Explorer behavior.
-- Confirm `git diff --check`, `pnpm.cmd --filter docs run verify`, and the required manual stale-word searches are adequate, or record verification gaps.
-- Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md`.
-- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the review note and workflow state changes with a Conventional Commit unless a stop condition prevents committing.
+- Fix only the documented review finding.
+- Do not change runtime API behavior or Explorer UI.
+- Do not broaden scope into unrelated docs cleanup.
+- Preserve the approved task 081 behavior: production `/__odx__/config` service entries include sanitized runtime metadata state.
+- Align root docs and Docus docs on the production `/__odx__/config` service-entry allowlist, including the approved `metadata` state fields, without documenting secrets, backend URLs, destinations, auth, outbound headers, rules, runtime paths, hooks, DevTools config, `forwardAuthHeader`, or `versions.node`.
+- Keep English and German docs semantically aligned if Docus text changes.
+- Run `git diff --check`.
+- Run `pnpm.cmd --filter docs run verify` if docs/API reference generation could be affected; otherwise record why it was skipped.
+- Update task handoff notes if useful.
+- Update `.agents/NEXT.md` with a focused re-review prompt.
+- Commit the integration fix with a Conventional Commit unless a stop condition prevents committing.
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- verification gaps
-- whether the task is approved or needs changes
+When done, summarize:
+- finding addressed
+- changed files
+- verification performed
+- whether focused re-review is required and why
 - commit hash
+- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
