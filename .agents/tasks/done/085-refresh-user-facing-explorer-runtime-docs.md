@@ -1,7 +1,7 @@
 # Task: Refresh user-facing Explorer runtime docs
 
-Status: ready
-Owner: unassigned
+Status: done
+Owner: Codex
 Created: 2026-05-08
 Risk: medium
 Review: required
@@ -71,17 +71,17 @@ Relevant files:
 
 ## Acceptance Criteria
 
-- [ ] Docus docs no longer say db0-backed production logs are merely planned
+- [x] Docus docs no longer say db0-backed production logs are merely planned
       once task 079 is approved.
-- [ ] Docus docs no longer say runtime metadata refresh is merely planned or
+- [x] Docus docs no longer say runtime metadata refresh is merely planned or
       that production `/__odx__/generate` returns `403` once task 080 is
       approved.
-- [ ] Docus docs clearly distinguish Refresh Metadata from development SDK/type
+- [x] Docus docs clearly distinguish Refresh Metadata from development SDK/type
       generation.
-- [ ] Docus docs describe production schema/config cache behavior without
+- [x] Docus docs describe production schema/config cache behavior without
       implying production writes generated TypeScript SDK files.
-- [ ] English and German pages are aligned for every touched topic.
-- [ ] Root docs and Docus docs do not contradict each other on production versus
+- [x] English and German pages are aligned for every touched topic.
+- [x] Root docs and Docus docs do not contradict each other on production versus
       development Explorer behavior.
 
 ## Verification
@@ -109,15 +109,55 @@ or contradict the reviewed runtime behavior.
 
 ## Handoff Notes
 
-To be completed by the implementer:
-
-- changed files
-- summary
-- tests run
-- skipped checks and residual risk
-- self-check result
-- review requirement decision
-- task state movement
-- `.agents/NEXT.md` update
-- commit hash
-- known gaps
+- changed files: `SECURITY.md`,
+  `docs/content/en/1.ecosystem/4.troubleshooting.md`,
+  `docs/content/de/1.ecosystem/4.troubleshooting.md`,
+  `docs/content/en/2.nuxt/4.deployment.md`,
+  `docs/content/de/2.nuxt/4.deployment.md`,
+  `docs/content/en/2.nuxt/5.module-reference.md`,
+  `docs/content/de/2.nuxt/5.module-reference.md`,
+  `docs/content/en/3.proxy/3.providers.md`,
+  `docs/content/de/3.proxy/3.providers.md`,
+  `docs/content/en/3.proxy/4.reference.md`,
+  `docs/content/de/3.proxy/4.reference.md`,
+  `docs/content/en/5.explorer/1.setup.md`,
+  `docs/content/de/5.explorer/1.setup.md`,
+  `docs/content/en/5.explorer/2.reference.md`,
+  `docs/content/de/5.explorer/2.reference.md`,
+  `docs/public/api-reference.json`, `.agents/NEXT.md`, and this task file.
+- summary: Refreshed English and German Docus Explorer runtime documentation to
+  describe approved db0-backed SQL log storage as opt-in, redacted, and
+  proxy-owned; clarified that production `/__odx__/generate` performs runtime
+  metadata refresh only; documented schema/config cache status and
+  `/__odx__/types` as a disabled generated-artifact endpoint in production;
+  aligned standalone Explorer wording around Refresh Metadata, generated
+  types, SQL log storage, and mock-data file management; refreshed the tracked
+  generated API reference via the docs verify script; and updated the root
+  `SECURITY.md` log policy sentence so it no longer contradicts Docus content.
+- tests run:
+  - `git diff --check`
+  - `pnpm.cmd --filter docs run verify`
+  - Manual `Select-String` searches over `docs/content/en` and
+    `docs/content/de` for `planned`, `follow-up`, `db0`, `metadata refresh`,
+    `generate`, `403`, and `mockdata`.
+- skipped checks and residual risk: No checks are intended to be skipped. No
+  live SAP BTP/AppRouter deployment smoke test is planned because this task is
+  documentation-only.
+- self-check result: Scope stayed on task 085 documentation and workflow state.
+  No runtime API behavior, Explorer UI, logging, metadata, persistence code,
+  customer-specific routes, credentials, destinations, or backend URLs were
+  changed. The docs describe only approved outcomes from tasks 080-083.
+- review requirement decision: Separate review is required because this
+  documentation describes production runtime API behavior, auth, redaction,
+  deployment, and generated artifact boundaries, and the task explicitly marks
+  review as required.
+- task state movement: Initial `Move-Item` from `ready/` to `in-progress/` was
+  blocked by Windows access denied, so the task was moved from `ready/` to
+  `done/` through the final patch after implementation.
+- `.agents/NEXT.md` update: Updated to request a fresh Reviewer for completed
+  task 085 before continuing workflow.
+- commit hash: Recorded in the final Implementer response after the task commit
+  is created.
+- known gaps: No live BTP deployment was tested. German content continues the
+  repository's existing ASCII transliteration style for new German text where
+  practical.

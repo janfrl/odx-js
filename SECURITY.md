@@ -81,8 +81,10 @@ Production `/__odx__/schema` returns parsed cached metadata only and rejects raw
 XML. Production `/__odx__/generate` refreshes runtime metadata cache state only
 and must not run SDK generation. Production `/__odx__/types` is
 development-only.
-Production `/__odx__/logs` returns an empty list and rejects clearing until a
-persistent log and redaction policy is implemented.
+Production `/__odx__/logs` returns an empty list and rejects clearing unless
+persistent SQL log storage is explicitly configured. With SQL storage enabled,
+the proxy stores and serves redacted traffic history through `OdxLogStore`, and
+production request/response payload bodies are omitted by default.
 
 Production metadata inspection is not SDK generation. Runtime metadata refresh
 may fetch `$metadata` using the configured service target, auth, headers, and

@@ -1059,7 +1059,24 @@
       },
       {
         "name": "devtools",
-        "type": "{ enabled?: boolean; maxLogs?: number; logPayloads?: boolean; maxPayloadBytes?: number; } | undefined",
+        "type": "{ enabled?: boolean; maxLogs?: number; logPayloads?: boolean; maxPayloadBytes?: number; logStore?: OdxRuntimeLogStoreConfig; } | undefined",
+        "required": false
+      }
+    ]
+  },
+  "OdxRuntimeLogStoreConfig": {
+    "title": "OdxRuntimeLogStoreConfig",
+    "properties": [
+      {
+        "name": "provider",
+        "type": "\"memory\" | \"sql\" | undefined",
+        "description": "`memory` keeps logs in process memory. `sql` enables persistent storage\nthrough the proxy-owned database adapter.",
+        "default": "'memory'",
+        "required": false
+      },
+      {
+        "name": "sql",
+        "type": "{ connector?: \"postgresql\" | \"sqlite\"; url?: string; path?: string; } | undefined",
         "required": false
       }
     ]
@@ -1105,6 +1122,61 @@
       {
         "name": "version",
         "type": "\"v2\" | \"v4\" | null | undefined",
+        "required": false
+      },
+      {
+        "name": "metadata",
+        "type": "ODataExplorerMetadataState | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataExplorerMetadataState": {
+    "title": "ODataExplorerMetadataState",
+    "properties": [
+      {
+        "name": "status",
+        "type": "\"available\" | \"stale\" | \"missing\"",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "\"cache\" | \"remote\" | \"local\" | null",
+        "required": true
+      },
+      {
+        "name": "stale",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "staleReason",
+        "type": "string | null",
+        "required": true
+      },
+      {
+        "name": "refreshedAt",
+        "type": "string | null",
+        "required": true
+      },
+      {
+        "name": "timestamp",
+        "type": "number | null",
+        "required": true
+      },
+      {
+        "name": "hash",
+        "type": "string | null",
+        "required": true
+      },
+      {
+        "name": "bytes",
+        "type": "number | null",
+        "required": true
+      },
+      {
+        "name": "message",
+        "type": "string | undefined",
         "required": false
       }
     ]
@@ -1236,7 +1308,7 @@
       },
       {
         "name": "devtools",
-        "type": "{ enabled?: boolean; maxLogs?: number; logPayloads?: boolean; maxPayloadBytes?: number; } | undefined",
+        "type": "{ enabled?: boolean; maxLogs?: number; logPayloads?: boolean; maxPayloadBytes?: number; logStore?: OdxRuntimeLogStoreConfig; } | undefined",
         "required": false
       }
     ]

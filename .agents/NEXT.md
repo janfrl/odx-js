@@ -14,51 +14,52 @@ contracts.
 
 ## Current Next Step
 
-Task 083 review is approved. Continue with:
-`.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`.
+Task 085 implementation is complete and requires a fresh independent review.
+Review:
+`.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Implement exactly:
-- `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`
+Review the completed task:
+- `.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`
 
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/implementer.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
+- .agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md
+- .agents/reviews/082-align-standalone-explorer-runtime-ui-review.md
 - .agents/reviews/083-complete-or-remove-explorer-mockdata-api-review.md
-- .agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md
-- root docs referenced by the task
-- docs/content/en
-- docs/content/de
+- .agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md
+- ARCHITECTURE.md
+- API.md
+- SECURITY.md
+- DEPLOYMENT.md
+- changed files and diff
 
 Rules:
-- Keep changes scoped to task 085.
-- Do not change runtime API behavior, Explorer UI, logging, metadata, or persistence code.
-- Do not document unapproved behavior from tasks that still need independent review.
-- Keep English and German documentation semantically aligned.
-- Do not publish customer-specific BTP routes, credentials, destinations, or backend URLs.
-- Update the task handoff notes before finishing.
-- Run `git diff --check` and `pnpm.cmd --filter docs run verify`, or record skipped checks and residual risk.
-- Manually search English and German docs for stale wording around `planned`, `follow-up`, `db0`, `metadata refresh`, `generate`, `403`, and `mockdata`.
-- Self-check against task scope, acceptance criteria, root docs/decisions, security/privacy implications, and unrelated changes.
-- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
+- Use a fresh review stance and do not rely on the Implementer conversation.
+- Findings first, ordered by severity with file/line references.
+- Check the diff against task 085 scope and acceptance criteria.
+- Verify English and German docs are semantically aligned for touched topics.
+- Check that docs match approved behavior from tasks 080-083 and do not document unapproved behavior.
+- Check that docs do not expose customer-specific BTP routes, credentials, destinations, or backend URLs.
+- Check root docs and Docus docs for contradictions on production versus development Explorer behavior.
+- Confirm `git diff --check`, `pnpm.cmd --filter docs run verify`, and the required manual stale-word searches are adequate, or record verification gaps.
+- Create or update a review note under `.agents/reviews/` using `REVIEW_TEMPLATE.md`.
 - Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
-- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
+- Commit the review note and workflow state changes with a Conventional Commit unless a stop condition prevents committing.
 
 Output:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
+- findings with severity and file/line references
+- acceptance criteria status
+- verification gaps
+- whether the task is approved or needs changes
 - commit hash
-- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
