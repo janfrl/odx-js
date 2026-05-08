@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { ODataLog, ProxyTraceEntry } from '../../composables/useODataState'
 import { computed, ref } from 'vue'
-import { useSharedODataState } from '../../composables/useODataState'
+import { buildOdxApiEndpoint, useSharedODataState } from '../../composables/useODataState'
 
 const { logs, useCORSBridge, selectedTraceLogId } = useSharedODataState()
 
 // Fetch current identity data
-const { data: me } = await useFetch<any>('/__odx__/me')
+const { data: me } = await useFetch<any>(buildOdxApiEndpoint('/__odx__/me'))
 
 // Get the trace of the absolute latest request that went through the proxy
 const latestLiveRequest = computed(() => {

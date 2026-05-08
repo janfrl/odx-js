@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { hasGeneratedTypes } from '../../composables/useODataState'
+
 const { config, services } = useSharedODataState()
 
 const stats = computed(() => [
@@ -8,9 +10,22 @@ const stats = computed(() => [
   { label: 'Services', value: services.value.length.toString(), icon: 'i-lucide-server' },
 ])
 
+const metadataSummary = computed(() => {
+  const states = services.value.map(service => service.metadata?.status || 'unknown')
+  if (states.includes('missing'))
+    return 'Missing'
+  if (states.includes('stale'))
+    return 'Stale'
+  if (states.includes('available'))
+    return 'Available'
+  return 'Checking'
+})
+
 const configItems = computed(() => [
   { id: 'auth', label: 'Auth Forwarding', type: 'badge', value: config.value.forwardAuthHeader },
-  { id: 'build', label: 'Build Directory', type: 'code', value: '.nuxt/sap-odata/generated' },
+  { id: 'metadata', label: 'Runtime Metadata', type: 'text', value: metadataSummary.value },
+  { id: 'types', label: 'Generated Types', type: 'text', value: hasGeneratedTypes(config.value) ? 'Available in development' : 'Build-time only' },
+  { id: 'api', label: 'ODX API Base', type: 'code', value: config.value.apiBase || 'same origin' },
 ])
 
 const runtimeItems = computed(() => [
@@ -53,6 +68,7 @@ const runtimeItems = computed(() => [
                 <code v-else-if="item.type === 'code'" class="text-[11px] font-mono text-default bg-muted px-2 py-1 rounded">
                   {{ item.value }}
                 </code>
+                <span v-else class="text-sm font-medium text-default">{{ item.value }}</span>
               </div>
             </div>
           </section>

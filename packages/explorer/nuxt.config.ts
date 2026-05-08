@@ -19,6 +19,12 @@ export default defineNuxtConfig({
 
   devtools: { enabled: false },
 
+  runtimeConfig: {
+    public: {
+      odxApiBase: process.env.NUXT_PUBLIC_ODX_API_BASE || process.env.ODX_API_BASE || '',
+    },
+  },
+
   app: {
     baseURL: '/__odx__/client/',
     buildAssetsDir: '_nuxt',

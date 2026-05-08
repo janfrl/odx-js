@@ -2,7 +2,7 @@ import { createNuxtApp } from 'nuxt/app'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createApp, nextTick } from 'vue'
 import { useEntityExplorer } from '../composables/useEntityExplorer'
-import { buildEntityPreviewCacheKey, buildSchemaEndpointUrl, useSharedODataState } from '../composables/useODataState'
+import { buildEntityPreviewCacheKey, buildOdxApiEndpoint, buildRuntimeProxyUrl, buildSchemaEndpointUrl, supportsSdkGeneration, useSharedODataState } from '../composables/useODataState'
 
 // Mock global fetch
 globalThis.fetch = vi.fn()
@@ -153,6 +153,89 @@ describe('explorer State Composable', () => {
 
   it('builds raw metadata URLs with encoded service names and raw=true preserved', () => {
     expect(buildSchemaEndpointUrl('R&D #1?', { raw: true })).toBe('/__odx__/schema?service=R%26D%20%231%3F&raw=true')
+  })
+
+  it('prefixes ODX API and proxied runtime URLs with a configured standalone API origin', () => {
+    const previousRuntimeConfig = (globalThis as any).useRuntimeConfig
+    ;(globalThis as any).useRuntimeConfig = () => ({
+      public: { odxApiBase: 'https://proxy.example.test/__odx__/' },
+    })
+
+    try {
+      expect(buildOdxApiEndpoint('/__odx__/config')).toBe('https://proxy.example.test/__odx__/config')
+      expect(buildSchemaEndpointUrl('R&D #1?')).toBe('https://proxy.example.test/__odx__/schema?service=R%26D%20%231%3F')
+      expect(buildRuntimeProxyUrl('/api/odx/northwind/Products')).toBe('https://proxy.example.test/api/odx/northwind/Products')
+    }
+    finally {
+      if (previousRuntimeConfig)
+        (globalThis as any).useRuntimeConfig = previousRuntimeConfig
+      else
+        delete (globalThis as any).useRuntimeConfig
+    }
+  })
+
+  it('returns metadata refresh results without requiring SDK generation semantics', async () => {
+    ;(globalThis.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          operation: 'metadata-refresh',
+          generated: false,
+          stale: false,
+          service: 'RemoteService',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          basePath: '/api/odx',
+          services: [
+            {
+              name: 'RemoteService',
+              route: 'remote',
+              metadata: { status: 'available', stale: false },
+            },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          entities: [],
+          metadata: { status: 'available', stale: false },
+        }),
+      })
+
+    const { refreshServiceMetadata, services } = useSharedODataState()
+    const result = await refreshServiceMetadata('RemoteService')
+    await nextTick()
+
+    expect(result).toMatchObject({
+      operation: 'metadata-refresh',
+      generated: false,
+    })
+    expect(globalThis.fetch).toHaveBeenNthCalledWith(1, '/__odx__/generate?service=RemoteService')
+    expect(services.value[0]?.metadata?.status).toBe('available')
+  })
+
+  it('uses development config capabilities to keep SDK generation affordances local', () => {
+    const { config } = useSharedODataState()
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [],
+      versions: { node: 'v24.0.0', module: '1.0.0' },
+    }
+
+    expect(supportsSdkGeneration(config.value)).toBe(true)
+
+    config.value = {
+      basePath: '/api/odx',
+      services: [],
+    }
+
+    expect(supportsSdkGeneration(config.value)).toBe(false)
   })
 
   it('filters traffic logs by service, search text, and failure status', () => {
@@ -571,6 +654,22 @@ describe('explorer State Composable', () => {
     }
 
     expect(services.value[0]?.health).toBe('offline')
+  })
+
+  it('maps stale metadata from config to degraded health before background checks finish', () => {
+    const { config, services } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'RemoteService',
+          route: 'remote',
+          metadata: { status: 'stale', stale: true, staleReason: 'Status: 503' },
+        },
+      ],
+    }
+
+    expect(services.value[0]?.health).toBe('degraded')
   })
 
   it('marks service health as degraded when schema health check reports stale metadata', async () => {

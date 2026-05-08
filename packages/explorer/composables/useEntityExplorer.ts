@@ -1,7 +1,7 @@
 import type { EntityMapping } from '@bc8-odx/core'
 import type { EditorState } from './useODataState'
 import { flattenOData } from '@bc8-odx/core'
-import { buildEntityPreviewCacheKey } from './useODataState'
+import { buildEntityPreviewCacheKey, buildRuntimeProxyUrl } from './useODataState'
 
 const editor = ref<EditorState>({
   show: false,
@@ -236,7 +236,7 @@ export function useEntityExplorer(): EntityExplorer {
         // Proxied Mode: Browser -> Nitro -> OData Service
         // This is the default even for 'direct' services to avoid CORS issues in dev.
         const route = selectedService.value.route || selectedService.value.name.toLowerCase()
-        urlPath = `${config.value.basePath}/${route}/${selectedEntity.value}`
+        urlPath = buildRuntimeProxyUrl(`${config.value.basePath}/${route}/${selectedEntity.value}`)
       }
 
       if (queryInput.value && queryInput.value !== '?') {
@@ -431,7 +431,7 @@ export function useEntityExplorer(): EntityExplorer {
     try {
       const route = selectedService.value.route || selectedService.value.name.toLowerCase()
       const encodedId = encodeURIComponent(String(id))
-      const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${encodedId}`, { method: 'DELETE' })
+      const res = await fetch(buildRuntimeProxyUrl(`${config.value.basePath}/${route}/${selectedEntity.value}?id=${encodedId}`), { method: 'DELETE' })
       if (res.ok) {
         const toast = useToast()
         toast.add({

@@ -1,18 +1,48 @@
 <script setup lang="ts">
-import { useSharedODataState } from '../../composables/useODataState'
+import { supportsSdkGeneration, useSharedODataState } from '../../composables/useODataState'
 
-const { selectedService, generatingStatus, generateService } = useSharedODataState()
+const { config, selectedService, generatingStatus, refreshServiceMetadata } = useSharedODataState()
 const toast = useToast()
 
-async function onRegenerate() {
+const title = computed(() => {
+  if (selectedService.value?.metadata?.status === 'missing')
+    return 'Metadata Missing'
+  if (selectedService.value?.metadata?.status === 'stale')
+    return 'Metadata Stale'
+  return 'Service Unreachable'
+})
+
+const description = computed(() => {
+  const metadata = selectedService.value?.metadata
+  if (metadata?.status === 'missing')
+    return metadata.message || 'No runtime metadata is available yet. Refresh metadata before browsing entities or schema.'
+  if (metadata?.status === 'stale') {
+    return metadata.staleReason
+      ? `Cached metadata is being used. Last refresh failed: ${metadata.staleReason}`
+      : 'Cached metadata is being used because the latest refresh did not complete.'
+  }
+  return 'The OData service at this endpoint is currently not responding. This might be due to network restrictions, a server-side issue, or an invalid URL.'
+})
+
+const refreshActionLabel = computed(() => {
+  return supportsSdkGeneration(config.value, selectedService.value) ? 'Regenerate SDK' : 'Refresh Metadata'
+})
+
+const refreshActionIcon = computed(() => {
+  return supportsSdkGeneration(config.value, selectedService.value) ? 'i-lucide-code-2' : 'i-lucide-refresh-cw'
+})
+
+async function onRefreshMetadata() {
   if (!selectedService.value)
     return
   try {
-    await generateService(selectedService.value.name)
+    const result = await refreshServiceMetadata(selectedService.value.name)
     toast.add({
       id: 'gen-success',
-      title: 'SDK Regenerated',
-      description: `Models for ${selectedService.value.name} are now up to date.`,
+      title: result?.generated ? 'SDK Regenerated' : 'Metadata Refreshed',
+      description: result?.generated
+        ? `Types for ${selectedService.value.name} were regenerated from current metadata.`
+        : `Runtime metadata for ${selectedService.value.name} is up to date.`,
       icon: 'i-lucide-check-circle',
       color: 'success',
     })
@@ -20,12 +50,12 @@ async function onRegenerate() {
   catch (e: any) {
     toast.add({
       id: 'gen-error',
-      title: 'Generation Failed',
+      title: e.stale ? 'Using Cached Metadata' : 'Metadata Refresh Failed',
       description: e.stale
-        ? `SAP unreachable — schema generated from cached metadata. ${e.message}`
-        : (e.message || 'An unexpected error occurred during SDK generation.'),
-      icon: 'i-lucide-circle-x',
-      color: 'error',
+        ? `Backend unreachable - using cached metadata. ${e.message}`
+        : (e.message || 'An unexpected error occurred during metadata refresh.'),
+      icon: e.stale ? 'i-lucide-triangle-alert' : 'i-lucide-circle-x',
+      color: e.stale ? 'warning' : 'error',
     })
   }
 }
@@ -39,21 +69,21 @@ async function onRegenerate() {
       <UIcon name="i-lucide-circle-off" class="text-error-500 w-8 h-8" />
     </div>
     <h3 class="text-sm font-bold uppercase tracking-widest mb-2 text-default">
-      Service Unreachable
+      {{ title }}
     </h3>
     <p class="text-[12px] text-muted max-w-70 leading-relaxed mb-6">
-      The OData service at this endpoint is currently not responding. This might be due to network restrictions (VPN), a server-side issue, or an invalid URL.
+      {{ description }}
     </p>
 
     <div class="flex items-center gap-3">
       <UButton
         v-if="selectedService"
-        icon="i-lucide-refresh-cw"
+        :icon="refreshActionIcon"
         color="neutral"
         variant="subtle"
-        label="Regenerate SDK"
+        :label="refreshActionLabel"
         :loading="generatingStatus[selectedService.name]"
-        @click="onRegenerate"
+        @click="onRefreshMetadata"
       />
     </div>
   </div>

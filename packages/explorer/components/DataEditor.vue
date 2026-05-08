@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EditorState } from '../composables/useODataState'
 import { computed, watch } from 'vue'
-import { useSharedODataState } from '../composables/useODataState'
+import { buildRuntimeProxyUrl, useSharedODataState } from '../composables/useODataState'
 
 const emit = defineEmits(['refresh'])
 const editor = defineModel<EditorState>('editor', { required: true })
@@ -105,7 +105,7 @@ async function saveItem() {
     const idKey = editor.value.original ? Object.keys(editor.value.original).find(k => k.toLowerCase() === 'id') : null
     const id = idKey ? (editor.value.original as Record<string, unknown>)[idKey] : null
 
-    const res = await fetch(`${config.value.basePath}/${route}/${selectedEntity.value}${id ? `?id=${id}` : ''}`, {
+    const res = await fetch(buildRuntimeProxyUrl(`${config.value.basePath}/${route}/${selectedEntity.value}${id ? `?id=${id}` : ''}`), {
       method: id ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { computed, ref } from 'vue'
-import { buildSchemaEndpointUrl, useSharedODataState } from '../../composables/useODataState'
+import { buildSchemaEndpointUrl, supportsSdkGeneration, useSharedODataState } from '../../composables/useODataState'
 import EntityExplorer from '../EntityExplorer.vue'
 import SchemaExplorer from '../SchemaExplorer.vue'
 import ServiceSettings from '../ServiceSettings.vue'
@@ -13,7 +13,7 @@ const {
   services,
   selectedService,
   config,
-  generateService,
+  refreshServiceMetadata,
   generatingStatus,
   selectedEntity,
   globalViewMode,
@@ -38,15 +38,69 @@ const metadataUrl = computed((): string => {
   return buildSchemaEndpointUrl(selectedService.value.name, { raw: true })
 })
 
-async function onRegenerate() {
+function metadataStatusLabel(service: any): string {
+  if (service.metadata?.status === 'stale')
+    return 'Stale metadata'
+  if (service.metadata?.status === 'missing')
+    return 'Missing metadata'
+  if (service.metadata?.status === 'available')
+    return 'Metadata available'
+  return 'Checking metadata'
+}
+
+function metadataStatusColor(service: any): 'success' | 'warning' | 'error' | 'neutral' {
+  if (service.metadata?.status === 'stale')
+    return 'warning'
+  if (service.metadata?.status === 'missing')
+    return 'error'
+  if (service.metadata?.status === 'available')
+    return 'success'
+  return 'neutral'
+}
+
+const selectedRouteUrl = computed(() => {
+  if (!selectedService.value)
+    return ''
+  return `${config.value.basePath}/${selectedService.value.route || selectedService.value.name.toLowerCase()}`
+})
+
+const selectedMetadataMessage = computed(() => {
+  const metadata = selectedService.value?.metadata
+  if (!metadata)
+    return 'Metadata state is being checked.'
+  if (metadata.status === 'missing')
+    return metadata.message || 'Refresh metadata before browsing this service schema.'
+  if (metadata.status === 'stale') {
+    return metadata.staleReason
+      ? `Using cached metadata. Last refresh failed: ${metadata.staleReason}`
+      : 'Using cached metadata from the last successful refresh.'
+  }
+  return metadata.refreshedAt ? `Last refreshed ${metadata.refreshedAt}` : 'Runtime metadata is available.'
+})
+
+const selectedSupportsSdkGeneration = computed(() => {
+  return selectedService.value ? supportsSdkGeneration(config.value, selectedService.value) : false
+})
+
+const refreshActionLabel = computed(() => {
+  return selectedSupportsSdkGeneration.value ? 'Regenerate SDK' : 'Refresh Metadata'
+})
+
+const refreshActionIcon = computed(() => {
+  return selectedSupportsSdkGeneration.value ? 'i-lucide-code-2' : 'i-lucide-refresh-cw'
+})
+
+async function onRefreshMetadata() {
   if (!selectedService.value)
     return
   try {
-    await generateService(selectedService.value.name)
+    const result = await refreshServiceMetadata(selectedService.value.name)
     toast.add({
       id: 'gen-success',
-      title: 'SDK Regenerated',
-      description: `Models for ${selectedService.value.name} are now up to date.`,
+      title: result?.generated ? 'SDK Regenerated' : 'Metadata Refreshed',
+      description: result?.generated
+        ? `Types for ${selectedService.value.name} were regenerated from current metadata.`
+        : `Runtime metadata for ${selectedService.value.name} is up to date.`,
       icon: 'i-lucide-check-circle',
       color: 'success',
     })
@@ -54,12 +108,12 @@ async function onRegenerate() {
   catch (e: any) {
     toast.add({
       id: 'gen-error',
-      title: 'Generation Failed',
+      title: e.stale ? 'Using Cached Metadata' : 'Metadata Refresh Failed',
       description: e.stale
-        ? `SAP unreachable — schema generated from cached metadata. ${e.message}`
-        : (e.message || 'An unexpected error occurred during SDK generation.'),
-      icon: 'i-lucide-circle-x',
-      color: 'error',
+        ? `Backend unreachable - using cached metadata. ${e.message}`
+        : (e.message || 'An unexpected error occurred during metadata refresh.'),
+      icon: e.stale ? 'i-lucide-triangle-alert' : 'i-lucide-circle-x',
+      color: e.stale ? 'warning' : 'error',
     })
   }
 }
@@ -72,13 +126,13 @@ const actionItems = computed((): DropdownMenuItem[][] => {
   const hasCachedSchema = selectedService.value.health !== 'offline'
   const menu: DropdownMenuItem[][] = [[]]
 
-  // If online, Regenerate is in the dropdown. If offline/degraded, it's the primary button.
+  // If online, refresh is in the dropdown. If offline/degraded, it's the primary button.
   if (!isOffline) {
     menu[0]!.push({
-      label: 'Regenerate SDK',
-      icon: 'i-lucide-refresh-cw',
+      label: refreshActionLabel.value,
+      icon: refreshActionIcon.value,
       loading: generatingStatus.value[selectedService.value.name],
-      onSelect: onRegenerate,
+      onSelect: onRefreshMetadata,
     })
   }
 
@@ -125,7 +179,7 @@ const actionItems = computed((): DropdownMenuItem[][] => {
     >
       <TabHeader
         title="OData Services"
-        description="Select a registered service to explore its entities, metadata, and generated SDK."
+        description="Select a registered service to explore its entities, runtime metadata, and schema."
       />
 
       <div class="flex-1 overflow-y-auto custom-scrollbar px-6 pt-2 pb-8">
@@ -150,6 +204,14 @@ const actionItems = computed((): DropdownMenuItem[][] => {
                   size="sm"
                 >
                   {{ svc.version }}
+                </UBadge>
+
+                <UBadge
+                  :color="metadataStatusColor(svc)"
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ metadataStatusLabel(svc) }}
                 </UBadge>
 
                 <UBadge
@@ -191,11 +253,23 @@ const actionItems = computed((): DropdownMenuItem[][] => {
                   'bg-warning-400 animate-pulse': selectedService.health === 'degraded',
                   'bg-neutral-400': selectedService.health === 'checking',
                 }"
-                :title="selectedService.health === 'degraded' ? 'Schema may be out of sync — SAP was unreachable during last regeneration' : `Service ${selectedService.health}`"
+                :title="selectedService.health === 'degraded' ? selectedMetadataMessage : `Service ${selectedService.health}`"
               />
             </h2>
             <div class="text-xs font-mono text-muted truncate">
-              {{ config.basePath }}/{{ selectedService.route || selectedService.name.toLowerCase() }}
+              {{ selectedRouteUrl }}
+            </div>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              <UBadge
+                :color="metadataStatusColor(selectedService)"
+                variant="subtle"
+                size="sm"
+              >
+                {{ metadataStatusLabel(selectedService) }}
+              </UBadge>
+              <span class="text-xs text-muted truncate max-w-120">
+                {{ selectedMetadataMessage }}
+              </span>
             </div>
           </div>
         </div>
@@ -225,15 +299,15 @@ const actionItems = computed((): DropdownMenuItem[][] => {
           </UFieldGroup>
 
           <UFieldGroup class="-mt-2">
-            <!-- If offline/degraded, Regenerate is primary. If online, Metadata is primary. -->
+            <!-- If offline/degraded, metadata refresh is primary. If online, metadata is primary. -->
             <UButton
               v-if="selectedService.health === 'offline' || selectedService.health === 'degraded'"
-              icon="i-lucide-refresh-cw"
+              :icon="refreshActionIcon"
               color="neutral"
               variant="subtle"
-              label="Regenerate SDK"
+              :label="refreshActionLabel"
               :loading="generatingStatus[selectedService.name]"
-              @click="onRegenerate"
+              @click="onRefreshMetadata"
             />
             <UButton
               v-else

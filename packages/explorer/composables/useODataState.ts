@@ -1,5 +1,9 @@
 import type { EntityMapping } from '@bc8-odx/core'
 
+const RE_ABSOLUTE_HTTP_URL = /^https?:\/\//i
+const RE_LEADING_SLASHES = /^\/+/
+const RE_TRAILING_SLASHES = /\/+$/
+
 export interface ODataServiceState {
   name: string
   url?: string
@@ -15,8 +19,19 @@ export interface ODataServiceState {
   icon?: string
   metadata?: {
     status?: 'available' | 'stale' | 'missing'
+    source?: 'remote' | 'cache' | 'local' | null
     stale?: boolean
     staleReason?: string | null
+    message?: string
+    refreshedAt?: string | null
+  }
+  isGenerated?: boolean
+  generation?: {
+    supported?: boolean
+  }
+  capabilities?: {
+    sdkGeneration?: boolean
+    generatedTypes?: boolean
   }
 }
 
@@ -24,6 +39,12 @@ export interface ODataConfig {
   basePath: string
   mode?: string
   services: any[]
+  apiBase?: string
+  capabilities?: {
+    sdkGeneration?: boolean
+    generatedTypes?: boolean
+  }
+  forwardAuthHeader?: boolean
   versions?: {
     node: string
     module: string
@@ -109,20 +130,84 @@ function encodeInternalQueryValue(value: string): string {
   return encodeURIComponent(value)
 }
 
+function normalizeBaseUrl(value: unknown): string {
+  if (typeof value !== 'string')
+    return ''
+  return value.trim().replace(RE_TRAILING_SLASHES, '')
+}
+
+function getConfiguredOdxApiBase(): string {
+  try {
+    const globalRuntimeConfig = (globalThis as any).useRuntimeConfig
+    if (typeof globalRuntimeConfig === 'function') {
+      const runtimeConfig = globalRuntimeConfig()
+      return normalizeBaseUrl(runtimeConfig.public?.odxApiBase)
+    }
+    if (typeof useRuntimeConfig === 'function') {
+      const runtimeConfig = useRuntimeConfig()
+      return normalizeBaseUrl(runtimeConfig.public?.odxApiBase)
+    }
+  }
+  catch {}
+  return ''
+}
+
+export function buildOdxApiEndpoint(path: string): string {
+  const normalizedPath = path.startsWith('/__odx__')
+    ? path
+    : `/__odx__/${path.replace(RE_LEADING_SLASHES, '')}`
+  const apiBase = getConfiguredOdxApiBase()
+
+  if (!apiBase)
+    return normalizedPath
+
+  if (apiBase.endsWith('/__odx__'))
+    return `${apiBase}${normalizedPath.slice('/__odx__'.length)}`
+
+  return `${apiBase}${normalizedPath}`
+}
+
+export function buildRuntimeProxyUrl(path: string): string {
+  if (RE_ABSOLUTE_HTTP_URL.test(path))
+    return path
+
+  const apiBase = getConfiguredOdxApiBase()
+  if (!apiBase)
+    return path
+
+  try {
+    return `${new URL(apiBase).origin}${path}`
+  }
+  catch {
+    return path
+  }
+}
+
+export function supportsSdkGeneration(config: ODataConfig, service?: Partial<ODataServiceState> | null): boolean {
+  return service?.generation?.supported === true
+    || service?.capabilities?.sdkGeneration === true
+    || config.capabilities?.sdkGeneration === true
+    || Boolean(config.versions?.node)
+}
+
+export function hasGeneratedTypes(config: ODataConfig): boolean {
+  return config.capabilities?.generatedTypes === true || Boolean(config.versions?.node)
+}
+
 export function buildSchemaEndpointUrl(service: string, options: { raw?: boolean } = {}): string {
   const query = [`service=${encodeInternalQueryValue(service)}`]
   if (options.raw) {
     query.push('raw=true')
   }
-  return `/__odx__/schema?${query.join('&')}`
+  return buildOdxApiEndpoint(`/__odx__/schema?${query.join('&')}`)
 }
 
 function buildGenerateEndpointUrl(service: string): string {
-  return `/__odx__/generate?service=${encodeInternalQueryValue(service)}`
+  return buildOdxApiEndpoint(`/__odx__/generate?service=${encodeInternalQueryValue(service)}`)
 }
 
 function buildMockDataEndpointUrl(service: string, entitySet: string): string {
-  return `/__odx__/mockdata?service=${encodeInternalQueryValue(service)}&entitySet=${encodeInternalQueryValue(entitySet)}`
+  return buildOdxApiEndpoint(`/__odx__/mockdata?service=${encodeInternalQueryValue(service)}&entitySet=${encodeInternalQueryValue(entitySet)}`)
 }
 
 export function buildEntityPreviewCacheKey(service: string, entity: string): string {
@@ -232,7 +317,8 @@ export interface SharedODataState {
   lastSelectedServiceForGraph: Ref<string | null>
   fetchConfig: () => Promise<void>
   refreshLogs: () => Promise<void>
-  generateService: (name: string) => Promise<void>
+  generateService: (name: string) => Promise<any>
+  refreshServiceMetadata: (name: string) => Promise<any>
   clearLogFilters: () => void
   clearLogs: () => Promise<void>
   clearEntityMockData: (service: string, entitySet: string) => Promise<void>
@@ -241,8 +327,8 @@ export interface SharedODataState {
 
 export function useSharedODataState(): SharedODataState {
   function updateServiceHealth(name: string, health: 'online' | 'offline' | 'checking' | 'degraded', force = false): void {
-    // Background schema checks (local EDMX) must not clear a 'degraded' state — only
-    // an explicit successful regeneration (force=true) is allowed to do that.
+    // Background schema checks must not clear degraded state; only a forced
+    // refresh can confirm that the latest metadata is usable again.
     if (health === 'online' && serviceHealthOverrides.value[name] === 'degraded' && !force)
       return
     serviceHealthOverrides.value[name] = health
@@ -270,9 +356,12 @@ export function useSharedODataState(): SharedODataState {
 
   async function fetchConfig(): Promise<void> {
     try {
-      const res = await fetch('/__odx__/config')
+      const res = await fetch(buildOdxApiEndpoint('/__odx__/config'))
       if (res.ok) {
-        config.value = await res.json()
+        config.value = {
+          ...await res.json(),
+          apiBase: getConfiguredOdxApiBase() || 'same-origin',
+        }
         // Trigger background health checks for all services
         config.value.services?.forEach((s: any) => {
           checkServiceHealth(s.name)
@@ -286,7 +375,7 @@ export function useSharedODataState(): SharedODataState {
 
   async function refreshLogs(): Promise<void> {
     try {
-      const res = await fetch('/__odx__/logs')
+      const res = await fetch(buildOdxApiEndpoint('/__odx__/logs'))
       if (res.ok) {
         logs.value = await res.json()
         reconcileSelectedTraceLog()
@@ -316,9 +405,22 @@ export function useSharedODataState(): SharedODataState {
   const services = computed(() => {
     const data = config.value.services || []
     return data.map((s: any) => {
+      if (s.metadata?.status === 'missing') {
+        return {
+          ...s,
+          health: 'offline',
+        }
+      }
+      if (s.metadata?.status === 'stale') {
+        return {
+          ...s,
+          health: 'degraded',
+        }
+      }
+
       return {
         ...s,
-        health: serviceHealthOverrides.value[s.name] || s.health || (s.metadata?.status === 'missing' ? 'offline' : 'checking'),
+        health: serviceHealthOverrides.value[s.name] || s.health || 'checking',
       }
     })
   })
@@ -409,35 +511,39 @@ export function useSharedODataState(): SharedODataState {
     }
   }, { deep: true })
 
-  async function generateService(name: string): Promise<void> {
+  async function refreshServiceMetadata(name: string): Promise<any> {
     generatingStatus.value[name] = true
     try {
       const res = await fetch(buildGenerateEndpointUrl(name))
       if (!res.ok) {
         const body = await res.json().catch(() => null)
-        const msg = body?.message || body?.statusMessage || `Generation failed (${res.status})`
+        const msg = body?.message || body?.statusMessage || `Metadata refresh failed (${res.status})`
         throw new Error(msg)
       }
       const body = await res.json().catch(() => null)
       await fetchConfig()
       if (body?.stale) {
         updateServiceHealth(name, 'degraded')
-        const err = new Error(body.staleReason || 'SAP unreachable — using cached metadata') as any
+        const err = new Error(body.staleReason || 'Backend unreachable - using cached metadata') as any
         err.stale = true
+        err.result = body
         throw err
       }
       else {
         updateServiceHealth(name, 'online', true)
       }
+      return body
     }
     finally {
       generatingStatus.value[name] = false
     }
   }
 
+  const generateService = refreshServiceMetadata
+
   async function clearLogs(): Promise<void> {
     try {
-      await fetch('/__odx__/logs', { method: 'DELETE' })
+      await fetch(buildOdxApiEndpoint('/__odx__/logs'), { method: 'DELETE' })
       logs.value = []
       selectedTraceLogId.value = null
     }
@@ -495,6 +601,7 @@ export function useSharedODataState(): SharedODataState {
     fetchConfig,
     refreshLogs,
     generateService,
+    refreshServiceMetadata,
     clearLogFilters,
     clearLogs,
     clearEntityMockData,
