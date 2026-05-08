@@ -14,28 +14,28 @@ contracts.
 
 ## Current Next Step
 
-Task 085 review found one focused documentation consistency issue. Integrate
-only the review finding in:
-`.agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md`.
+Task 085 focused documentation consistency fix is ready for re-review.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Address the review finding for completed task 085:
+Run a focused re-review for completed task 085 after the integration fix:
 - `.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`
 - `.agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md`
 
 Reviewed implementation commit:
 - `1396a2984d1b8621527fd6276a35984b49cef003`
 
+Review finding commit:
+- `8f340632ebfd7a2d1ae4b7c3fe132df85b796e69`
+
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/integrator.md
+- .agents/roles/reviewer.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
 - .agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md
 - .agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md
@@ -43,26 +43,27 @@ Read:
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- relevant changed Docus docs
+- docs/content/en/5.explorer/2.reference.md
+- docs/content/de/5.explorer/2.reference.md
+- .agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md
+- the integration fix diff after review commit `8f340632ebfd7a2d1ae4b7c3fe132df85b796e69`
 
 Rules:
-- Fix only the documented review finding.
-- Do not change runtime API behavior or Explorer UI.
-- Do not broaden scope into unrelated docs cleanup.
-- Preserve the approved task 081 behavior: production `/__odx__/config` service entries include sanitized runtime metadata state.
-- Align root docs and Docus docs on the production `/__odx__/config` service-entry allowlist, including the approved `metadata` state fields, without documenting secrets, backend URLs, destinations, auth, outbound headers, rules, runtime paths, hooks, DevTools config, `forwardAuthHeader`, or `versions.node`.
-- Keep English and German docs semantically aligned if Docus text changes.
-- Run `git diff --check`.
-- Run `pnpm.cmd --filter docs run verify` if docs/API reference generation could be affected; otherwise record why it was skipped.
-- Update task handoff notes if useful.
-- Update `.agents/NEXT.md` with a focused re-review prompt.
-- Commit the integration fix with a Conventional Commit unless a stop condition prevents committing.
+- Review only the focused fix for the task 085 config-allowlist finding and the new follow-up task file requested by the operator.
+- Confirm root docs and Docus docs align on production `/__odx__/config` service entries including sanitized `metadata` runtime cache state fields.
+- Confirm the docs still do not document secrets, backend URLs, destinations, auth, outbound headers, rules, runtime paths, hooks, DevTools config, `forwardAuthHeader`, or `versions.node` as production config output.
+- Confirm English and German Explorer reference wording is semantically aligned.
+- Confirm no runtime API behavior or Explorer UI changed.
+- Check `git diff --check` and `pnpm.cmd --filter docs run verify` results from the integration fix.
+- Update the review note with the focused re-review decision.
+- If approved, update `.agents/NEXT.md` to assign task 086 to an Implementer; otherwise point `.agents/NEXT.md` to the next focused fix.
+- Commit the re-review note and workflow state changes unless a stop condition prevents committing.
 
 When done, summarize:
-- finding addressed
-- changed files
-- verification performed
-- whether focused re-review is required and why
+- findings
+- acceptance criteria status for the focused fix
+- verification reviewed
+- whether task 085 is approved or still needs changes
 - commit hash
 - known gaps
 - exact next-chat prompt from `.agents/NEXT.md`

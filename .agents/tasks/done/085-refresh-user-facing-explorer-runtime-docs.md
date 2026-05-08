@@ -156,6 +156,10 @@ or contradict the reviewed runtime behavior.
   `done/` through the final patch after implementation.
 - `.agents/NEXT.md` update: Updated to request a fresh Reviewer for completed
   task 085 before continuing workflow.
+- review follow-up: The focused review finding was addressed by aligning the
+  root docs and Docus Explorer reference allowlists for production
+  `/__odx__/config` so they include the approved sanitized `metadata` runtime
+  cache state fields.
 - commit hash: Recorded in the final Implementer response after the task commit
   is created.
 - known gaps: No live BTP deployment was tested. German content continues the

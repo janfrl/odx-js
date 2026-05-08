@@ -183,7 +183,10 @@ endpoint policy:
 
 - `/__odx__/config` returns only top-level `basePath`, `mode`, and `services`.
   Service entries are limited to `name`, `route`, `icon`, `strategy`,
-  `proxyMode`, `entities`, `isGenerated`, and `version`.
+  `proxyMode`, `entities`, `isGenerated`, `version`, and `metadata`. The
+  `metadata` object is limited to runtime cache state: `status`, `source`,
+  `stale`, `staleReason`, `refreshedAt`, `timestamp`, `hash`, `bytes`, and
+  optional `message`.
 - Backend URLs, destinations, auth, outbound headers, rules, unknown service
   fields, global secrets, runtime paths, hooks, DevTools config,
   `forwardAuthHeader`, and `versions.node` are redacted or omitted.

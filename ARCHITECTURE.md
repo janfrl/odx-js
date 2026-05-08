@@ -97,7 +97,10 @@ Current production behavior after tasks 077-080:
   security context.
 - `/__odx__/config` uses a whitelist response: top-level `basePath`, `mode`,
   and `services`; each service entry is limited to `name`, `route`, `icon`,
-  `strategy`, `proxyMode`, `entities`, `isGenerated`, and `version`.
+  `strategy`, `proxyMode`, `entities`, `isGenerated`, `version`, and
+  `metadata`. The `metadata` object is limited to runtime cache state:
+  `status`, `source`, `stale`, `staleReason`, `refreshedAt`, `timestamp`,
+  `hash`, `bytes`, and optional `message`.
 - Production config omits backend URLs, destinations, auth, outbound headers,
   rules, unknown service fields, global secrets, runtime paths, hooks, DevTools
   config, `forwardAuthHeader`, and `versions.node`.

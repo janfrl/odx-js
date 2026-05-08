@@ -220,14 +220,17 @@ endpoint requires validated SAP security context before returning runtime data.
 
 Production `/__odx__/config` returns only the top-level Explorer runtime fields
 `basePath`, `mode`, and `services`; each service entry is limited to `name`,
-`route`, `icon`, `strategy`, `proxyMode`, `entities`, `isGenerated`, and
-`version`. It does not return backend URLs, destinations, auth, outbound
-headers, rules, unknown service fields, global secrets, runtime paths, hooks,
-DevTools config, `forwardAuthHeader`, or `versions.node`.
+`route`, `icon`, `strategy`, `proxyMode`, `entities`, `isGenerated`, `version`,
+and `metadata`. The `metadata` object is limited to runtime cache state:
+`status`, `source`, `stale`, `staleReason`, `refreshedAt`, `timestamp`, `hash`,
+`bytes`, and optional `message`. It does not return backend URLs,
+destinations, auth, outbound headers, rules, unknown service fields, global
+secrets, runtime paths, hooks, DevTools config, `forwardAuthHeader`, or
+`versions.node`.
 
 | Endpoint | Development behavior | Current production policy |
 | --- | --- | --- |
-| `/__odx__/config` | Resolved service config, entities, versions, and generation status for DevTools inspection. | Authenticated. Returns only top-level `basePath`, `mode`, and sanitized `services` entries. |
+| `/__odx__/config` | Resolved service config, entities, versions, and generation status for DevTools inspection. | Authenticated. Returns only top-level `basePath`, `mode`, and sanitized `services` entries with entity and metadata cache state. |
 | `/__odx__/logs` | Memory-backed traffic logs through `OdxLogStore` by default. `GET` supports retention-friendly filters such as `limit`, `offset`, `service`, `method`, `status`, `from`, `to`, `before`, `after`, `includePending=false`, and `order=asc\|desc`; `DELETE` clears all local logs or a bounded subset with `service`, `before`, or `to`. Logs redact secrets and bound large payloads before storage, display, export, or test use. | Authenticated. With `devtools.logStore.provider=sql`, returns and clears persisted redacted traffic logs through the `OdxLogStore` boundary. Without SQL storage, returns `[]` and rejects `DELETE`. Production payload bodies are omitted by default. |
 | `/__odx__/generate?service=<name>` | Development SDK/type regeneration for one service when the Nuxt generator is present. It refreshes metadata first, then runs `odata2ts` through the injected generator. Hosts without a generator return `501`. | Authenticated. Refreshes runtime metadata cache state only. It does not run `odata2ts` or write generated TypeScript SDK files. Responses include `operation: "metadata-refresh"`, stale state, timestamp, hash, byte count, and metadata source. |
 | `/__odx__/schema?service=<name>` | Parsed EDMX schema. `raw=true` can return XML locally. | Authenticated. Uses cached parsed metadata only and rejects raw XML. |
