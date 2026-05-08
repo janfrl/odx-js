@@ -14,12 +14,12 @@ contracts.
 
 ## Current Next Step
 
-Task 081 review found one focused production privacy issue. Start an Integrator
-chat to fix only the finding in:
+Task 081 review found one focused production privacy issue, and the Integrator
+fix has been applied. Start a fresh Reviewer chat for focused re-review of:
 `.agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md`.
 
-After the focused fix and re-review approve task 081, continue the remaining
-production runtime sequence in this order:
+After focused re-review approves task 081, continue the remaining production
+runtime sequence in this order:
 
 1. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
 2. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
@@ -28,46 +28,40 @@ production runtime sequence in this order:
 ## Prompt For Next Chat
 
 ```txt
-You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Address the review finding for completed task 081:
+Focused re-review for completed task 081 after the Integrator fix:
 - `.agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md`
 - `.agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md`
 
 Read:
 - AGENTS.md
-- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/integrator.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
 - .agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md
 - .agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md
-- packages/proxy/src/api/config.ts
-- packages/proxy/src/api/schema.ts
 - packages/proxy/src/utils/metadata-refresh.ts
 - packages/proxy/test/explorer-policy.test.ts
+- the latest diff
 
-Rules:
-- Fix only the review finding: production `/__odx__/config` and `/__odx__/schema` must not expose raw stale metadata failure details that can contain backend metadata URLs or hostnames.
-- Keep actionable stale/missing metadata status for Explorer.
-- Do not change normal OData proxy responses.
-- Do not add db0, evlog, persistence dependencies, generated SDK changes, or broad Explorer UI redesign.
-- Add a focused regression test where refresh falls back after invalid metadata from an internal URL and production config/schema responses do not contain that URL.
+Review stance:
+- Review only the focused Integrator fix for the task 081 finding.
+- Confirm production `/__odx__/config` and `/__odx__/schema` no longer expose raw stale metadata failure details that can contain backend metadata URLs or hostnames.
+- Confirm stale/missing metadata remains actionable for Explorer.
+- Confirm normal OData proxy responses were not changed.
+- Confirm no db0, evlog, persistence dependencies, generated SDK changes, or broad Explorer UI redesign were added.
+- Check the regression test covers refresh fallback after invalid metadata from an internal URL and production config/schema responses do not contain that URL.
 
 Verification:
 - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
-- `pnpm.cmd --filter @bc8-odx/proxy run verify`
-- `pnpm.cmd run lint`
-- `pnpm.cmd run typecheck`
 - `git diff --check`
 
 Output:
-- findings addressed
-- changed files
+- findings first with severity and file/line references, if any
+- whether task 081 is approved after the focused fix
 - verification performed
-- whether focused re-review is required and why
 - commit hash
-- known gaps
+- residual risk or known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

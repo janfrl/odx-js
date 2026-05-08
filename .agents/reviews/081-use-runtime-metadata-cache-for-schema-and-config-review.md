@@ -5,7 +5,7 @@ Date: 2026-05-08
 Reviewer: Codex
 Task: `.agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md`
 Reviewed commit: `e3351a019aafc3d275322984d20f1286bf5471e6`
-Decision: needs changes
+Decision: needs changes; focused integration fix applied, pending re-review
 
 ## Findings
 
@@ -92,9 +92,29 @@ intact in the covered development fixture path, normal OData proxy code was not
 changed, and no db0, evlog, or broad Explorer redesign was added. The task needs
 a focused privacy fix before approval.
 
+## Integration Fix
+
+- Sanitized runtime metadata fallback stale reasons before writing metadata
+  cache state, preserving actionable status-code failures and replacing/removing
+  backend URLs and hostnames from persisted stale reasons.
+- Added a regression test where production metadata refresh receives invalid
+  metadata through a URL containing an internal upstream URL, falls back to a
+  cache entry, and verifies `/__odx__/config` and `/__odx__/schema` do not
+  contain the internal URL or hostname.
+- Focused verification run:
+  `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts` -
+  pass outside sandbox; 1 file, 17 tests.
+- Integration verification:
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts` -
+    pass outside sandbox; 1 file, 17 tests.
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify` - pass outside sandbox; 11
+    proxy test files passed, 158 tests passed, 1 skipped, standalone proxy
+    example passed.
+  - `pnpm.cmd run lint` - pass.
+  - `pnpm.cmd run typecheck` - pass.
+  - `git diff --check` - pass with Git line-ending warnings only.
+
 ## Next Action
 
-- `.agents/NEXT.md` was updated to request a focused Integrator fix for the
-  stale reason leak.
-- Follow-up task or fix required: sanitize stale metadata failure details before
-  exposing production Explorer config/schema responses, with regression tests.
+- `.agents/NEXT.md` was updated to request focused re-review of the integration
+  fix before continuing to task 082.

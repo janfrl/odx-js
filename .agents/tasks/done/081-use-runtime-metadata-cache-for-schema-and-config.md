@@ -123,3 +123,27 @@ is required.
   - Recorded in the final Implementer response after the task commit is created.
 - known gaps:
   - Metadata staleness is based on persisted refresh state when available; existing legacy cache files without sidecar state are treated as available cache entries.
+
+## Integration Fix Notes
+
+- addressed review finding:
+  - Sanitized runtime metadata fallback stale reasons before persisting cache
+    state so production `/__odx__/config` and `/__odx__/schema` keep stale
+    status without exposing backend metadata URLs or hostnames.
+  - Preserved actionable stale status and status-code reasons such as
+    `Status: 503`.
+  - Added a regression test for invalid metadata fetched through an internal
+    metadata URL followed by cache fallback, then verified production config and
+    schema responses do not serialize that URL or hostname.
+- verification:
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts` -
+    pass outside sandbox; 1 file, 17 tests.
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify` - pass outside sandbox; 11
+    proxy test files passed, 158 tests passed, 1 skipped, standalone proxy
+    example passed.
+  - `pnpm.cmd run lint` - pass.
+  - `pnpm.cmd run typecheck` - pass.
+  - `git diff --check` - pass with Git line-ending warnings only.
+- review requirement:
+  - Focused re-review is required because the original task is high risk and
+    the fix changes production Explorer runtime metadata error exposure.

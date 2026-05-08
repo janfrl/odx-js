@@ -41,6 +41,11 @@ export interface RuntimeMetadataSnapshot {
 const METADATA_ACCEPT_HEADER = 'application/xml, text/xml, */*'
 const REQUEST_TIMEOUT_MS = 15_000
 const RE_TRAILING_SLASHES = /\/+$/
+const RE_HTTP_URL = /https?:\/\/[^\s)"']+/gi
+const RE_URL_HOST = /\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?::\d+)?\b/gi
+const RE_STATUS_REASON = /^Status:\s*\d{3}\b/
+const RE_INVALID_METADATA_REASON = /^Received invalid or empty metadata/
+const RE_WHITESPACE = /\s+/g
 
 export function getRuntimeMetadataCachePaths(config: ODataProxyConfig, serviceName: string): { tempFile: string, persistentCacheFile: string, stateFile: string } {
   const buildDir = config.buildDir ?? ''
@@ -120,6 +125,23 @@ function assertValidMetadata(xml: string, metadataUrl: string): void {
   if (!xml.trim() || !xml.includes('Edmx')) {
     throw new Error(`Received invalid or empty metadata from ${metadataUrl}`)
   }
+}
+
+function sanitizeMetadataFailureReason(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error)
+  const normalized = message.trim().replace(RE_WHITESPACE, ' ')
+
+  if (RE_STATUS_REASON.test(normalized)) {
+    return normalized
+  }
+
+  if (RE_INVALID_METADATA_REASON.test(normalized)) {
+    return 'Received invalid or empty metadata'
+  }
+
+  return normalized
+    .replace(RE_HTTP_URL, '[metadata-url]')
+    .replace(RE_URL_HOST, '[metadata-host]')
 }
 
 function createMetadataResult(
@@ -350,7 +372,7 @@ export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyC
     }
 
     const xml = fs.readFileSync(tempFile, 'utf-8')
-    const result = createMetadataResult(service, tempFile, xml, 'cache', true, err.message || String(err))
+    const result = createMetadataResult(service, tempFile, xml, 'cache', true, sanitizeMetadataFailureReason(err))
     writeMetadataState(stateFile, result)
     return result
   }

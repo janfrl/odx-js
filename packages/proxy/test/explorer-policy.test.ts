@@ -369,6 +369,53 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
+  it('does not expose internal metadata URLs after stale fallback from invalid metadata', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ xml: 'not-edmx' })
+    const internalMetadataUrl = 'https://internal.sap.example.local/sap/opu/odata/sap/SENSITIVE'
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata?upstream=${encodeURIComponent(internalMetadataUrl)}`)
+    const persistentCacheFile = join(rootDir, '.odx', 'cache', 'RemoteService.edmx')
+    mkdirSync(join(rootDir, '.odx', 'cache'), { recursive: true })
+    writeFileSync(persistentCacheFile, staleMetadataXml, { encoding: 'utf-8', flag: 'w' })
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const refresh: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+      const schema: any = await ofetch(`${server.url}/__odx__/schema?service=RemoteService`)
+      const explorerConfig: any = await ofetch(`${server.url}/__odx__/config`)
+      const serializedRuntimeResponses = JSON.stringify({ refresh, schema, explorerConfig })
+
+      expect(refresh).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        stale: true,
+        staleReason: 'Received invalid or empty metadata',
+        source: 'cache',
+      })
+      expect(schema).toMatchObject({
+        metadata: {
+          status: 'stale',
+          stale: true,
+          staleReason: 'Received invalid or empty metadata',
+        },
+      })
+      expect(explorerConfig.services[0]).toMatchObject({
+        metadata: {
+          status: 'stale',
+          stale: true,
+          staleReason: 'Received invalid or empty metadata',
+        },
+      })
+      expect(serializedRuntimeResponses).not.toContain(internalMetadataUrl)
+      expect(serializedRuntimeResponses).not.toContain('internal.sap.example.local')
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
   it('reads production schema from the runtime metadata cache without .nuxt temp files', async () => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()
