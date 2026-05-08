@@ -8,94 +8,68 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 088 Integrator fix is complete and needs focused
-re-review because it touches production BTP destination resolution behavior for
-runtime metadata refresh.
+Adaptive Teamflow. Task 088 is approved after focused re-review. The next
+lowest ready task is medium-risk task 089. Separate review is conditional:
+required if implementation changes runtime code, dependency metadata, or
+deployment docs; not required for a test-only smoke coverage change that stays
+within scope and passes verification.
 
 ## Current Next Step
 
-Start a fresh Reviewer for the focused task 088 Integrator fix using review
-note:
-`.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`.
+Start an Implementer for:
+`.agents/tasks/ready/089-add-sql-log-store-connector-smoke-tests.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Focused re-review for:
-.agents/tasks/done/088-cover-btp-destination-metadata-refresh.md
-
-Review note:
-.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md
-
-Reviewed implementation commit:
-4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
-
-Integrator fix:
-Review the latest HEAD commit on this branch, which addresses the task 088
-review finding.
+Implement exactly:
+.agents/tasks/ready/089-add-sql-log-store-connector-smoke-tests.md
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/implementer.md
 - .agents/decisions/
 - .agents/NEXT.md
-- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
-- .agents/reviews/088-cover-btp-destination-metadata-refresh-review.md
-- SECURITY.md
-- DEPLOYMENT.md
-- .agents/tasks/done/088-cover-btp-destination-metadata-refresh.md
-- packages/proxy/src/utils/metadata-refresh.ts
-- packages/proxy/src/utils/target.ts
-- packages/proxy/src/utils/btp-destination.ts
-- packages/proxy/src/api/generate.ts
-- packages/proxy/test/explorer-policy.test.ts
-- packages/proxy/test/btp-destination.test.ts
-- the focused Integrator diff since reviewed commit 4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
+- .agents/reviews/079-add-db0-backed-explorer-log-store-review.md
+- .agents/tasks/ready/089-add-sql-log-store-connector-smoke-tests.md
+- packages/proxy/package.json
+- packages/proxy/src/utils/log-store.ts
+- packages/proxy/test/db0-log-store.test.ts
 
-Review stance:
-- Findings first.
-- Review only the bounded task 088 Integrator fix unless you discover a direct
-  regression from that fix.
-- Check that strict production runtime metadata refresh treats missing
-  Destination/XSUAA bindings as a BTP destination resolution failure before any
-  local `/sap/opu/odata/sap` fallback can be used.
-- Check that local development BTP fallback behavior and normal OData proxy
-  resolver defaults remain preserved.
-- Check that the new regression test is deterministic, uses stale cache, does
-  not require live SAP BTP services or external network access, does not invoke
-  the injected generator, and asserts the stale reason is BTP binding/resolution
-  related rather than a local fallback 404/path.
-- Check that the change stays out of Explorer UI, unrelated direct-service
-  behavior, dependencies, lockfiles, generated files, and unrelated docs.
+Rules:
+- Keep changes scoped to task 089.
+- Add deterministic smoke coverage that imports the documented db0 PostgreSQL
+  connector from the proxy package context without opening a real database
+  connection.
+- Add SQLite connector smoke coverage only if it is useful and deterministic.
+- Do not expose db0 APIs outside the existing proxy log-store boundary.
+- Do not add dependencies unless the smoke test proves a real missing runtime
+  dependency.
+- Move the task to `.agents/tasks/in-progress/` when starting and to
+  `.agents/tasks/done/` only after implementation and verification.
+- Update task handoff notes and `.agents/NEXT.md`.
+- Commit the completed task with a Conventional Commit unless a stop condition
+  prevents committing.
 
-Integrator verification already run:
-- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`
-  - pass outside sandbox, 2 files, 45 tests. Initial sandboxed run could not
-    resolve `vitest`.
+Verification:
+- `pnpm.cmd exec vitest run packages/proxy/test/db0-log-store.test.ts`
 - `pnpm.cmd --filter @bc8-odx/proxy run verify`
-  - pass outside sandbox on rerun, 11 files, 169 passed, 1 skipped, plus proxy
-    standalone example. Initial sandboxed run failed with Windows `spawn
-    EPERM`; first escalated run hit a transient Vitest worker-fork crash after
-    visible tests passed.
-- `pnpm.cmd run lint` - pass.
-- `pnpm.cmd run typecheck` - pass.
-- `git diff --check` - pass, with Git CRLF working-copy warnings only.
+- `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck`
+- `git diff --check`
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status for the focused review finding
-- verification gaps or rerun results
-- whether the task is approved after the Integrator fix or still needs changes
-
-Update `.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`
-with a Focused Re-review section.
-Update `.agents/NEXT.md` with the next workflow action.
-Commit the review note and workflow state changes with a Conventional Commit
-unless a stop condition prevents committing.
-Include the exact next-chat prompt the operator should paste into a new chat.
+When done, summarize:
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from `.agents/NEXT.md`
 ```
