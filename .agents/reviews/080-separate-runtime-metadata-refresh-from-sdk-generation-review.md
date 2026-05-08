@@ -5,9 +5,14 @@ Date: 2026-05-08
 Reviewer: Codex
 Task: `.agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
 Reviewed commit: `464ae4c1764bc8cd1272b5753b5f985880dbfa46`
-Decision: needs changes
+Decision: approved after focused re-review
 
 ## Findings
+
+Focused re-review findings after Integrator commit
+`ea55184855ea656bacb738819a430e2b9813d252`: none.
+
+Original finding, now resolved:
 
 1. [P1] Direct-service metadata refresh can send configured credentials that
    normal direct proxy access intentionally skips:
@@ -40,9 +45,11 @@ Decision: needs changes
   with the refreshed EDMX path and output directory.
 - [x] Refresh results include clear status, stale state, and timestamp/hash
   information: pass.
-- [ ] Metadata fetching uses production-compatible service resolution: needs
-  changes. Target resolution is reused, but configured auth fallback currently
-  breaks direct-service auth semantics.
+- [x] Metadata fetching uses production-compatible service resolution: pass
+  after focused fix. Direct absolute-url services with `strategy: "direct"`
+  now preserve the resolved target auth semantics and do not fall back to
+  service/global configured Authorization headers when normal direct proxy
+  access would skip managed auth.
 - [x] Docs distinguish Refresh Metadata from Regenerate SDK: pass.
 
 ## Verification
@@ -79,6 +86,12 @@ Run or inspect:
 - `pnpm.cmd run lint` - pass.
 - `pnpm.cmd run typecheck` - pass.
 - `git diff --check` - pass.
+- Focused re-review of Integrator commit
+  `ea55184855ea656bacb738819a430e2b9813d252` - reviewed.
+- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts` -
+  pass outside sandbox; 1 file, 12 tests. Initial sandboxed run could not
+  resolve `vitest`.
+- `git diff --check` - pass.
 
 ## Residual Risk
 
@@ -96,7 +109,8 @@ Run or inspect:
 
 ## Test Gaps
 
-- Add the direct-strategy auth regression test described in the finding.
+- The direct-strategy auth regression test described in the original finding
+  has been added and passes.
 - Consider a focused production destination/auth/header test with a mocked BTP
   destination response, including stale fallback when destination resolution
   fails.
@@ -111,15 +125,16 @@ non-production hosts without a generator still return `501`. No db0, evlog,
 Explorer UI redesign, or normal OData data proxy implementation changes were
 introduced by the reviewed commit.
 
-The task needs a focused fix for direct-service auth semantics before approval.
+The task is approved after the focused Integrator fix. Production metadata
+refresh remains separated from SDK generation: production responses use
+`operation: "metadata-refresh"`, do not invoke the injected Nuxt generator, and
+do not write generated TypeScript SDK files.
 
 ## Next Action
 
-- `.agents/NEXT.md` was updated to request an Integrator for the focused direct
-  metadata-refresh auth fix.
-- Follow-up task or fix required: fix the finding above, add the focused
-  regression test, rerun focused proxy tests and `git diff --check`, then
-  request focused re-review of task 080.
+- `.agents/NEXT.md` was updated to request task 081 implementation next.
+- Continue the remaining production runtime sequence with task 081, task 082,
+  task 083, then task 085.
 
 ## Integrator Update
 
@@ -137,4 +152,23 @@ Status: ready for focused re-review.
   - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
   - `pnpm.cmd exec vitest run packages/proxy/test`
   - `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - `git diff --check`
+
+## Focused Re-review
+
+Status: approved.
+
+- Direct-service auth semantics: pass. The refresh path now uses
+  `target.authHeader || (target.strategy === 'direct' ? undefined :
+  resolveConfiguredAuthHeader(service, config))`, so direct absolute-url
+  services do not receive service/global configured Authorization fallback when
+  the shared target resolver skipped managed auth.
+- Regression coverage: pass. The new production test configures both global and
+  service auth for a direct absolute-url service and asserts the backend
+  `$metadata` request has no `authorization` header.
+- SDK-generation separation: pass. The existing production test still asserts
+  `operation: "metadata-refresh"`, `generated: false`, no generator call, and
+  no `.nuxt/odx/generated` directory.
+- Verification passed:
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
   - `git diff --check`
