@@ -14,56 +14,51 @@ contracts.
 
 ## Current Next Step
 
-Task 083 implementation is complete and requires separate review:
-`.agents/tasks/done/083-complete-or-remove-explorer-mockdata-api.md`.
-
-After task 083 review is approved, continue with:
+Task 083 review is approved. Continue with:
 `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-- `.agents/tasks/done/083-complete-or-remove-explorer-mockdata-api.md`
+Implement exactly:
+- `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/implementer.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
-- .agents/tasks/done/083-complete-or-remove-explorer-mockdata-api.md
-- .agents/reviews/082-align-standalone-explorer-runtime-ui-review.md
-- packages/proxy/src/nitro.ts
-- packages/proxy/src/api/*
-- packages/explorer/composables/useODataState.ts
-- packages/explorer/composables/useEntityExplorer.ts
-- packages/explorer/test/state.test.ts
-- docs/content/en/5.explorer/1.setup.md
-- docs/content/de/5.explorer/1.setup.md
-- the changed files and diff for the latest task 083 implementation commit
+- .agents/reviews/083-complete-or-remove-explorer-mockdata-api-review.md
+- .agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md
+- root docs referenced by the task
+- docs/content/en
+- docs/content/de
 
-Review stance:
-- Findings first.
-- Prioritize correctness, architecture boundaries, security/privacy, authorization, public contracts, missing tests, and acceptance criteria gaps.
-- Verify Explorer no longer calls an unregistered `/__odx__/mockdata` endpoint.
-- Verify the docs and tests match the chosen removal behavior.
-- Verify production behavior cannot delete arbitrary files or customer data.
-- Verify normal OData proxy behavior was not changed.
-
-Verification:
-- Inspect the implementation diff.
-- Run focused checks if needed, or record why the implementer verification is sufficient.
+Rules:
+- Keep changes scoped to task 085.
+- Do not change runtime API behavior, Explorer UI, logging, metadata, or persistence code.
+- Do not document unapproved behavior from tasks that still need independent review.
+- Keep English and German documentation semantically aligned.
+- Do not publish customer-specific BTP routes, credentials, destinations, or backend URLs.
+- Update the task handoff notes before finishing.
+- Run `git diff --check` and `pnpm.cmd --filter docs run verify`, or record skipped checks and residual risk.
+- Manually search English and German docs for stale wording around `planned`, `follow-up`, `db0`, `metadata refresh`, `generate`, `403`, and `mockdata`.
+- Self-check against task scope, acceptance criteria, root docs/decisions, security/privacy implications, and unrelated changes.
+- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
+- Update `.agents/NEXT.md` with the next action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- verification performed or accepted from implementer
-- whether the task is approved or needs changes
-- create or update a review note under `.agents/reviews/`
-- update `.agents/NEXT.md` with the next action, preserving task 085 as the next task after task 083 review approval
-- commit the review note and workflow state changes unless a stop condition prevents committing
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```
