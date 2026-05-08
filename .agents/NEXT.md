@@ -8,68 +8,66 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 090 implementation is complete. Separate review is
-required because the task guards deployment/runtime boundaries and production
-authentication routing.
+Adaptive Teamflow. Task 090 separate review is complete and approved. The next
+lowest ready task is low-risk task 091.
 
 ## Current Next Step
 
-Start a fresh Reviewer for:
-`.agents/tasks/done/090-tighten-production-explorer-deployment-consistency-checks.md`.
-
-The Reviewer should create a review note under `.agents/reviews/` using the
-existing review-note format.
+Start an Implementer for:
+`.agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-.agents/tasks/done/090-tighten-production-explorer-deployment-consistency-checks.md
+Implement exactly:
+.agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/implementer.md
 - .agents/decisions/
 - .agents/NEXT.md
-- .agents/reviews/077-harden-production-explorer-endpoints-and-config-review.md
-- .agents/reviews/082-align-standalone-explorer-runtime-ui-review.md
-- .agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md
-- .agents/tasks/done/090-tighten-production-explorer-deployment-consistency-checks.md
-- mta.yaml
-- packages/approuter/xs-app.json
-- packages/approuter/test/deployment-config.test.ts
-- packages/approuter/package.json
-- the implementation commit diff for task 090
+- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
+- .agents/tasks/done/082-align-standalone-explorer-runtime-ui.md
+- .agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md
+- packages/explorer/composables/useODataState.ts
+- packages/explorer/test/state.test.ts
 
-Review stance:
-- Findings first.
-- Prioritize deployment consistency, authentication-token forwarding, required
-  MTA bindings, AppRouter route ordering and route matching, unsupported
-  `/__odx__` runtime paths, missing deterministic tests, and unrelated scope.
-- Check that the implementation did not deploy to Cloud Foundry, start a real
-  AppRouter, change runtime endpoint behavior, or update user-facing
-  deployment docs without a configuration contract change.
-- Check that the task acceptance criteria and required verification were met.
+Rules:
+- Keep changes scoped to task 091.
+- Remove the remaining internal `generateService` alias from Explorer state and
+  tests.
+- Preserve the existing `/__odx__/generate` endpoint path and metadata refresh
+  behavior.
+- Do not change SDK generation behavior, redesign Explorer UI, or change
+  runtime metadata refresh response semantics.
+- Move task 091 to `.agents/tasks/in-progress/` when starting and to
+  `.agents/tasks/done/` only after implementation and verification.
+- Update task handoff notes and `.agents/NEXT.md`.
+- Commit the completed task with a Conventional Commit unless a stop condition
+  prevents committing.
+- Separate review is not required if the task stays within its low-risk,
+  internal naming cleanup scope and verification passes.
 
-Verification to review or rerun as needed:
-- `pnpm.cmd --filter odx-approuter run verify`
+Verification:
+- `pnpm.cmd --filter @bc8-odx/explorer run verify`
+- `git grep -n "generateService" -- packages/explorer`
 - `pnpm.cmd run lint`
 - `pnpm.cmd run typecheck`
 - `git diff --check`
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether task 090 is approved or needs changes
-
-Create or update a review note under `.agents/reviews/` using the existing
-review-note format. Update `.agents/NEXT.md` and commit the review note and
-workflow state changes. Include the exact next-chat prompt the operator should
-paste into a new chat.
+When done, summarize:
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from `.agents/NEXT.md`
 ```
