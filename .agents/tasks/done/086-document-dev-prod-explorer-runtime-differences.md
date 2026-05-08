@@ -172,3 +172,30 @@ policy for production configuration and public/internal API contract docs.
   not present in this checkout; the actual completed task 077 file read was
   `.agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md`.
   No live BTP deployment was tested.
+
+Integrator update:
+
+- findings addressed: Fixed the two review findings from
+  `.agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md`.
+  `ARCHITECTURE.md` now says production traffic history is disabled by default
+  while local development and tests remain memory-backed, and `SECURITY.md`
+  distinguishes AppRouter-authenticated Explorer UI routes from the supported
+  proxy runtime API routes.
+- changed files: `ARCHITECTURE.md`, `SECURITY.md`,
+  `.agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md`,
+  `.agents/NEXT.md`, and this task file.
+- tests run:
+  - `git diff --check`
+  - `pnpm.cmd --filter docs run verify`
+  - Focused `Select-String` consistency search over root docs and relevant
+    Docus pages for stale production log default wording, broad `/__odx__/*`
+    proxy-route wording, SQL log storage defaults, and Explorer UI versus
+    proxy runtime API routing.
+  - Changed-file audit with `git diff --name-only` confirmed the integration
+    fix touched only documentation/workflow Markdown files.
+- skipped checks and residual risk: No task-required checks were skipped. No
+  live SAP BTP/AppRouter deployment smoke test was performed because this
+  integration fix is documentation-only.
+- review requirement decision: Focused re-review is required because task 086
+  remains review-required and the fix updates production runtime, routing, and
+  security documentation.

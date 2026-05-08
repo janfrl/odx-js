@@ -14,16 +14,16 @@ contracts.
 
 ## Current Next Step
 
-Task 086 review found bounded documentation consistency issues. Start a fresh
-Integrator chat to address only the findings in:
+Task 086 integration fix is complete. Start a fresh Reviewer chat for focused
+re-review of only the two findings in:
 `.agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Address review findings for:
+Focused re-review for:
 - `.agents/tasks/done/086-document-dev-prod-explorer-runtime-differences.md`
 
 Read:
@@ -43,29 +43,29 @@ Read:
 - docs/content/de/2.nuxt/4.deployment.md
 - docs/content/en/3.proxy/4.reference.md
 - docs/content/de/3.proxy/4.reference.md
-- the reviewed commit diff `2c980a3bf464a3293dcf9fa9072bef730d20f560`
+- the original reviewed commit diff `2c980a3bf464a3293dcf9fa9072bef730d20f560`
+- the latest integration fix commit diff
 
 Rules:
-- Fix only the concrete review findings assigned in the review note.
-- Keep the fix documentation-only.
-- Do not change runtime code, Explorer UI, tests, package metadata, generated app output, endpoints, logging providers, persistence adapters, or metadata generation features.
-- Do not expose customer-specific BTP routes, credentials, destinations, backend URLs, auth details, outbound headers, TLS settings, runtime paths, or hooks.
-- Update the task handoff notes and review note when useful.
-- Update `.agents/NEXT.md` with a focused re-review prompt for task 086.
-- Commit the integration fix with a Conventional Commit unless a stop condition prevents committing.
+- Review only whether the two findings in the review note were fixed.
+- Confirm `ARCHITECTURE.md` says production traffic history is disabled by default unless SQL storage is configured, while local development and tests remain memory-backed.
+- Confirm `SECURITY.md` distinguishes AppRouter-authenticated Explorer UI routes from supported authenticated proxy runtime API routes.
+- Confirm the fix stayed documentation-only and did not change runtime code, Explorer UI, tests, package metadata, generated app output, endpoints, logging providers, persistence adapters, or metadata generation features.
+- Confirm root docs and Docus docs no longer contradict each other on production log storage defaults or AppRouter routing for Explorer UI versus proxy runtime APIs.
+- Confirm no customer-specific BTP routes, credentials, destinations, backend URLs, auth details, outbound headers, TLS settings, runtime paths, or hooks were exposed.
+- Update the review note and `.agents/NEXT.md` with the re-review result.
+- Commit the re-review note and workflow state changes with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- Run `git diff --check`.
-- Run `pnpm.cmd --filter docs run verify`.
-- Confirm root docs and Docus docs no longer contradict each other on production log storage defaults or AppRouter routing for Explorer UI versus proxy runtime APIs.
-- Confirm English and German docs remain semantically aligned for any touched Docus content.
-- Confirm the fix does not change runtime code, Explorer UI, tests, package metadata, generated app output, endpoints, logging providers, persistence adapters, or metadata generation features.
+- Inspect the latest integration fix diff.
+- Run or verify `git diff --check`.
+- Run or verify `pnpm.cmd --filter docs run verify`.
 
 When done, summarize:
-- findings addressed
-- changed files
-- verification performed
-- whether focused re-review is required and why
+- findings, or state that no findings remain
+- acceptance criteria status for the two fixed findings
+- verification reviewed or run
+- whether task 086 is approved or still needs changes
 - commit hash
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

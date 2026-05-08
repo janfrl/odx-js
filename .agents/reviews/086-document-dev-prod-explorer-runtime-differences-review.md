@@ -101,7 +101,13 @@ AppRouter route split for standalone Explorer versus proxy runtime APIs.
 
 ## Next Action
 
-- `.agents/NEXT.md` was updated to request an Integrator to address only the
-  two findings above.
-- Follow-up task or fix required: focused documentation fix, then focused
-  re-review of task 086.
+- Integrator update: the documentation fix addressed both bounded findings by
+  aligning `ARCHITECTURE.md` with the disabled-by-default production log
+  policy and updating `SECURITY.md` to distinguish Explorer UI routes from
+  supported proxy runtime API routes.
+- Integration verification: `git diff --check` and
+  `pnpm.cmd --filter docs run verify` passed. A focused consistency search
+  found no remaining stale production memory-backed default wording or broad
+  `/__odx__/*` proxy-route wording.
+- `.agents/NEXT.md` was updated to request a focused re-review of task 086.
+- Follow-up task or fix required: focused re-review of the integration fix.

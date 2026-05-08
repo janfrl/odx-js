@@ -27,8 +27,10 @@ the approuter and proxy Nitro plugins.
 
 Relevant behavior:
 
-- `packages/approuter/xs-app.json` requires XSUAA for `/api/odx/*` and
-  `/__odx__/*` on the proxy and `/explorer/*` on the Explorer UI.
+- `packages/approuter/xs-app.json` requires XSUAA for proxied OData routes
+  under `/api/odx/*`, Explorer UI routes `/explorer/*`, `/__odx__/client`, and
+  `/__odx__/client/*`, and the supported proxy runtime API routes
+  `/__odx__/{config,logs,schema,generate,types,me}`.
 - `packages/proxy/src/plugins/auth-btp.ts` validates SAP security context for
   `/api/*` and `/__odx__/*` when `NODE_ENV=production`, `VCAP_SERVICES` exists,
   and XSUAA credentials are available.

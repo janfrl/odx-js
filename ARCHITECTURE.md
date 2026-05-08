@@ -122,10 +122,10 @@ Current production behavior:
 Runtime metadata refresh is separate from TypeScript SDK generation. Production
 can refresh metadata cache state for Explorer schema/config views, but SDK/type
 file generation remains a development, build, or CI workflow that requires a
-new deployment to affect application code. Production traffic history remains
-memory-backed by default. SQL persistence is available through a proxy-owned
-db0 adapter only when `devtools.logStore` or the matching environment variables
-select SQL storage.
+new deployment to affect application code. Production traffic history is
+disabled by default; local development and tests remain memory-backed. SQL
+persistence is available through a proxy-owned db0 adapter only when
+`devtools.logStore` or the matching environment variables select SQL storage.
 
 ### `docs`
 
