@@ -275,6 +275,47 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
+  it('does not send configured Authorization when refreshing direct production metadata', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend()
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    config.auth = {
+      username: 'configured-global-user',
+      password: 'configured-global-password',
+      bearerToken: 'configured-global-token',
+    }
+    config.services![0] = {
+      ...config.services![0],
+      strategy: 'direct',
+      auth: {
+        username: 'configured-service-user',
+        password: 'configured-service-password',
+        bearerToken: 'configured-service-token',
+      },
+    }
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: false,
+        service: 'RemoteService',
+        source: 'remote',
+      })
+      expect(backend.requests[0]?.url).toBe('/odata/$metadata')
+      expect(backend.requests[0]?.headers.authorization).toBeUndefined()
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
   it('preserves stale-cache fallback when production metadata refresh fails', async () => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()

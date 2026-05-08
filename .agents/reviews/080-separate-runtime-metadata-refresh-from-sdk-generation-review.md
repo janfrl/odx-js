@@ -120,3 +120,21 @@ The task needs a focused fix for direct-service auth semantics before approval.
 - Follow-up task or fix required: fix the finding above, add the focused
   regression test, rerun focused proxy tests and `git diff --check`, then
   request focused re-review of task 080.
+
+## Integrator Update
+
+Status: ready for focused re-review.
+
+- Finding addressed: `packages/proxy/src/utils/metadata-refresh.ts` now uses
+  the resolved target auth semantics and skips service/global configured
+  Authorization fallback when `target.strategy === "direct"` and the resolver
+  did not provide an auth header.
+- Regression test added:
+  `packages/proxy/test/explorer-policy.test.ts` verifies production metadata
+  refresh for a direct absolute-url service with global and service auth
+  configured does not send an Authorization header to the backend.
+- Verification passed:
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
+  - `pnpm.cmd exec vitest run packages/proxy/test`
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - `git diff --check`

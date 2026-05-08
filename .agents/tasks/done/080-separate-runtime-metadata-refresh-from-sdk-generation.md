@@ -139,3 +139,26 @@ review is required.
   test. The Explorer UI still uses the existing `generateService` action name;
   response semantics and docs now distinguish metadata refresh from SDK
   regeneration.
+
+## Integration Notes
+
+- focused review finding addressed: Production metadata refresh now preserves
+  direct-service auth semantics by avoiding service/global configured
+  Authorization fallback when the resolved proxy target has
+  `strategy: "direct"` and no managed auth header. This keeps direct absolute
+  URL refresh behavior aligned with normal direct proxy target resolution.
+- regression coverage added: `packages/proxy/test/explorer-policy.test.ts`
+  now covers a production direct absolute-url service with both global and
+  service auth configured and asserts the `$metadata` request does not send the
+  configured Authorization header.
+- production SDK-generation separation remains intact: production
+  `/__odx__/generate` still returns `operation: "metadata-refresh"`, does not
+  invoke the injected Nuxt generator, and does not write generated TypeScript
+  SDK files.
+- integration verification:
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
+  - `pnpm.cmd exec vitest run packages/proxy/test`
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - `git diff --check`
+- focused re-review required: Yes, because task 080 is high-risk production
+  runtime auth behavior and the original review decision was needs changes.

@@ -163,7 +163,7 @@ async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, 
     ...service.headers,
     Accept: METADATA_ACCEPT_HEADER,
   }
-  const authHeader = target.authHeader || resolveConfiguredAuthHeader(service, config)
+  const authHeader = target.authHeader || (target.strategy === 'direct' ? undefined : resolveConfiguredAuthHeader(service, config))
   const headers = prepareProxyHeaders(getHeaders(event), configuredHeaders, authHeader)
   headers.accept = METADATA_ACCEPT_HEADER
 
