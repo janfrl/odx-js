@@ -91,7 +91,10 @@ Explorer state is intentionally client-side and session-oriented. Durable
 business rules, security behavior, and OData parsing logic do not belong in the
 Explorer.
 
-Current production behavior after tasks 077-080:
+No `/__odx__/mockdata` endpoint is registered. Mock fixture files remain a
+local development workspace concern.
+
+Current production behavior:
 
 - `/__odx__` endpoints are a proxy-owned runtime boundary behind validated SAP
   security context.
@@ -106,7 +109,7 @@ Current production behavior after tasks 077-080:
   config, `forwardAuthHeader`, and `versions.node`.
 - `/__odx__/schema` returns parsed cached schema only and rejects raw XML.
 - `/__odx__/generate` refreshes runtime metadata cache state in production.
-  It fetches `$metadata` through the same proxy target, auth, header, and TLS
+  It fetches `$metadata` through the same production-compatible service
   resolution used for backend access, records timestamp/hash details, and falls
   back to stale cached metadata when the backend is unreachable.
 - `/__odx__/types` is development-only and returns `403` in production.

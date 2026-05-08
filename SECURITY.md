@@ -89,10 +89,10 @@ the proxy stores and serves redacted traffic history through `OdxLogStore`, and
 production request/response payload bodies are omitted by default.
 
 Production metadata inspection is not SDK generation. Runtime metadata refresh
-may fetch `$metadata` using the configured service target, auth, headers, and
-TLS policy, then update cached EDMX state for Explorer views. It may fall back
-to stale cached metadata, but production must not write generated TypeScript
-SDK files or imply application type changes without a build and deployment.
+may fetch `$metadata` through production-compatible service resolution, then
+update cached EDMX state for Explorer views. It may fall back to stale cached
+metadata, but production must not write generated TypeScript SDK files or imply
+application type changes without a build and deployment.
 
 ## Header Handling
 

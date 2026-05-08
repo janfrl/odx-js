@@ -193,10 +193,9 @@ endpoint policy:
 - `/__odx__/schema` serves parsed cached metadata only and rejects raw metadata
   XML.
 - `/__odx__/generate` refreshes runtime metadata cache state only. It uses the
-  configured proxy target, auth, headers, and TLS policy to fetch `$metadata`,
-  mirrors the EDMX into `.nuxt/odx/temp` and `.odx/cache`, reports stale,
-  timestamp, hash, byte count, and source information, and falls back to stale
-  cache when the backend is unreachable.
+  production-compatible service resolution path to fetch `$metadata`, reports
+  stale, timestamp, hash, byte count, and source information, and falls back to
+  stale cache when the backend is unreachable.
 - `/__odx__/types` returns `403`; production does not expose generated type
   artifacts.
 - `/__odx__/logs` returns an empty list and rejects `DELETE` unless persistent

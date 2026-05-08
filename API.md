@@ -237,6 +237,10 @@ secrets, runtime paths, hooks, DevTools config, `forwardAuthHeader`, or
 | `/__odx__/types?service=<name>` | Local generated TypeScript model files. | Authenticated but disabled. Returns `403`. |
 | `/__odx__/me` | Current user info from SAP security context or local fallback. | Authenticated. Returns sanitized SAP user context and omits raw token data. |
 
+There is no `/__odx__/mockdata` endpoint. The Explorer can export JSON for
+local mock fixtures, but mock-data file management stays in the development
+workspace and is not exposed as a runtime API.
+
 Runtime metadata refresh and TypeScript SDK generation are intentionally
 separate contracts. Production refresh updates Explorer metadata cache state
 only and may return `stale: true` when it had to use cached EDMX because the
