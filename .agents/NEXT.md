@@ -13,82 +13,66 @@ auth, privacy, deployment runtime behavior, and internal HTTP contracts.
 
 ## Current Next Step
 
-Run focused re-review for the task 078 integration fix:
-`.agents/tasks/done/078-introduce-odx-log-store-and-redaction.md`.
-
-Review note:
-`.agents/reviews/078-introduce-odx-log-store-and-redaction-review.md`.
-
-Reviewed base commit:
-`c9ef7aa865ad2c6147af8581bb19dbd054bcbeeb`.
-
-Integration fix:
-review the current branch HEAD after the focused integration commit.
-
-Do not start task 079 until focused re-review approves task 078.
+Task 078 focused re-review is approved. Start the next high-risk production
+runtime sequence task:
+`.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`.
 
 Continue the remaining production runtime sequence in this order after review
-approval:
+task 079:
 
-1. `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
-2. `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
-3. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
-4. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
-5. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
+1. `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
+2. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
+3. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
+4. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Run a focused re-review for the task 078 needs-changes integration fix:
-- Task: .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
-- Review: .agents/reviews/078-introduce-odx-log-store-and-redaction-review.md
-- Reviewed commit: c9ef7aa865ad2c6147af8581bb19dbd054bcbeeb
-- Integration fix: current branch HEAD
+Implement exactly:
+.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
+- .agents/roles/implementer.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/tasks/ready/079-add-db0-backed-explorer-log-store.md
 - .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
 - .agents/reviews/078-introduce-odx-log-store-and-redaction-review.md
-- ARCHITECTURE.md
-- API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- packages/core/src/dev-logs.ts
-- packages/proxy/src/utils/rules.ts
-- packages/proxy/src/utils/trace.ts
-- packages/proxy/test/dev-logs.test.ts
-- packages/proxy/test/rules.test.ts
-- docs/public/api-reference.json
+- API.md
+- ARCHITECTURE.md
 
-Review stance:
-- Review only the two needs-changes findings from the review note.
-- Confirm `proxyTrace.details` redacts sensitive header values before storage for `injectHeader`, `denyIfHeader`, and nested objects keyed by sensitive header names.
-- Confirm the tracked docs API reference artifact is refreshed for the task 078 public/core export changes.
-- Confirm production `/__odx__/logs` remains disabled and no db0, evlog, metadata refresh, SDK generation behavior, database migration, Explorer UI redesign, or unrelated refactor was introduced.
-- Findings first. If no actionable issue remains, approve task 078.
+Rules:
+- Keep changes scoped to task 079.
+- Add db0 only where the persistent Explorer log store implementation needs it.
+- Keep db0 behind the existing ODX log store boundary; do not leak db0-specific APIs into Explorer or public ODX contracts.
+- Keep memory storage as the default for local development and tests unless persistent storage is explicitly configured.
+- Do not add evlog, metadata caching, Explorer database access, unredacted payload storage, or unrelated UI redesign.
+- Document BTP production database binding expectations and SQLite limitations.
+- Update task handoff notes, move the task to done only after implementation and verification, update `.agents/NEXT.md`, and commit with a Conventional Commit.
 
-Verification to inspect or rerun as needed:
-- `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts packages/proxy/test/rules.test.ts`
-- `pnpm.cmd exec vitest run packages/proxy/test/integration.test.ts`
+Expected verification:
+- `pnpm.cmd exec vitest run packages/proxy/test`
 - `pnpm.cmd --filter @bc8-odx/proxy run verify`
-- `pnpm.cmd --filter docs run verify`
+- `pnpm.cmd --filter @bc8-odx/explorer run verify`
 - `pnpm.cmd run lint`
 - `pnpm.cmd run typecheck`
+- Confirm `pnpm-lock.yaml` changes match the added db0 dependency only.
 - `git diff --check`
 
-Update `.agents/reviews/078-introduce-odx-log-store-and-redaction-review.md` with the focused re-review result, update `.agents/NEXT.md`, and commit the review/workflow note changes with a Conventional Commit.
-
 When done, summarize:
-- findings
-- acceptance criteria status for the two reviewed findings
+- changed files
+- what was implemented
 - verification performed
-- whether task 078 is approved or still needs changes
+- self-check result
+- whether separate review is required and why
 - commit hash
+- known gaps
 - exact next-chat prompt from .agents/NEXT.md
 ```
