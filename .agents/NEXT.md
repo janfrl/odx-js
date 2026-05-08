@@ -8,14 +8,14 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 074 is complete and does not require separate review;
+Adaptive Teamflow. Task 075 is complete and does not require separate review;
 no in-progress task is currently recorded.
 
 ## Current Next Step
 
 Start an Orchestrator chat to resume the normal workflow. Ready tasks exist;
 the lowest-numbered ready task is
-`.agents/tasks/ready/075-make-standalone-examples-assertion-backed.md`.
+`.agents/tasks/ready/076-skip-buffered-response-flattening-when-devtools-disabled.md`.
 
 ## Prompt For Next Chat
 
