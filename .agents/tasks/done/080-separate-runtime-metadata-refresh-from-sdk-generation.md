@@ -133,7 +133,7 @@ review is required.
   `done/` through patches after implementation and verification.
 - `.agents/NEXT.md` update: Updated to request a fresh Reviewer for task 080
   before continuing to task 081.
-- commit hash: to be filled after commit.
+- commit hash: `464ae4c1764bc8cd1272b5753b5f985880dbfa46`.
 - known gaps: Runtime metadata refresh is covered by local HTTP tests and file
   cache assertions, but not by a live SAP BTP Destination/Connectivity smoke
   test. The Explorer UI still uses the existing `generateService` action name;
