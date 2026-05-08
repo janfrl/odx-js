@@ -1,6 +1,6 @@
 import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
 import { createServer } from 'node:http'
-import { clearODataLogs, getODataLogs } from '@bc8-odx/core'
+import { clearODataLogs, flattenOData, getODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
@@ -9,11 +9,21 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createBackend } from './fixtures/backend'
 import { createProxyServer } from './fixtures/server'
 
+vi.mock('@bc8-odx/core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@bc8-odx/core')>()
+  return {
+    ...actual,
+    flattenOData: vi.fn(actual.flattenOData),
+  }
+})
+
 describe('proxy integration', () => {
   let backendServer: any
   let proxyServer: any
+  let disabledProxyServer: any
   let backendUrl: string
   let proxyUrl: string
+  let disabledProxyUrl: string
   const hooks = createHooks<ODataProxyHooks>()
 
   beforeAll(async () => {
@@ -78,6 +88,27 @@ describe('proxy integration', () => {
     proxyServer = createServer(toNodeListener(createProxyServer(config)))
     await new Promise(resolve => proxyServer.listen(proxyPort, () => resolve(true)))
     proxyUrl = `http://127.0.0.1:${proxyPort}`
+
+    const disabledProxyPort = await getPort()
+    const disabledConfig: ODataProxyConfig = {
+      ...config,
+      services: [
+        {
+          name: 'DisabledDevToolsService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+        },
+      ],
+      devtools: {
+        enabled: false,
+      },
+      hooks: createHooks<ODataProxyHooks>(),
+    }
+
+    disabledProxyServer = createServer(toNodeListener(createProxyServer(disabledConfig)))
+    await new Promise(resolve => disabledProxyServer.listen(disabledProxyPort, () => resolve(true)))
+    disabledProxyUrl = `http://127.0.0.1:${disabledProxyPort}`
   }, 20000)
 
   afterAll(async () => {
@@ -97,6 +128,7 @@ describe('proxy integration', () => {
     await Promise.all([
       closeServer(backendServer),
       closeServer(proxyServer),
+      closeServer(disabledProxyServer),
     ])
   }, 20000)
 
@@ -167,6 +199,26 @@ describe('proxy integration', () => {
     const [log] = await getODataLogs()
     expect(log?.status).toBe(204)
     expect(log?.responseBody).toBeUndefined()
+  })
+
+  it('skips log-only flattening for buffered responses when DevTools are disabled', async () => {
+    clearODataLogs()
+
+    const flattenODataMock = vi.mocked(flattenOData)
+    flattenODataMock.mockClear()
+
+    const response = await ofetch.raw(`${disabledProxyUrl}/api/odx/DisabledDevToolsService/Products`)
+
+    expect(response.status).toBe(200)
+    expect(response._data).toEqual({
+      d: {
+        results: [
+          { ID: '1', Name: 'Test Product' },
+        ],
+      },
+    })
+    expect(flattenODataMock).not.toHaveBeenCalled()
+    expect(await getODataLogs()).toEqual([])
   })
 
   it('triggers interception hooks', async () => {

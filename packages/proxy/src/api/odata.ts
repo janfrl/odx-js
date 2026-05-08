@@ -123,7 +123,10 @@ export default defineEventHandler(async (event): Promise<any> => {
 
         setResponseStatus(event, responseStatus)
         tracer.addTrace('Response', 'Request successful', { status: responseStatus }, 'success')
-        await tracer.updateLog(responseStatus, responseStatus === 204 ? undefined : flattenOData(responseData))
+        const responseLogBody = tracer.enabled && responseStatus !== 204
+          ? flattenOData(responseData)
+          : undefined
+        await tracer.updateLog(responseStatus, responseLogBody)
         return responseStatus === 204 ? '' : responseData
       }
       catch (err: any) {
