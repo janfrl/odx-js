@@ -14,34 +14,36 @@ contracts.
 
 ## Current Next Step
 
-Task 080 is implemented and requires independent review before continuing:
-`.agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md`.
+Task 080 review found one focused production metadata-refresh auth issue that
+needs an Integrator fix before approval:
+`.agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md`.
 
 Continue the remaining production runtime sequence in this order after task
-080 review approval:
+080 focused fix and re-review approval:
 
 1. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
 2. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
 3. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
+4. `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-.agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md
+Address the focused review finding for task 080:
+- `.agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
+- `.agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md`
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/integrator.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
 - .agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md
-- .agents/tasks/done/079-add-db0-backed-explorer-log-store.md
-- .agents/reviews/079-add-db0-backed-explorer-log-store-review.md
+- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
 - ARCHITECTURE.md
 - API.md
 - DEPLOYMENT.md
@@ -50,38 +52,29 @@ Read:
 - packages/proxy/src/utils/explorer-policy.ts
 - packages/proxy/src/utils/metadata-refresh.ts
 - packages/proxy/test/explorer-policy.test.ts
-- packages/nuxt/src/generate.ts
-- packages/nuxt/src/runtime/server-middleware.ts
-- packages/proxy/src/api/schema.ts
-- packages/proxy/src/plugins/btp-auth.ts
-- packages/proxy/src/utils/btp-destination.ts
 - packages/proxy/src/utils/target.ts
-- packages/explorer/composables/useODataState.ts
-- the implementation commit diff for task 080
+- packages/proxy/src/api/odata.ts
 
-Review stance:
-- Findings first.
-- Prioritize production endpoint semantics, auth/header/TLS behavior, stale-cache fallback, generation boundaries, unsupported host behavior, docs accuracy, and missing tests.
-- Confirm production refresh updates metadata cache state only and never invokes `odata2ts` or writes generated TypeScript files.
-- Confirm development SDK regeneration still works when the Nuxt generator is present.
-- Confirm no db0, evlog, unrelated Explorer UI redesign, or normal data proxy behavior changes were introduced.
+Rules:
+- Fix only the review finding: production metadata refresh must preserve direct-service auth semantics and must not send service/global configured Authorization headers for `strategy: "direct"` services when normal direct proxy access would skip managed auth.
+- Keep production SDK-generation separation intact: production refresh must update metadata cache state only and never invoke the Nuxt generator or write generated TypeScript SDK files.
+- Add a focused regression test for a direct absolute-url service with service or global auth asserting production metadata refresh does not send that configured Authorization header.
+- Do not change db0, evlog, unrelated Explorer UI, normal data proxy behavior, or broad docs unless the focused fix requires a tiny clarification.
+- Update the task handoff notes and review note if useful.
+- Update `.agents/NEXT.md` with a focused re-review prompt.
+- Commit the integration fix with a Conventional Commit.
 
-Verification context from Implementer:
+Verification:
+- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
 - `pnpm.cmd exec vitest run packages/proxy/test`
-- `pnpm.cmd exec vitest run packages/nuxt/test/generate.test.ts`
 - `pnpm.cmd --filter @bc8-odx/proxy run verify`
-- `pnpm.cmd --filter @bc8-odx/nuxt run playground:check`
-- `pnpm.cmd run lint`
-- `pnpm.cmd run typecheck`
 - `git diff --check`
 
 Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether the task is approved or needs changes
-
-Create or update a review note under .agents/reviews/ using REVIEW_TEMPLATE.md.
-Update .agents/NEXT.md and commit the review note and workflow state changes.
-Include the exact next-chat prompt the operator should paste into a new chat.
+- finding addressed
+- changed files
+- verification performed
+- whether focused re-review is required and why
+- commit hash
+- exact next-chat prompt from `.agents/NEXT.md`
 ```
