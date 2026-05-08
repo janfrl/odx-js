@@ -131,6 +131,86 @@ describe('proxy Dev Logs', () => {
     expect(redactSensitiveHeaders({ 'x-session-token': 'secret' })['x-session-token']).toBe('[Redacted]')
   })
 
+  it('redacts sensitive proxy trace header details before storage', async () => {
+    await addODataLog({
+      id: 'trace-headers',
+      timestamp: 1,
+      method: 'GET',
+      url: '/test',
+      service: 'TestService',
+      proxyTrace: [
+        {
+          timestamp: 1,
+          duration: 0,
+          label: 'Rules',
+          message: 'Injecting custom header: "x-api-key"',
+          status: 'info',
+          details: {
+            name: 'x-api-key',
+            value: 'api-secret',
+            policy: 'HeaderInjection',
+          },
+        },
+        {
+          timestamp: 2,
+          duration: 1,
+          label: 'Rules',
+          message: 'Checking header policy: "x-csrf-token"',
+          status: 'info',
+          details: {
+            header: 'x-csrf-token',
+            actual: 'csrf-secret',
+            deniedValue: 'csrf-secret',
+            policy: 'HeaderGuard',
+          },
+        },
+        {
+          timestamp: 3,
+          duration: 2,
+          label: 'Rules',
+          message: 'Nested header payload',
+          status: 'info',
+          details: {
+            headers: {
+              'authorization': 'Bearer nested-secret',
+              'x-visible': 'visible',
+            },
+            nested: [
+              { 'x-sap-security-session': 'sap-secret' },
+            ],
+          },
+        },
+      ],
+    })
+
+    const [log] = await getODataLogs()
+
+    expect(log?.proxyTrace?.[0]?.details).toEqual({
+      name: 'x-api-key',
+      value: '[Redacted]',
+      policy: 'HeaderInjection',
+    })
+    expect(log?.proxyTrace?.[1]?.details).toEqual({
+      header: 'x-csrf-token',
+      actual: '[Redacted]',
+      deniedValue: '[Redacted]',
+      policy: 'HeaderGuard',
+    })
+    expect(log?.proxyTrace?.[2]?.details).toEqual({
+      headers: {
+        'authorization': '[Redacted]',
+        'x-visible': 'visible',
+      },
+      nested: [
+        { 'x-sap-security-session': '[Redacted]' },
+      ],
+    })
+    expect(JSON.stringify(log)).not.toContain('api-secret')
+    expect(JSON.stringify(log)).not.toContain('csrf-secret')
+    expect(JSON.stringify(log)).not.toContain('nested-secret')
+    expect(JSON.stringify(log)).not.toContain('sap-secret')
+  })
+
   it('bounds large payloads and can omit payload storage by policy', async () => {
     const largePayload = { value: 'x'.repeat(128) }
 

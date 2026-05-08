@@ -138,3 +138,39 @@ review is required.
 - known gaps: Production traffic history remains intentionally disabled.
   Persistent storage, db0 adapter wiring, production retention configuration,
   and production clear semantics remain task 079 or later work.
+
+## Integration Notes
+
+- review findings addressed: Fixed the P1 proxy trace detail redaction gap by
+  sanitizing `proxyTrace.details` at the core log-storage boundary before
+  bounding and persistence. The sanitizer covers `injectHeader` details with
+  `name`/`value`, `denyIfHeader` details with `header`/`actual`/`deniedValue`
+  and `header`/`value`, and nested objects keyed by sensitive header names.
+  Refreshed the tracked `docs/public/api-reference.json` artifact for the task
+  078 public/core export changes.
+- focused code changes: Added a private core trace-detail sanitizer, included
+  the denied header name in `denyIfHeader` trace details so storage redaction
+  can classify the trace, and added storage-level and rule-generated trace
+  tests proving sensitive injected and denied header values are not retained
+  after log storage.
+- verification run:
+  - `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts packages/proxy/test/rules.test.ts`
+  - `pnpm.cmd exec vitest run packages/proxy/test/integration.test.ts`
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - `pnpm.cmd --filter docs run verify`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run typecheck`
+  - `git diff --check`
+- skipped checks and residual risk: No requested check was skipped. Sandboxed
+  Vitest commands could not resolve `vitest`, and sandboxed proxy verify hit
+  Windows `spawn EPERM` while starting esbuild; the same commands passed when
+  rerun outside the sandbox with approval. `git diff --check` passed with only
+  Git line-ending normalization warnings. No live SAP BTP/AppRouter smoke test
+  was performed because this integration fix does not enable production logs or
+  change deployment routing.
+- scope check: No db0, evlog, metadata refresh, SDK generation behavior,
+  database migration, Explorer UI redesign, or unrelated refactor was added.
+  Production `/__odx__/logs` remains disabled by policy; local Explorer
+  traffic logs continue to use the memory store.
+- `.agents/NEXT.md` update: Updated to request focused re-review of the two
+  needs-changes findings before task 079 starts.

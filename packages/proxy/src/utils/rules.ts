@@ -150,6 +150,7 @@ export class ODataGuard {
   denyIfHeader(name: string, value: string, reason?: string): this {
     const headers = (this.ctx.fetchOptions.headers as Record<string, string>) || {}
     this.addTrace('Rules', `Checking header policy: "${name}"`, {
+      header: name,
       actual: headers[name],
       deniedValue: value,
       policy: 'HeaderGuard',

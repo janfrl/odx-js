@@ -165,6 +165,42 @@ function isSensitiveHeader(name: string): boolean {
   return SENSITIVE_HEADER_PATTERNS.some(pattern => pattern.test(name))
 }
 
+function isTraceHeaderValueKey(key: string): boolean {
+  return key === 'actual' || key === 'deniedValue' || key === 'value'
+}
+
+function getTraceHeaderName(details: Record<string, any>): string | undefined {
+  const headerName = details.header ?? details.name
+  return typeof headerName === 'string' ? headerName : undefined
+}
+
+function sanitizeProxyTraceDetails(details: any): any {
+  if (details === undefined || details === null)
+    return details
+
+  if (Array.isArray(details))
+    return details.map(sanitizeProxyTraceDetails)
+
+  if (typeof details !== 'object')
+    return details
+
+  const headerName = getTraceHeaderName(details)
+  const hasSensitiveHeader = !!headerName && isSensitiveHeader(headerName)
+  const isHeaderGuardTrace = details.policy === 'HeaderGuard'
+
+  return Object.fromEntries(
+    Object.entries(details).map(([key, value]) => {
+      if (isSensitiveHeader(key))
+        return [key, REDACTED_HEADER_VALUE]
+
+      if (isTraceHeaderValueKey(key) && (hasSensitiveHeader || (isHeaderGuardTrace && !headerName)))
+        return [key, REDACTED_HEADER_VALUE]
+
+      return [key, sanitizeProxyTraceDetails(value)]
+    }),
+  )
+}
+
 export function redactSensitiveHeaders(headers: Record<string, string> = {}): Record<string, string> {
   return Object.fromEntries(
     Object.entries(headers).map(([name, value]) => [
@@ -202,7 +238,7 @@ export function sanitizeODataLog(log: ODataLog, policy: OdxLogPayloadPolicy = {}
     responseBody: boundLogPayload(log.responseBody, policy),
     proxyTrace: log.proxyTrace?.map(entry => ({
       ...cloneSerializable(entry),
-      details: boundLogPayload(entry.details, policy),
+      details: boundLogPayload(sanitizeProxyTraceDetails(entry.details), policy),
     })),
   }
 }

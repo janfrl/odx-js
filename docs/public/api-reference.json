@@ -99,6 +99,67 @@
       }
     ]
   },
+  "redactSensitiveHeaders": {
+    "title": "redactSensitiveHeaders",
+    "properties": [
+      {
+        "name": "headers",
+        "type": "Record<string, string>",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "boundLogPayload": {
+    "title": "boundLogPayload",
+    "properties": [
+      {
+        "name": "payload",
+        "type": "any",
+        "required": true
+      },
+      {
+        "name": "policy",
+        "type": "OdxLogPayloadPolicy",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "sanitizeODataLog": {
+    "title": "sanitizeODataLog",
+    "properties": [
+      {
+        "name": "log",
+        "type": "ODataLog",
+        "required": true
+      },
+      {
+        "name": "policy",
+        "type": "OdxLogPayloadPolicy",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "getOdxLogStore": {
+    "title": "getOdxLogStore",
+    "properties": []
+  },
+  "setOdxLogStore": {
+    "title": "setOdxLogStore",
+    "properties": [
+      {
+        "name": "store",
+        "type": "OdxLogStore",
+        "required": true
+      }
+    ]
+  },
+  "resetOdxLogStore": {
+    "title": "resetOdxLogStore",
+    "properties": []
+  },
   "addODataLog": {
     "title": "addODataLog",
     "properties": [
@@ -112,12 +173,16 @@
         "type": "number",
         "default": "DEFAULT_MAX_LOGS",
         "required": false
+      },
+      {
+        "name": "payload",
+        "type": "OdxLogPayloadPolicy | undefined",
+        "required": false
       }
     ]
   },
   "updateODataLog": {
     "title": "updateODataLog",
-    "description": "Updates an existing OData log entry by its ID.",
     "properties": [
       {
         "name": "id",
@@ -128,16 +193,45 @@
         "name": "updates",
         "type": "Partial<ODataLog>",
         "required": true
+      },
+      {
+        "name": "payload",
+        "type": "OdxLogPayloadPolicy | undefined",
+        "required": false
       }
     ]
   },
   "getODataLogs": {
     "title": "getODataLogs",
-    "properties": []
+    "properties": [
+      {
+        "name": "options",
+        "type": "OdxLogQueryOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "getODataLog": {
+    "title": "getODataLog",
+    "properties": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      }
+    ]
   },
   "clearODataLogs": {
     "title": "clearODataLogs",
-    "properties": []
+    "properties": [
+      {
+        "name": "options",
+        "type": "OdxLogClearOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
   },
   "ProxyTraceEntry": {
     "title": "ProxyTraceEntry",
@@ -246,6 +340,181 @@
         "name": "proxyTrace",
         "type": "ProxyTraceEntry[] | undefined",
         "required": false
+      }
+    ]
+  },
+  "OdxBoundedPayload": {
+    "title": "OdxBoundedPayload",
+    "properties": [
+      {
+        "name": "__odxPayload",
+        "type": "\"truncated\" | \"unserializable\"",
+        "required": true
+      },
+      {
+        "name": "originalBytes",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "maxBytes",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "preview",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "OdxLogPayloadPolicy": {
+    "title": "OdxLogPayloadPolicy",
+    "properties": [
+      {
+        "name": "storePayloads",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "maxPayloadBytes",
+        "type": "number | undefined",
+        "required": false
+      }
+    ]
+  },
+  "OdxLogAppendOptions": {
+    "title": "OdxLogAppendOptions",
+    "properties": [
+      {
+        "name": "maxEntries",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "payload",
+        "type": "OdxLogPayloadPolicy | undefined",
+        "required": false
+      }
+    ]
+  },
+  "OdxLogUpdateOptions": {
+    "title": "OdxLogUpdateOptions",
+    "properties": [
+      {
+        "name": "payload",
+        "type": "OdxLogPayloadPolicy | undefined",
+        "required": false
+      }
+    ]
+  },
+  "OdxLogQueryOptions": {
+    "title": "OdxLogQueryOptions",
+    "properties": [
+      {
+        "name": "limit",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "offset",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "service",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "method",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "status",
+        "type": "number | \"success\" | \"pending\" | \"failure\" | undefined",
+        "required": false
+      },
+      {
+        "name": "from",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "to",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "before",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "after",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "includePending",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "order",
+        "type": "\"asc\" | \"desc\" | undefined",
+        "required": false
+      }
+    ]
+  },
+  "OdxLogClearOptions": {
+    "title": "OdxLogClearOptions",
+    "properties": [
+      {
+        "name": "service",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "before",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "to",
+        "type": "number | undefined",
+        "required": false
+      }
+    ]
+  },
+  "OdxLogStore": {
+    "title": "OdxLogStore",
+    "properties": [
+      {
+        "name": "append",
+        "type": "(log: ODataLog, options?: OdxLogAppendOptions) => OdxMaybePromise<void>",
+        "required": true
+      },
+      {
+        "name": "update",
+        "type": "(id: string, updates: Partial<ODataLog>, options?: OdxLogUpdateOptions) => OdxMaybePromise<ODataLog | undefined>",
+        "required": true
+      },
+      {
+        "name": "list",
+        "type": "(options?: OdxLogQueryOptions) => OdxMaybePromise<ODataLog[]>",
+        "required": true
+      },
+      {
+        "name": "get",
+        "type": "(id: string) => OdxMaybePromise<ODataLog | undefined>",
+        "required": true
+      },
+      {
+        "name": "clear",
+        "type": "(options?: OdxLogClearOptions) => OdxMaybePromise<void>",
+        "required": true
       }
     ]
   },
@@ -602,7 +871,7 @@
       },
       {
         "name": "status",
-        "type": "{ value: \"idle\" | \"pending\" | \"success\" | \"error\"; } & (\"success\" | \"error\" | \"idle\" | \"pending\")",
+        "type": "{ value: \"idle\" | \"pending\" | \"success\" | \"error\"; } & (\"success\" | \"error\" | \"pending\" | \"idle\")",
         "description": "Status of the request: idle, pending, success, or error.",
         "default": "'idle'",
         "required": true
@@ -790,7 +1059,7 @@
       },
       {
         "name": "devtools",
-        "type": "{ enabled?: boolean; maxLogs?: number; } | undefined",
+        "type": "{ enabled?: boolean; maxLogs?: number; logPayloads?: boolean; maxPayloadBytes?: number; } | undefined",
         "required": false
       }
     ]
@@ -967,7 +1236,7 @@
       },
       {
         "name": "devtools",
-        "type": "{ enabled?: boolean; maxLogs?: number; } | undefined",
+        "type": "{ enabled?: boolean; maxLogs?: number; logPayloads?: boolean; maxPayloadBytes?: number; } | undefined",
         "required": false
       }
     ]

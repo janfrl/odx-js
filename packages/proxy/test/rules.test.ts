@@ -5,7 +5,7 @@ import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
 import { ofetch } from 'ofetch'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { odataGuard } from '../src'
 import btpAuthPlugin from '../src/plugins/btp-auth'
 import { DevToolsTracer } from '../src/utils/trace'
@@ -515,5 +515,98 @@ describe('disabled DevTools proxy tracing', () => {
       isRelative: false,
     })
     expect(event.context.proxyTrace).toEqual([])
+  })
+})
+
+describe('stored proxy rule trace redaction', () => {
+  beforeEach(async () => {
+    await clearODataLogs()
+  })
+
+  function createTraceEvent() {
+    const event = {
+      method: 'GET',
+      path: '/api/odx/TestService/Products',
+      context: {
+        odataConfig: {
+          devtools: {
+            enabled: true,
+          },
+        },
+      },
+      node: {
+        res: {
+          on: vi.fn(),
+        },
+      },
+    } as any
+
+    const tracer = new DevToolsTracer(event)
+    return { event, tracer }
+  }
+
+  it('redacts injected sensitive header values after log storage', async () => {
+    const { event, tracer } = createTraceEvent()
+    await tracer.initLog(
+      event,
+      'https://example.test/odata/Products',
+      'TestService',
+      'Products',
+    )
+
+    odataGuard({
+      event,
+      serviceName: 'TestService',
+      fetchOptions: { headers: {} },
+    }).injectHeader('x-api-key', 'injected-secret')
+    await tracer.updateLog(200)
+
+    const [log] = await getODataLogs()
+    const injectionTrace = log?.proxyTrace?.find(entry => entry.details?.policy === 'HeaderInjection')
+
+    expect(injectionTrace?.details).toEqual({
+      name: 'x-api-key',
+      value: '[Redacted]',
+      policy: 'HeaderInjection',
+    })
+    expect(JSON.stringify(log)).not.toContain('injected-secret')
+  })
+
+  it('redacts denied sensitive header values after log storage', async () => {
+    const { event, tracer } = createTraceEvent()
+    await tracer.initLog(
+      event,
+      'https://example.test/odata/Products',
+      'TestService',
+      'Products',
+    )
+
+    expect(() => odataGuard({
+      event,
+      serviceName: 'TestService',
+      fetchOptions: {
+        headers: {
+          'x-csrf-token': 'csrf-secret',
+        },
+      },
+    }).denyIfHeader('x-csrf-token', 'csrf-secret')).toThrow()
+    await tracer.updateLog(403)
+
+    const [log] = await getODataLogs()
+    const headerGuardTrace = log?.proxyTrace?.find(entry => entry.details?.policy === 'HeaderGuard')
+    const rejectTrace = log?.proxyTrace?.find(entry => entry.details?.action === 'REJECT')
+
+    expect(headerGuardTrace?.details).toEqual({
+      header: 'x-csrf-token',
+      actual: '[Redacted]',
+      deniedValue: '[Redacted]',
+      policy: 'HeaderGuard',
+    })
+    expect(rejectTrace?.details).toEqual({
+      header: 'x-csrf-token',
+      value: '[Redacted]',
+      action: 'REJECT',
+    })
+    expect(JSON.stringify(log)).not.toContain('csrf-secret')
   })
 })

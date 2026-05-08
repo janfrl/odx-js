@@ -13,15 +13,19 @@ auth, privacy, deployment runtime behavior, and internal HTTP contracts.
 
 ## Current Next Step
 
-Fix the needs-changes review for the completed high-risk production runtime
-task:
+Run focused re-review for the task 078 integration fix:
 `.agents/tasks/done/078-introduce-odx-log-store-and-redaction.md`.
 
 Review note:
 `.agents/reviews/078-introduce-odx-log-store-and-redaction-review.md`.
 
-Do not start task 079 until the review findings are fixed and focused
-re-review approves task 078.
+Reviewed base commit:
+`c9ef7aa865ad2c6147af8581bb19dbd054bcbeeb`.
+
+Integration fix:
+review the current branch HEAD after the focused integration commit.
+
+Do not start task 079 until focused re-review approves task 078.
 
 Continue the remaining production runtime sequence in this order after review
 approval:
@@ -35,12 +39,13 @@ approval:
 ## Prompt For Next Chat
 
 ```txt
-You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Address the needs-changes review for:
+Run a focused re-review for the task 078 needs-changes integration fix:
 - Task: .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
 - Review: .agents/reviews/078-introduce-odx-log-store-and-redaction-review.md
 - Reviewed commit: c9ef7aa865ad2c6147af8581bb19dbd054bcbeeb
+- Integration fix: current branch HEAD
 
 Read:
 - AGENTS.md
@@ -61,18 +66,14 @@ Read:
 - packages/proxy/test/rules.test.ts
 - docs/public/api-reference.json
 
-Rules:
-- Fix only the concrete review findings.
-- Do not add db0, evlog, metadata refresh, SDK generation behavior, database migration, Explorer UI redesign, or unrelated refactors.
-- Preserve production `/__odx__/logs` disabled policy.
-- Preserve local Explorer traffic-log behavior with the memory store.
-- Ensure sensitive header values in `proxyTrace.details` are redacted before storage, not just bounded.
-- Refresh the tracked docs API reference artifact if public/core exports remain changed.
-- Update task handoff notes and `.agents/NEXT.md` with a focused re-review prompt.
-- Commit the focused integration fix with a Conventional Commit.
+Review stance:
+- Review only the two needs-changes findings from the review note.
+- Confirm `proxyTrace.details` redacts sensitive header values before storage for `injectHeader`, `denyIfHeader`, and nested objects keyed by sensitive header names.
+- Confirm the tracked docs API reference artifact is refreshed for the task 078 public/core export changes.
+- Confirm production `/__odx__/logs` remains disabled and no db0, evlog, metadata refresh, SDK generation behavior, database migration, Explorer UI redesign, or unrelated refactor was introduced.
+- Findings first. If no actionable issue remains, approve task 078.
 
-Expected verification:
-- Add or update focused tests proving `injectHeader` and `denyIfHeader` trace details do not retain sensitive header values after log storage.
+Verification to inspect or rerun as needed:
 - `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts packages/proxy/test/rules.test.ts`
 - `pnpm.cmd exec vitest run packages/proxy/test/integration.test.ts`
 - `pnpm.cmd --filter @bc8-odx/proxy run verify`
@@ -81,12 +82,13 @@ Expected verification:
 - `pnpm.cmd run typecheck`
 - `git diff --check`
 
+Update `.agents/reviews/078-introduce-odx-log-store-and-redaction-review.md` with the focused re-review result, update `.agents/NEXT.md`, and commit the review/workflow note changes with a Conventional Commit.
+
 When done, summarize:
-- findings addressed
-- changed files
+- findings
+- acceptance criteria status for the two reviewed findings
 - verification performed
-- whether focused re-review is required and why
+- whether task 078 is approved or still needs changes
 - commit hash
-- known gaps
 - exact next-chat prompt from .agents/NEXT.md
 ```
