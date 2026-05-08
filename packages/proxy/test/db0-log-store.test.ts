@@ -129,6 +129,11 @@ function createLogsEvent(method: string, config: ODataProxyConfig): any {
   }
 }
 
+async function importDb0Connector(moduleName: string): Promise<unknown> {
+  const { default: connector } = await import(moduleName)
+  return connector
+}
+
 describe('db0-backed Explorer log store', () => {
   afterEach(async () => {
     process.env.NODE_ENV = originalNodeEnv
@@ -138,6 +143,15 @@ describe('db0-backed Explorer log store', () => {
     delete process.env.NUXT_ODATA_DEVTOOLS_LOG_DB_PATH
     await configureOdxLogStore({ basePath: '/api/odx', buildDir: '', rootDir: '', mode: 'sdk', services: [] })
     await clearODataLogs()
+  })
+
+  it('loads documented SQL connector modules without opening a database connection', async () => {
+    const connectors = await Promise.all([
+      importDb0Connector('db0/connectors/postgresql'),
+      importDb0Connector('db0/connectors/node-sqlite'),
+    ])
+
+    expect(connectors).toEqual([expect.any(Function), expect.any(Function)])
   })
 
   it('keeps memory storage as the default and resolves SQL storage only when configured', () => {
