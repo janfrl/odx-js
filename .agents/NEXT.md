@@ -14,54 +14,63 @@ contracts.
 
 ## Current Next Step
 
-Task 081 review found one focused production privacy issue, and the Integrator
-fix has been applied. Start a fresh Reviewer chat for focused re-review of:
-`.agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md`.
+Task 081 is approved after focused re-review of Integrator fix
+`f464176568be69de8c8acde70aaea98ab9bdbfa9`.
 
-After focused re-review approves task 081, continue the remaining production
-runtime sequence in this order:
+Start task 082 implementation next:
+`.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`.
 
-1. `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
-2. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
-3. `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`
+After task 082, continue the remaining production runtime sequence in this
+order:
+
+1. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
+2. `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Focused re-review for completed task 081 after the Integrator fix:
-- `.agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md`
-- `.agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md`
+Implement exactly:
+- `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md
+- .agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md
 - .agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md
 - .agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md
-- packages/proxy/src/utils/metadata-refresh.ts
-- packages/proxy/test/explorer-policy.test.ts
-- the latest diff
+- relevant Explorer files listed in the task
 
-Review stance:
-- Review only the focused Integrator fix for the task 081 finding.
-- Confirm production `/__odx__/config` and `/__odx__/schema` no longer expose raw stale metadata failure details that can contain backend metadata URLs or hostnames.
-- Confirm stale/missing metadata remains actionable for Explorer.
-- Confirm normal OData proxy responses were not changed.
-- Confirm no db0, evlog, persistence dependencies, generated SDK changes, or broad Explorer UI redesign were added.
-- Check the regression test covers refresh fallback after invalid metadata from an internal URL and production config/schema responses do not contain that URL.
+Rules:
+- Keep changes scoped to task 082.
+- Do not change proxy endpoint security.
+- Do not add persistence dependencies.
+- Do not change metadata cache implementation.
+- Do not introduce a marketing or landing page.
+- Follow existing Explorer and Nuxt UI patterns.
+- Update the task handoff notes before finishing.
+- Move the task to `.agents/tasks/done/` when implementation and verification are complete.
+- Update `.agents/NEXT.md` with the next workflow action. Preserve task 083 then task 085 order after task 082.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts`
-- `git diff --check`
+- `pnpm.cmd --filter @bc8-odx/explorer run verify`
+- `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck`
+- Browser verification is required if layout or interactive behavior changes beyond labels/state branching. Record the tested URL and viewport.
 
-Output:
-- findings first with severity and file/line references, if any
-- whether task 081 is approved after the focused fix
+When done, summarize:
+- changed files
+- what was implemented
 - verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
-- residual risk or known gaps
+- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

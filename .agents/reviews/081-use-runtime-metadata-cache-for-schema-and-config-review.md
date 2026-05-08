@@ -5,7 +5,7 @@ Date: 2026-05-08
 Reviewer: Codex
 Task: `.agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md`
 Reviewed commit: `e3351a019aafc3d275322984d20f1286bf5471e6`
-Decision: needs changes; focused integration fix applied, pending re-review
+Decision: approved after focused re-review of Integrator fix `f464176568be69de8c8acde70aaea98ab9bdbfa9`
 
 ## Findings
 
@@ -116,5 +116,42 @@ a focused privacy fix before approval.
 
 ## Next Action
 
-- `.agents/NEXT.md` was updated to request focused re-review of the integration
-  fix before continuing to task 082.
+- `.agents/NEXT.md` was updated to continue with task 082 implementation.
+
+## Focused Re-review
+
+Decision: approved.
+
+Findings: none.
+
+Reviewed Integrator fix commit:
+`f464176568be69de8c8acde70aaea98ab9bdbfa9`.
+
+Scope checked:
+
+- Production `/__odx__/config` and `/__odx__/schema` no longer expose the raw
+  invalid metadata stale reason containing backend metadata URLs or hostnames.
+- Stale metadata remains actionable for Explorer through the sanitized
+  `Received invalid or empty metadata` reason, and status-code failures such as
+  `Status: 503` remain visible.
+- Normal OData proxy response paths were not changed by the focused fix.
+- No db0, evlog, persistence dependency, generated SDK, or broad Explorer UI
+  redesign changes were added.
+- The regression test covers invalid metadata fetched through a URL containing
+  an internal upstream metadata URL, cache fallback, and production
+  `/__odx__/config` plus `/__odx__/schema` responses that do not contain that
+  internal URL or hostname.
+
+Verification:
+
+- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts` -
+  pass outside sandbox; 1 file, 17 tests.
+- `git diff --check` - pass.
+
+Residual risk:
+
+- No live SAP BTP Destination, Connectivity, XSUAA, or customer backend smoke
+  test was performed.
+- Existing legacy cache state files created before the sanitization fix could
+  still contain old raw stale reasons until metadata refresh writes a new state
+  file.
