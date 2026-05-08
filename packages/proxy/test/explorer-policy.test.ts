@@ -18,6 +18,7 @@ import typesHandler from '../src/api/types'
 import { getRuntimeMetadataCachePaths } from '../src/utils/metadata-refresh'
 
 const originalNodeEnv = process.env.NODE_ENV
+const originalVcapServices = process.env.VCAP_SERVICES
 const tempRoots: string[] = []
 
 const metadataXml = `<?xml version="1.0" encoding="utf-8"?>
@@ -139,6 +140,44 @@ function createRuntimeMetadataConfig(rootDir: string, url: string): ODataProxyCo
   }
 }
 
+function createDestinationMetadataConfig(rootDir: string, destination: string): ODataProxyConfig {
+  return {
+    basePath: '/api/odx',
+    buildDir: join(rootDir, '.nuxt'),
+    rootDir,
+    mode: 'sdk',
+    rejectUnauthorized: false,
+    auth: {
+      username: 'global-user',
+      password: 'global-password',
+      bearerToken: 'global-token',
+    },
+    headers: {
+      'x-global-header': 'global',
+    },
+    services: [
+      {
+        name: 'DestinationService088',
+        route: 'destination-refresh-088',
+        url: '',
+        destination,
+        strategy: 'proxied',
+        headers: {
+          'x-service-header': 'service',
+          'authorization': 'Bearer configured-service-header-token',
+          'proxy-authorization': 'Basic configured-proxy-secret',
+          'content-length': '999',
+        },
+        auth: {
+          username: 'service-user',
+          password: 'service-password',
+          bearerToken: 'service-token',
+        },
+      },
+    ],
+  }
+}
+
 function writeRuntimeMetadataCache(config: ODataProxyConfig, serviceName: string, xml: string, options: { stale?: boolean, staleReason?: string | null, source?: 'remote' | 'cache' } = {}) {
   const timestamp = Date.now()
   const paths = getRuntimeMetadataCachePaths(config, serviceName)
@@ -166,6 +205,56 @@ async function listenMetadataBackend(options: { xml?: string, status?: number } 
     res.statusCode = options.status ?? 200
     res.setHeader('content-type', 'application/xml')
     res.end(options.xml ?? metadataXml)
+  })
+  await new Promise(resolve => server.listen(port, () => resolve(true)))
+
+  return {
+    url: `http://127.0.0.1:${port}`,
+    requests,
+    close: () => new Promise<void>((resolve) => {
+      server.close(() => resolve())
+    }),
+  }
+}
+
+async function listenBtpDestinationService(options: {
+  destinationUrl: string
+  destinationAuthToken?: string
+  destinationStatus?: number
+}): Promise<{
+  url: string
+  requests: Array<{ method?: string, url?: string, headers: Record<string, string | string[] | undefined> }>
+  close: () => Promise<void>
+}> {
+  const requests: Array<{ method?: string, url?: string, headers: Record<string, string | string[] | undefined> }> = []
+  const port = await getPort()
+  const server = createServer((req, res) => {
+    requests.push({ method: req.method, url: req.url, headers: req.headers })
+
+    if (req.url === '/oauth/token') {
+      res.statusCode = 200
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ access_token: 'destination-api-token-088' }))
+      return
+    }
+
+    if (req.url?.startsWith('/destination-configuration/v1/destinations/')) {
+      res.statusCode = options.destinationStatus ?? 200
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({
+        destinationConfiguration: {
+          URL: options.destinationUrl,
+          User: 'destination-user',
+          Password: 'destination-password',
+          ProxyType: 'Internet',
+        },
+        authTokens: [{ value: options.destinationAuthToken ?? 'destination-auth-token-088' }],
+      }))
+      return
+    }
+
+    res.statusCode = 404
+    res.end('not found')
   })
   await new Promise(resolve => server.listen(port, () => resolve(true)))
 
@@ -215,6 +304,12 @@ async function listenExplorerApi(config: ODataProxyConfig, options: { authentica
 describe('production Explorer endpoint policy', () => {
   afterEach(() => {
     process.env.NODE_ENV = originalNodeEnv
+    if (originalVcapServices === undefined) {
+      delete process.env.VCAP_SERVICES
+    }
+    else {
+      process.env.VCAP_SERVICES = originalVcapServices
+    }
     while (tempRoots.length > 0) {
       const tempRoot = tempRoots.pop()!
       if (existsSync(tempRoot))
@@ -333,6 +428,165 @@ describe('production Explorer endpoint policy', () => {
     finally {
       await server.close()
       await backend.close()
+    }
+  })
+
+  it('refreshes production runtime metadata through BTP destination resolution', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend()
+    const btp = await listenBtpDestinationService({
+      destinationUrl: `${backend.url}/sap/opu/odata/sap/DESTINATION_088`,
+    })
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: btp.url } }],
+      xsuaa: [{ credentials: { url: btp.url, clientid: 'destination-client', clientsecret: 'destination-secret' } }],
+    })
+    const generator = vi.fn()
+    const config = createDestinationMetadataConfig(rootDir, 'DestinationSuccess088')
+    const server = await listenExplorerApi(config, { authenticated: true, generator })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=DestinationService088`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer incoming-user-token-088',
+          'Proxy-Authorization': 'Basic incoming-proxy-secret',
+          'X-Incoming-Header': 'incoming',
+        },
+      })
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: false,
+        staleReason: null,
+        service: 'DestinationService088',
+        source: 'remote',
+        bytes: Buffer.byteLength(metadataXml),
+      })
+      expect(generator).not.toHaveBeenCalled()
+      expect(backend.requests).toHaveLength(1)
+
+      const metadataRequest = backend.requests[0]!
+      expect(metadataRequest.url).toBe('/sap/opu/odata/sap/DESTINATION_088/$metadata')
+      expect(metadataRequest.headers.accept).toBe('application/xml, text/xml, */*')
+      expect(metadataRequest.headers.authorization).toBe('Bearer destination-auth-token-088')
+      expect(metadataRequest.headers.authorization).not.toBe('Bearer incoming-user-token-088')
+      expect(metadataRequest.headers.authorization).not.toBe('Bearer service-token')
+      expect(metadataRequest.headers.authorization).not.toBe('Bearer global-token')
+      expect(metadataRequest.headers['x-service-header']).toBe('service')
+      expect(metadataRequest.headers['x-global-header']).toBe('global')
+      expect(metadataRequest.headers['x-incoming-header']).toBe('incoming')
+      expect(metadataRequest.headers['proxy-authorization']).toBeUndefined()
+      expect(metadataRequest.headers['content-length']).toBeUndefined()
+
+      const destinationRequest = btp.requests.find(request => request.url?.startsWith('/destination-configuration/v1/destinations/'))
+      expect(destinationRequest?.headers.authorization).toBe('Bearer destination-api-token-088')
+      expect(destinationRequest?.headers['x-user-token']).toBe('incoming-user-token-088')
+    }
+    finally {
+      await server.close()
+      await btp.close()
+      await backend.close()
+    }
+  })
+
+  it('uses stale cache for destination-backed production refresh when metadata fetch fails', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ status: 503, xml: 'unavailable' })
+    const btp = await listenBtpDestinationService({
+      destinationUrl: `${backend.url}/sap/opu/odata/sap/STALE_DESTINATION_088`,
+    })
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: btp.url } }],
+      xsuaa: [{ credentials: { url: btp.url, clientid: 'destination-client', clientsecret: 'destination-secret' } }],
+    })
+    const generator = vi.fn()
+    const config = createDestinationMetadataConfig(rootDir, 'DestinationStale088')
+    const persistentCacheFile = join(rootDir, '.odx', 'cache', 'DestinationService088.edmx')
+    mkdirSync(join(rootDir, '.odx', 'cache'), { recursive: true })
+    writeFileSync(persistentCacheFile, staleMetadataXml, { encoding: 'utf-8', flag: 'w' })
+    const server = await listenExplorerApi(config, { authenticated: true, generator })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=DestinationService088`, {
+        headers: {
+          Authorization: 'Bearer stale-refresh-user-token-088',
+        },
+      })
+      const tempFile = join(rootDir, '.nuxt', 'odx', 'temp', 'DestinationService088.edmx')
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: true,
+        source: 'cache',
+        service: 'DestinationService088',
+        bytes: Buffer.byteLength(staleMetadataXml),
+      })
+      expect(response.staleReason).toContain('Status: 503')
+      expect(generator).not.toHaveBeenCalled()
+      expect(backend.requests[0]?.url).toBe('/sap/opu/odata/sap/STALE_DESTINATION_088/$metadata')
+      expect(backend.requests[0]?.headers.authorization).toBe('Bearer destination-auth-token-088')
+      expect(readFileSync(tempFile, 'utf-8')).toBe(staleMetadataXml)
+      expect(existsSync(join(rootDir, '.nuxt', 'odx', 'generated'))).toBe(false)
+    }
+    finally {
+      await server.close()
+      await btp.close()
+      await backend.close()
+    }
+  })
+
+  it('uses stale cache for destination-backed production refresh when destination resolution fails', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const btp = await listenBtpDestinationService({
+      destinationUrl: 'http://127.0.0.1:1/unreachable',
+      destinationStatus: 503,
+    })
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: btp.url } }],
+      xsuaa: [{ credentials: { url: btp.url, clientid: 'destination-client', clientsecret: 'destination-secret' } }],
+    })
+    const generator = vi.fn()
+    const config = createDestinationMetadataConfig(rootDir, 'DestinationResolutionFailure088')
+    const persistentCacheFile = join(rootDir, '.odx', 'cache', 'DestinationService088.edmx')
+    mkdirSync(join(rootDir, '.odx', 'cache'), { recursive: true })
+    writeFileSync(persistentCacheFile, staleMetadataXml, { encoding: 'utf-8', flag: 'w' })
+    const server = await listenExplorerApi(config, { authenticated: true, generator })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=DestinationService088`, {
+        headers: {
+          Authorization: 'Bearer destination-resolution-failure-token-088',
+        },
+      })
+      const tempFile = join(rootDir, '.nuxt', 'odx', 'temp', 'DestinationService088.edmx')
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: true,
+        source: 'cache',
+        service: 'DestinationService088',
+        bytes: Buffer.byteLength(staleMetadataXml),
+      })
+      expect(response.staleReason).toContain('Failed to resolve BTP destination "DestinationResolutionFailure088"')
+      expect(response.staleReason).not.toContain(btp.url)
+      expect(response.staleReason).not.toContain('127.0.0.1')
+      expect(generator).not.toHaveBeenCalled()
+      expect(readFileSync(tempFile, 'utf-8')).toBe(staleMetadataXml)
+      expect(existsSync(join(rootDir, '.nuxt', 'odx', 'generated'))).toBe(false)
+    }
+    finally {
+      await server.close()
+      await btp.close()
     }
   })
 

@@ -8,7 +8,12 @@ import { resolveBtpDestination } from './btp-destination'
  * Resolves the proxy target configuration for a given event and module config.
  * Encapsulates the logic for absolute URLs, BTP destinations, and local relative paths.
  */
-export async function resolveProxyTarget(event: H3Event, config: ODataProxyConfig, serviceRoute: string): Promise<any> {
+export async function resolveProxyTarget(
+  event: H3Event,
+  config: ODataProxyConfig,
+  serviceRoute: string,
+  options: { allowBtpDestinationFallback?: boolean } = {},
+): Promise<any> {
   const matched = config.services?.find((s: any) =>
     s.name.toLowerCase() === serviceRoute.toLowerCase()
     || (s.route && s.route.toLowerCase() === serviceRoute.toLowerCase()),
@@ -65,7 +70,11 @@ export async function resolveProxyTarget(event: H3Event, config: ODataProxyConfi
         proxyMode,
       }
     }
-    catch {
+    catch (err) {
+      if (options.allowBtpDestinationFallback === false) {
+        throw err
+      }
+
       // Fallback for tests if BTP resolution fails
       return {
         url: '/sap/opu/odata/sap',

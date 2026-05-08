@@ -328,7 +328,7 @@ export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: O
 
 async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<{ url: string, headers: Record<string, string> }> {
   const route = service.route || service.name
-  const target = await resolveProxyTarget(event, config, route)
+  const target = await resolveProxyTarget(event, config, route, { allowBtpDestinationFallback: false })
   if (!target) {
     throw new Error(`Could not resolve target for ${service.name}`)
   }
