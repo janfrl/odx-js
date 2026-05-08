@@ -105,7 +105,11 @@ is not deployable without the required `pg` runtime dependency.
 
 ## Next Action
 
-- `.agents/NEXT.md` was updated to request a focused Integrator fix for the
-  missing PostgreSQL runtime dependency before task 079 can be approved.
-- Follow-up task or fix required: yes; add the required proxy package
-  dependency and a focused verification check, then request focused re-review.
+- Integrator update 2026-05-08: The focused fix added `pg` as a direct
+  `@bc8-odx/proxy` runtime dependency and updated `pnpm-lock.yaml`. `@types/pg`
+  was not added because the package does not import `pg` types directly.
+  Verification passed for the PostgreSQL connector import, focused db0
+  log-store test, proxy verify, workspace lint, workspace typecheck, and
+  `git diff --check`.
+- `.agents/NEXT.md` was updated to request focused re-review of only the
+  missing PostgreSQL runtime dependency fix before task 079 can be approved.

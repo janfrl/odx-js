@@ -138,3 +138,13 @@ Separate review is required.
 - known gaps: PostgreSQL production use still depends on the db0 PostgreSQL
   connector's `pg` runtime peer being present in the deployment image, as
   documented. The task did not add or mandate a BTP SQL provider.
+- integrator update 2026-05-08: Addressed the task 079 review finding by
+  adding `pg` as a direct `@bc8-odx/proxy` runtime dependency and updating
+  `pnpm-lock.yaml` with the required PostgreSQL dependency graph. Did not add
+  `@types/pg` because proxy source and generated type flow do not import `pg`
+  types directly; the required production smoke import is runtime-only.
+  Verified the PostgreSQL connector import, focused db0 log-store test, proxy
+  verify, workspace lint, workspace typecheck, and `git diff --check`. The
+  focused Vitest and proxy verify checks needed approved outside-sandbox reruns
+  after sandboxed Windows runner failures; the approved reruns passed.
+  `.agents/NEXT.md` now requests focused re-review before task 079 approval.
