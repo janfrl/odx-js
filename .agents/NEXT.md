@@ -14,12 +14,12 @@ contracts.
 
 ## Current Next Step
 
-Task 079 implementation is complete and requires independent review:
-`.agents/tasks/done/079-add-db0-backed-explorer-log-store.md`.
+Task 079 review found one focused needs-changes issue:
+`.agents/reviews/079-add-db0-backed-explorer-log-store-review.md`.
 
-Use a fresh Reviewer that did not participate in the implementation. Continue
-the remaining production runtime sequence only after task 079 review is
-approved:
+Use a focused Integrator to fix only the missing PostgreSQL runtime dependency
+for the db0-backed Explorer log store, then request focused re-review before
+continuing the remaining production runtime sequence:
 
 1. `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
 2. `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
@@ -29,49 +29,48 @@ approved:
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-.agents/tasks/done/079-add-db0-backed-explorer-log-store.md
+Address the needs-changes finding for task 079:
+- Task: .agents/tasks/done/079-add-db0-backed-explorer-log-store.md
+- Review: .agents/reviews/079-add-db0-backed-explorer-log-store-review.md
+- Reviewed commit: 48e9432c2daa05e8aeb073979f06119f34c83491
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
-- .agents/decisions/001-production-explorer-runtime-apis.md
+- .agents/roles/integrator.md
 - .agents/tasks/done/079-add-db0-backed-explorer-log-store.md
-- .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
-- .agents/reviews/078-introduce-odx-log-store-and-redaction-review.md
-- SECURITY.md
+- .agents/reviews/079-add-db0-backed-explorer-log-store-review.md
 - DEPLOYMENT.md
-- API.md
-- ARCHITECTURE.md
-- changed files and diff for the task 079 commit
+- packages/proxy/src/utils/log-store.ts
+- packages/proxy/package.json
+- pnpm-lock.yaml
 
-Review stance:
-- Findings first.
-- Prioritize correctness, architecture boundaries, security/privacy, persistence behavior, deployment configuration, dependency scope, db0 isolation, redaction, production `/__odx__/logs` behavior, missing tests, and acceptance criteria gaps.
-- Confirm db0 remains behind the `OdxLogStore` boundary and is not exposed to Explorer or public ODX contracts.
-- Confirm memory storage remains the default and production payload bodies are not stored.
-- Confirm `pnpm-lock.yaml` changes are limited to the direct `db0` dependency for `packages/proxy`.
+Rules:
+- Fix only the review finding: the documented db0 PostgreSQL connector path dynamically imports `db0/connectors/postgresql`, but `packages/proxy` does not declare the required `pg` runtime dependency.
+- Add the minimal dependency/package-lock changes needed to make the documented PostgreSQL production path deployable.
+- Add `@types/pg` only if the package or type flow actually needs it.
+- Keep db0 and PostgreSQL implementation details behind the existing `OdxLogStore` boundary.
+- Do not change Explorer UI, public contracts, production payload policy, metadata refresh, or unrelated source.
+- Update task/review handoff notes and `.agents/NEXT.md`.
+- Commit the focused fix with a Conventional Commit.
 
-Verification to inspect or rerun if needed:
-- `pnpm.cmd exec vitest run packages/proxy/test`
+Verification:
+- `pnpm.cmd --filter @bc8-odx/proxy exec node -e "import('db0/connectors/postgresql').then(()=>console.log('ok')).catch(e=>{console.error(e.code||e.message); process.exit(1)})"`
+- `pnpm.cmd exec vitest run packages/proxy/test/db0-log-store.test.ts`
 - `pnpm.cmd --filter @bc8-odx/proxy run verify`
-- `pnpm.cmd --filter @bc8-odx/explorer run verify`
 - `pnpm.cmd run lint`
 - `pnpm.cmd run typecheck`
 - `git diff --check`
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- test/verification gaps
-- whether the task is approved or needs changes
-
-Create or update a review note under .agents/reviews/ using REVIEW_TEMPLATE.md.
-Update .agents/NEXT.md and commit the review note and workflow state changes.
-Include the exact next-chat prompt the operator should paste into a new chat.
+When done, summarize:
+- finding addressed
+- changed files
+- verification performed
+- whether focused re-review is required and why
+- commit hash
+- exact next-chat prompt from .agents/NEXT.md
 ```

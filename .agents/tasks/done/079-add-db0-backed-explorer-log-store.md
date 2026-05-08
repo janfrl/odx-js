@@ -134,7 +134,7 @@ Separate review is required.
   is now in `done/` after implementation and verification.
 - `.agents/NEXT.md` update: Updated to request a fresh Reviewer for task 079
   before continuing to task 080.
-- commit hash: pending until commit creation.
+- commit hash: `48e9432c2daa05e8aeb073979f06119f34c83491`.
 - known gaps: PostgreSQL production use still depends on the db0 PostgreSQL
   connector's `pg` runtime peer being present in the deployment image, as
   documented. The task did not add or mandate a BTP SQL provider.
