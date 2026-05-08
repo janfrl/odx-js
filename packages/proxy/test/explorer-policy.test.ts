@@ -1,10 +1,14 @@
 import type { ODataProxyConfig } from '@bc8-odx/core'
+import { Buffer } from 'node:buffer'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
+import { tmpdir } from 'node:os'
 import { addODataLog, clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { getPort } from 'get-port-please'
 import { createApp, createRouter, defineEventHandler, toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
-import { afterEach, describe, expect, it } from 'vitest'
+import { join } from 'pathe'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import configHandler from '../src/api/config'
 import generateHandler from '../src/api/generate'
 import logsHandler from '../src/api/logs'
@@ -13,6 +17,24 @@ import schemaHandler from '../src/api/schema'
 import typesHandler from '../src/api/types'
 
 const originalNodeEnv = process.env.NODE_ENV
+const tempRoots: string[] = []
+
+const metadataXml = `<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="4.0" xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
+  <edmx:DataServices>
+    <Schema Namespace="Runtime" xmlns="http://docs.oasis-open.org/odata/ns/edm">
+      <EntityType Name="Product">
+        <Key><PropertyRef Name="ID" /></Key>
+        <Property Name="ID" Type="Edm.String" Nullable="false" />
+      </EntityType>
+      <EntityContainer Name="Container">
+        <EntitySet Name="Products" EntityType="Runtime.Product" />
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>`
+
+const staleMetadataXml = metadataXml.replace('Runtime', 'RuntimeCache').replace('Products', 'CachedProducts')
 
 const securityContext = {
   getAttribute: (name: string) => {
@@ -78,13 +100,74 @@ function createConfig(): ODataProxyConfig {
   }
 }
 
-async function listenExplorerApi(config: ODataProxyConfig, options: { authenticated?: boolean } = {}) {
+function createTempRoot(): string {
+  const root = mkdtempSync(join(tmpdir(), 'odx-runtime-metadata-test-'))
+  tempRoots.push(root)
+  return root
+}
+
+function createRuntimeMetadataConfig(rootDir: string, url: string): ODataProxyConfig {
+  return {
+    basePath: '/api/odx',
+    buildDir: join(rootDir, '.nuxt'),
+    rootDir,
+    mode: 'sdk',
+    rejectUnauthorized: false,
+    auth: {
+      username: 'global-user',
+      password: 'global-password',
+    },
+    headers: {
+      'x-global-header': 'global',
+    },
+    services: [
+      {
+        name: 'RemoteService',
+        route: 'remote',
+        url,
+        strategy: 'proxied',
+        headers: {
+          'x-service-header': 'service',
+        },
+        auth: {
+          username: 'service-user',
+          password: 'service-password',
+        },
+      },
+    ],
+  }
+}
+
+async function listenMetadataBackend(options: { xml?: string, status?: number } = {}) {
+  const requests: Array<{ url?: string, headers: Record<string, string | string[] | undefined> }> = []
+  const port = await getPort()
+  const server = createServer((req, res) => {
+    requests.push({ url: req.url, headers: req.headers })
+    res.statusCode = options.status ?? 200
+    res.setHeader('content-type', 'application/xml')
+    res.end(options.xml ?? metadataXml)
+  })
+  await new Promise(resolve => server.listen(port, () => resolve(true)))
+
+  return {
+    url: `http://127.0.0.1:${port}`,
+    requests,
+    close: () => new Promise<void>((resolve) => {
+      server.close(() => resolve())
+    }),
+  }
+}
+
+async function listenExplorerApi(config: ODataProxyConfig, options: { authenticated?: boolean, generator?: any } = {}) {
   const app = createApp()
   const router = createRouter()
   const withContext = (handler: any) => defineEventHandler((event) => {
     event.context.odataConfig = config
     if (options.authenticated) {
       event.context.securityContext = securityContext
+    }
+    if (options.generator) {
+      event.context.odataGenerator = options.generator
     }
     return handler(event)
   })
@@ -112,6 +195,11 @@ async function listenExplorerApi(config: ODataProxyConfig, options: { authentica
 describe('production Explorer endpoint policy', () => {
   afterEach(() => {
     process.env.NODE_ENV = originalNodeEnv
+    while (tempRoots.length > 0) {
+      const tempRoot = tempRoots.pop()!
+      if (existsSync(tempRoot))
+        rmSync(tempRoot, { recursive: true, force: true })
+    }
   })
 
   it('requires an authenticated security context for production runtime endpoints', async () => {
@@ -130,22 +218,141 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
-  it('blocks development-only generation and type artifact endpoints in production', async () => {
+  it('blocks development-only type artifact endpoints in production', async () => {
     process.env.NODE_ENV = 'production'
     const server = await listenExplorerApi(createConfig(), { authenticated: true })
 
     try {
-      for (const endpoint of [
-        '/__odx__/generate?service=SensitiveService',
-        '/__odx__/types?service=SensitiveService',
-      ]) {
-        await expect(ofetch(`${server.url}${endpoint}`)).rejects.toMatchObject({
-          status: 403,
-        })
-      }
+      await expect(ofetch(`${server.url}/__odx__/types?service=SensitiveService`)).rejects.toMatchObject({
+        status: 403,
+      })
     }
     finally {
       await server.close()
+    }
+  })
+
+  it('refreshes production runtime metadata without invoking SDK generation', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend()
+    const generator = vi.fn()
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const server = await listenExplorerApi(config, { authenticated: true, generator })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+      const tempFile = join(rootDir, '.nuxt', 'odx', 'temp', 'RemoteService.edmx')
+      const persistentCacheFile = join(rootDir, '.odx', 'cache', 'RemoteService.edmx')
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: false,
+        staleReason: null,
+        service: 'RemoteService',
+        source: 'remote',
+        bytes: Buffer.byteLength(metadataXml),
+      })
+      expect(response.hash).toMatch(/^[a-f0-9]{64}$/)
+      expect(typeof response.timestamp).toBe('number')
+      expect(new Date(response.refreshedAt).toString()).not.toBe('Invalid Date')
+      expect(generator).not.toHaveBeenCalled()
+      expect(existsSync(tempFile)).toBe(true)
+      expect(existsSync(persistentCacheFile)).toBe(true)
+      expect(readFileSync(tempFile, 'utf-8')).toBe(metadataXml)
+      expect(readFileSync(persistentCacheFile, 'utf-8')).toBe(metadataXml)
+      expect(existsSync(join(rootDir, '.nuxt', 'odx', 'generated'))).toBe(false)
+      expect(backend.requests[0]?.url).toBe('/odata/$metadata')
+      expect(backend.requests[0]?.headers['x-service-header']).toBe('service')
+      expect(backend.requests[0]?.headers['x-global-header']).toBe('global')
+      expect(backend.requests[0]?.headers.authorization).toBe(`Basic ${Buffer.from('service-user:service-password').toString('base64')}`)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('preserves stale-cache fallback when production metadata refresh fails', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ status: 503, xml: 'unavailable' })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const persistentCacheFile = join(rootDir, '.odx', 'cache', 'RemoteService.edmx')
+    mkdirSync(join(rootDir, '.odx', 'cache'), { recursive: true })
+    writeFileSync(persistentCacheFile, staleMetadataXml, { encoding: 'utf-8', flag: 'w' })
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+      const tempFile = join(rootDir, '.nuxt', 'odx', 'temp', 'RemoteService.edmx')
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: true,
+        source: 'cache',
+        service: 'RemoteService',
+        bytes: Buffer.byteLength(staleMetadataXml),
+      })
+      expect(response.staleReason).toContain('Status: 503')
+      expect(response.hash).toMatch(/^[a-f0-9]{64}$/)
+      expect(readFileSync(tempFile, 'utf-8')).toBe(staleMetadataXml)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('keeps development SDK regeneration working when a Nuxt generator is present', async () => {
+    process.env.NODE_ENV = 'development'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend()
+    const generator = vi.fn()
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const server = await listenExplorerApi(config, { generator })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+      const tempFile = join(rootDir, '.nuxt', 'odx', 'temp', 'RemoteService.edmx')
+      const outDir = join(rootDir, '.nuxt', 'odx', 'generated', 'RemoteService')
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'sdk-generation',
+        generated: true,
+        stale: false,
+        service: 'RemoteService',
+        source: 'remote',
+      })
+      expect(generator).toHaveBeenCalledWith(tempFile, outDir, 'RemoteService')
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('reports unsupported SDK generation when a non-production host has no generator', async () => {
+    process.env.NODE_ENV = 'development'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend()
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const server = await listenExplorerApi(config)
+
+    try {
+      await expect(ofetch(`${server.url}/__odx__/generate?service=RemoteService`)).rejects.toMatchObject({
+        status: 501,
+      })
+      expect(existsSync(join(rootDir, '.nuxt', 'odx', 'generated'))).toBe(false)
+    }
+    finally {
+      await server.close()
+      await backend.close()
     }
   })
 

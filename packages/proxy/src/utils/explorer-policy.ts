@@ -4,7 +4,7 @@ import { createError } from 'h3'
 
 export type ExplorerEndpoint = 'config' | 'logs' | 'generate' | 'schema' | 'types' | 'me'
 
-const PRODUCTION_DEVELOPMENT_ONLY_ENDPOINTS = new Set<ExplorerEndpoint>(['generate', 'types'])
+const PRODUCTION_DEVELOPMENT_ONLY_ENDPOINTS = new Set<ExplorerEndpoint>(['types'])
 
 export function isProductionExplorerRuntime(): boolean {
   return process.env.NODE_ENV === 'production'

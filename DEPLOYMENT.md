@@ -189,8 +189,13 @@ endpoint policy:
   `forwardAuthHeader`, and `versions.node` are redacted or omitted.
 - `/__odx__/schema` serves parsed cached metadata only and rejects raw metadata
   XML.
-- `/__odx__/generate` and `/__odx__/types` return `403`; production does not
-  regenerate SDK files.
+- `/__odx__/generate` refreshes runtime metadata cache state only. It uses the
+  configured proxy target, auth, headers, and TLS policy to fetch `$metadata`,
+  mirrors the EDMX into `.nuxt/odx/temp` and `.odx/cache`, reports stale,
+  timestamp, hash, byte count, and source information, and falls back to stale
+  cache when the backend is unreachable.
+- `/__odx__/types` returns `403`; production does not expose generated type
+  artifacts.
 - `/__odx__/logs` returns an empty list and rejects `DELETE` unless persistent
   SQL log storage is explicitly configured. With SQL storage enabled, it lists
   and clears redacted logs behind the existing log store and redaction
@@ -226,9 +231,9 @@ generation or runtime schema checks to disagree with the backend, delete
 well only when you want the next prepare/build to refetch metadata instead of
 using the local fallback.
 
-Current production Explorer behavior uses cached parsed metadata for schema
-inspection only. Runtime metadata refresh is planned as a separate production
-follow-up and must not be confused with TypeScript SDK generation. Generated
+Production Explorer metadata refresh is not TypeScript SDK generation. It
+updates cached EDMX state for schema inspection only and never runs `odata2ts`
+or writes generated TypeScript files in the deployed Nitro runtime. Generated
 SDK files remain development/build/CI artifacts and require a new deployment to
 change application types.
 

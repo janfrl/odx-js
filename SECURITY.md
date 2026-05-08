@@ -78,15 +78,17 @@ settings, global auth, global headers, `forwardAuthHeader`, or Node runtime
 versions.
 
 Production `/__odx__/schema` returns parsed cached metadata only and rejects raw
-XML. Production `/__odx__/generate` and `/__odx__/types` are development-only.
+XML. Production `/__odx__/generate` refreshes runtime metadata cache state only
+and must not run SDK generation. Production `/__odx__/types` is
+development-only.
 Production `/__odx__/logs` returns an empty list and rejects clearing until a
 persistent log and redaction policy is implemented.
 
-Production metadata inspection is not SDK generation. Current production
-behavior can read cached parsed metadata for Explorer views only. A planned
-runtime metadata refresh endpoint may update runtime cache state later, but
-production must not write generated TypeScript SDK files or imply application
-type changes without a build and deployment.
+Production metadata inspection is not SDK generation. Runtime metadata refresh
+may fetch `$metadata` using the configured service target, auth, headers, and
+TLS policy, then update cached EDMX state for Explorer views. It may fall back
+to stale cached metadata, but production must not write generated TypeScript
+SDK files or imply application type changes without a build and deployment.
 
 ## Header Handling
 

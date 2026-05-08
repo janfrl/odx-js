@@ -91,7 +91,7 @@ Explorer state is intentionally client-side and session-oriented. Durable
 business rules, security behavior, and OData parsing logic do not belong in the
 Explorer.
 
-Current production behavior after tasks 077-079:
+Current production behavior after tasks 077-080:
 
 - `/__odx__` endpoints are a proxy-owned runtime boundary behind validated SAP
   security context.
@@ -102,21 +102,24 @@ Current production behavior after tasks 077-079:
   rules, unknown service fields, global secrets, runtime paths, hooks, DevTools
   config, `forwardAuthHeader`, and `versions.node`.
 - `/__odx__/schema` returns parsed cached schema only and rejects raw XML.
-- `/__odx__/generate` and `/__odx__/types` are development-only and return
-  `403` in production.
+- `/__odx__/generate` refreshes runtime metadata cache state in production.
+  It fetches `$metadata` through the same proxy target, auth, header, and TLS
+  resolution used for backend access, records timestamp/hash details, and falls
+  back to stale cached metadata when the backend is unreachable.
+- `/__odx__/types` is development-only and returns `403` in production.
 - `/__odx__/logs` returns an empty list and rejects `DELETE` in production
   unless SQL log storage is explicitly configured. When configured, the proxy
   stores and serves redacted traffic history through `OdxLogStore`; Explorer
   never talks to db0 or a database directly.
 - `/__odx__/me` returns sanitized SAP user context without raw token data.
 
-Planned follow-up work keeps runtime metadata refresh separate from TypeScript
-SDK generation. Production may later refresh runtime metadata cache state for
-Explorer schema/config views, but SDK/type file generation remains a
-development, build, or CI workflow that requires a new deployment to affect
-application code. Production traffic history remains memory-backed by default.
-SQL persistence is available through a proxy-owned db0 adapter only when
-`devtools.logStore` or the matching environment variables select SQL storage.
+Runtime metadata refresh is separate from TypeScript SDK generation. Production
+can refresh metadata cache state for Explorer schema/config views, but SDK/type
+file generation remains a development, build, or CI workflow that requires a
+new deployment to affect application code. Production traffic history remains
+memory-backed by default. SQL persistence is available through a proxy-owned
+db0 adapter only when `devtools.logStore` or the matching environment variables
+select SQL storage.
 
 ### `docs`
 
@@ -169,10 +172,11 @@ TypeScript SDK generation is driven by `packages/nuxt/src/generate.ts`:
 Agents changing generation must preserve the registry augmentation behavior,
 because it is what powers typed `useOData().Service.EntitySet` access.
 
-Runtime metadata refresh is a separate concern from SDK generation. Current
-production Explorer endpoints do not regenerate `.nuxt/odx-types` files and do
-not update deployed application types. Later production work may refresh
-runtime metadata cache state for Explorer inspection only.
+Runtime metadata refresh is a separate concern from SDK generation. Production
+Explorer endpoints do not regenerate `.nuxt/odx-types` files and do not update
+deployed application types. The runtime refresh path updates cached EDMX state
+for Explorer inspection only and returns stale/timestamp/hash details so
+operators can see whether live metadata or cached metadata was used.
 
 ## Deployment Shape
 
