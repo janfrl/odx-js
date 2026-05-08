@@ -557,6 +557,48 @@ describe('explorer State Composable', () => {
     expect(services.value[0]?.health).toBe('online')
   })
 
+  it('maps missing metadata from config to offline health before background checks finish', () => {
+    const { config, services } = useSharedODataState()
+    config.value = {
+      basePath: '/api/odx',
+      services: [
+        {
+          name: 'RemoteService',
+          route: 'remote',
+          metadata: { status: 'missing', stale: false, staleReason: null },
+        },
+      ],
+    }
+
+    expect(services.value[0]?.health).toBe('offline')
+  })
+
+  it('marks service health as degraded when schema health check reports stale metadata', async () => {
+    ;(globalThis.fetch as any)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          basePath: '/api/odx',
+          services: [{ name: 'RemoteService', route: 'remote' }],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          entities: [],
+          metadata: { status: 'stale', stale: true, staleReason: 'Status: 503' },
+        }),
+      })
+
+    const { fetchConfig, services } = useSharedODataState()
+    await fetchConfig()
+    await nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/schema?service=RemoteService')
+    expect(services.value[0]?.health).toBe('degraded')
+  })
+
   it('maps configured services with default and overridden health states', () => {
     const { config, services, updateServiceHealth } = useSharedODataState()
     config.value = {

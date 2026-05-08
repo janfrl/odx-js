@@ -23,17 +23,33 @@ export interface RuntimeMetadataRefreshResult {
   bytes: number
 }
 
+export interface RuntimeMetadataSnapshot {
+  service: string
+  inputPath: string | null
+  exists: boolean
+  stale: boolean
+  staleReason: string | null
+  source: RuntimeMetadataRefreshResult['source'] | null
+  timestamp: number | null
+  refreshedAt: string | null
+  hash: string | null
+  bytes: number | null
+  xml: string | null
+  missingReason: string | null
+}
+
 const METADATA_ACCEPT_HEADER = 'application/xml, text/xml, */*'
 const REQUEST_TIMEOUT_MS = 15_000
 const RE_TRAILING_SLASHES = /\/+$/
 
-function getCachePaths(config: ODataProxyConfig, serviceName: string): { tempFile: string, persistentCacheFile: string } {
+export function getRuntimeMetadataCachePaths(config: ODataProxyConfig, serviceName: string): { tempFile: string, persistentCacheFile: string, stateFile: string } {
   const buildDir = config.buildDir ?? ''
   const rootDir = config.rootDir ?? ''
 
   return {
     tempFile: join(buildDir, 'odx', 'temp', `${serviceName}.edmx`),
     persistentCacheFile: join(rootDir, '.odx', 'cache', `${serviceName}.edmx`),
+    stateFile: join(rootDir, '.odx', 'cache', `${serviceName}.metadata.json`),
   }
 }
 
@@ -49,6 +65,43 @@ function writeMetadataCache(tempFile: string, persistentCacheFile: string, xml: 
   fs.writeFileSync(tempFile, xml)
   ensureParentDir(persistentCacheFile)
   fs.writeFileSync(persistentCacheFile, xml)
+}
+
+function writeMetadataState(stateFile: string, result: RuntimeMetadataRefreshResult): void {
+  ensureParentDir(stateFile)
+  fs.writeFileSync(stateFile, `${JSON.stringify({
+    service: result.service,
+    inputPath: result.inputPath,
+    stale: result.stale,
+    staleReason: result.staleReason,
+    source: result.source,
+    timestamp: result.timestamp,
+    refreshedAt: result.refreshedAt,
+    hash: result.hash,
+    bytes: result.bytes,
+  }, null, 2)}\n`)
+}
+
+function readMetadataState(stateFile: string): Partial<Omit<RuntimeMetadataRefreshResult, 'inputPath'>> | null {
+  if (!fs.existsSync(stateFile))
+    return null
+
+  try {
+    const data = JSON.parse(fs.readFileSync(stateFile, 'utf-8'))
+    return {
+      service: String(data.service || ''),
+      stale: data.stale === true,
+      staleReason: typeof data.staleReason === 'string' ? data.staleReason : null,
+      source: data.source === 'remote' || data.source === 'cache' || data.source === 'local' ? data.source : 'cache',
+      timestamp: typeof data.timestamp === 'number' ? data.timestamp : null,
+      refreshedAt: typeof data.refreshedAt === 'string' ? data.refreshedAt : null,
+      hash: typeof data.hash === 'string' ? data.hash : '',
+      bytes: typeof data.bytes === 'number' ? data.bytes : 0,
+    }
+  }
+  catch {
+    return null
+  }
 }
 
 function restorePersistentCache(tempFile: string, persistentCacheFile: string): void {
@@ -149,6 +202,95 @@ function shouldFetchRemoteMetadata(service: ODataServiceConfig): boolean {
   return service.url?.startsWith('http') || !!service.destination || (!!process.env.VCAP_SERVICES && service.strategy !== 'direct')
 }
 
+export function shouldUseRemoteRuntimeMetadata(service: ODataServiceConfig): boolean {
+  return shouldFetchRemoteMetadata(service)
+}
+
+export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: ODataServiceConfig): RuntimeMetadataSnapshot {
+  if (!shouldFetchRemoteMetadata(service)) {
+    const inputPath = resolve(config.rootDir ?? '', service.url)
+    if (!fs.existsSync(inputPath)) {
+      return {
+        service: service.name,
+        inputPath,
+        exists: false,
+        stale: false,
+        staleReason: null,
+        source: 'local',
+        timestamp: null,
+        refreshedAt: null,
+        hash: null,
+        bytes: null,
+        xml: null,
+        missingReason: `Input EDMX file not found at ${inputPath}`,
+      }
+    }
+
+    const xml = fs.readFileSync(inputPath, 'utf-8')
+    const { hash, bytes } = metadataDigest(xml)
+    const stats = fs.statSync(inputPath)
+    return {
+      service: service.name,
+      inputPath,
+      exists: true,
+      stale: false,
+      staleReason: null,
+      source: 'local',
+      timestamp: stats.mtimeMs,
+      refreshedAt: stats.mtime.toISOString(),
+      hash,
+      bytes,
+      xml,
+      missingReason: null,
+    }
+  }
+
+  const { persistentCacheFile, stateFile, tempFile } = getRuntimeMetadataCachePaths(config, service.name)
+  const inputPath = fs.existsSync(persistentCacheFile)
+    ? persistentCacheFile
+    : fs.existsSync(tempFile)
+      ? tempFile
+      : null
+
+  if (!inputPath) {
+    return {
+      service: service.name,
+      inputPath: null,
+      exists: false,
+      stale: false,
+      staleReason: null,
+      source: null,
+      timestamp: null,
+      refreshedAt: null,
+      hash: null,
+      bytes: null,
+      xml: null,
+      missingReason: `Runtime metadata cache for ${service.name} not found. Refresh metadata first.`,
+    }
+  }
+
+  const xml = fs.readFileSync(inputPath, 'utf-8')
+  const digest = metadataDigest(xml)
+  const stats = fs.statSync(inputPath)
+  const state = readMetadataState(stateFile)
+  const stale = state?.stale === true
+
+  return {
+    service: service.name,
+    inputPath,
+    exists: true,
+    stale,
+    staleReason: state?.staleReason ?? null,
+    source: state?.source ?? 'cache',
+    timestamp: state?.timestamp ?? stats.mtimeMs,
+    refreshedAt: state?.refreshedAt ?? stats.mtime.toISOString(),
+    hash: state?.hash || digest.hash,
+    bytes: state?.bytes || digest.bytes,
+    xml,
+    missingReason: null,
+  }
+}
+
 async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<{ url: string, headers: Record<string, string> }> {
   const route = service.route || service.name
   const target = await resolveProxyTarget(event, config, route)
@@ -181,14 +323,16 @@ export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyC
     return createMetadataResult(service, inputPath, xml, 'local', false, null)
   }
 
-  const { tempFile, persistentCacheFile } = getCachePaths(config, service.name)
+  const { tempFile, persistentCacheFile, stateFile } = getRuntimeMetadataCachePaths(config, service.name)
 
   try {
     const request = await resolveMetadataRequest(event, config, service)
     const xml = await fetchMetadata(request.url, request.headers, config.rejectUnauthorized !== false)
     assertValidMetadata(xml, request.url)
     writeMetadataCache(tempFile, persistentCacheFile, xml)
-    return createMetadataResult(service, tempFile, xml, 'remote', false, null)
+    const result = createMetadataResult(service, tempFile, xml, 'remote', false, null)
+    writeMetadataState(stateFile, result)
+    return result
   }
   catch (err: any) {
     const fallback = fs.existsSync(tempFile)
@@ -206,6 +350,8 @@ export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyC
     }
 
     const xml = fs.readFileSync(tempFile, 'utf-8')
-    return createMetadataResult(service, tempFile, xml, 'cache', true, err.message || String(err))
+    const result = createMetadataResult(service, tempFile, xml, 'cache', true, err.message || String(err))
+    writeMetadataState(stateFile, result)
+    return result
   }
 }

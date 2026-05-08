@@ -259,6 +259,19 @@ export interface ODataExplorerServiceInfo {
   entities?: EntityMapping[]
   isGenerated?: boolean
   version?: 'v2' | 'v4' | null
+  metadata?: ODataExplorerMetadataState
+}
+
+export interface ODataExplorerMetadataState {
+  status: 'available' | 'stale' | 'missing'
+  source: 'remote' | 'cache' | 'local' | null
+  stale: boolean
+  staleReason: string | null
+  refreshedAt: string | null
+  timestamp: number | null
+  hash: string | null
+  bytes: number | null
+  message?: string
 }
 
 export interface ODataExplorerConfigResponse {

@@ -13,6 +13,11 @@ export interface ODataServiceState {
   headers?: Record<string, string>
   health?: 'online' | 'offline' | 'checking' | 'degraded'
   icon?: string
+  metadata?: {
+    status?: 'available' | 'stale' | 'missing'
+    stale?: boolean
+    staleReason?: string | null
+  }
 }
 
 export interface ODataConfig {
@@ -251,7 +256,12 @@ export function useSharedODataState(): SharedODataState {
   async function checkServiceHealth(name: string): Promise<void> {
     try {
       const res = await fetch(buildSchemaEndpointUrl(name))
-      updateServiceHealth(name, res.ok ? 'online' : 'offline')
+      if (!res.ok) {
+        updateServiceHealth(name, 'offline')
+        return
+      }
+      const body = await res.json().catch(() => null)
+      updateServiceHealth(name, body?.metadata?.stale ? 'degraded' : 'online')
     }
     catch {
       updateServiceHealth(name, 'offline')
@@ -308,7 +318,7 @@ export function useSharedODataState(): SharedODataState {
     return data.map((s: any) => {
       return {
         ...s,
-        health: serviceHealthOverrides.value[s.name] || s.health || 'checking',
+        health: serviceHealthOverrides.value[s.name] || s.health || (s.metadata?.status === 'missing' ? 'offline' : 'checking'),
       }
     })
   })
@@ -526,8 +536,9 @@ watch(selectedEntity, async (newEntity) => {
   try {
     const res = await fetch(buildSchemaEndpointUrl(svcName))
     if (res.ok) {
-      entitySchema.value = await res.json()
-      updateServiceHealth(svcName, 'online')
+      const body = await res.json()
+      entitySchema.value = body
+      updateServiceHealth(svcName, body?.metadata?.stale ? 'degraded' : 'online')
     }
     else {
       updateServiceHealth(svcName, 'offline')

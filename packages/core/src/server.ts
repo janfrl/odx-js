@@ -32,11 +32,8 @@ function getAttributes(tag: string): Record<string, string> {
 /**
  * Extracts entity set names, their types, properties and navigation properties from an EDMX file.
  */
-export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
-  if (!fs.existsSync(edmxPath))
-    return []
+export function extractEntitiesFromEdmxContent(xml: string): EntityMapping[] {
   try {
-    const xml = fs.readFileSync(edmxPath, 'utf-8')
     const mappings: EntityMapping[] = []
 
     const entityTypes: Record<string, { properties: EntityProperty[], navProps: NavigationProperty[] }> = {}
@@ -139,14 +136,17 @@ export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
   }
 }
 
+export function extractEntitiesFromEdmx(edmxPath: string): EntityMapping[] {
+  if (!fs.existsSync(edmxPath))
+    return []
+  return extractEntitiesFromEdmxContent(fs.readFileSync(edmxPath, 'utf-8'))
+}
+
 /**
  * Extracts associations from an EDMX file.
  */
-export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
-  if (!fs.existsSync(edmxPath))
-    return []
+export function extractAssociationsFromEdmxContent(xml: string): Association[] {
   try {
-    const xml = fs.readFileSync(edmxPath, 'utf-8')
     const associations: Association[] = []
 
     const assocParts = xml.split(RE_ASSOCIATION_OPEN).slice(1)
@@ -186,21 +186,31 @@ export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
   }
 }
 
+export function extractAssociationsFromEdmx(edmxPath: string): Association[] {
+  if (!fs.existsSync(edmxPath))
+    return []
+  return extractAssociationsFromEdmxContent(fs.readFileSync(edmxPath, 'utf-8'))
+}
+
 /**
  * Detects the OData version from an EDMX file.
  */
-export function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
-  if (!fs.existsSync(edmxPath))
-    return null
+export function detectODataVersionFromContent(content: string): 'v2' | 'v4' | null {
   try {
-    const content = fs.readFileSync(edmxPath, 'utf-8').slice(0, 3000)
-    if (content.includes('Version="4.0"'))
+    const head = content.slice(0, 3000)
+    if (head.includes('Version="4.0"'))
       return 'v4'
-    if (content.includes('DataServiceVersion="2.0"') || content.includes('DataServiceVersion="1.0"'))
+    if (head.includes('DataServiceVersion="2.0"') || head.includes('DataServiceVersion="1.0"'))
       return 'v2'
-    return content.includes('http://docs.oasis-open.org/odata/ns/edmx') ? 'v4' : 'v2'
+    return head.includes('http://docs.oasis-open.org/odata/ns/edmx') ? 'v4' : 'v2'
   }
   catch {
     return null
   }
+}
+
+export function detectODataVersion(edmxPath: string): 'v2' | 'v4' | null {
+  if (!fs.existsSync(edmxPath))
+    return null
+  return detectODataVersionFromContent(fs.readFileSync(edmxPath, 'utf-8'))
 }

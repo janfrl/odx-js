@@ -15,6 +15,7 @@ import logsHandler from '../src/api/logs'
 import meHandler from '../src/api/me'
 import schemaHandler from '../src/api/schema'
 import typesHandler from '../src/api/types'
+import { getRuntimeMetadataCachePaths } from '../src/utils/metadata-refresh'
 
 const originalNodeEnv = process.env.NODE_ENV
 const tempRoots: string[] = []
@@ -136,6 +137,25 @@ function createRuntimeMetadataConfig(rootDir: string, url: string): ODataProxyCo
       },
     ],
   }
+}
+
+function writeRuntimeMetadataCache(config: ODataProxyConfig, serviceName: string, xml: string, options: { stale?: boolean, staleReason?: string | null, source?: 'remote' | 'cache' } = {}) {
+  const timestamp = Date.now()
+  const paths = getRuntimeMetadataCachePaths(config, serviceName)
+  mkdirSync(join(config.rootDir, '.odx', 'cache'), { recursive: true })
+  writeFileSync(paths.persistentCacheFile, xml, { encoding: 'utf-8', flag: 'w' })
+  writeFileSync(paths.stateFile, `${JSON.stringify({
+    service: serviceName,
+    inputPath: paths.persistentCacheFile,
+    stale: options.stale === true,
+    staleReason: options.staleReason ?? null,
+    source: options.source ?? 'remote',
+    timestamp,
+    refreshedAt: new Date(timestamp).toISOString(),
+    hash: 'a'.repeat(64),
+    bytes: Buffer.byteLength(xml),
+  }, null, 2)}\n`)
+  return paths
 }
 
 async function listenMetadataBackend(options: { xml?: string, status?: number } = {}) {
@@ -349,6 +369,155 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
+  it('reads production schema from the runtime metadata cache without .nuxt temp files', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const config = createRuntimeMetadataConfig(rootDir, 'https://backend.example.test/odata')
+    const paths = writeRuntimeMetadataCache(config, 'RemoteService', metadataXml)
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/schema?service=RemoteService`)
+
+      expect(response).toMatchObject({
+        name: 'RemoteService',
+        version: 'v4',
+        namespace: 'Runtime',
+        entities: [{ name: 'Products', type: 'Product' }],
+        metadata: {
+          status: 'available',
+          source: 'remote',
+          stale: false,
+          staleReason: null,
+          hash: 'a'.repeat(64),
+          bytes: Buffer.byteLength(metadataXml),
+        },
+      })
+      expect(existsSync(paths.tempFile)).toBe(false)
+    }
+    finally {
+      await server.close()
+    }
+  })
+
+  it('reports stale runtime metadata in production schema and config responses', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const config = createRuntimeMetadataConfig(rootDir, 'https://backend.example.test/odata')
+    writeRuntimeMetadataCache(config, 'RemoteService', staleMetadataXml, {
+      stale: true,
+      staleReason: 'Status: 503',
+      source: 'cache',
+    })
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const schema: any = await ofetch(`${server.url}/__odx__/schema?service=RemoteService`)
+      const explorerConfig: any = await ofetch(`${server.url}/__odx__/config`)
+
+      expect(schema).toMatchObject({
+        namespace: 'RuntimeCache',
+        entities: [{ name: 'CachedProducts' }],
+        metadata: {
+          status: 'stale',
+          source: 'cache',
+          stale: true,
+          staleReason: 'Status: 503',
+        },
+      })
+      expect(explorerConfig.services[0]).toMatchObject({
+        name: 'RemoteService',
+        entities: [{ name: 'CachedProducts' }],
+        isGenerated: false,
+        version: 'v4',
+        metadata: {
+          status: 'stale',
+          source: 'cache',
+          stale: true,
+          staleReason: 'Status: 503',
+        },
+      })
+      expect(JSON.stringify(explorerConfig)).not.toContain('backend.example.test')
+    }
+    finally {
+      await server.close()
+    }
+  })
+
+  it('reports missing runtime metadata without creating production cache files', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const config = createRuntimeMetadataConfig(rootDir, 'https://backend.example.test/odata')
+    const paths = getRuntimeMetadataCachePaths(config, 'RemoteService')
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const explorerConfig: any = await ofetch(`${server.url}/__odx__/config`)
+
+      expect(explorerConfig.services[0]).toMatchObject({
+        name: 'RemoteService',
+        entities: [],
+        version: null,
+        metadata: {
+          status: 'missing',
+          source: null,
+          stale: false,
+        },
+      })
+      expect(explorerConfig.services[0].metadata.message).toContain('Refresh metadata first')
+      await expect(ofetch(`${server.url}/__odx__/schema?service=RemoteService`)).rejects.toMatchObject({
+        status: 404,
+        data: {
+          data: {
+            service: 'RemoteService',
+            metadata: {
+              status: 'missing',
+            },
+          },
+        },
+      })
+      expect(existsSync(paths.tempFile)).toBe(false)
+      expect(existsSync(paths.persistentCacheFile)).toBe(false)
+    }
+    finally {
+      await server.close()
+    }
+  })
+
+  it('keeps local EDMX file schema support for development fixtures', async () => {
+    process.env.NODE_ENV = 'development'
+    const rootDir = createTempRoot()
+    mkdirSync(join(rootDir, 'fixtures'), { recursive: true })
+    writeFileSync(join(rootDir, 'fixtures', 'local.edmx'), metadataXml)
+    const config = createRuntimeMetadataConfig(rootDir, 'fixtures/local.edmx')
+    config.services[0] = {
+      name: 'LocalService',
+      route: 'local',
+      url: 'fixtures/local.edmx',
+      strategy: 'proxied',
+    }
+    const server = await listenExplorerApi(config)
+
+    try {
+      const schema: any = await ofetch(`${server.url}/__odx__/schema?service=LocalService`)
+      const raw: string = await ofetch(`${server.url}/__odx__/schema?service=LocalService&raw=true`)
+
+      expect(schema).toMatchObject({
+        name: 'LocalService',
+        entities: [{ name: 'Products', type: 'Product' }],
+        metadata: {
+          status: 'available',
+          source: 'local',
+          stale: false,
+        },
+      })
+      expect(raw).toBe(metadataXml)
+    }
+    finally {
+      await server.close()
+    }
+  })
+
   it('keeps development SDK regeneration working when a Nuxt generator is present', async () => {
     process.env.NODE_ENV = 'development'
     const rootDir = createTempRoot()
@@ -418,6 +587,11 @@ describe('production Explorer endpoint policy', () => {
             proxyMode: 'buffer',
             entities: [],
             isGenerated: false,
+            metadata: {
+              status: 'missing',
+              source: null,
+              stale: false,
+            },
             version: null,
           },
         ],
@@ -427,6 +601,7 @@ describe('production Explorer endpoint policy', () => {
         'entities',
         'icon',
         'isGenerated',
+        'metadata',
         'name',
         'proxyMode',
         'route',

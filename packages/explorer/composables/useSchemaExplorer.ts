@@ -102,7 +102,7 @@ export function useSchemaExplorer(): SchemaExplorer {
       const res = await fetch(buildSchemaEndpointUrl(serviceName))
       if (res.ok) {
         schemaData.value = await res.json()
-        updateServiceHealth(serviceName, 'online')
+        updateServiceHealth(serviceName, schemaData.value?.metadata?.stale ? 'degraded' : 'online')
         await generateGraph(true)
       }
       else {
