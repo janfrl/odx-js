@@ -8,72 +8,68 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 089 is complete as a test-only smoke coverage change
-with `.agents` workflow updates. Separate review is not required for task 089
-because runtime code, dependency metadata, deployment docs, lockfiles,
-generated files, and public contracts were not changed. The next lowest ready
-task is high-risk task 090, and separate review is required.
+Adaptive Teamflow. Task 090 implementation is complete. Separate review is
+required because the task guards deployment/runtime boundaries and production
+authentication routing.
 
 ## Current Next Step
 
-Start an Implementer for:
-`.agents/tasks/ready/090-tighten-production-explorer-deployment-consistency-checks.md`.
+Start a fresh Reviewer for:
+`.agents/tasks/done/090-tighten-production-explorer-deployment-consistency-checks.md`.
+
+The Reviewer should create a review note under `.agents/reviews/` using the
+existing review-note format.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Implement exactly:
-.agents/tasks/ready/090-tighten-production-explorer-deployment-consistency-checks.md
+Review the completed task:
+.agents/tasks/done/090-tighten-production-explorer-deployment-consistency-checks.md
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/implementer.md
+- .agents/roles/reviewer.md
 - .agents/decisions/
 - .agents/NEXT.md
 - .agents/reviews/077-harden-production-explorer-endpoints-and-config-review.md
 - .agents/reviews/082-align-standalone-explorer-runtime-ui-review.md
 - .agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md
-- .agents/tasks/ready/090-tighten-production-explorer-deployment-consistency-checks.md
+- .agents/tasks/done/090-tighten-production-explorer-deployment-consistency-checks.md
 - mta.yaml
 - packages/approuter/xs-app.json
 - packages/approuter/test/deployment-config.test.ts
 - packages/approuter/package.json
+- the implementation commit diff for task 090
 
-Rules:
-- Keep changes scoped to task 090.
-- Extend deterministic AppRouter deployment consistency verification for the
-  production Explorer runtime route split and required MTA bindings.
-- Do not deploy to Cloud Foundry or start a real SAP AppRouter process.
-- Do not change runtime endpoint behavior unless the consistency check exposes
-  a real configuration bug.
-- Do not update user-facing deployment docs unless the configuration contract
-  changes.
-- Move task 090 to `.agents/tasks/in-progress/` when starting and to
-  `.agents/tasks/done/` only after implementation and verification.
-- Update task handoff notes and `.agents/NEXT.md`.
-- Commit the completed task with a Conventional Commit unless a stop condition
-  prevents committing.
-- Separate review is required for task 090 because it guards deployment and
-  production authentication routing boundaries.
+Review stance:
+- Findings first.
+- Prioritize deployment consistency, authentication-token forwarding, required
+  MTA bindings, AppRouter route ordering and route matching, unsupported
+  `/__odx__` runtime paths, missing deterministic tests, and unrelated scope.
+- Check that the implementation did not deploy to Cloud Foundry, start a real
+  AppRouter, change runtime endpoint behavior, or update user-facing
+  deployment docs without a configuration contract change.
+- Check that the task acceptance criteria and required verification were met.
 
-Verification:
+Verification to review or rerun as needed:
 - `pnpm.cmd --filter odx-approuter run verify`
 - `pnpm.cmd run lint`
 - `pnpm.cmd run typecheck`
 - `git diff --check`
 
-When done, summarize:
-- changed files
-- what was implemented
-- verification performed
-- self-check result
-- whether separate review is required and why
-- commit hash
-- known gaps
-- exact next-chat prompt from `.agents/NEXT.md`
+Output:
+- findings with severity and file/line references
+- acceptance criteria status
+- test/verification gaps
+- whether task 090 is approved or needs changes
+
+Create or update a review note under `.agents/reviews/` using the existing
+review-note format. Update `.agents/NEXT.md` and commit the review note and
+workflow state changes. Include the exact next-chat prompt the operator should
+paste into a new chat.
 ```
