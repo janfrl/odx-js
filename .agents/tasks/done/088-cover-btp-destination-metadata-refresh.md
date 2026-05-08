@@ -101,6 +101,8 @@ sensitive.
 
 - Changed files:
   - `packages/proxy/test/explorer-policy.test.ts`
+  - `packages/proxy/test/btp-destination.test.ts`
+  - `packages/proxy/src/utils/btp-destination.ts`
   - `packages/proxy/src/utils/metadata-refresh.ts`
   - `packages/proxy/src/utils/target.ts`
   - `.agents/tasks/done/088-cover-btp-destination-metadata-refresh.md`
@@ -120,6 +122,11 @@ sensitive.
     out of the target resolver's local BTP fallback so destination resolution
     failures reach stale-cache fallback with the BTP failure reason instead of
     being hidden behind a local `/sap/opu/odata/sap` 404.
+  - Integrator fix after review: strict runtime metadata refresh now also
+    disables the BTP helper's missing-binding fallback, so production
+    Destination/XSUAA binding gaps report a BTP destination resolution stale
+    reason instead of resolving to the local mock target. Normal proxy resolver
+    defaults and local development fallback behavior remain unchanged.
 - Pre-fix failing result:
   - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`
     failed after adding the destination-resolution stale-cache test because
@@ -128,9 +135,13 @@ sensitive.
     the focused fix.
 - Tests run:
   - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`
-    - pass outside sandbox, 2 files, 43 tests.
+    - pass outside sandbox, 2 files, 45 tests. Initial sandboxed run could not
+      resolve `vitest`.
   - `pnpm.cmd --filter @bc8-odx/proxy run verify` - pass outside sandbox, 11
-    files, 167 passed, 1 skipped, plus proxy standalone example.
+    files, 169 passed, 1 skipped, plus proxy standalone example. Initial
+    sandboxed run failed with Windows `spawn EPERM`; the first escalated run
+    hit a transient Vitest worker-fork crash after visible tests passed, and
+    the rerun passed.
   - `pnpm.cmd run lint` - pass.
   - `pnpm.cmd run typecheck` - pass.
   - `git diff --check` - pass, with Git CRLF working-copy warnings only.
@@ -153,10 +164,10 @@ sensitive.
   - Moved from `.agents/tasks/ready/` to `.agents/tasks/in-progress/` at start.
   - Moved to `.agents/tasks/done/` after implementation and verification.
 - `.agents/NEXT.md` update:
-  - Updated to request a fresh Reviewer for task 088.
+  - Updated to request a focused re-review of the Integrator fix for task 088.
 - Commit hash:
-  - Pending final commit; report the completed commit hash in the final
-    response.
+  - Pending final integration commit; report the completed commit hash in the
+    final response.
 - Known gaps:
   - On-premise Connectivity proxy behavior remains out of scope for task 088.
   - No live BTP smoke test was run.

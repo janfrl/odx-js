@@ -590,6 +590,48 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
+  it('uses stale cache for destination-backed production refresh when BTP bindings are missing', async () => {
+    process.env.NODE_ENV = 'production'
+    process.env.VCAP_SERVICES = JSON.stringify({})
+    const rootDir = createTempRoot()
+    const generator = vi.fn()
+    const config = createDestinationMetadataConfig(rootDir, 'DestinationMissingBindings088')
+    const persistentCacheFile = join(rootDir, '.odx', 'cache', 'DestinationService088.edmx')
+    mkdirSync(join(rootDir, '.odx', 'cache'), { recursive: true })
+    writeFileSync(persistentCacheFile, staleMetadataXml, { encoding: 'utf-8', flag: 'w' })
+    const server = await listenExplorerApi(config, { authenticated: true, generator })
+
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=DestinationService088`, {
+        headers: {
+          Authorization: 'Bearer missing-bindings-user-token-088',
+        },
+      })
+      const tempFile = join(rootDir, '.nuxt', 'odx', 'temp', 'DestinationService088.edmx')
+
+      expect(response).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        generated: false,
+        stale: true,
+        source: 'cache',
+        service: 'DestinationService088',
+        bytes: Buffer.byteLength(staleMetadataXml),
+      })
+      expect(response.staleReason).toContain('Failed to resolve BTP destination "DestinationMissingBindings088"')
+      expect(response.staleReason).toContain('service bindings')
+      expect(response.staleReason).not.toContain('Status: 404')
+      expect(response.staleReason).not.toContain('Cannot find any path')
+      expect(response.staleReason).not.toContain('[metadata-path]')
+      expect(generator).not.toHaveBeenCalled()
+      expect(readFileSync(tempFile, 'utf-8')).toBe(staleMetadataXml)
+      expect(existsSync(join(rootDir, '.nuxt', 'odx', 'generated'))).toBe(false)
+    }
+    finally {
+      await server.close()
+    }
+  })
+
   it('preserves stale-cache fallback when production metadata refresh fails', async () => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()

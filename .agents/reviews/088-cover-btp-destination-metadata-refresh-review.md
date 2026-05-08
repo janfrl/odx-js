@@ -109,3 +109,32 @@ strict target-resolver option can take effect.
   088 using this review note.
 - Follow-up task or fix required: fix the missing-binding strict metadata
   refresh fallback and add a deterministic regression test.
+
+## Integrator Update
+
+Status: ready for focused re-review.
+
+- Finding addressed: strict production runtime metadata refresh now passes the
+  existing no-fallback intent through `resolveProxyTarget` into
+  `resolveBtpDestination`, so missing Destination/XSUAA bindings throw a BTP
+  destination resolution error instead of returning the local
+  `/sap/opu/odata/sap` mock target.
+- Scope preserved: the BTP helper option defaults to preserving the existing
+  missing-binding fallback for normal proxy resolver calls and local
+  development behavior.
+- Regression coverage added:
+  `packages/proxy/test/explorer-policy.test.ts` now covers production
+  `/__odx__/generate?service=DestinationService088` with stale cache, an
+  injected generator, and no usable BTP bindings. It asserts
+  `operation: "metadata-refresh"`, `generated: false`, `source: "cache"`, no
+  generator call, and a BTP binding/resolution stale reason without local 404
+  or `[metadata-path]` fallback text.
+- Helper coverage added:
+  `packages/proxy/test/btp-destination.test.ts` covers the strict
+  missing-binding option without external service calls.
+- Verification passed:
+  - `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`
+  - `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - `pnpm.cmd run lint`
+  - `pnpm.cmd run typecheck`
+  - `git diff --check`

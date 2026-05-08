@@ -8,20 +8,22 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 088 review found one bounded production BTP destination
-resolution gap and needs a focused Integrator fix.
+Adaptive Teamflow. Task 088 Integrator fix is complete and needs focused
+re-review because it touches production BTP destination resolution behavior for
+runtime metadata refresh.
 
 ## Current Next Step
 
-Start a fresh Integrator for task 088 using review note:
+Start a fresh Reviewer for the focused task 088 Integrator fix using review
+note:
 `.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Address review findings for:
+Focused re-review for:
 .agents/tasks/done/088-cover-btp-destination-metadata-refresh.md
 
 Review note:
@@ -30,12 +32,16 @@ Review note:
 Reviewed implementation commit:
 4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
 
+Integrator fix:
+Review the latest HEAD commit on this branch, which addresses the task 088
+review finding.
+
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/integrator.md
+- .agents/roles/reviewer.md
 - .agents/decisions/
 - .agents/NEXT.md
 - .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
@@ -49,48 +55,47 @@ Read:
 - packages/proxy/src/api/generate.ts
 - packages/proxy/test/explorer-policy.test.ts
 - packages/proxy/test/btp-destination.test.ts
-- the latest diff since reviewed commit 4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
+- the focused Integrator diff since reviewed commit 4b28a6e9dabc6356a15c544f8663ec948eb3a5c5
 
-Rules:
-- Fix only the concrete review finding in the task 088 review note.
-- Keep the fix scoped to production runtime metadata refresh and BTP
-  destination resolution failure handling.
-- Preserve local development BTP fallback behavior unless the focused fix
-  requires a strict-mode branch for metadata refresh.
-- Preserve normal OData proxy resolver default behavior unless the review
-  finding cannot be fixed safely without a shared helper option.
-- Add a deterministic regression test for a production destination-backed
-  `/__odx__/generate?service=<name>` refresh with stale cache present and no
-  usable Destination/XSUAA binding. Assert the response remains
-  `operation: "metadata-refresh"`, `generated: false`, `source: "cache"`, does
-  not invoke the injected generator, and reports a BTP binding/resolution
-  stale reason instead of a local fallback 404/path.
-- Do not require live SAP BTP services or external network access.
-- Do not alter Explorer UI, unrelated direct-service behavior, dependencies,
-  lockfiles, generated files, or unrelated docs.
+Review stance:
+- Findings first.
+- Review only the bounded task 088 Integrator fix unless you discover a direct
+  regression from that fix.
+- Check that strict production runtime metadata refresh treats missing
+  Destination/XSUAA bindings as a BTP destination resolution failure before any
+  local `/sap/opu/odata/sap` fallback can be used.
+- Check that local development BTP fallback behavior and normal OData proxy
+  resolver defaults remain preserved.
+- Check that the new regression test is deterministic, uses stale cache, does
+  not require live SAP BTP services or external network access, does not invoke
+  the injected generator, and asserts the stale reason is BTP binding/resolution
+  related rather than a local fallback 404/path.
+- Check that the change stays out of Explorer UI, unrelated direct-service
+  behavior, dependencies, lockfiles, generated files, and unrelated docs.
 
-Verification:
-- Run `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`.
-- Run `pnpm.cmd --filter @bc8-odx/proxy run verify`.
-- Run `pnpm.cmd run lint`.
-- Run `pnpm.cmd run typecheck`.
-- Run `git diff --check`.
+Integrator verification already run:
+- `pnpm.cmd exec vitest run packages/proxy/test/explorer-policy.test.ts packages/proxy/test/btp-destination.test.ts`
+  - pass outside sandbox, 2 files, 45 tests. Initial sandboxed run could not
+    resolve `vitest`.
+- `pnpm.cmd --filter @bc8-odx/proxy run verify`
+  - pass outside sandbox on rerun, 11 files, 169 passed, 1 skipped, plus proxy
+    standalone example. Initial sandboxed run failed with Windows `spawn
+    EPERM`; first escalated run hit a transient Vitest worker-fork crash after
+    visible tests passed.
+- `pnpm.cmd run lint` - pass.
+- `pnpm.cmd run typecheck` - pass.
+- `git diff --check` - pass, with Git CRLF working-copy warnings only.
 
-Before finishing:
-- Update the task handoff notes if the fix changes implementation details or
-  verification results.
-- Update `.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`
-  with an Integrator Update.
-- Update `.agents/NEXT.md` with a focused re-review prompt.
-- Commit the integration fix with a Conventional Commit unless a stop condition
-  prevents committing.
+Output:
+- findings with severity and file/line references
+- acceptance criteria status for the focused review finding
+- verification gaps or rerun results
+- whether the task is approved after the Integrator fix or still needs changes
 
-When done, summarize:
-- findings addressed
-- changed files
-- verification performed
-- whether focused re-review is required and why
-- commit hash
-- known gaps
-- exact next-chat prompt from `.agents/NEXT.md`
+Update `.agents/reviews/088-cover-btp-destination-metadata-refresh-review.md`
+with a Focused Re-review section.
+Update `.agents/NEXT.md` with the next workflow action.
+Commit the review note and workflow state changes with a Conventional Commit
+unless a stop condition prevents committing.
+Include the exact next-chat prompt the operator should paste into a new chat.
 ```

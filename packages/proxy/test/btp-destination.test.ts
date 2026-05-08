@@ -47,6 +47,18 @@ describe('btp Destination Resolution', () => {
     expect(result.url).toBe('/sap/opu/odata/sap')
   })
 
+  it('throws in production when strict missing-binding fallback is disabled', async () => {
+    process.env.NODE_ENV = 'production'
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+
+    await expect(resolveBtpDestination('MissingBindingsProductionService', undefined, {
+      allowMissingBindingFallback: false,
+    })).rejects.toThrow(
+      'Failed to resolve BTP destination "MissingBindingsProductionService": Destination and XSUAA service bindings are required',
+    )
+    expect(ofetch).not.toHaveBeenCalled()
+  })
+
   it('resolves a standard internet destination', async () => {
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: 'https://dest.api' } }],

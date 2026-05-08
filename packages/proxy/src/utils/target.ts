@@ -54,7 +54,9 @@ export async function resolveProxyTarget(
     try {
       const btpTargetName = matched.destination || matched.name
       const authHeader = event.headers.get('authorization')
-      const destination = await resolveBtpDestination(btpTargetName, authHeader || undefined)
+      const destination = await resolveBtpDestination(btpTargetName, authHeader || undefined, {
+        allowMissingBindingFallback: options.allowBtpDestinationFallback !== false,
+      })
       let authHeaderValue = ''
       if (destination.authTokens?.[0]) {
         authHeaderValue = `Bearer ${destination.authTokens[0].value}`

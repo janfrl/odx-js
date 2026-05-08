@@ -29,6 +29,10 @@ interface DestinationCacheEntry {
   evictionTimer: ReturnType<typeof setTimeout>
 }
 
+interface ResolveBtpDestinationOptions {
+  allowMissingBindingFallback?: boolean
+}
+
 const DESTINATION_CACHE_TTL_MS = 60_000
 const destinationCache = new Map<string, DestinationCacheEntry>()
 
@@ -137,7 +141,11 @@ async function fetchXsuaaToken(credentials: any, grantType: string = 'client_cre
  * Resolves technical user credentials and target URL from the SAP BTP Destination Service.
  * Supports Principal Propagation via userToken exchange and Connectivity Service for OnPremise targets.
  */
-export async function resolveBtpDestination(serviceName: string, userToken?: string): Promise<BtpDestination> {
+export async function resolveBtpDestination(
+  serviceName: string,
+  userToken?: string,
+  options: ResolveBtpDestinationOptions = {},
+): Promise<BtpDestination> {
   const cacheKey = createDestinationCacheKey(serviceName, userToken)
   const cachedDestination = getCachedDestination(cacheKey)
   if (cachedDestination) {
@@ -152,6 +160,9 @@ export async function resolveBtpDestination(serviceName: string, userToken?: str
   if (!destService?.credentials || !xsuaaService?.credentials) {
     if (process.env.NODE_ENV === 'production') {
       console.warn(`[@bc8-odx/proxy] No BTP Service bindings found for "${serviceName}"`)
+    }
+    if (process.env.NODE_ENV === 'production' && options.allowMissingBindingFallback === false) {
+      throw new Error(`Failed to resolve BTP destination "${serviceName}": Destination and XSUAA service bindings are required`)
     }
     return {
       name: serviceName,
