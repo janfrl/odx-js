@@ -152,6 +152,14 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
       maxLogs: options.devtools?.maxLogs ?? 100,
       logPayloads: options.devtools?.logPayloads !== false,
       maxPayloadBytes: options.devtools?.maxPayloadBytes ?? 32 * 1024,
+      logStore: {
+        provider: (process.env.NUXT_ODATA_DEVTOOLS_LOG_STORE as any) || options.devtools?.logStore?.provider || 'memory',
+        sql: {
+          connector: (process.env.NUXT_ODATA_DEVTOOLS_LOG_DB_CONNECTOR as any) || options.devtools?.logStore?.sql?.connector,
+          url: process.env.NUXT_ODATA_DEVTOOLS_LOG_DB_URL || options.devtools?.logStore?.sql?.url,
+          path: process.env.NUXT_ODATA_DEVTOOLS_LOG_DB_PATH || options.devtools?.logStore?.sql?.path,
+        },
+      },
     },
   }
 }

@@ -91,7 +91,7 @@ Explorer state is intentionally client-side and session-oriented. Durable
 business rules, security behavior, and OData parsing logic do not belong in the
 Explorer.
 
-Current production behavior after task 077:
+Current production behavior after tasks 077-079:
 
 - `/__odx__` endpoints are a proxy-owned runtime boundary behind validated SAP
   security context.
@@ -104,16 +104,19 @@ Current production behavior after task 077:
 - `/__odx__/schema` returns parsed cached schema only and rejects raw XML.
 - `/__odx__/generate` and `/__odx__/types` are development-only and return
   `403` in production.
-- `/__odx__/logs` returns an empty list and rejects `DELETE` in production.
+- `/__odx__/logs` returns an empty list and rejects `DELETE` in production
+  unless SQL log storage is explicitly configured. When configured, the proxy
+  stores and serves redacted traffic history through `OdxLogStore`; Explorer
+  never talks to db0 or a database directly.
 - `/__odx__/me` returns sanitized SAP user context without raw token data.
 
 Planned follow-up work keeps runtime metadata refresh separate from TypeScript
 SDK generation. Production may later refresh runtime metadata cache state for
 Explorer schema/config views, but SDK/type file generation remains a
 development, build, or CI workflow that requires a new deployment to affect
-application code. Production traffic history also remains disabled until
-db0-backed persistence work defines deployment storage, retention, and clear
-behavior behind the existing `OdxLogStore` boundary.
+application code. Production traffic history remains memory-backed by default.
+SQL persistence is available through a proxy-owned db0 adapter only when
+`devtools.logStore` or the matching environment variables select SQL storage.
 
 ### `docs`
 
@@ -143,8 +146,9 @@ memory-backed for local development and tests, supports append, update, list,
 get, clear, and retention-friendly filters, and redacts or bounds sensitive log
 fields before persisting entries. Outbound headers, auth/session/CSRF material,
 and large request or response bodies must be redacted or bounded before they
-are displayed, stored, exported, or copied into tests. Production payload
-logging remains disabled by default.
+are displayed, stored, exported, or copied into tests. A proxy-owned db0 SQL
+store can be selected for deployed Explorer traffic history, but production
+payload logging remains disabled by default.
 
 Direct services can be addressed by the browser, but the Explorer defaults to a
 CORS bridge path for usability during development.

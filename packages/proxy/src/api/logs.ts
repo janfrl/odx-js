@@ -2,6 +2,7 @@ import type { OdxLogClearOptions, OdxLogQueryOptions } from '@bc8-odx/core'
 import { clearODataLogs, getODataLogs } from '@bc8-odx/core'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
+import { configureOdxLogStore, isPersistentOdxLogStoreConfigured } from '../utils/log-store'
 
 const RE_POSITIVE_INTEGER = /^\d+$/
 const RE_LOG_STATUS = /^(?:pending|success|failure)$/
@@ -43,8 +44,9 @@ function parseClearOptions(raw: Record<string, any>): OdxLogClearOptions {
 
 export default defineEventHandler(async (event) => {
   enforceExplorerEndpointPolicy(event, 'logs')
+  await configureOdxLogStore(event.context.odataConfig)
 
-  if (isProductionExplorerRuntime()) {
+  if (isProductionExplorerRuntime() && !isPersistentOdxLogStoreConfigured(event.context.odataConfig)) {
     if (event.method === 'GET') {
       return []
     }
@@ -65,5 +67,13 @@ export default defineEventHandler(async (event) => {
   if (event.method === 'DELETE') {
     return await clearODataLogs(parseClearOptions(getQuery(event)))
   }
-  return await getODataLogs(parseLogQuery(getQuery(event)))
+
+  if (event.method === 'GET' || !isProductionExplorerRuntime()) {
+    return await getODataLogs(parseLogQuery(getQuery(event)))
+  }
+
+  throw createError({
+    statusCode: 405,
+    statusMessage: 'Method Not Allowed',
+  })
 })

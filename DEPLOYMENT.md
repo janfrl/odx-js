@@ -48,6 +48,18 @@ default. `devtools.maxLogs` controls local retention count, `devtools.logPayload
 can omit request/response bodies, and `devtools.maxPayloadBytes` bounds each
 stored payload preview.
 
+Local development can opt into SQL-backed Explorer traffic history with:
+
+```bash
+NUXT_ODATA_DEVTOOLS_LOG_STORE=sql
+NUXT_ODATA_DEVTOOLS_LOG_DB_CONNECTOR=sqlite
+NUXT_ODATA_DEVTOOLS_LOG_DB_PATH=.odx/explorer-logs.sqlite
+```
+
+SQLite is only appropriate for local development or explicit single-instance
+demos. It is not safe for BTP multi-instance production deployments because
+each application instance has its own filesystem and locking behavior.
+
 ## Build
 
 The root build script builds the Explorer, builds the proxy, adjusts generated
@@ -124,6 +136,20 @@ Purpose:
 - `odx-destination`: Destination service for managed backend destinations.
 - `odx-connectivity`: Connectivity service for on-premise destinations.
 
+Persistent production Explorer logs require an additional bound SQL database
+for `odx-proxy`. The repository does not mandate a specific BTP SQL provider;
+operators should bind the chosen managed SQL service, expose its connection URL
+to the proxy as `NUXT_ODATA_DEVTOOLS_LOG_DB_URL`, and set:
+
+```bash
+NUXT_ODATA_DEVTOOLS_LOG_STORE=sql
+NUXT_ODATA_DEVTOOLS_LOG_DB_CONNECTOR=postgresql
+```
+
+The db0 PostgreSQL connector requires the `pg` runtime package for deployments
+that select PostgreSQL. Keep database credentials in BTP service bindings or
+environment variables, not in checked-in configuration.
+
 `xs-security.json` currently configures:
 
 - dedicated tenant mode
@@ -165,9 +191,11 @@ endpoint policy:
   XML.
 - `/__odx__/generate` and `/__odx__/types` return `403`; production does not
   regenerate SDK files.
-- `/__odx__/logs` returns an empty list and rejects `DELETE` until the planned
-  db0-backed adapter defines production storage, retention, and clear behavior
-  behind the existing log store and redaction boundary.
+- `/__odx__/logs` returns an empty list and rejects `DELETE` unless persistent
+  SQL log storage is explicitly configured. With SQL storage enabled, it lists
+  and clears redacted logs behind the existing log store and redaction
+  boundary. Production request and response payload bodies are omitted by
+  default.
 - `/__odx__/me` returns sanitized SAP user context without raw token data.
 
 ## Service Configuration In Deployment

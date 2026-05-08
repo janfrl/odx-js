@@ -2,6 +2,7 @@ import type { OdxLogPayloadPolicy } from '@bc8-odx/core'
 import type { H3Event } from 'h3'
 import process from 'node:process'
 import { addODataLog, updateODataLog } from '@bc8-odx/core'
+import { configureOdxLogStore, isPersistentOdxLogStoreConfigured } from './log-store'
 
 function resolvePayloadPolicy(event: H3Event): OdxLogPayloadPolicy {
   const devtools = event.context.odataConfig?.devtools
@@ -9,6 +10,17 @@ function resolvePayloadPolicy(event: H3Event): OdxLogPayloadPolicy {
     storePayloads: !!devtools?.enabled && devtools.logPayloads !== false && process.env.NODE_ENV !== 'production',
     maxPayloadBytes: devtools?.maxPayloadBytes,
   }
+}
+
+function shouldEnableTraceLogging(event: H3Event): boolean {
+  const config = event.context.odataConfig
+  if (!config?.devtools?.enabled)
+    return false
+
+  if (process.env.NODE_ENV !== 'production')
+    return true
+
+  return isPersistentOdxLogStoreConfigured(config)
 }
 
 /**
@@ -22,8 +34,7 @@ export class DevToolsTracer {
   readonly payloadPolicy: OdxLogPayloadPolicy
 
   constructor(event: H3Event) {
-    const config = event.context.odataConfig
-    this.enabled = !!(config?.devtools?.enabled && process.env.NODE_ENV !== 'production')
+    this.enabled = shouldEnableTraceLogging(event)
     this.payloadPolicy = resolvePayloadPolicy(event)
     this.trace = []
     event.context.proxyTrace = this.addTrace.bind(this)
@@ -54,6 +65,7 @@ export class DevToolsTracer {
       return
 
     const config = event.context.odataConfig
+    await configureOdxLogStore(config)
     await addODataLog({
       id: this.id,
       timestamp: Date.now(),

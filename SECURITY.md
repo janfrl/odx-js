@@ -161,9 +161,9 @@ its default.
 
 Development logging stores OData traffic in memory for Explorer inspection
 through the core `OdxLogStore` boundary. The default store is
-`OdxMemoryLogStore`; future persistent adapters must implement the same append,
-update, list, get, clear, and retention-friendly query behavior without
-bypassing redaction.
+`OdxMemoryLogStore`; the proxy also has an opt-in SQL store implemented with
+db0 behind the same append, update, list, get, clear, and retention-friendly
+query behavior without bypassing redaction.
 Logs may include:
 
 - request URLs
@@ -197,10 +197,13 @@ and a preview. Treat request bodies, response bodies, outbound headers,
 auth/session/CSRF data, and proxy traces as potentially sensitive even when
 they are local-only.
 
-Production Explorer traffic history is currently disabled by policy:
-`/__odx__/logs` returns an empty list and rejects clearing. The planned
-db0-backed follow-up must define production storage, retention, and clear
-behavior behind `OdxLogStore` before enabling persisted traffic history.
+Production Explorer traffic history is disabled unless persistent SQL storage
+is explicitly configured. When `devtools.logStore.provider` or
+`NUXT_ODATA_DEVTOOLS_LOG_STORE` selects `sql`, production proxy tracing stores
+redacted request metadata and proxy traces through `OdxLogStore`; request and
+response payload bodies are omitted by default in production even when
+`devtools.logPayloads` is enabled for local development. Without SQL storage,
+`/__odx__/logs` returns an empty list and rejects clearing.
 
 ## Direct Strategy
 

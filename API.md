@@ -45,6 +45,10 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `devtools.maxLogs` | Maximum in-memory traffic log entries. | `100` |
 | `devtools.logPayloads` | Store bounded request/response payload previews in development traffic logs. | `true` |
 | `devtools.maxPayloadBytes` | Maximum serialized bytes kept per logged request/response payload before replacing it with a truncated preview marker. | `32768` |
+| `devtools.logStore.provider` | Traffic log storage provider: `memory` or `sql`. SQL storage is implemented inside the proxy through db0. | `memory` |
+| `devtools.logStore.sql.connector` | Persistent SQL connector for traffic logs: `postgresql` or `sqlite`. Inferred from URL/path when possible. | none |
+| `devtools.logStore.sql.url` | Database URL for network SQL providers such as PostgreSQL. | none |
+| `devtools.logStore.sql.path` | Local SQLite database path for development or explicit single-instance demos. | none |
 
 Only safe public fields are exposed through `runtimeConfig.public.odata`. Secrets
 must stay in private runtime config, environment variables, or BTP services.
@@ -224,7 +228,7 @@ DevTools config, `forwardAuthHeader`, or `versions.node`.
 | Endpoint | Development behavior | Current production policy |
 | --- | --- | --- |
 | `/__odx__/config` | Resolved service config, entities, versions, and generation status for DevTools inspection. | Authenticated. Returns only top-level `basePath`, `mode`, and sanitized `services` entries. |
-| `/__odx__/logs` | Memory-backed traffic logs through `OdxLogStore`. `GET` supports retention-friendly filters such as `limit`, `offset`, `service`, `method`, `status`, `from`, `to`, `before`, `after`, `includePending=false`, and `order=asc\|desc`; `DELETE` clears all local logs or a bounded subset with `service`, `before`, or `to`. Logs redact secrets and bound large payloads before storage, display, export, or test use. | Authenticated. Returns `[]`; `DELETE` returns `403` until persistent log policy exists. |
+| `/__odx__/logs` | Memory-backed traffic logs through `OdxLogStore` by default. `GET` supports retention-friendly filters such as `limit`, `offset`, `service`, `method`, `status`, `from`, `to`, `before`, `after`, `includePending=false`, and `order=asc\|desc`; `DELETE` clears all local logs or a bounded subset with `service`, `before`, or `to`. Logs redact secrets and bound large payloads before storage, display, export, or test use. | Authenticated. With `devtools.logStore.provider=sql`, returns and clears persisted redacted traffic logs through the `OdxLogStore` boundary. Without SQL storage, returns `[]` and rejects `DELETE`. Production payload bodies are omitted by default. |
 | `/__odx__/generate?service=<name>` | Development SDK/type regeneration for one service. | Authenticated but disabled. Returns `403`; production does not regenerate SDK files. |
 | `/__odx__/schema?service=<name>` | Parsed EDMX schema. `raw=true` can return XML locally. | Authenticated. Uses cached parsed metadata only and rejects raw XML. |
 | `/__odx__/types?service=<name>` | Local generated TypeScript model files. | Authenticated but disabled. Returns `403`. |
@@ -236,10 +240,11 @@ metadata only; a later endpoint may refresh runtime metadata cache state for the
 Explorer, but generated SDK/type files remain development, build, or CI
 artifacts.
 
-Production traffic history is intentionally disabled. The `OdxLogStore`
-boundary, memory implementation, redaction rules, and payload limits exist now;
-a later db0 adapter task must define deployment storage, retention, and clear
-semantics before production logs are enabled.
+Production traffic history is disabled unless SQL log storage is explicitly
+configured. The `OdxLogStore` boundary, memory implementation, db0-backed SQL
+adapter, redaction rules, payload limits, and clear semantics exist now.
+Persistent adapters must stay behind `OdxLogStore` and must not expose database
+APIs to Explorer.
 
 Do not expose secrets from these endpoints. Treat them as development and
 authenticated tool surfaces, not public product APIs.

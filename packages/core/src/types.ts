@@ -222,6 +222,31 @@ export interface ODataProxyConfig {
     maxLogs?: number
     logPayloads?: boolean
     maxPayloadBytes?: number
+    logStore?: OdxRuntimeLogStoreConfig
+  }
+}
+
+export interface OdxRuntimeLogStoreConfig {
+  /**
+   * `memory` keeps logs in process memory. `sql` enables persistent storage
+   * through the proxy-owned database adapter.
+   * @default 'memory'
+   */
+  provider?: 'memory' | 'sql'
+  sql?: {
+    /**
+     * SQL connector used by the proxy-owned persistent log adapter.
+     * @default inferred from `url` or `path`
+     */
+    connector?: 'postgresql' | 'sqlite'
+    /**
+     * Database connection URL for network SQL providers such as PostgreSQL.
+     */
+    url?: string
+    /**
+     * Local SQLite file path for development or explicit single-instance demos.
+     */
+    path?: string
   }
 }
 
@@ -312,6 +337,7 @@ export interface ModuleOptions {
      * @default 32768
      */
     maxPayloadBytes?: number
+    logStore?: OdxRuntimeLogStoreConfig
   }
 }
 
