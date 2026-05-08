@@ -8,64 +8,43 @@ or workflow task.
 
 ## Current Mode
 
-Secure Teamflow for the production Explorer runtime sequence because it touches
-auth, privacy, deployment runtime behavior, persistence, and internal HTTP
-contracts.
+Adaptive Teamflow. Task 086 was approved after focused re-review; no
+in-progress task is currently recorded.
 
 ## Current Next Step
 
-Task 086 integration fix is complete. Start a fresh Reviewer chat for focused
-re-review of only the two findings in:
-`.agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md`.
+Start an Orchestrator chat to resume the normal workflow. Ready tasks exist;
+the lowest-numbered ready task is
+`.agents/tasks/ready/074-reject-duplicate-benchmark-output-scenarios.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
-
-Focused re-review for:
-- `.agents/tasks/done/086-document-dev-prod-explorer-runtime-differences.md`
+You are the Orchestrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/reviews/086-document-dev-prod-explorer-runtime-differences-review.md
-- .agents/tasks/done/086-document-dev-prod-explorer-runtime-differences.md
-- ARCHITECTURE.md
-- SECURITY.md
-- API.md
-- DEPLOYMENT.md
-- docs/content/en/5.explorer/2.reference.md
-- docs/content/de/5.explorer/2.reference.md
-- docs/content/en/2.nuxt/4.deployment.md
-- docs/content/de/2.nuxt/4.deployment.md
-- docs/content/en/3.proxy/4.reference.md
-- docs/content/de/3.proxy/4.reference.md
-- the original reviewed commit diff `2c980a3bf464a3293dcf9fa9072bef730d20f560`
-- the latest integration fix commit diff
+- .agents/roles/orchestrator.md
+- .agents/NEXT.md
+
+Coordinate the next workflow step from .agents/NEXT.md.
 
 Rules:
-- Review only whether the two findings in the review note were fixed.
-- Confirm `ARCHITECTURE.md` says production traffic history is disabled by default unless SQL storage is configured, while local development and tests remain memory-backed.
-- Confirm `SECURITY.md` distinguishes AppRouter-authenticated Explorer UI routes from supported authenticated proxy runtime API routes.
-- Confirm the fix stayed documentation-only and did not change runtime code, Explorer UI, tests, package metadata, generated app output, endpoints, logging providers, persistence adapters, or metadata generation features.
-- Confirm root docs and Docus docs no longer contradict each other on production log storage defaults or AppRouter routing for Explorer UI versus proxy runtime APIs.
-- Confirm no customer-specific BTP routes, credentials, destinations, backend URLs, auth details, outbound headers, TLS settings, runtime paths, or hooks were exposed.
-- Update the review note and `.agents/NEXT.md` with the re-review result.
-- Commit the re-review note and workflow state changes with a Conventional Commit unless a stop condition prevents committing.
-
-Verification:
-- Inspect the latest integration fix diff.
-- Run or verify `git diff --check`.
-- Run or verify `pnpm.cmd --filter docs run verify`.
+- Do not implement, review, or integrate directly unless the operator explicitly asks.
+- Use Adaptive Teamflow unless .agents/NEXT.md or the operator selects another mode.
+- Classify each task with the risk classifier before delegation; if unclear, choose the higher-risk path.
+- Use fresh role-specific contexts for Implementer, Reviewer, Integrator, Planner, or Architect work when available.
+- Give each role only the compact repository-local prompt it needs.
+- For work requiring separate review, use a fresh Reviewer that did not see the Implementer conversation.
+- Continue through bounded, clearly actionable review findings by delegating a focused fix, then run focused re-review.
+- Stop only when a stop condition, failed verification, broad/risky review finding, unclear decision, approval requirement, destructive action, conflicting decision, or safely undelegable blocker blocks the loop.
 
 When done, summarize:
-- findings, or state that no findings remain
-- acceptance criteria status for the two fixed findings
-- verification reviewed or run
-- whether task 086 is approved or still needs changes
-- commit hash
-- exact next-chat prompt from `.agents/NEXT.md`
+- role chats or sub-agents run
+- commits created or reviewed
+- current .agents/NEXT.md action
+- blockers or human decisions needed
 ```
