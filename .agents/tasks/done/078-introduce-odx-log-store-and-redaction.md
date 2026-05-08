@@ -134,7 +134,7 @@ review is required.
   `done/` through the final patch after implementation and verification.
 - `.agents/NEXT.md` update: Updated to request a fresh Reviewer for this
   completed high-risk task before continuing to task 079.
-- commit hash: pending commit.
+- commit hash: `c9ef7aa865ad2c6147af8581bb19dbd054bcbeeb`.
 - known gaps: Production traffic history remains intentionally disabled.
   Persistent storage, db0 adapter wiring, production retention configuration,
   and production clear semantics remain task 079 or later work.

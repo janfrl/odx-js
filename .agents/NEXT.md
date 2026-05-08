@@ -13,10 +13,15 @@ auth, privacy, deployment runtime behavior, and internal HTTP contracts.
 
 ## Current Next Step
 
-Review the completed high-risk production runtime task:
+Fix the needs-changes review for the completed high-risk production runtime
+task:
 `.agents/tasks/done/078-introduce-odx-log-store-and-redaction.md`.
 
-Do not start task 079 until this review is complete.
+Review note:
+`.agents/reviews/078-introduce-odx-log-store-and-redaction-review.md`.
+
+Do not start task 079 until the review findings are fixed and focused
+re-review approves task 078.
 
 Continue the remaining production runtime sequence in this order after review
 approval:
@@ -30,10 +35,12 @@ approval:
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Integrator for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-.agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
+Address the needs-changes review for:
+- Task: .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
+- Review: .agents/reviews/078-introduce-odx-log-store-and-redaction-review.md
+- Reviewed commit: c9ef7aa865ad2c6147af8581bb19dbd054bcbeeb
 
 Read:
 - AGENTS.md
@@ -41,45 +48,45 @@ Read:
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
-- .agents/reviews/077-harden-production-explorer-endpoints-and-config-review.md
-- .agents/reviews/084-document-dev-prod-explorer-runtime-differences-review.md
-- .agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md
-- .agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md
 - .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
+- .agents/reviews/078-introduce-odx-log-store-and-redaction-review.md
 - ARCHITECTURE.md
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
-- changed source, tests, and docs from the task 078 commit
+- packages/core/src/dev-logs.ts
+- packages/proxy/src/utils/rules.ts
+- packages/proxy/src/utils/trace.ts
+- packages/proxy/test/dev-logs.test.ts
+- packages/proxy/test/rules.test.ts
+- docs/public/api-reference.json
 
-Review stance:
-- Findings first, ordered by severity.
-- Prioritize security/privacy regressions, redaction gaps, payload retention,
-  production `/__odx__/logs` policy, public/core export contracts, store
-  semantics, compatibility with existing proxy trace updates, and missing
-  tests.
-- Check that task 078 stayed scoped and did not add db0, evlog, metadata
-  refresh, SDK generation, database migration, or Explorer UI redesign.
-- Check that durable docs match the implemented store/redaction behavior.
+Rules:
+- Fix only the concrete review findings.
+- Do not add db0, evlog, metadata refresh, SDK generation behavior, database migration, Explorer UI redesign, or unrelated refactors.
+- Preserve production `/__odx__/logs` disabled policy.
+- Preserve local Explorer traffic-log behavior with the memory store.
+- Ensure sensitive header values in `proxyTrace.details` are redacted before storage, not just bounded.
+- Refresh the tracked docs API reference artifact if public/core exports remain changed.
+- Update task handoff notes and `.agents/NEXT.md` with a focused re-review prompt.
+- Commit the focused integration fix with a Conventional Commit.
 
 Expected verification:
-- Inspect the task 078 diff.
-- Run or validate the focused checks recorded in the task handoff where useful:
-  `pnpm.cmd exec vitest run packages/proxy/test/integration.test.ts`
-  `pnpm.cmd exec vitest run packages/proxy/test/rules.test.ts`
-  `pnpm.cmd --filter @bc8-odx/proxy run verify`
-  `pnpm.cmd --filter @bc8-odx/explorer run verify`
-  `pnpm.cmd run lint`
-  `pnpm.cmd run typecheck`
+- Add or update focused tests proving `injectHeader` and `denyIfHeader` trace details do not retain sensitive header values after log storage.
+- `pnpm.cmd exec vitest run packages/proxy/test/dev-logs.test.ts packages/proxy/test/rules.test.ts`
+- `pnpm.cmd exec vitest run packages/proxy/test/integration.test.ts`
+- `pnpm.cmd --filter @bc8-odx/proxy run verify`
+- `pnpm.cmd --filter docs run verify`
+- `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck`
+- `git diff --check`
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
-- verification performed or intentionally skipped
-- residual risk
-- whether the task is approved or needs changes
-- create or update a review note under `.agents/reviews/`
-- update `.agents/NEXT.md` with the next workflow action
-- commit the review note and workflow state changes with a Conventional Commit
-- include the exact next-chat prompt from `.agents/NEXT.md`
+When done, summarize:
+- findings addressed
+- changed files
+- verification performed
+- whether focused re-review is required and why
+- commit hash
+- known gaps
+- exact next-chat prompt from .agents/NEXT.md
 ```
