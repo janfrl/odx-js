@@ -8,49 +8,52 @@ or workflow task.
 
 ## Current Mode
 
-Adaptive Teamflow. Task 076 review is approved. No ready or in-progress task is
-currently recorded.
+Adaptive Teamflow. Tasks 077-086 are complete and reviewed. Ready tasks 087-091
+are available.
 
 ## Current Next Step
 
-Start a Planner chat to create the next 3-5 implementation tasks.
+Start task 087 with a fresh Implementer:
+`.agents/tasks/ready/087-sanitize-explorer-metadata-failure-messages.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Planner for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
-- relevant root documentation
 - .agents/WORKFLOW.md
-- .agents/ROADMAP.md
-- .agents/EPICS.md
-- .agents/BACKLOG.md
-- .agents/tasks/
-- .agents/reviews/
 - .agents/decisions/
 - .agents/NEXT.md
+- .agents/reviews/080-separate-runtime-metadata-refresh-from-sdk-generation-review.md
+- .agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md
+- SECURITY.md
+- API.md
+- .agents/tasks/ready/087-sanitize-explorer-metadata-failure-messages.md
 
-Create the next 3-5 implementation tasks.
+Implement exactly `.agents/tasks/ready/087-sanitize-explorer-metadata-failure-messages.md`.
 
 Rules:
-- Each task must be executable by one implementer chat.
-- Use .agents/tasks/TASK_TEMPLATE.md.
-- Put new tasks in .agents/tasks/ready/.
-- Keep tasks small and reviewable.
-- Include acceptance criteria and verification steps.
-- Do not create vague or oversized tasks.
-- Update BACKLOG.md, EPICS.md, and ROADMAP.md only if needed.
-- Update .agents/NEXT.md with the next action and exact next-chat prompt.
-- Commit the planning update with a Conventional Commit unless a stop condition prevents committing.
+- Keep changes scoped to the task.
+- Do not start unrelated refactors.
+- Follow existing repository structure, style, and documented architecture boundaries.
+- Update the task handoff notes before finishing.
+- Run the verification steps listed in the task, or explain why they could not be run.
+- Self-check against scope, acceptance criteria, relevant docs/decisions, architecture boundaries, security/privacy implications, and unrelated changes.
+- Separate review is required because this task touches production Explorer metadata error exposure.
+- Move the task to .agents/tasks/done/ when implementation and verification are complete.
+- Update .agents/NEXT.md with the reviewer prompt for task 087.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- new tasks created
-- recommended next task
-- open decisions or blockers
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
 - exact next-chat prompt from .agents/NEXT.md
 ```

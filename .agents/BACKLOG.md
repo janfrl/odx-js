@@ -8,27 +8,25 @@ implementation phases.
 
 ## Now
 
-- Prioritize production Explorer runtime hardening before broader benchmark or
-  polish work:
-  - endpoint policy and config redaction
-  - development versus production Explorer runtime documentation
-  - log storage abstraction and redaction
-  - db0-backed Explorer traffic history
-  - runtime metadata refresh separated from SDK generation
-  - schema/config endpoints backed by runtime metadata cache
+- Close the post-production-runtime cleanup queue from tasks 077-086:
+  - sanitize metadata refresh and cache-state failure messages before Explorer
+    responses expose them
+  - add local BTP Destination coverage for production metadata refresh
+  - make SQL log-store connector imports part of proxy verification
+  - tighten AppRouter/MTA consistency checks for the standalone Explorer
+  - remove stale Explorer `generateService` naming now that UI code uses
+    Refresh Metadata semantics
 
 ## Next
 
-- Continue the older benchmark and package-polish queue after the production
-  Explorer runtime sequence has a safe endpoint and storage foundation.
+- Continue the older benchmark and package-polish queue after the cleanup tasks
+  087-091 complete or have bounded residual risk.
 - Continue Explorer improvements only through narrow, test-backed state fixes
   unless UI changes are explicitly needed and browser-verified.
 - Revisit stream proxy response-hook behavior only after the expected contract
   is clear from public docs or focused tests.
 - Consider runtime performance optimizations only after benchmark tooling keeps
   malformed reports visible and checkpoint checks remain green.
-- Plan the next small stability or package-isolation queue after the task
-  058-062 checkpoint completes.
 
 ## Later
 

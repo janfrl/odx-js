@@ -308,10 +308,10 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/054-validate-benchmark-concurrency-env.md`
-- `.agents/tasks/ready/055-use-http-client-for-nuxt-metadata-downloads.md`
-- `.agents/tasks/ready/056-unwrap-falsy-v2-d-payloads.md`
-- `.agents/tasks/ready/057-run-stability-checkpoint.md`
+- `.agents/tasks/done/054-validate-benchmark-concurrency-env.md`
+- `.agents/tasks/done/055-use-http-client-for-nuxt-metadata-downloads.md`
+- `.agents/tasks/done/056-unwrap-falsy-v2-d-payloads.md`
+- `.agents/tasks/done/057-run-stability-checkpoint.md`
 
 Exit criteria:
 
@@ -340,11 +340,11 @@ Deliverables:
 
 Candidate tasks:
 
-- `.agents/tasks/ready/058-quote-generated-registry-service-keys.md`
-- `.agents/tasks/ready/059-cover-buffered-service-specific-response-hooks.md`
-- `.agents/tasks/ready/060-validate-benchmark-iteration-env.md`
-- `.agents/tasks/ready/061-document-service-name-type-generation-limits.md`
-- `.agents/tasks/ready/062-run-stability-and-hooks-checkpoint.md`
+- `.agents/tasks/done/058-quote-generated-registry-service-keys.md`
+- `.agents/tasks/done/059-cover-buffered-service-specific-response-hooks.md`
+- `.agents/tasks/done/060-validate-benchmark-iteration-env.md`
+- `.agents/tasks/done/061-document-service-name-type-generation-limits.md`
+- `.agents/tasks/done/062-run-stability-and-hooks-checkpoint.md`
 
 Exit criteria:
 
@@ -378,13 +378,15 @@ Deliverables:
 Candidate tasks:
 
 - `.agents/tasks/done/077-harden-production-explorer-endpoints-and-config.md`
-- `.agents/tasks/ready/084-document-dev-prod-explorer-runtime-differences.md`
-- `.agents/tasks/ready/078-introduce-odx-log-store-and-redaction.md`
-- `.agents/tasks/ready/079-add-db0-backed-explorer-log-store.md`
-- `.agents/tasks/ready/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
-- `.agents/tasks/ready/081-use-runtime-metadata-cache-for-schema-and-config.md`
-- `.agents/tasks/ready/082-align-standalone-explorer-runtime-ui.md`
-- `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
+- `.agents/tasks/done/078-introduce-odx-log-store-and-redaction.md`
+- `.agents/tasks/done/079-add-db0-backed-explorer-log-store.md`
+- `.agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md`
+- `.agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md`
+- `.agents/tasks/done/082-align-standalone-explorer-runtime-ui.md`
+- `.agents/tasks/done/083-complete-or-remove-explorer-mockdata-api.md`
+- `.agents/tasks/done/084-document-dev-prod-explorer-runtime-differences.md`
+- `.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`
+- `.agents/tasks/done/086-document-dev-prod-explorer-runtime-differences.md`
 
 Exit criteria:
 
@@ -394,3 +396,36 @@ Exit criteria:
 - BTP deployment docs describe the database/logging and metadata-refresh
   expectations.
 - TypeScript SDK generation remains a development/build/CI concern.
+
+## Epic 13: Production Runtime Cleanup And Deployment Confidence
+
+Goal: close remaining rough edges after the production Explorer runtime
+sequence without adding new product scope.
+
+Deliverables:
+
+- Production metadata refresh/config/schema responses sanitize failure and
+  legacy cache-state messages before reaching Explorer users.
+- BTP Destination-backed metadata refresh has deterministic local coverage for
+  target resolution, auth/header behavior, and stale fallback.
+- SQL log-store connector runtime peers are covered by proxy verification.
+- AppRouter and MTA deployment config checks cover the standalone Explorer
+  route split, destination forwarding, and required module bindings.
+- Explorer state naming matches Refresh Metadata semantics and no longer
+  carries the stale `generateService` alias.
+
+Candidate tasks:
+
+- `.agents/tasks/ready/087-sanitize-explorer-metadata-failure-messages.md`
+- `.agents/tasks/ready/088-cover-btp-destination-metadata-refresh.md`
+- `.agents/tasks/ready/089-add-sql-log-store-connector-smoke-tests.md`
+- `.agents/tasks/ready/090-tighten-production-explorer-deployment-consistency-checks.md`
+- `.agents/tasks/ready/091-remove-stale-explorer-generate-service-alias.md`
+
+Exit criteria:
+
+- High-risk production metadata and deployment checks receive independent
+  review.
+- Task-local verification passes or records bounded residual risk.
+- No runtime feature expansion, UI redesign, or user-facing documentation churn
+  is introduced outside the task scopes.

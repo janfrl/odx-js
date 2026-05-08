@@ -115,3 +115,11 @@ Use `.agents/EPICS.md` for the more detailed implementation breakdown.
 - Keep proxy benchmark env validation strict for timing loop controls.
 - Document service-name type-generation limits narrowly after implementation.
 - Run a checkpoint after the queue and required hook-contract review complete.
+
+## Phase 13: Production Runtime Cleanup And Deployment Confidence
+
+- Sanitize remaining Explorer metadata failure-message exposure paths.
+- Add local coverage for BTP Destination-backed runtime metadata refresh.
+- Make SQL log-store connector importability part of proxy verification.
+- Strengthen AppRouter/MTA consistency checks for deployed Explorer routing.
+- Remove stale Explorer internal naming left over from SDK generation semantics.
