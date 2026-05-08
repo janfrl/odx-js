@@ -37,7 +37,7 @@ export default defineEventHandler((event) => {
     })
   }
 
-  const metadata = readRuntimeMetadataSnapshot(config, svc)
+  const metadata = readRuntimeMetadataSnapshot(config, svc, { sanitizeFailureReasons: isProduction })
 
   if (!metadata.exists || !metadata.xml) {
     throw createError({

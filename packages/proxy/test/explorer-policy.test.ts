@@ -369,6 +369,77 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
+  it('sanitizes production metadata refresh errors when no cache fallback exists', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ xml: 'not-edmx' })
+    const internalMetadataUrl = 'https://internal.sap.example.local/sap/opu/odata/sap/SENSITIVE/$metadata'
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata?upstream=${encodeURIComponent(internalMetadataUrl)}`)
+    const paths = getRuntimeMetadataCachePaths(config, 'RemoteService')
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      let error: any
+      try {
+        await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+      }
+      catch (err) {
+        error = err
+      }
+
+      const serializedError = JSON.stringify(error?.data)
+
+      expect(error).toMatchObject({ status: 500 })
+      expect(serializedError).toContain('Metadata refresh failed')
+      expect(serializedError).toContain('Received invalid or empty metadata')
+      expect(serializedError).not.toContain(internalMetadataUrl)
+      expect(serializedError).not.toContain('internal.sap.example.local')
+      expect(serializedError).not.toContain(backend.url)
+      expect(serializedError).not.toContain('127.0.0.1')
+      expect(existsSync(paths.tempFile)).toBe(false)
+      expect(existsSync(paths.persistentCacheFile)).toBe(false)
+      expect(existsSync(paths.stateFile)).toBe(false)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('sanitizes local runtime paths in production metadata refresh errors', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const config = createRuntimeMetadataConfig(rootDir, 'fixtures/private/missing.edmx')
+    config.services![0] = {
+      name: 'LocalService',
+      route: 'local',
+      url: 'fixtures/private/missing.edmx',
+      strategy: 'proxied',
+    }
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      let error: any
+      try {
+        await ofetch(`${server.url}/__odx__/generate?service=LocalService`)
+      }
+      catch (err) {
+        error = err
+      }
+
+      const serializedError = JSON.stringify(error?.data)
+
+      expect(error).toMatchObject({ status: 500 })
+      expect(serializedError).toContain('[metadata-path]')
+      expect(serializedError).not.toContain(rootDir)
+      expect(serializedError).not.toContain('fixtures/private/missing.edmx')
+      expect(serializedError).not.toContain('odx-runtime-metadata-test-')
+    }
+    finally {
+      await server.close()
+    }
+  })
+
   it('does not expose internal metadata URLs after stale fallback from invalid metadata', async () => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()
@@ -413,6 +484,34 @@ describe('production Explorer endpoint policy', () => {
     finally {
       await server.close()
       await backend.close()
+    }
+  })
+
+  it('sanitizes legacy sidecar stale reasons in production schema and config responses', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const config = createRuntimeMetadataConfig(rootDir, 'https://backend.example.test/odata')
+    const internalMetadataUrl = 'https://internal.sap.example.local/sap/opu/odata/sap/SENSITIVE/$metadata'
+    writeRuntimeMetadataCache(config, 'RemoteService', staleMetadataXml, {
+      stale: true,
+      staleReason: `Status: 503 Service Unavailable from ${internalMetadataUrl}`,
+      source: 'cache',
+    })
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const schema: any = await ofetch(`${server.url}/__odx__/schema?service=RemoteService`)
+      const explorerConfig: any = await ofetch(`${server.url}/__odx__/config`)
+      const serializedRuntimeResponses = JSON.stringify({ schema, explorerConfig })
+
+      expect(schema.metadata.staleReason).toContain('Status: 503')
+      expect(explorerConfig.services[0].metadata.staleReason).toContain('Status: 503')
+      expect(serializedRuntimeResponses).not.toContain(internalMetadataUrl)
+      expect(serializedRuntimeResponses).not.toContain('internal.sap.example.local')
+      expect(serializedRuntimeResponses).not.toContain('sap/opu/odata/sap/SENSITIVE')
+    }
+    finally {
+      await server.close()
     }
   })
 

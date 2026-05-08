@@ -42,8 +42,10 @@ const METADATA_ACCEPT_HEADER = 'application/xml, text/xml, */*'
 const REQUEST_TIMEOUT_MS = 15_000
 const RE_TRAILING_SLASHES = /\/+$/
 const RE_HTTP_URL = /https?:\/\/[^\s)"']+/gi
+const RE_WINDOWS_PATH = /\b[A-Z]:[\\/][^\s)"']+/gi
+const RE_UNC_PATH = /\\\\[^\s)"']+/g
+const RE_ABSOLUTE_PATH = /(^|\s)\/[^\s)"']+/g
 const RE_URL_HOST = /\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?::\d+)?\b/gi
-const RE_STATUS_REASON = /^Status:\s*\d{3}\b/
 const RE_INVALID_METADATA_REASON = /^Received invalid or empty metadata/
 const RE_WHITESPACE = /\s+/g
 
@@ -127,12 +129,12 @@ function assertValidMetadata(xml: string, metadataUrl: string): void {
   }
 }
 
-function sanitizeMetadataFailureReason(error: unknown): string {
+export function sanitizeMetadataFailureReason(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   const normalized = message.trim().replace(RE_WHITESPACE, ' ')
 
-  if (RE_STATUS_REASON.test(normalized)) {
-    return normalized
+  if (!normalized) {
+    return 'Metadata refresh failed'
   }
 
   if (RE_INVALID_METADATA_REASON.test(normalized)) {
@@ -141,6 +143,9 @@ function sanitizeMetadataFailureReason(error: unknown): string {
 
   return normalized
     .replace(RE_HTTP_URL, '[metadata-url]')
+    .replace(RE_WINDOWS_PATH, '[metadata-path]')
+    .replace(RE_UNC_PATH, '[metadata-path]')
+    .replace(RE_ABSOLUTE_PATH, '$1[metadata-path]')
     .replace(RE_URL_HOST, '[metadata-host]')
 }
 
@@ -228,7 +233,15 @@ export function shouldUseRemoteRuntimeMetadata(service: ODataServiceConfig): boo
   return shouldFetchRemoteMetadata(service)
 }
 
-export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: ODataServiceConfig): RuntimeMetadataSnapshot {
+export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: ODataServiceConfig, options: { sanitizeFailureReasons?: boolean } = {}): RuntimeMetadataSnapshot {
+  const sanitizeReason = (reason: string | null): string | null => {
+    if (!reason || !options.sanitizeFailureReasons) {
+      return reason
+    }
+
+    return sanitizeMetadataFailureReason(reason)
+  }
+
   if (!shouldFetchRemoteMetadata(service)) {
     const inputPath = resolve(config.rootDir ?? '', service.url)
     if (!fs.existsSync(inputPath)) {
@@ -244,7 +257,7 @@ export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: O
         hash: null,
         bytes: null,
         xml: null,
-        missingReason: `Input EDMX file not found at ${inputPath}`,
+        missingReason: sanitizeReason(`Input EDMX file not found at ${inputPath}`),
       }
     }
 
@@ -302,7 +315,7 @@ export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: O
     inputPath,
     exists: true,
     stale,
-    staleReason: state?.staleReason ?? null,
+    staleReason: sanitizeReason(state?.staleReason ?? null),
     source: state?.source ?? 'cache',
     timestamp: state?.timestamp ?? stats.mtimeMs,
     refreshedAt: state?.refreshedAt ?? stats.mtime.toISOString(),

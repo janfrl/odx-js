@@ -2,7 +2,7 @@ import type { ODataProxyConfig } from '@bc8-odx/core'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { join } from 'pathe'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
-import { refreshRuntimeMetadata } from '../utils/metadata-refresh'
+import { refreshRuntimeMetadata, sanitizeMetadataFailureReason } from '../utils/metadata-refresh'
 
 export default defineEventHandler(async (event) => {
   enforceExplorerEndpointPolicy(event, 'generate')
@@ -79,12 +79,15 @@ export default defineEventHandler(async (event) => {
     }
 
     const message = error.message || String(error)
+    const isProduction = isProductionExplorerRuntime()
+    const publicMessage = isProduction ? sanitizeMetadataFailureReason(error) : message
+    const failureLabel = isProduction ? 'Metadata refresh failed' : 'Generation failed'
     console.error(`[ODX] Generation failed for ${serviceName}:`, message)
 
     throw createError({
       statusCode: 500,
-      statusMessage: `Generation failed: ${message}`,
-      data: { error: message },
+      statusMessage: `${failureLabel}: ${publicMessage}`,
+      data: { error: publicMessage },
     })
   }
 })

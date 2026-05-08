@@ -27,7 +27,7 @@ export default defineEventHandler((event) => {
 
   const enhancedServices = services.map((svc) => {
     let entities: EntityMapping[] = []
-    const metadata = readRuntimeMetadataSnapshot(config, svc)
+    const metadata = readRuntimeMetadataSnapshot(config, svc, { sanitizeFailureReasons: isProductionExplorerRuntime() })
     const version = metadata.xml ? detectODataVersionFromContent(metadata.xml) : null
 
     if (metadata.xml)
