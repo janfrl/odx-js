@@ -14,70 +14,67 @@ contracts.
 
 ## Current Next Step
 
-Task 082 implementation is complete and requires independent review. Because
-task 082 is review-required, start a fresh Reviewer chat for:
-`.agents/tasks/done/082-align-standalone-explorer-runtime-ui.md`.
+Task 082 review is approved. Continue the remaining production runtime sequence
+with the next ready task:
+`.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`.
 
-After task 082 review approval, continue the remaining production runtime
-sequence in this order:
-
-1. `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
-2. `.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`
+After task 083 is implemented and reviewed as required, continue with:
+`.agents/tasks/ready/085-refresh-user-facing-explorer-runtime-docs.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Review the completed task:
-- `.agents/tasks/done/082-align-standalone-explorer-runtime-ui.md`
+Implement exactly this task:
+- `.agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md`
 
 Read:
 - AGENTS.md
 - README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/implementer.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
-- .agents/tasks/done/082-align-standalone-explorer-runtime-ui.md
-- .agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md
-- .agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md
-- .agents/reviews/081-use-runtime-metadata-cache-for-schema-and-config-review.md
-- packages/explorer/nuxt.config.ts
+- .agents/tasks/ready/083-complete-or-remove-explorer-mockdata-api.md
+- .agents/reviews/082-align-standalone-explorer-runtime-ui-review.md
+- packages/proxy/src/nitro.ts
+- packages/proxy/src/api/*
 - packages/explorer/composables/useODataState.ts
 - packages/explorer/composables/useEntityExplorer.ts
-- packages/explorer/components/DataEditor.vue
-- packages/explorer/components/entity/OfflineState.vue
-- packages/explorer/components/tabs/TabOverview.vue
-- packages/explorer/components/tabs/TabProxy.vue
-- packages/explorer/components/tabs/TabServices.vue
 - packages/explorer/test/state.test.ts
-- the implementation diff for task 082
+- docs/content/en/5.explorer/1.setup.md
+- docs/content/de/5.explorer/1.setup.md
 
-Review stance:
-- Findings first.
-- Prioritize production/runtime messaging correctness, standalone API-base behavior, stale/missing metadata UI state, generated type/SDK wording, layout regressions, and missing tests.
-- Confirm production-like configs show Refresh Metadata semantics and do not imply production SDK regeneration.
-- Confirm local development SDK regeneration affordances remain available only when config indicates support.
-- Confirm configured `odxApiBase` is applied consistently to internal Explorer APIs and runtime proxy calls without changing proxy endpoint security.
-- Confirm no persistence dependency, metadata cache implementation change, db0, evlog, or marketing/landing-page scope was introduced.
+Rules:
+- Keep changes scoped to task 083.
+- Decide within implementation whether to add a real mock-data backend handler or remove the exposed UI/state call.
+- If adding a handler, keep it clearly development/mock-only and protect it in production.
+- If removing the call, update Explorer UI/state and docs so mock-data clearing is not advertised as a server feature.
+- Do not add db0.
+- Do not implement full mock data management unless the minimal clear behavior is already well-defined and safe.
+- Do not change normal OData proxy behavior.
+- Do not redesign Explorer data browser UI beyond removing or wiring the mismatched action.
+- Add focused tests for the chosen behavior.
+- Update the task handoff notes before finishing.
+- Move the task to `.agents/tasks/done/` only after implementation and verification.
+- Update `.agents/NEXT.md` with the next workflow action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 Verification:
-- inspect or rerun `pnpm.cmd --filter @bc8-odx/explorer run verify`
-- inspect or rerun `pnpm.cmd run lint`
-- inspect or rerun `pnpm.cmd run typecheck`
-- inspect the recorded headless Chrome browser check:
-  `C:\tmp\odx-explorer-task082.png`, URL
-  `http://127.0.0.1:3401/__odx__/client/`, viewport `1440x1000`
+- `pnpm.cmd --filter @bc8-odx/explorer run verify`
+- `pnpm.cmd --filter @bc8-odx/proxy run verify`
+- `pnpm.cmd run lint`
+- `pnpm.cmd run typecheck`
 - `git diff --check`
 
-Output:
-- findings with severity and file/line references
-- acceptance criteria status
+When done, summarize:
+- changed files
+- implementation summary
 - verification performed
-- whether task 082 is approved or needs changes
-- create or update a review note under `.agents/reviews/`
-- update `.agents/NEXT.md` with the next workflow action
-- commit the review note and workflow state changes with a Conventional Commit
+- self-check result
+- whether separate review is required and why
+- commit hash
+- known gaps
 - exact next-chat prompt from `.agents/NEXT.md`
 ```

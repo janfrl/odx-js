@@ -127,6 +127,6 @@ runtime endpoint work.
   `.agents/tasks/done/` after implementation and verification.
 - `.agents/NEXT.md` update: Updated to request a fresh Reviewer for task 082
   before continuing to task 083, then task 085.
-- commit hash: to be filled after commit.
+- commit hash: `36136d8795a1bbf9e3038eb027e642c52ee770f5`.
 - known gaps: Browser verification used mocked runtime API responses rather
   than a live BTP/AppRouter deployment.
