@@ -14,56 +14,65 @@ contracts.
 
 ## Current Next Step
 
-Task 085 focused documentation consistency fix is ready for re-review.
+Task 085 is approved after focused re-review. Implement task 086:
+`.agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md`.
 
 ## Prompt For Next Chat
 
 ```txt
-You are the Reviewer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
+You are the Implementer for ODX in C:\GitHub\Bechtle-AG\nuxt-sap-odata on branch codex/orchestrator-8h-analysis.
 
-Run a focused re-review for completed task 085 after the integration fix:
-- `.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`
-- `.agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md`
-
-Reviewed implementation commit:
-- `1396a2984d1b8621527fd6276a35984b49cef003`
-
-Review finding commit:
-- `8f340632ebfd7a2d1ae4b7c3fe132df85b796e69`
+Implement exactly:
+- `.agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md`
 
 Read:
 - AGENTS.md
+- README.md
 - CONTRIBUTING.md
 - .agents/WORKFLOW.md
-- .agents/roles/reviewer.md
+- .agents/roles/implementer.md
 - .agents/decisions/001-production-explorer-runtime-apis.md
-- .agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md
+- .agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md
+- .agents/tasks/done/077-document-explorer-prod-dev-differences.md
+- .agents/tasks/done/078-introduce-odx-log-store-and-redaction.md
+- .agents/tasks/done/079-add-db0-backed-explorer-log-store.md
+- .agents/tasks/done/080-separate-runtime-metadata-refresh-from-sdk-generation.md
+- .agents/tasks/done/081-use-runtime-metadata-cache-for-schema-and-config.md
+- .agents/tasks/done/082-align-standalone-explorer-runtime-ui.md
+- .agents/tasks/done/083-complete-or-remove-explorer-mockdata-api.md
 - .agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md
+- .agents/reviews/085-refresh-user-facing-explorer-runtime-docs-review.md
 - ARCHITECTURE.md
 - API.md
 - SECURITY.md
 - DEPLOYMENT.md
 - docs/content/en/5.explorer/2.reference.md
 - docs/content/de/5.explorer/2.reference.md
-- .agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md
-- the integration fix diff after review commit `8f340632ebfd7a2d1ae4b7c3fe132df85b796e69`
+- relevant English and German Docus pages under docs/content
 
 Rules:
-- Review only the focused fix for the task 085 config-allowlist finding and the new follow-up task file requested by the operator.
-- Confirm root docs and Docus docs align on production `/__odx__/config` service entries including sanitized `metadata` runtime cache state fields.
-- Confirm the docs still do not document secrets, backend URLs, destinations, auth, outbound headers, rules, runtime paths, hooks, DevTools config, `forwardAuthHeader`, or `versions.node` as production config output.
-- Confirm English and German Explorer reference wording is semantically aligned.
-- Confirm no runtime API behavior or Explorer UI changed.
-- Check `git diff --check` and `pnpm.cmd --filter docs run verify` results from the integration fix.
-- Update the review note with the focused re-review decision.
-- If approved, update `.agents/NEXT.md` to assign task 086 to an Implementer; otherwise point `.agents/NEXT.md` to the next focused fix.
-- Commit the re-review note and workflow state changes unless a stop condition prevents committing.
+- Move task 086 to `.agents/tasks/in-progress/` when starting and to `.agents/tasks/done/` only after implementation and verification pass.
+- Keep changes scoped to task 086 documentation and workflow state.
+- Do not change runtime API behavior or Explorer UI.
+- Do not add new endpoints, logging providers, persistence adapters, or metadata generation features.
+- Do not document unapproved future work as current behavior.
+- Do not expose customer-specific BTP routes, credentials, destinations, backend URLs, auth details, outbound headers, TLS settings, runtime paths, or hooks.
+- Create a coherent English and German user-facing development-versus-production Explorer runtime comparison.
+- Keep root docs and Docus docs consistent where both describe the same Explorer runtime behavior.
+- Run `git diff --check`.
+- Run `pnpm.cmd --filter docs run verify`.
+- Perform the manual stale-word, English/German alignment, and sensitive-detail checks listed in the task.
+- Update task 086 handoff notes before finishing.
+- Decide whether separate review is required using `.agents/WORKFLOW.md`; task 086 marks review as required.
+- Update `.agents/NEXT.md` with the next workflow action and exact next-chat prompt.
+- Commit the completed task with a Conventional Commit unless a stop condition prevents committing.
 
 When done, summarize:
-- findings
-- acceptance criteria status for the focused fix
-- verification reviewed
-- whether task 085 is approved or still needs changes
+- changed files
+- what was implemented
+- verification performed
+- self-check result
+- whether separate review is required and why
 - commit hash
 - known gaps
 - exact next-chat prompt from `.agents/NEXT.md`

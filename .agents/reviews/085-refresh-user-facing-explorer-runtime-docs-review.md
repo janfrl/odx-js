@@ -5,9 +5,67 @@ Date: 2026-05-08
 Reviewer: Codex
 Task: `.agents/tasks/done/085-refresh-user-facing-explorer-runtime-docs.md`
 Reviewed commit: `1396a2984d1b8621527fd6276a35984b49cef003`
-Decision: needs changes
+Decision: approved after focused re-review
 
-## Findings
+## Focused Re-Review
+
+Date: 2026-05-08
+Reviewed fix commit: `52302ddcdc561f269bd8ba98e8e1a991915991c7`
+Scope: focused fix for the production `/__odx__/config` allowlist finding and
+the new task 086 follow-up file requested by the operator.
+Decision: approved
+
+### Findings
+
+None.
+
+### Focused Acceptance Criteria
+
+- [x] Root docs and Docus docs align on production `/__odx__/config` service
+  entries, including the sanitized `metadata` runtime cache state fields:
+  `status`, `source`, `stale`, `staleReason`, `refreshedAt`, `timestamp`,
+  `hash`, `bytes`, and optional `message`.
+- [x] The reviewed docs still do not document secrets, backend URLs,
+  destinations, auth, outbound headers, rules, runtime paths, hooks, DevTools
+  config, `forwardAuthHeader`, or `versions.node` as production config output.
+  These categories are documented only as omitted/redacted production fields or
+  as non-output behavior context.
+- [x] English and German Explorer reference wording is semantically aligned for
+  the production config allowlist and metadata cache-state wording.
+- [x] No runtime API behavior or Explorer UI changed in the focused fix. The
+  fix commit changed only root/Docus documentation and `.agents` workflow/task
+  files.
+- [x] The new task
+  `.agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md`
+  is scoped as a documentation follow-up and preserves the non-goals for
+  runtime behavior, Explorer UI, secrets, backend URLs, destinations, auth
+  details, outbound headers, TLS settings, runtime paths, and hooks.
+
+### Verification Reviewed
+
+- `git diff --name-status 8f340632ebfd7a2d1ae4b7c3fe132df85b796e69 52302ddcdc561f269bd8ba98e8e1a991915991c7` -
+  confirmed only documentation and `.agents` files changed.
+- `git diff --check 8f340632ebfd7a2d1ae4b7c3fe132df85b796e69 52302ddcdc561f269bd8ba98e8e1a991915991c7` -
+  pass.
+- `pnpm.cmd --filter docs run verify` - pass.
+- Direct inspection of `ARCHITECTURE.md`, `API.md`, `SECURITY.md`,
+  `DEPLOYMENT.md`, `docs/content/en/5.explorer/2.reference.md`, and
+  `docs/content/de/5.explorer/2.reference.md` - pass for the focused
+  config-allowlist alignment.
+
+### Residual Risk
+
+- No live SAP BTP/AppRouter deployment smoke test was performed. This remains
+  acceptable for this documentation-only focused fix.
+
+### Next Action
+
+- Task 085 is approved.
+- `.agents/NEXT.md` should assign
+  `.agents/tasks/ready/086-document-dev-prod-explorer-runtime-differences.md`
+  to an Implementer.
+
+## Initial Review Findings
 
 1. [P1] Root docs still contradict the updated Docus config contract:
    `API.md:221`, `API.md:222`, `ARCHITECTURE.md:98`,
@@ -25,7 +83,7 @@ Decision: needs changes
    `metadata` state fields, or narrow the Docus wording if `metadata` is not
    intended to be part of the production config contract.
 
-## Acceptance Criteria
+## Initial Review Acceptance Criteria
 
 - [x] Docus docs no longer say db0-backed production logs are merely planned
   once task 079 is approved: pass.
@@ -41,7 +99,7 @@ Decision: needs changes
   versus development Explorer behavior: fail due the production config
   `metadata` allowlist mismatch above.
 
-## Verification
+## Initial Review Verification
 
 Run or inspect:
 
@@ -60,7 +118,7 @@ Run or inspect:
   pass. The docs use examples/placeholders and do not expose customer-specific
   BTP routes, credentials, destinations, or backend URLs.
 
-## Residual Risk
+## Initial Review Residual Risk
 
 - No live SAP BTP/AppRouter deployment smoke test was performed. This is
   acceptable for this documentation-only review.
@@ -69,15 +127,15 @@ Run or inspect:
   not a blocker because the prose production policy still states the production
   redaction boundary.
 
-## Open Questions
+## Initial Review Open Questions
 
 - None.
 
-## Test Gaps
+## Initial Review Test Gaps
 
 - None beyond the documented absence of live BTP smoke testing.
 
-## Summary
+## Initial Review Summary
 
 The Docus refresh correctly updates the implemented production log-store,
 metadata-refresh, schema/config cache, standalone Explorer, and mock-data
@@ -85,10 +143,8 @@ behavior in both English and German. The task needs one focused documentation
 fix so the root production config allowlist matches the approved runtime
 metadata state exposed by `/__odx__/config` and the updated Docus wording.
 
-## Next Action
+## Initial Review Next Action (Superseded)
 
-- `.agents/NEXT.md` was updated to request an Integrator fix for the single
-  root-vs-Docus config contract finding.
-- Follow-up task or fix required: yes, update the affected root docs or Docus
-  wording so the production `/__odx__/config` service-entry allowlist is
-  consistent.
+- Superseded by focused fix commit
+  `52302ddcdc561f269bd8ba98e8e1a991915991c7` and the approved focused
+  re-review above.
