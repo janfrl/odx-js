@@ -10,7 +10,6 @@ const {
   previewData,
   openEditor,
   downloadJson,
-  clearData,
 } = useEntityExplorer()
 
 const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
@@ -74,7 +73,6 @@ const showBuilder = ref(false)
           <UButton label="Headers" icon="i-lucide-sliders-horizontal" variant="ghost" color="neutral" size="sm" @click="openEditor('headers')" />
           <template v-if="previewData && previewData.length > 0">
             <UButton label="JSON" icon="i-lucide-download" variant="ghost" color="neutral" size="sm" @click="downloadJson" />
-            <UButton label="Clear" icon="i-lucide-trash-2" variant="ghost" color="error" size="sm" @click="clearData" />
           </template>
         </div>
       </div>

@@ -139,16 +139,9 @@ describe('explorer State Composable', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/generate?service=R%26D%20%231%3F')
   })
 
-  it('encodes service and entity set names when clearing mock data', async () => {
-    ;(globalThis.fetch as any).mockResolvedValue({ ok: true })
-
-    const { clearEntityMockData } = useSharedODataState()
-    await clearEntityMockData('R&D #1?', 'Sales Orders?#&')
-
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      '/__odx__/mockdata?service=R%26D%20%231%3F&entitySet=Sales%20Orders%3F%23%26',
-      { method: 'DELETE' },
-    )
+  it('does not expose mock-data deletion as an Explorer state action', () => {
+    expect(useSharedODataState()).not.toHaveProperty('clearEntityMockData')
+    expect(useEntityExplorer()).not.toHaveProperty('clearData')
   })
 
   it('builds raw metadata URLs with encoded service names and raw=true preserved', () => {

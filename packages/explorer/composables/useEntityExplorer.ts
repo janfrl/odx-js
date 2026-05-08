@@ -40,7 +40,6 @@ export interface EntityExplorer {
   isNavigationProperty: (key: string) => boolean
   openEditor: (mode: 'view' | 'create' | 'update' | 'headers', row?: any) => void
   deleteItem: (id: any) => Promise<void>
-  clearData: () => Promise<void>
   downloadJson: () => void
 }
 
@@ -49,7 +48,6 @@ export function useEntityExplorer(): EntityExplorer {
     selectedService,
     selectedEntity,
     config,
-    clearEntityMockData,
     sessionHeaders,
     previewLoading,
     previewError,
@@ -452,36 +450,6 @@ export function useEntityExplorer(): EntityExplorer {
     }
   }
 
-  async function clearData(): Promise<void> {
-    if (!selectedService.value || !selectedEntity.value) {
-      return
-    }
-
-    // eslint-disable-next-line no-alert
-    if (!confirm(`Are you sure you want to clear all mock data for ${selectedEntity.value}?`)) {
-      return
-    }
-
-    try {
-      await clearEntityMockData(selectedService.value.name, selectedEntity.value)
-      const toast = useToast()
-      toast.add({
-        title: `All mock data for ${selectedEntity.value} cleared`,
-        icon: 'i-lucide-trash-2',
-        color: 'success',
-      })
-      await refreshEntityData()
-    }
-    catch (e: unknown) {
-      const toast = useToast()
-      toast.add({
-        title: (e as Error).message,
-        icon: 'i-lucide-circle-x',
-        color: 'error',
-      })
-    }
-  }
-
   function downloadJson(): void {
     if (!previewData.value || previewData.value.length === 0) {
       return
@@ -531,7 +499,6 @@ export function useEntityExplorer(): EntityExplorer {
     isNavigationProperty,
     openEditor,
     deleteItem,
-    clearData,
     downloadJson,
     queryState,
   }

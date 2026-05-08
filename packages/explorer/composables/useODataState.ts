@@ -206,10 +206,6 @@ function buildGenerateEndpointUrl(service: string): string {
   return buildOdxApiEndpoint(`/__odx__/generate?service=${encodeInternalQueryValue(service)}`)
 }
 
-function buildMockDataEndpointUrl(service: string, entitySet: string): string {
-  return buildOdxApiEndpoint(`/__odx__/mockdata?service=${encodeInternalQueryValue(service)}&entitySet=${encodeInternalQueryValue(entitySet)}`)
-}
-
 export function buildEntityPreviewCacheKey(service: string, entity: string): string {
   return JSON.stringify([service, entity])
 }
@@ -321,7 +317,6 @@ export interface SharedODataState {
   refreshServiceMetadata: (name: string) => Promise<any>
   clearLogFilters: () => void
   clearLogs: () => Promise<void>
-  clearEntityMockData: (service: string, entitySet: string) => Promise<void>
   updateServiceHealth: (name: string, health: 'online' | 'offline' | 'checking' | 'degraded', force?: boolean) => void
 }
 
@@ -558,16 +553,6 @@ export function useSharedODataState(): SharedODataState {
     logSearch.value = ''
   }
 
-  async function clearEntityMockData(service: string, entitySet: string): Promise<void> {
-    try {
-      await fetch(buildMockDataEndpointUrl(service, entitySet), { method: 'DELETE' })
-    }
-    catch (e) {
-      console.error(`[ODataState] Failed to clear mock data for ${entitySet}`, e)
-      throw e
-    }
-  }
-
   return {
     activeTab,
     logs,
@@ -604,7 +589,6 @@ export function useSharedODataState(): SharedODataState {
     refreshServiceMetadata,
     clearLogFilters,
     clearLogs,
-    clearEntityMockData,
     updateServiceHealth,
   }
 }
