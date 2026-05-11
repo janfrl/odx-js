@@ -1,6 +1,8 @@
 import process from 'node:process'
 import { defineNuxtConfig } from 'nuxt/config'
 
+const apiProxyTarget = process.env.ODX_EXPLORER_API_PROXY_TARGET?.replace(/\/$/, '')
+
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
@@ -25,6 +27,14 @@ export default defineNuxtConfig({
     },
   },
 
+  routeRules: apiProxyTarget
+    ? {
+        '/__odx__/**': {
+          proxy: `${apiProxyTarget}/__odx__/**`,
+        },
+      }
+    : {},
+
   app: {
     baseURL: '/__odx__/client/',
     buildAssetsDir: '_nuxt',
@@ -36,9 +46,6 @@ export default defineNuxtConfig({
 
   vite: {
     server: {
-      hmr: {
-        clientPort: +(process.env.PORT || 3300),
-      },
       fs: {
         // Allow serving files from the entire monorepo
         allow: ['../..'],

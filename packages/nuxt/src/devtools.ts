@@ -9,6 +9,7 @@ export const DEVTOOLS_UI_LOCAL_PORT = 3300
 export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
   const clientPath = resolver.resolve('./client')
   const isProductionBuild = existsSync(clientPath)
+  let devtoolsUiSrc = `${DEVTOOLS_UI_ROUTE}/`
 
   // Serve production-built client (used when package is published)
   if (isProductionBuild) {
@@ -20,41 +21,42 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
       )
     })
   }
-  // In local development, start a separate Nuxt Server and proxy to serve the client
+  // In local development, start a separate Nuxt server and proxy to serve the client.
   else {
-    // 1. Start the explorer dev server on localhost:3300
     const explorerDir = resolver.resolve('../../explorer')
     if (existsSync(explorerDir)) {
-      startSubprocess(
-        {
-          command: 'npx',
-          args: ['nuxi', 'dev', '--port', DEVTOOLS_UI_LOCAL_PORT.toString()],
-          cwd: explorerDir,
-        },
-        {
-          id: 'odx:client',
-          name: 'ODX Explorer Dev',
-        },
-      )
-    }
-    // 2. Proxy the route to the local dev server using Nitro's devProxy
-    nuxt.options.nitro.devProxy ||= {}
-    nuxt.options.nitro.devProxy[DEVTOOLS_UI_ROUTE] = {
-      target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}/`,
-      changeOrigin: true,
-    }
+      let explorerProcess: ReturnType<typeof startSubprocess> | undefined
+      const hostAppUrl = `http://localhost:${nuxt.options.devServer?.port || 3000}`
+      const explorerUrl = `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}/`
+      devtoolsUiSrc = explorerUrl
 
-    // Also add to Vite for better HMR support
-    nuxt.hook('vite:extendConfig', (config) => {
-      if (config.server) {
-        config.server.proxy ||= {}
-        config.server.proxy[DEVTOOLS_UI_ROUTE] = {
-          target: `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}`,
-          changeOrigin: true,
-          followRedirects: true,
-        }
-      }
-    })
+      // Start only when Vite is serving. `nuxi prepare` also runs Nuxt modules in
+      // dev mode, and starting a long-lived subprocess there keeps prepare alive.
+      nuxt.hook('vite:serverCreated', () => {
+        explorerProcess ||= startSubprocess(
+          {
+            command: 'pnpm',
+            args: ['exec', 'nuxi', 'dev', '--host', 'localhost', '--port', DEVTOOLS_UI_LOCAL_PORT.toString()],
+            cwd: explorerDir,
+            env: {
+              ODX_EXPLORER_API_PROXY_TARGET: hostAppUrl,
+            },
+          },
+          {
+            id: 'odx:client',
+            name: 'ODX Explorer Dev',
+          },
+        )
+      })
+
+      nuxt.hook('vite:serverCreated', (server) => {
+        server.middlewares.use(DEVTOOLS_UI_ROUTE, (_req, res) => {
+          res.statusCode = 302
+          res.setHeader('Location', explorerUrl)
+          res.end()
+        })
+      })
+    }
   }
 
   (nuxt as any).hook('devtools:customTabs', (tabs: any[]) => {
@@ -64,7 +66,7 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
       icon: 'i-lucide-cable',
       view: {
         type: 'iframe',
-        src: `${DEVTOOLS_UI_ROUTE}/`,
+        src: devtoolsUiSrc,
       },
     })
   })

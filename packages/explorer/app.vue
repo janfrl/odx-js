@@ -40,6 +40,7 @@ onMounted(() => {
           >
             <UButton
               :icon="item.icon"
+              :aria-label="item.label"
               :color="activeTab === item.id ? 'primary' : 'neutral'"
               :variant="activeTab === item.id ? 'soft' : 'ghost'"
               size="xl"
