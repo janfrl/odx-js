@@ -27,6 +27,16 @@ function createTempRoot(): string {
   return root
 }
 
+function createMockRequest() {
+  const request = new EventEmitter() as any
+  request.setTimeout = vi.fn(() => request)
+  request.destroy = vi.fn((error?: Error) => {
+    if (error)
+      request.emit('error', error)
+  })
+  return request
+}
+
 function createNuxtTypeGenerationHarness(serviceName: string) {
   const rootDir = createTempRoot()
   const buildDir = join(rootDir, '.nuxt')
@@ -71,6 +81,7 @@ describe('type Generation Logic', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     while (tempRoots.length > 0) {
       const tempRoot = tempRoots.pop()!
       if (existsSync(tempRoot))
@@ -141,7 +152,7 @@ describe('type Generation Logic', () => {
       const svc = { name: 'Test', url: 'https://example.com/odata' }
       const config = { auth: { bearerToken: 'test-token' }, rejectUnauthorized: false } as any
 
-      const mockRequest = new EventEmitter() as any
+      const mockRequest = createMockRequest()
       vi.mocked(https.get).mockImplementation((url, options, callback) => {
         const res = new EventEmitter() as any
         res.statusCode = 200
@@ -169,7 +180,7 @@ describe('type Generation Logic', () => {
       const svc = { name: 'Local', url: 'http://localhost:4000/odata' }
       const config = { auth: { bearerToken: 'local-token' }, rejectUnauthorized: false } as any
 
-      const mockRequest = new EventEmitter() as any
+      const mockRequest = createMockRequest()
       vi.mocked(http.get).mockImplementation((url, options, callback) => {
         const res = new EventEmitter() as any
         res.statusCode = 200
@@ -200,7 +211,7 @@ describe('type Generation Logic', () => {
       }
       const config = {} as any
 
-      const mockRequest = new EventEmitter() as any
+      const mockRequest = createMockRequest()
       vi.mocked(https.get).mockImplementation((url, options, callback) => {
         const res = new EventEmitter() as any
         res.statusCode = 200
@@ -224,14 +235,38 @@ describe('type Generation Logic', () => {
 
     it('throws error on non-200 status code', async () => {
       const svc = { name: 'Test', url: 'https://example.com' }
+      const mockRequest = createMockRequest()
+      const resume = vi.fn()
+
       vi.mocked(https.get).mockImplementation((url, options, callback) => {
         const res = new EventEmitter() as any
         res.statusCode = 404
+        res.resume = resume
         callback!(res)
-        return new EventEmitter() as any
+        return mockRequest
       })
 
       await expect(downloadMetadata(svc, {} as any)).rejects.toThrow('Status: 404')
+      expect(resume).toHaveBeenCalledOnce()
+    })
+
+    it('times out hanging metadata requests', async () => {
+      vi.useFakeTimers()
+
+      const svc = { name: 'Slow', url: 'https://example.com/odata' }
+      const mockRequest = createMockRequest()
+      mockRequest.setTimeout = vi.fn((timeout: number, callback: () => void) => {
+        setTimeout(callback, timeout)
+        return mockRequest
+      })
+
+      vi.mocked(https.get).mockImplementation(() => mockRequest)
+
+      const download = expect(downloadMetadata(svc, {} as any)).rejects.toThrow('Metadata request timed out after 30000ms')
+      await vi.advanceTimersByTimeAsync(30_000)
+
+      await download
+      expect(mockRequest.destroy).toHaveBeenCalledWith(expect.any(Error))
     })
   })
 

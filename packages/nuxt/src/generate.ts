@@ -12,6 +12,7 @@ import { consola } from 'consola'
 import { join, resolve } from 'pathe'
 
 const logger = consola.withTag('@bc8-odx/nuxt')
+const METADATA_DOWNLOAD_TIMEOUT_MS = 30_000
 const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
 const RE_PATH_SEPARATOR = /[/\\]/
@@ -72,13 +73,19 @@ export async function downloadMetadata(svc: ODataServiceConfig, config: ODataPro
       ? { headers, rejectUnauthorized: config.rejectUnauthorized }
       : { headers }
 
-    client.get(metadataUrl, requestOptions, (res) => {
-      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300))
+    const req = client.get(metadataUrl, requestOptions, (res) => {
+      if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
+        res.resume()
         return reject(new Error(`Status: ${res.statusCode}`))
+      }
       let data = ''
       res.on('data', chunk => data += chunk)
       res.on('end', () => resolve(data))
     }).on('error', reject)
+
+    req.setTimeout(METADATA_DOWNLOAD_TIMEOUT_MS, () => {
+      req.destroy(new Error(`Metadata request timed out after ${METADATA_DOWNLOAD_TIMEOUT_MS}ms`))
+    })
   })
 }
 
