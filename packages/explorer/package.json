@@ -2,26 +2,62 @@
   "name": "@bc8-odx/explorer",
   "type": "module",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
+  "description": "Standalone Nuxt DevTools and operations UI for ODX.",
+  "license": "MIT",
+  "homepage": "https://github.com/janfrl/odx-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janfrl/odx-js.git"
+  },
+  "exports": {
+    ".": "./nuxt.config.ts",
+    "./package.json": "./package.json"
+  },
+  "main": "./nuxt.config.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "app.config.ts",
+    "app.css",
+    "app.vue",
+    "components",
+    "composables",
+    "nuxt.config.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0"
+  },
   "scripts": {
     "build": "nuxi build",
     "dev": "nuxi dev",
     "generate": "nuxi generate",
     "prepare": "nuxi prepare",
     "preview": "nuxi preview",
-    "verify": "vitest run"
+    "verify": "vitest run && pnpm run typecheck",
+    "typecheck": "nuxi typecheck",
+    "prepack": "pnpm run verify"
   },
   "dependencies": {
+    "@bc8-odx/core": "workspace:*",
+    "@nuxt/ui": "4.9.0",
     "@vue-flow/background": "^1.3.2",
     "@vue-flow/core": "^1.48.2",
+    "@vueuse/core": "14.2.1",
     "elkjs": "^0.11.1",
-    "shiki": "^4.0.2"
+    "nuxt": "4.4.8",
+    "shiki": "^4.0.2",
+    "tailwindcss": "^4.3.2",
+    "vue": "3.5.39"
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.0.0",
-    "@nuxt/ui": "^4.6.0",
     "@vue/test-utils": "^2.4.6",
-    "nuxt": "^4.4.2",
-    "vitest": "^4.1.1"
+    "typescript": "~5.9.3",
+    "vitest": "4.1.3",
+    "vue-tsc": "3.2.6"
   }
 }

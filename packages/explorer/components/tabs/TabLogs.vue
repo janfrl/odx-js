@@ -18,6 +18,10 @@ function getRowTabs() {
   ]
 }
 
+function setRowTab(id: string, value: string | number) {
+  activeRowTabs.value[id] = String(value)
+}
+
 function viewProxyTrace(id: string) {
   selectedTraceLogId.value = id
   activeTab.value = 'proxy'
@@ -29,7 +33,6 @@ function copyToClipboard(text: string) {
     title: 'Copied to clipboard',
     icon: 'i-lucide-copy',
     color: 'success',
-    size: 'xs',
   })
 }
 
@@ -216,7 +219,7 @@ async function runClear() {
             :columns="columns"
             :data="filteredLogs"
             row-id="id"
-            :get-row-id="(row) => String(row.id)"
+            :get-row-id="(row: any) => String(row.id)"
             :expanded-options="{ autoResetExpanded: false }"
             :auto-reset-all="false"
             class="w-full"
@@ -311,11 +314,11 @@ async function runClear() {
                     <div class="px-4 py-2 border-b border-default bg-default/50 flex items-center justify-between">
                       <UTabs
                         :model-value="getRowTab(row.original.id)"
-                        :items="getRowTabs(row.original)"
+                        :items="getRowTabs()"
                         size="sm"
-                        variant="subtle"
+                        variant="pill"
                         class="w-fit"
-                        @update:model-value="v => activeRowTabs[row.original.id] = v"
+                        @update:model-value="setRowTab(row.original.id, $event)"
                       />
                     </div>
 
@@ -385,7 +388,7 @@ async function runClear() {
                           </div>
                           <div v-if="row.original.requestHeaders && Object.keys(row.original.requestHeaders).length > 0" class="text-[11px] font-mono bg-muted/30 p-4 rounded-xl border border-default space-y-2 max-h-120 overflow-auto custom-scrollbar">
                             <div v-for="(val, key) in row.original.requestHeaders" :key="key" class="grid grid-cols-[140px_1fr] gap-4 items-start min-w-0">
-                              <span class="font-bold text-toned truncate" :title="key">{{ key }}:</span>
+                              <span class="font-bold text-toned truncate" :title="String(key)">{{ key }}:</span>
                               <span class="text-muted break-all min-w-0">{{ val }}</span>
                             </div>
                           </div>

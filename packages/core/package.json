@@ -2,17 +2,56 @@
   "name": "@bc8-odx/core",
   "type": "module",
   "version": "0.0.1",
-  "private": true,
-  "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server.ts"
+  "private": false,
+  "description": "Framework-agnostic OData types and utilities for ODX.",
+  "license": "MIT",
+  "homepage": "https://github.com/janfrl/odx-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janfrl/odx-js.git"
   },
-  "main": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.mts",
+      "import": "./dist/server.mjs",
+      "default": "./dist/server.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0"
+  },
   "scripts": {
-    "verify": "vitest run && tsx ../../examples/core-standalone.ts"
+    "verify": "pnpm run test && pnpm run typecheck && tsx ../../examples/core-standalone.ts",
+    "build": "unbuild",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepack": "pnpm run build && pnpm run verify",
+    "prepare": "pnpm run build"
   },
   "dependencies": {
-    "hookable": "^6.1.0",
     "ofetch": "^1.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "4.21.0",
+    "typescript": "~5.9.3",
+    "unbuild": "3.6.1",
+    "vitest": "4.1.3"
   }
 }

@@ -2,11 +2,12 @@ import { defineBuildConfig } from 'unbuild'
 
 export default defineBuildConfig({
   entries: [
-    { input: './packages/nuxt/src/module', name: 'module' },
+    { input: 'src/module', name: 'module' },
+    { input: 'src/generate', name: 'generate' },
   ],
   declaration: true,
   clean: true,
   rollup: {
-    emitCJS: true,
+    emitCJS: false,
   },
 })

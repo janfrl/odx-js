@@ -1,6 +1,4 @@
 import { execSync } from 'node:child_process'
-import { copyFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import process from 'node:process'
 import { consola } from 'consola'
 import { loadWorkspace } from './_utils'
@@ -17,25 +15,27 @@ async function main() {
 
   consola.start(`Starting release for version v${workspace.rootPkg.data.version} with tag ${tag}`)
 
-  // Build the workspace
-  execCommand('pnpm build')
+  execCommand('pnpm verify')
 
-  for (const pkg of workspace.packages) {
-    if (pkg.data.private)
-      continue
+  const publishOrder = [
+    '@bc8-odx/core',
+    '@bc8-odx/proxy',
+    '@bc8-odx/explorer',
+    '@bc8-odx/nuxt',
+  ]
 
-    consola.info(`Publishing ${pkg.data.name}...`)
-    const pkgDir = resolve(repoRoot, pkg.dir)
-
-    // Sync metadata
-    for (const file of ['README.md', 'LICENSE']) {
-      try {
-        copyFileSync(resolve(repoRoot, file), resolve(pkgDir, file))
-      }
-      catch {}
+  for (const packageName of publishOrder) {
+    const pkg = workspace.packages.find(candidate => candidate.data.name === packageName)
+    if (!pkg) {
+      throw new Error(`Release package is missing from the workspace: ${packageName}`)
     }
 
-    execCommand(`pnpm publish --access public --no-git-checks --tag ${tag}`, pkgDir)
+    if (pkg.data.private) {
+      throw new Error(`Release package is unexpectedly private: ${packageName}`)
+    }
+
+    consola.info(`Publishing ${packageName}...`)
+    execCommand(`pnpm publish --access public --no-git-checks --provenance --tag ${tag}`, pkg.dir)
     consola.success(`Published ${pkg.data.name}`)
   }
 

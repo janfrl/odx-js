@@ -12,6 +12,10 @@ ODX works with any standard OData V2/V4 endpoint. Additionally, it comes with fi
 ## 📦 Packages
 
 This repository is a monorepo managed with `pnpm`.
+All four ODX product packages below are published publicly. The
+`packages/approuter` workspace is a private SAP BTP deployment module, not a
+reusable npm package.
+
 
 | Package | Description |
 | :--- | :--- |
@@ -74,6 +78,9 @@ const { data, refresh } = await useOData('Northwind').entitySet('Products').list
 ```
 
 ## 🛠️ Development
+The supported toolchain is Node.js 22 or 24 with pnpm 10 or 11. The repository
+pins the pnpm version used by CI through `packageManager`.
+
 
 ```bash
 # Install dependencies
@@ -85,11 +92,14 @@ pnpm run dev:prepare
 # Start development server with playground
 pnpm run dev
 
-# Run tests
-pnpm run test
+# Run the complete repository gate
+pnpm run verify
 
-# Run package-level verification examples
-pnpm run examples
+# Build all publishable packages
+pnpm run build
+
+# Build the SAP BTP deployment archive
+pnpm run build:deployment
 
 # Regenerate API Reference
 pnpm run docs:api
@@ -99,9 +109,9 @@ The API reference is automatically updated during `pnpm run docs:prepare`.
 
 ### Package verification
 
-Use `pnpm run verify:packages` when you want the package-local confidence checks
-in one command. It is additive: still run broad `lint`, `typecheck`, or
-workspace `test` when the change scope calls for them.
+`pnpm run verify` is the complete repository gate. Use
+`pnpm run verify:packages` when you specifically need the package-local checks
+without the surrounding lint, workspace typecheck, and publication checks.
 
 | Command | What it verifies |
 | :--- | :--- |

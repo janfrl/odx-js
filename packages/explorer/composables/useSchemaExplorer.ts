@@ -23,6 +23,8 @@ if (typeof document !== 'undefined') {
 
 export interface SchemaExplorer {
   selectedService: Ref<any>
+  globalNodes: ReturnType<typeof useVueFlow>['nodes']
+  globalEdges: ReturnType<typeof useVueFlow>['edges']
   containerRef: Ref<HTMLElement | null>
   loading: Ref<boolean>
   isReady: Ref<boolean>
@@ -38,7 +40,7 @@ export interface SchemaExplorer {
 
 export function useSchemaExplorer(): SchemaExplorer {
   const { selectedService } = useSharedODataState()
-  const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport, edges } = useVueFlow()
+  const { setNodes, setEdges, fitView, onPaneReady, viewport, setViewport, nodes: globalNodes, edges: globalEdges } = useVueFlow()
   const toast = useToast()
 
   const nodeTypes: NodeTypesObject = {
@@ -312,7 +314,7 @@ export function useSchemaExplorer(): SchemaExplorer {
     })
 
     // 1. Relationships first (to guide Mermaid layout engine)
-    const sortedEdges = edges.value.toSorted((a: any, b: any) => {
+    const sortedEdges = globalEdges.value.toSorted((a: any, b: any) => {
       const s1 = nameMap[a.source] || a.source
       const s2 = nameMap[b.source] || b.source
       return s1.localeCompare(s2) || (nameMap[a.target] || a.target).localeCompare(nameMap[b.target] || b.target)
@@ -361,6 +363,8 @@ export function useSchemaExplorer(): SchemaExplorer {
 
   return {
     selectedService,
+    globalNodes,
+    globalEdges,
     containerRef,
     loading,
     isReady,

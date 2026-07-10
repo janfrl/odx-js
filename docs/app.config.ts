@@ -30,26 +30,17 @@ export default defineAppConfig({
     },
   },
   docus: {
+    locale: 'en',
+  },
+  seo: {
     title: 'ODX',
+    titleTemplate: '%s ? ODX',
     description: 'OData Developer Experience: The modern ecosystem for OData integration.',
-    socials: {
-      github: 'janfrl/odx-js',
-    },
-    aside: {
-      collapsed: false,
-      exclude: [],
-    },
-    header: {
-      logo: false,
-      showLinkIcon: true,
-      fluid: true,
-    },
-    footer: {
-      credits: {
-        icon: 'i-lucide-box',
-        text: 'ODX Ecosystem',
-        href: 'https://github.com/janfrl/odx-js',
-      },
-    },
+  },
+  header: {
+    title: 'ODX',
+  },
+  socials: {
+    github: 'janfrl/odx-js',
   },
 })

@@ -175,7 +175,7 @@ TypeScript SDK generation is driven by `packages/nuxt/src/generate.ts`:
 5. ODX writes an `index.d.ts` file that augments `ODataServiceRegistry`.
 6. Nuxt receives that generated declaration as a type reference.
 
-Agents changing generation must preserve the registry augmentation behavior,
+Changes to generation must preserve the registry augmentation behavior,
 because it is what powers typed `useOData().Service.EntitySet` access.
 
 Runtime metadata refresh is a separate concern from SDK generation. Production

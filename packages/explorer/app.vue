@@ -44,7 +44,7 @@ onMounted(() => {
               :color="activeTab === item.id ? 'primary' : 'neutral'"
               :variant="activeTab === item.id ? 'soft' : 'ghost'"
               size="xl"
-              :ui="{ rounded: 'rounded-xl' }"
+              :ui="{ base: 'rounded-xl' }"
               @click="activeTab = item.id as any"
             />
           </UChip>

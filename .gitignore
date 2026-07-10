@@ -1,5 +1,6 @@
 # Dependencies
 node_modules
+.pnpm-store/
 
 # Logs
 *.log*
@@ -40,12 +41,7 @@ coverage
 .nyc_output
 
 # VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+.vscode/
 
 # Intellij idea
 *.iml
@@ -60,5 +56,7 @@ coverage
 Network Trash Folder
 Temporary Items
 .apdisk
- 
 packages/proxy/public/
+
+# Generated deployment archives
+packages/explorer/*.zip

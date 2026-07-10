@@ -118,8 +118,9 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
       <!-- Nested Group -->
       <FilterGroup
         v-if="isGroup(item)"
-        v-model="group.items[index]"
+        :model-value="item as FilterGroup"
         :properties="properties"
+        @update:model-value="group.items[index] = $event"
         @remove="removeItem(index)"
       />
 
@@ -140,16 +141,18 @@ function isRule(item: FilterRule | FilterGroup): item is FilterRule {
           v-model="(group.items[index] as FilterRule).operator"
           :items="operators"
           size="xs"
+          value-key="value"
           class="w-32"
         />
 
         <div class="min-w-0 flex-1 h-8 flex items-center">
           <UInput
             v-if="!noValueOperators.includes((group.items[index] as FilterRule).operator)"
-            v-model="(group.items[index] as FilterRule).value"
+            :model-value="String((group.items[index] as FilterRule).value)"
             size="xs"
             placeholder="Value"
             class="w-full"
+            @update:model-value="(group.items[index] as FilterRule).value = $event"
           />
           <div v-else class="w-full h-8 bg-muted/50 rounded-md border border-default/50" />
         </div>

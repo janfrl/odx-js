@@ -2,8 +2,7 @@
 
 Read `README.md` before making changes.
 
-This document defines the contribution standards for this repository. It
-applies to human contributors and automated coding agents alike.
+This document defines the contribution standards for all contributors.
 
 ## Repository Hygiene
 

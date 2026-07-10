@@ -10,21 +10,24 @@
     "postinstall": "nuxi prepare",
     "clean": "nuxt cleanup",
     "metadata:extract": "tsx scripts/extract-metadata.ts",
-    "verify": "pnpm run metadata:extract && pnpm --dir .. run docs:api"
+    "verify": "pnpm run metadata:extract && pnpm --dir .. run docs:api",
+    "typecheck": "nuxi typecheck"
   },
   "dependencies": {
     "@shikijs/twoslash": "^4.0.2",
     "@shikijs/vitepress-twoslash": "4.0.2",
     "comark": "^0.3.1",
-    "docus": "latest",
+    "docus": "^5.12.3",
+    "embla-carousel": "8.6.0",
     "floating-vue": "^5.2.2",
     "shiki": "^4.0.2"
   },
   "devDependencies": {
     "@bc8-odx/nuxt": "workspace:*",
-    "@nuxt/schema": "^4.4.2",
-    "@nuxtjs/i18n": "latest",
-    "nuxt": "^4.4.2",
+    "@nuxt/schema": "^4.4.8",
+    "@nuxtjs/i18n": "^10.4.0",
+    "jiti": "^2.7.0",
+    "nuxt": "^4.4.8",
     "untyped": "^2.0.0"
   }
 }

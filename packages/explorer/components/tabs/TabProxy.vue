@@ -43,24 +43,30 @@ function toggleEntry(idx: number) {
     expandedEntries.value.add(idx)
 }
 
-const labelColors: Record<string, string> = {
+type BadgeColor = 'error' | 'info' | 'neutral' | 'primary' | 'secondary' | 'success' | 'warning'
+
+const labelColors: Record<string, BadgeColor> = {
   Request: 'neutral',
-  Security: 'amber',
-  Auth: 'orange',
-  BTP: 'purple',
-  Hooks: 'indigo',
+  Security: 'warning',
+  Auth: 'warning',
+  BTP: 'secondary',
+  Hooks: 'info',
   Proxy: 'primary',
-  Data: 'teal',
-  Rules: 'blue',
+  Data: 'info',
+  Rules: 'info',
   Response: 'success',
 }
 
-function getLabelColor(label: string, status?: string) {
+function getLabelColor(label: string, status?: ProxyTraceEntry['status']): BadgeColor {
   if (status === 'error')
     return 'error'
   if (status === 'success')
     return 'success'
   return labelColors[label] || 'neutral'
+}
+
+function isPositiveDelta(delta: string | number): boolean {
+  return Number(delta) > 0
 }
 
 function formatTime(ts: number | string) {
@@ -260,7 +266,7 @@ const identityFields = computed(() => {
                       </UBadge>
                       <span class="text-[10px] font-mono text-muted">
                         {{ formatTime(entry.timestamp) }}
-                        <span v-if="idx > 0 && entry.delta > 0" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
+                        <span v-if="idx > 0 && isPositiveDelta(entry.delta)" class="ml-1 text-primary-500 font-bold">(+{{ entry.delta }}ms)</span>
                       </span>
                     </div>
                     <UIcon

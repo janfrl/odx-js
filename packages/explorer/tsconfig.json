@@ -4,11 +4,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "paths": {
-      "@bc8-odx/core": ["../core/src/index.ts"],
-      "@bc8-odx/proxy": ["../proxy/src/index.ts"],
-      "~/*": ["./*"]
-    },
     "strict": true
   }
 }

@@ -62,11 +62,12 @@ each application instance has its own filesystem and locking behavior.
 
 ## Build
 
-The root build script builds the Explorer, builds the proxy, adjusts generated
-Nitro package metadata for deployment, and creates an MTA archive:
+`build:deployment` builds the Explorer and proxy runtimes, adjusts generated
+Nitro package metadata, and creates an MTA archive. The root `build` command is
+reserved for the publishable npm packages.
 
 ```bash
-pnpm run build
+pnpm run build:deployment
 ```
 
 The resulting archive is written to:
@@ -248,7 +249,7 @@ pnpm run lint
 pnpm run typecheck
 pnpm run test
 pnpm --filter odx-approuter run verify
-pnpm run build
+pnpm run build:deployment
 ```
 
 For documentation-only changes, `git diff --check` is usually enough.

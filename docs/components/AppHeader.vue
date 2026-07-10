@@ -1,5 +1,7 @@
 <script setup lang="ts">
-const { docus: config } = useAppConfig()
+const { socials } = useAppConfig() as {
+  socials: Record<string, string>
+}
 </script>
 
 <template>
@@ -28,8 +30,8 @@ const { docus: config } = useAppConfig()
           </ClientOnly>
 
           <UButton
-            v-if="config.socials?.github"
-            :to="`https://github.com/${config.socials.github}`"
+            v-if="socials.github"
+            :to="`https://github.com/${socials.github}`"
             target="_blank"
             color="neutral"
             variant="ghost"

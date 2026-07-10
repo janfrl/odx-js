@@ -102,7 +102,7 @@ describe('explorer State Composable', () => {
 
     expect(globalThis.fetch).toHaveBeenCalledWith('/__odx__/logs')
     expect(logs.value).toHaveLength(1)
-    expect(logs.value[0].id).toBe('1')
+    expect(logs.value[0]!.id).toBe('1')
   })
 
   it('clears server and local traffic logs', async () => {

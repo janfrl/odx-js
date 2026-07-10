@@ -1,10 +1,10 @@
-import type { EntityMapping } from '@bc8-odx/core'
+import type { ODataLog as CoreODataLog, ProxyTraceEntry as CoreProxyTraceEntry, EntityMapping, ODataServiceConfig } from '@bc8-odx/core'
 
 const RE_ABSOLUTE_HTTP_URL = /^https?:\/\//i
 const RE_LEADING_SLASHES = /^\/+/
 const RE_TRAILING_SLASHES = /\/+$/
 
-export interface ODataServiceState {
+export interface ODataServiceState extends Omit<ODataServiceConfig, 'route' | 'strategy' | 'url'> {
   name: string
   url?: string
   route: string
@@ -15,6 +15,7 @@ export interface ODataServiceState {
     auth?: any
   }
   headers?: Record<string, string>
+  version?: string
   health?: 'online' | 'offline' | 'checking' | 'degraded'
   icon?: string
   metadata?: {
@@ -51,37 +52,30 @@ export interface ODataConfig {
   }
 }
 
-export interface ProxyTraceEntry {
-  label: string
-  duration: number | string
-  status?: number
-  timestamp?: number
-  details?: any
-}
+export type ProxyTraceEntry = CoreProxyTraceEntry
 
-export interface ODataLog {
-  id: string
-  timestamp: string
-  method: string
-  service: string
-  path: string
-  url?: string
-  targetUrl?: string
-  entitySet?: string
-  status: number
-  duration: number
-  isPending?: boolean
-  proxyTrace?: ProxyTraceEntry[]
+export interface ODataLog extends Omit<CoreODataLog, 'timestamp'> {
+  timestamp: number | string
+  path?: string
 }
 
 export type LogFilterStatus = 'all' | 'success' | 'failures'
 
+export interface FilterRule {
+  type: 'rule'
+  field: string
+  operator: string
+  value: string | number
+}
+
+export interface FilterGroup {
+  type: 'group'
+  logic: 'and' | 'or'
+  items: Array<FilterRule | FilterGroup>
+}
+
 export interface VisualQueryState {
-  filters: {
-    type: 'group'
-    logic: 'and' | 'or'
-    items: any[]
-  }
+  filters: FilterGroup
   select: string[]
   expand: string[]
   sortBy: { field: string, direction: 'asc' | 'desc' }[]

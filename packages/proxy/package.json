@@ -2,32 +2,69 @@
   "name": "@bc8-odx/proxy",
   "type": "module",
   "version": "0.0.1",
-  "exports": {
-    ".": "./src/index.ts",
-    "./nitro": "./src/nitro.ts"
+  "private": false,
+  "description": "H3 and Nitro OData proxy with SAP BTP integration for ODX.",
+  "license": "MIT",
+  "homepage": "https://github.com/janfrl/odx-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janfrl/odx-js.git"
   },
-  "main": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./nitro": {
+      "types": "./dist/nitro.d.mts",
+      "import": "./dist/nitro.mjs",
+      "default": "./dist/nitro.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0"
+  },
   "scripts": {
-    "build": "nitropack build",
+    "build": "unbuild",
     "test": "vitest run",
-    "verify": "vitest run && tsx ../../examples/proxy-standalone.ts"
+    "verify": "vitest run && tsx ../../examples/proxy-standalone.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepack": "pnpm run build && pnpm run verify",
+    "build:runtime": "nitropack build",
+    "prepare": "pnpm run build"
   },
   "dependencies": {
     "@bc8-odx/core": "workspace:*",
     "@sap/xsenv": "^6.1.0",
     "@sap/xssec": "^4.13.0",
     "db0": "^0.3.4",
-    "h3": "^1.15.10",
+    "h3": "1.15.11",
     "hookable": "^6.1.0",
-    "nitropack": "^2.13.2",
+    "nitropack": "2.13.4",
     "ofetch": "^1.5.1",
     "pathe": "^2.0.3",
     "pg": "^8.20.0",
     "ufo": "^1.6.3"
   },
   "devDependencies": {
-    "get-port-please": "^3.2.0",
+    "@types/node": "^26.1.1",
     "listhen": "^1.9.0",
-    "vitest": "^4.1.1"
+    "tsx": "4.21.0",
+    "typescript": "~5.9.3",
+    "unbuild": "3.6.1",
+    "vitest": "4.1.3"
   }
 }

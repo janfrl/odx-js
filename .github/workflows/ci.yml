@@ -9,41 +9,31 @@ on:
       - main
 
 jobs:
-  lint:
+  verify:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22, 24]
 
     steps:
       - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 20
-
-      - run: npm i -g --force corepack@latest && corepack enable
-
-      - name: Install dependencies
-        run: npx nypm@latest i
-
-      - name: Lint
-        run: npm run lint
-
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 20
-
-      - run: npm i -g --force corepack@latest && corepack enable
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
 
       - name: Install dependencies
-        run: npx nypm@latest i
+        run: pnpm install --frozen-lockfile
 
-      - name: Playground prepare
-        run: npm run dev:prepare
+      - name: Prepare Nuxt workspaces
+        run: pnpm dev:prepare
 
-      - name: Test
-        run: npm run test:unit
+      - name: Verify workspace
+        run: pnpm verify
+
+      - name: Check generated artifact drift
+        run: git diff --exit-code
