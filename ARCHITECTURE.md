@@ -131,7 +131,7 @@ persistence is available through a proxy-owned db0 adapter only when
 
 The documentation site extends Docus, uses Nuxt UI styling, and includes API
 reference automation. Source guides live under `docs/content`. The root-level
-documentation files describe repository-wide architecture and agent-relevant
+documentation files describe repository-wide architecture and contributor
 constraints; the Docus content describes user-facing product guides.
 
 ## Runtime Flow

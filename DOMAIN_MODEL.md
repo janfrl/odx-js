@@ -1,7 +1,7 @@
 # Domain Model
 
-This file defines the stable ODX concepts used across packages, docs, and agent
-workflows.
+This file defines the stable ODX concepts used across packages and
+documentation.
 
 ## ODX
 

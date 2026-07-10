@@ -26,8 +26,8 @@ Project context should live in normal project documentation such as
 `README.md`, `ARCHITECTURE.md`, `DESIGN.md`, `SECURITY.md`, `API.md`,
 `DEPLOYMENT.md`, `DOMAIN_MODEL.md`, or `CONTRIBUTING.md`.
 
-Use `.agents/` only for operational planning, task state, role prompts, review
-notes, and temporary workflow material.
+Temporary planning belongs in issues, pull requests, task tools, or agreed
+workspace notes. Do not add repository-local assistant workflow folders.
 
 Prefer documentation that is useful to all contributors.
 
