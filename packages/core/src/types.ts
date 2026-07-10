@@ -1,14 +1,3 @@
-import type { H3Event } from 'h3'
-import type { Hookable } from 'hookable'
-import type { FetchOptions, FetchResponse } from 'ofetch'
-
-export interface ODataProxyHooks {
-  'odx:proxy:request': (ctx: { event: H3Event, serviceName: string, fetchOptions: FetchOptions }) => void | Promise<void>
-  'odx:proxy:response': (ctx: { event: H3Event, serviceName: string, response: FetchResponse<any> }) => void | Promise<void>
-  [key: `odx:proxy:request:${string}`]: (ctx: { event: H3Event, serviceName: string, fetchOptions: FetchOptions }) => void | Promise<void>
-  [key: `odx:proxy:response:${string}`]: (ctx: { event: H3Event, serviceName: string, response: FetchResponse<any> }) => void | Promise<void>
-}
-
 export interface EntityProperty {
   name: string
   type: string
@@ -216,7 +205,11 @@ export interface ODataProxyConfig {
   basePath: string
   mode: string
   defaultProxyMode?: 'stream' | 'buffer'
-  hooks?: Hookable<ODataProxyHooks>
+  /**
+   * Optional host-specific hook dispatcher. The proxy package supplies the
+   * concrete Nitro/Hookable type without coupling core to a server framework.
+   */
+  hooks?: unknown
   devtools?: {
     enabled?: boolean
     maxLogs?: number
@@ -285,10 +278,18 @@ export interface ODataExplorerConfigResponse {
   }
 }
 
+export interface ODataPublicServiceConfig {
+  name: string
+  strategy?: 'proxied' | 'direct'
+  route?: string
+  /** Required in browser runtime config only for direct services. */
+  url?: string
+}
+
 export interface ODataPublicConfig {
   basePath?: string
   mode?: string
-  services?: ODataServiceConfig[]
+  services?: ODataPublicServiceConfig[]
 }
 
 export interface ModuleOptions {
@@ -351,18 +352,5 @@ export interface ModuleOptions {
      */
     maxPayloadBytes?: number
     logStore?: OdxRuntimeLogStoreConfig
-  }
-}
-
-// Global hook augmentations for Nitro
-declare module 'nitropack' {
-  interface NitroRuntimeHooks extends ODataProxyHooks {}
-}
-
-declare module 'h3' {
-  interface H3EventContext {
-    odataConfig: ODataProxyConfig
-    odataAuth?: string
-    securityContext?: any
   }
 }

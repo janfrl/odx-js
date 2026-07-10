@@ -6,7 +6,7 @@ import {
   createResolver,
   defineNuxtModule,
 } from '@nuxt/kit'
-import { resolveModuleConfig } from './config'
+import { createPublicODataConfig, resolveModuleConfig } from './config'
 import { setupDevToolsUI } from './devtools'
 import { setupTypeGeneration } from './generate'
 
@@ -19,7 +19,7 @@ export default defineNuxtModule<ModuleOptions>({
     mode: 'sdk',
     basePath: '/api/odx',
     forwardAuthHeader: true,
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
     services: [],
     devtools: {
       enabled: true,
@@ -38,17 +38,8 @@ export default defineNuxtModule<ModuleOptions>({
     const odataConfig = resolveModuleConfig(options, nuxt.options)
 
     // 2. Register Runtime & Public Config
-    nuxt.options.runtimeConfig.odata = odataConfig
-    nuxt.options.runtimeConfig.public.odata = {
-      mode: odataConfig.mode,
-      basePath: odataConfig.basePath,
-      services: odataConfig.services.map(s => ({
-        name: s.name,
-        strategy: s.strategy || 'proxied',
-        url: s.url,
-        route: s.route,
-      })),
-    }
+    nuxt.options.runtimeConfig.odata = odataConfig as typeof nuxt.options.runtimeConfig.odata
+    nuxt.options.runtimeConfig.public.odata = createPublicODataConfig(odataConfig) as typeof nuxt.options.runtimeConfig.public.odata
 
     // 3. Register Composables & Middleware
     addImportsDir(resolver.resolve('./runtime/composables'))
@@ -78,7 +69,7 @@ declare module '@nuxt/schema' {
     odata?: ModuleOptions
   }
   interface NuxtOptions {
-    odata?: ModuleOptions
+    odata: ModuleOptions
     nitro: NitroConfig
   }
   interface RuntimeConfig {

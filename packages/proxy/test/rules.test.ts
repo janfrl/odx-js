@@ -1,7 +1,7 @@
-import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyHooks } from '../src/types'
 import { createServer } from 'node:http'
 import { clearODataLogs, getODataLogs } from '@bc8-odx/core'
-import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
 import { ofetch } from 'ofetch'
@@ -10,6 +10,7 @@ import { odataGuard } from '../src'
 import btpAuthPlugin from '../src/plugins/btp-auth'
 import { DevToolsTracer } from '../src/utils/trace'
 import { createBackend } from './fixtures/backend'
+import { listenOnLoopback } from './fixtures/listen'
 import { createProxyServer } from './fixtures/server'
 
 const useRuntimeConfigMock = vi.hoisted(() => vi.fn())
@@ -30,13 +31,10 @@ describe('proxy rules', () => {
 
   beforeAll(async () => {
     // 1. Backend
-    const backendPort = await getPort()
     backendServer = createServer(toNodeListener(createBackend()))
-    await new Promise(resolve => backendServer.listen(backendPort, () => resolve(true)))
-    backendUrl = `http://127.0.0.1:${backendPort}`
+    backendUrl = await listenOnLoopback(backendServer)
 
     // 2. Proxy
-    const proxyPort = await getPort()
     const config: ODataProxyConfig = {
       services: [
         {
@@ -110,8 +108,7 @@ describe('proxy rules', () => {
     }
 
     proxyServer = createServer(toNodeListener(createProxyServer(config)))
-    await new Promise(resolve => proxyServer.listen(proxyPort, () => resolve(true)))
-    proxyUrl = `http://127.0.0.1:${proxyPort}`
+    proxyUrl = await listenOnLoopback(proxyServer)
   }, 20000)
 
   afterAll(async () => {

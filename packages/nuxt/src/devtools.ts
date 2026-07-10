@@ -1,12 +1,28 @@
 import type { Resolver } from '@nuxt/kit'
 import type { Nuxt } from 'nuxt/schema'
 import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { dirname } from 'node:path'
 import { startSubprocess } from '@nuxt/devtools-kit'
 
 export const DEVTOOLS_UI_ROUTE = '/__odx__/client'
 export const DEVTOOLS_UI_LOCAL_PORT = 3300
 
 export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
+  function resolveExplorerDirectory(resolver: Resolver): string | undefined {
+    const workspaceDirectory = resolver.resolve('../../explorer')
+    if (existsSync(workspaceDirectory))
+      return workspaceDirectory
+
+    try {
+      const require = createRequire(import.meta.url)
+      return dirname(require.resolve('@bc8-odx/explorer/package.json'))
+    }
+    catch {
+      return undefined
+    }
+  }
+
   const clientPath = resolver.resolve('./client')
   const isProductionBuild = existsSync(clientPath)
   let devtoolsUiSrc = `${DEVTOOLS_UI_ROUTE}/`
@@ -23,8 +39,8 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
   }
   // In local development, start a separate Nuxt server and proxy to serve the client.
   else {
-    const explorerDir = resolver.resolve('../../explorer')
-    if (existsSync(explorerDir)) {
+    const explorerDir = resolveExplorerDirectory(resolver)
+    if (explorerDir) {
       let explorerProcess: ReturnType<typeof startSubprocess> | undefined
       const hostAppUrl = `http://localhost:${nuxt.options.devServer?.port || 3000}`
       const explorerUrl = `http://localhost:${DEVTOOLS_UI_LOCAL_PORT}${DEVTOOLS_UI_ROUTE}/`

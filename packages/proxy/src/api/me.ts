@@ -2,6 +2,11 @@ import process from 'node:process'
 import { defineEventHandler, getHeader } from 'h3'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 
+function getFirstString(value: unknown): string | undefined {
+  const firstValue = Array.isArray(value) ? value[0] : value
+  return typeof firstValue === 'string' ? firstValue : undefined
+}
+
 /**
  * Returns the current user's identity details using the official SAP security context methods.
  */
@@ -14,7 +19,7 @@ export default defineEventHandler(async (event) => {
 
   // 1. Unified Return via SAP Security Context (Real Cloud Flow)
   if (sc) {
-    const authAttr = sc.getAttribute('auth')?.[0]
+    const authAttr = getFirstString(sc.getAttribute('auth'))
     let userCompanies: any[] = []
     if (authAttr) {
       try {
@@ -25,13 +30,13 @@ export default defineEventHandler(async (event) => {
     }
 
     const user = {
-      Usermail: sc.getEmail() || '',
-      Userid: sc.getAttribute('employee_id')?.[0] || sc.getLogonName() || '',
-      Usercompany: sc.getAttribute('company_id')?.[0] || '',
+      Usermail: sc.getEmail?.() || '',
+      Userid: getFirstString(sc.getAttribute('employee_id')) || sc.getLogonName?.() || '',
+      Usercompany: getFirstString(sc.getAttribute('company_id')) || '',
       Usercompanies: userCompanies,
     }
 
-    return isProduction ? user : { ...user, _raw: sc.getTokenInfo() }
+    return isProduction ? user : { ...user, _raw: sc.getTokenInfo?.() }
   }
 
   // 2. Manual decoding fallback (Approuter present but plugin skipped)

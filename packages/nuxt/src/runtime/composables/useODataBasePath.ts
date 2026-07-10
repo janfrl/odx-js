@@ -8,6 +8,10 @@ export function useODataBasePath(serviceName?: string): string {
   if (serviceName && publicConfig?.services) {
     const service = publicConfig.services.find(s => s.name === serviceName)
     if (service?.strategy === 'direct') {
+      if (!service.url) {
+        throw new Error(`Direct OData service "${service.name}" is missing its public URL`)
+      }
+
       return service.url
     }
   }

@@ -1,3 +1,5 @@
+import type { Hookable } from 'hookable'
+import type { ODataProxyHooks } from '../types'
 import process from 'node:process'
 import { flattenOData } from '@bc8-odx/core'
 import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, setResponseStatus } from 'h3'
@@ -37,7 +39,7 @@ export default defineEventHandler(async (event): Promise<any> => {
       tracer.addTrace('Security', 'Validating BTP Authentication...')
       await validateBtpAuth(event)
       if (event.context.securityContext) {
-        tracer.addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName() }, 'success')
+        tracer.addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName?.() }, 'success')
       }
     }
 
@@ -53,7 +55,12 @@ export default defineEventHandler(async (event): Promise<any> => {
     tracer.addTrace('Proxy', `Forwarding request to: ${targetUrl}`)
 
     // 3. Header Preparation
-    const finalHeaders = prepareProxyHeaders(getHeaders(event), matched?.headers, targetConfig.authHeader)
+    const finalHeaders = prepareProxyHeaders(
+      getHeaders(event),
+      matched?.headers,
+      targetConfig.authHeader,
+      { forwardAuthorization: config.forwardAuthHeader !== false },
+    )
     const loggedHeaders = { ...finalHeaders }
     omitManagedAuthorization(loggedHeaders, targetConfig.authHeader)
 
@@ -68,7 +75,9 @@ export default defineEventHandler(async (event): Promise<any> => {
     const isDirect = targetConfig.strategy === 'direct'
     const fetchOptions: any = { method: event.method, headers: { ...finalHeaders } }
     const nitroApp = (event.context as any).nitroApp
-    const hooks = config?.hooks || event.context.odataHooks || nitroApp?.hooks
+    const configuredHooks = config?.hooks as Hookable<ODataProxyHooks> | undefined
+    const eventHooks = event.context.odataHooks as Hookable<ODataProxyHooks> | undefined
+    const hooks = configuredHooks || eventHooks || nitroApp?.hooks
 
     if (!isDirect) {
       const hookCtx = { event, serviceName, fetchOptions, url: targetUrl }

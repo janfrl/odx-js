@@ -6,6 +6,9 @@ import { useODataBasePath } from './useODataBasePath'
 const RE_SINGLE_QUOTE = /'/g
 const RE_LEADING_SLASHES = /^\/+/
 const RE_TRAILING_SLASHES = /\/+$/
+interface ODataFetchClient {
+  <T>(path: string, options?: any): Promise<T>
+}
 
 /**
  * Composable for interacting with OData services.
@@ -15,7 +18,7 @@ const RE_TRAILING_SLASHES = /\/+$/
 export function useOData(): ODataServiceRegistry
 export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService
 export function useOData(service?: string): any {
-  const client = globalThis.$fetch
+  const client = globalThis.$fetch as unknown as ODataFetchClient
 
   const formatStringKeyLiteral = (value: string): string => `'${encodeURIComponent(value).replace(RE_SINGLE_QUOTE, '\'\'')}'`
 

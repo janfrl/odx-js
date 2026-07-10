@@ -1,3 +1,4 @@
+import type { ODataProxyConfig } from '@bc8-odx/core'
 import type { generateODataTypes } from '../generate'
 import { defineEventHandler, getHeader } from 'h3'
 import { useNitroApp, useRuntimeConfig } from 'nitropack/runtime'
@@ -14,7 +15,7 @@ export default defineEventHandler((event) => {
   const nitroApp = useNitroApp()
 
   // Inject the configuration into the context for the agnostic proxy handlers
-  event.context.odataConfig = runtimeConfig.odata
+  event.context.odataConfig = runtimeConfig.odata as unknown as ODataProxyConfig
 
   // Inject the runtime hooks for the proxy handlers
   // This ensures plugins registered in server/plugins can be called

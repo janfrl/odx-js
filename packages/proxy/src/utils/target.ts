@@ -4,6 +4,14 @@ import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { resolveBtpDestination } from './btp-destination'
 
+export interface ResolvedProxyTarget {
+  url: string
+  authHeader: string
+  isRelative: boolean
+  strategy?: 'proxied' | 'direct'
+  proxyMode?: 'stream' | 'buffer'
+}
+
 /**
  * Resolves the proxy target configuration for a given event and module config.
  * Encapsulates the logic for absolute URLs, BTP destinations, and local relative paths.
@@ -13,7 +21,7 @@ export async function resolveProxyTarget(
   config: ODataProxyConfig,
   serviceRoute: string,
   options: { allowBtpDestinationFallback?: boolean } = {},
-): Promise<any> {
+): Promise<ResolvedProxyTarget | null> {
   const matched = config.services?.find((s: any) =>
     s.name.toLowerCase() === serviceRoute.toLowerCase()
     || (s.route && s.route.toLowerCase() === serviceRoute.toLowerCase()),

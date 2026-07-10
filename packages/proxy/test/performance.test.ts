@@ -6,13 +6,13 @@ import { createServer } from 'node:http'
 import { dirname } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { clearODataLogs } from '@bc8-odx/core'
-import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { assignAverageOverhead, createBenchmarkOutput, formatBenchmarkReport } from './benchmark-report'
 import { summarizeBenchmarkTimings } from './benchmark-summary'
 import { createBackend } from './fixtures/backend'
+import { listenOnLoopback } from './fixtures/listen'
 import { createProxyServer } from './fixtures/server'
 
 const shouldRunBenchmark = process.env.npm_lifecycle_event === 'bench:proxy' || process.env.ODX_PROXY_BENCHMARK === '1'
@@ -48,12 +48,11 @@ function parsePositiveIntegerEnv(name: string, value: string | undefined, defaul
 }
 
 async function listen(app: ReturnType<typeof createBackend>): Promise<{ server: Server, url: string }> {
-  const port = await getPort()
   const server = createServer(toNodeListener(app))
-  await new Promise<void>(resolve => server.listen(port, () => resolve()))
+  const url = await listenOnLoopback(server)
   return {
     server,
-    url: `http://127.0.0.1:${port}`,
+    url,
   }
 }
 

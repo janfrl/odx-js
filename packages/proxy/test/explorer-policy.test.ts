@@ -4,7 +4,6 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { addODataLog, clearODataLogs, getODataLogs } from '@bc8-odx/core'
-import { getPort } from 'get-port-please'
 import { createApp, createRouter, defineEventHandler, toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
 import { join } from 'pathe'
@@ -16,6 +15,7 @@ import meHandler from '../src/api/me'
 import schemaHandler from '../src/api/schema'
 import typesHandler from '../src/api/types'
 import { getRuntimeMetadataCachePaths } from '../src/utils/metadata-refresh'
+import { listenOnLoopback } from './fixtures/listen'
 
 const originalNodeEnv = process.env.NODE_ENV
 const originalVcapServices = process.env.VCAP_SERVICES
@@ -199,17 +199,16 @@ function writeRuntimeMetadataCache(config: ODataProxyConfig, serviceName: string
 
 async function listenMetadataBackend(options: { xml?: string, status?: number } = {}) {
   const requests: Array<{ url?: string, headers: Record<string, string | string[] | undefined> }> = []
-  const port = await getPort()
   const server = createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers })
     res.statusCode = options.status ?? 200
     res.setHeader('content-type', 'application/xml')
     res.end(options.xml ?? metadataXml)
   })
-  await new Promise(resolve => server.listen(port, () => resolve(true)))
+  const url = await listenOnLoopback(server)
 
   return {
-    url: `http://127.0.0.1:${port}`,
+    url,
     requests,
     close: () => new Promise<void>((resolve) => {
       server.close(() => resolve())
@@ -227,7 +226,6 @@ async function listenBtpDestinationService(options: {
   close: () => Promise<void>
 }> {
   const requests: Array<{ method?: string, url?: string, headers: Record<string, string | string[] | undefined> }> = []
-  const port = await getPort()
   const server = createServer((req, res) => {
     requests.push({ method: req.method, url: req.url, headers: req.headers })
 
@@ -256,10 +254,10 @@ async function listenBtpDestinationService(options: {
     res.statusCode = 404
     res.end('not found')
   })
-  await new Promise(resolve => server.listen(port, () => resolve(true)))
+  const url = await listenOnLoopback(server)
 
   return {
-    url: `http://127.0.0.1:${port}`,
+    url,
     requests,
     close: () => new Promise<void>((resolve) => {
       server.close(() => resolve())
@@ -289,12 +287,11 @@ async function listenExplorerApi(config: ODataProxyConfig, options: { authentica
   router.use('/__odx__/types', withContext(typesHandler))
   app.use(router)
 
-  const port = await getPort()
   const server = createServer(toNodeListener(app))
-  await new Promise(resolve => server.listen(port, () => resolve(true)))
+  const url = await listenOnLoopback(server)
 
   return {
-    url: `http://127.0.0.1:${port}`,
+    url,
     close: () => new Promise<void>((resolve) => {
       server.close(() => resolve())
     }),

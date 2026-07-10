@@ -1,12 +1,13 @@
-import type { ODataProxyConfig, ODataProxyHooks } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyHooks } from '../src/types'
 import { createServer } from 'node:http'
 import { clearODataLogs, flattenOData, getODataLogs } from '@bc8-odx/core'
-import { getPort } from 'get-port-please'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
 import { ofetch } from 'ofetch'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createBackend } from './fixtures/backend'
+import { listenOnLoopback } from './fixtures/listen'
 import { createProxyServer } from './fixtures/server'
 
 vi.mock('@bc8-odx/core', async (importOriginal) => {
@@ -28,13 +29,10 @@ describe('proxy integration', () => {
 
   beforeAll(async () => {
     // 1. Spin up dummy backend
-    const backendPort = await getPort()
     backendServer = createServer(toNodeListener(createBackend()))
-    await new Promise(resolve => backendServer.listen(backendPort, () => resolve(true)))
-    backendUrl = `http://127.0.0.1:${backendPort}`
+    backendUrl = await listenOnLoopback(backendServer)
 
     // 2. Configure and spin up proxy server
-    const proxyPort = await getPort()
     const config: ODataProxyConfig = {
       services: [
         {
@@ -86,10 +84,8 @@ describe('proxy integration', () => {
     }
 
     proxyServer = createServer(toNodeListener(createProxyServer(config)))
-    await new Promise(resolve => proxyServer.listen(proxyPort, () => resolve(true)))
-    proxyUrl = `http://127.0.0.1:${proxyPort}`
+    proxyUrl = await listenOnLoopback(proxyServer)
 
-    const disabledProxyPort = await getPort()
     const disabledConfig: ODataProxyConfig = {
       ...config,
       services: [
@@ -107,8 +103,7 @@ describe('proxy integration', () => {
     }
 
     disabledProxyServer = createServer(toNodeListener(createProxyServer(disabledConfig)))
-    await new Promise(resolve => disabledProxyServer.listen(disabledProxyPort, () => resolve(true)))
-    disabledProxyUrl = `http://127.0.0.1:${disabledProxyPort}`
+    disabledProxyUrl = await listenOnLoopback(disabledProxyServer)
   }, 20000)
 
   afterAll(async () => {
@@ -342,12 +337,13 @@ describe('proxy integration', () => {
 
     expect(response.receivedHeaders.authorization).toMatch(/^Basic /)
     expect(response.receivedHeaders['x-hook-visible']).toBe('logged')
+    expect(response.receivedHeaders.cookie).toBeUndefined()
 
     const [log] = await getODataLogs()
     expect(log?.requestHeaders?.['x-debug-test']).toBe('visible')
     expect(log?.requestHeaders?.['x-hook-visible']).toBe('logged')
     expect(log?.requestHeaders?.['x-api-key']).toBe('[Redacted]')
-    expect(log?.requestHeaders?.cookie).toBe('[Redacted]')
+    expect(log?.requestHeaders?.cookie).toBeUndefined()
     expect(log?.requestHeaders?.authorization).toBeUndefined()
   })
 

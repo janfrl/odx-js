@@ -646,21 +646,6 @@
       }
     ]
   },
-  "ODataProxyHooks": {
-    "title": "ODataProxyHooks",
-    "properties": [
-      {
-        "name": "'odx:proxy:request'",
-        "type": "(ctx: { event: H3Event; serviceName: string; fetchOptions: FetchOptions; }) => void | Promise<void>",
-        "required": true
-      },
-      {
-        "name": "'odx:proxy:response'",
-        "type": "(ctx: { event: H3Event; serviceName: string; response: FetchResponse<any>; }) => void | Promise<void>",
-        "required": true
-      }
-    ]
-  },
   "EntityProperty": {
     "title": "EntityProperty",
     "properties": [
@@ -1054,7 +1039,8 @@
       },
       {
         "name": "hooks",
-        "type": "Hookable<ODataProxyHooks, HookKeys<ODataProxyHooks>> | undefined",
+        "type": "unknown",
+        "description": "Optional host-specific hook dispatcher. The proxy package supplies the\nconcrete Nitro/Hookable type without coupling core to a server framework.",
         "required": false
       },
       {
@@ -1211,6 +1197,32 @@
       }
     ]
   },
+  "ODataPublicServiceConfig": {
+    "title": "ODataPublicServiceConfig",
+    "properties": [
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "strategy",
+        "type": "\"proxied\" | \"direct\" | undefined",
+        "required": false
+      },
+      {
+        "name": "route",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "url",
+        "type": "string | undefined",
+        "description": "Required in browser runtime config only for direct services.",
+        "required": false
+      }
+    ]
+  },
   "ODataPublicConfig": {
     "title": "ODataPublicConfig",
     "properties": [
@@ -1226,7 +1238,7 @@
       },
       {
         "name": "services",
-        "type": "ODataServiceConfig[] | undefined",
+        "type": "ODataPublicServiceConfig[] | undefined",
         "required": false
       }
     ]

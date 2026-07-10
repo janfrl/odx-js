@@ -37,7 +37,7 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `destination` | Global SAP BTP destination fallback. | none |
 | `auth` | Global Basic, Bearer, or mock auth data. | none |
 | `headers` | Global headers merged into outgoing proxy calls. | none |
-| `rejectUnauthorized` | TLS certificate validation for metadata/backend calls. | module default is `false` |
+| `rejectUnauthorized` | TLS certificate validation for metadata/backend calls. | `true` |
 | `forwardAuthHeader` | Forward incoming Authorization header through ODX. | `true` |
 | `services` | Configured OData service definitions. | `[]` |
 | `btpConfigService` | User-provided service name for BTP config overrides. | `odx-config` |
@@ -50,8 +50,11 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `devtools.logStore.sql.url` | Database URL for network SQL providers such as PostgreSQL. | none |
 | `devtools.logStore.sql.path` | Local SQLite database path for development or explicit single-instance demos. | none |
 
-Only safe public fields are exposed through `runtimeConfig.public.odata`. Secrets
-must stay in private runtime config, environment variables, or BTP services.
+Only safe public fields are exposed through `runtimeConfig.public.odata`.
+Proxied services expose their name, strategy, and optional route but not their
+backend URL. Direct services also expose their URL because the browser must call
+that endpoint. Secrets must stay in private runtime config, environment
+variables, or BTP services.
 
 ### Service Config
 
@@ -97,9 +100,8 @@ NUXT_ODATA_SERVICES_NORTHWIND_HEADERS_X_API_KEY=...
 
 The service key is the uppercase service name.
 
-`NUXT_ODATA_REJECT_UNAUTHORIZED=false` is a runtime disable switch. To require
-TLS certificate validation, configure `odata.rejectUnauthorized: true` in Nuxt
-module options.
+`NUXT_ODATA_REJECT_UNAUTHORIZED=false` is an explicit runtime escape hatch for
+development systems that use certificates unavailable to the local trust store.
 
 ## `useOData`
 

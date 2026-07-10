@@ -1,4 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from './types'
 import { ofetch } from 'ofetch'
 
 export interface ODataClientOptions {
@@ -21,7 +21,7 @@ export function createODataClient(options: ODataClientOptions): any {
       }
     },
     onResponseError({ response }) {
-      console.error('[@bc8-odx/proxy] request failed', response?._data || response)
+      console.error('[@bc8-odx/core] request failed', response?._data || response)
     },
   })
 }

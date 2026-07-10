@@ -98,8 +98,18 @@ application type changes without a build and deployment.
 
 ## Header Handling
 
-`prepareProxyHeaders` merges service headers and incoming request headers, then
-removes restricted hop-by-hop headers:
+`prepareProxyHeaders` merges explicit service headers with a filtered set of
+incoming request headers. Ambient browser and reverse-proxy credentials are not
+forwarded to OData backends: cookies, response cookies, forwarding metadata,
+real-client IP metadata, hop-by-hop headers, and headers named by the incoming
+`Connection` header are removed. An explicitly configured service `Cookie`
+header remains available for legacy backends.
+
+Incoming `Authorization` is forwarded only when `forwardAuthHeader` is not
+`false`. Authentication resolved from service config or a BTP destination
+always overrides the final `Authorization` header.
+
+Restricted hop-by-hop headers include:
 
 - `host`
 - `connection`
@@ -112,9 +122,6 @@ removes restricted hop-by-hop headers:
 - `te`
 - `trailers`
 - `upgrade`
-
-An auth header resolved from service config or BTP destination overrides the
-final `authorization` header.
 
 Be careful when adding new forwarded headers. Headers can carry identity,
 tenant, routing, or credential material.
@@ -146,24 +153,23 @@ V4 services.
 
 ## TLS
 
-The Nuxt module currently defaults `rejectUnauthorized` to `false` unless the
-option or environment forces stricter behavior. This is convenient for SAP
-development landscapes with self-signed certificates but is weaker than normal
-production TLS validation.
+The Nuxt module defaults `rejectUnauthorized` to `true`. Metadata and backend
+connections therefore validate TLS certificates unless an operator explicitly
+opts out for a development system.
 
-For production deployments, prefer validating certificates and set:
+Development systems with certificates unavailable to the local trust store can
+opt out explicitly:
 
 ```ts
 export default defineNuxtConfig({
   odata: {
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
   },
 })
 ```
 
 `NUXT_ODATA_REJECT_UNAUTHORIZED=false` is available as a runtime disable switch;
-do not rely on it to turn validation on when module config leaves the option at
-its default.
+never use that override as a production default.
 
 ## Logging And Telemetry
 

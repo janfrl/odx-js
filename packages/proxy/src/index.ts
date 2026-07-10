@@ -4,6 +4,12 @@ import odataHandler from './api/odata'
 import { resolveProxyTarget } from './utils/target'
 import { parseODataRequest } from './utils/url'
 
+export type {
+  ODataProxyHooks,
+  ODataProxyRequestContext,
+  ODataProxyResponseContext,
+  SapSecurityContext,
+} from './types'
 export { odataGuard } from './utils/rules'
 export {
   addODataLog,

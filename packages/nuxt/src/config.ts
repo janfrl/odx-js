@@ -1,4 +1,4 @@
-import type { ModuleOptions, ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig, ODataServiceConfig } from '@bc8-odx/core'
 import process from 'node:process'
 import { useLogger } from '@nuxt/kit'
 
@@ -38,7 +38,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
       return JSON.parse(envValue)
     }
     catch {
-      logger.warn(`[@bc8-odx/nuxt] Failed to parse JSON from environment variable: ${envValue}`)
+      logger.warn('[@bc8-odx/nuxt] Ignoring malformed JSON from an OData environment override')
       return {}
     }
   }
@@ -161,5 +161,23 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
         },
       },
     },
+  }
+}
+
+/**
+ * Creates the browser-visible runtime configuration. Backend locations remain
+ * private for proxied services; direct services retain their URL because the
+ * browser must contact them itself.
+ */
+export function createPublicODataConfig(config: ODataProxyConfig): ODataPublicConfig {
+  return {
+    mode: config.mode,
+    basePath: config.basePath,
+    services: config.services.map(service => ({
+      name: service.name,
+      strategy: service.strategy || 'proxied',
+      route: service.route,
+      ...(service.strategy === 'direct' ? { url: service.url } : {}),
+    })),
   }
 }
