@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
+      "@bc8-odx/metadata": ["./packages/metadata/src/index.ts"],
       "@bc8-odx/core": ["./packages/core/src/index.ts"],
       "@bc8-odx/core/server": ["./packages/core/src/server.ts"],
       "@bc8-odx/proxy": ["./packages/proxy/src/index.ts"]

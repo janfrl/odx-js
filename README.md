@@ -12,13 +12,14 @@ ODX works with any standard OData V2/V4 endpoint. Additionally, it comes with fi
 ## 📦 Packages
 
 This repository is a monorepo managed with `pnpm`.
-All four ODX product packages below are published publicly. The
+All five ODX product packages below are published publicly. The
 `packages/approuter` workspace is a private SAP BTP deployment module, not a
 reusable npm package.
 
 
 | Package | Description |
 | :--- | :--- |
+| [`@bc8-odx/metadata`](./packages/metadata) | Loss-aware, framework-neutral XML and JSON CSDL ingestion. |
 | [`@bc8-odx/core`](./packages/core) | Core OData types and framework-agnostic utilities. |
 | [`@bc8-odx/proxy`](./packages/proxy) | H3-based server proxy for OData backends. |
 | [`@bc8-odx/nuxt`](./packages/nuxt) | The main Nuxt module and client-side composables. |
@@ -36,6 +37,7 @@ reusable npm package.
 
 ## ✨ Features
 
+- **Loss-Aware Metadata:** Versioned XML and JSON CSDL ingestion for semantic tooling.
 - **Type-Safe SDK:** Automated TypeScript model generation from EDMX schemas using `odata2ts`.
 - **Nuxt DevTools:** Integrated Traffic Monitor, Schema Explorer, and Entity Data browser.
 - **Server Proxy:** Automated handling of authentication, CSRF tokens, and mock data.
@@ -119,8 +121,9 @@ without the surrounding lint, workspace typecheck, and publication checks.
 | `pnpm run example:core` | Runs the standalone core example against local fixtures, covering EDMX version detection, entity extraction, query stringification, OData response flattening, and the low-level `$odata` helper. |
 | `pnpm run example:proxy` | Starts a local fixture backend and H3 proxy, then verifies proxied OData reads and header forwarding through `@bc8-odx/proxy`. |
 | `pnpm run examples` | Runs the core and proxy standalone examples together for a quick package isolation smoke check. |
-| `pnpm run verify:packages` | Runs the existing package-local verify scripts for core, proxy, Nuxt, Explorer, AppRouter, and docs without replacing broad `lint`, `typecheck`, or workspace `test`. |
+| `pnpm run verify:packages` | Runs the package-local verify scripts for metadata, core, proxy, Nuxt, Explorer, AppRouter, and docs without replacing broad `lint`, `typecheck`, or workspace `test`. |
 | `pnpm run bench:proxy` | Runs the proxy performance benchmark and reports direct, buffered proxy, streamed proxy, concurrent, and DevTools logging timing baselines. |
+| `pnpm --filter @bc8-odx/metadata run verify` | Runs the loss-aware CSDL parser corpus, security cases, serialization, and deterministic hashing checks. |
 | `pnpm --filter @bc8-odx/core run verify` | Runs the focused core Vitest tests and standalone fixture check through the package-local script. |
 | `pnpm --filter @bc8-odx/proxy run verify` | Runs the proxy package Vitest suite and standalone fixture check through the package-local script. |
 | `pnpm --filter @bc8-odx/nuxt run verify` | Runs the Nuxt package Vitest suite and minimal playground check through the package-local script. |

@@ -60,6 +60,18 @@ uses EDMX to:
 Local EDMX paths are resolved from the Nuxt root. Remote EDMX files are fetched
 from `$metadata`.
 
+## CSDL Document
+
+A CSDL document is the loss-aware XML or JSON representation produced by
+`@bc8-odx/metadata`. It contains source identity, OData version evidence,
+ordered raw nodes, stable node IDs, provenance ranges when available, a shallow
+schema index, and diagnostics.
+
+The document is an ingestion contract, not a linked semantic model. Unknown
+annotations and vendor extensions remain data. Resolution of aliases,
+references, inheritance, vocabulary terms, and capabilities belongs in a
+separate semantic compilation phase.
+
 ## Entity Set
 
 An entity set is a named collection exposed by an OData service, such as

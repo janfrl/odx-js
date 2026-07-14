@@ -13,6 +13,7 @@ Important boundaries:
 - ODX proxy to external OData service, BTP destination, or local mock route.
 - AppRouter to proxy and Explorer in BTP.
 - Explorer to internal `/__odx__` endpoints.
+- Untrusted XML or JSON CSDL input to the framework-neutral metadata reader.
 
 Do not treat Explorer endpoints as public APIs. They expose operational state
 that is appropriate for authenticated development and inspection workflows.
@@ -236,6 +237,11 @@ published as examples.
 
 Do not commit generated cache files from customer systems.
 
+Metadata parsing is an untrusted-input boundary. The XML reader must keep DTD
+and entity declarations disabled, perform no external resolution, reject
+unknown entities, and retain nesting limits. Parser security changes require
+focused malformed-input and resource-limit tests.
+
 ## Review Triggers
 
 Require focused security review when a change touches:
@@ -248,4 +254,5 @@ Require focused security review when a change touches:
 - CSRF behavior
 - TLS validation
 - generated metadata cache policy
+- metadata parsing, entity handling, or resource limits
 - `/__odx__` endpoint exposure

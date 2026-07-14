@@ -1,4 +1,750 @@
 {
+  "parseCsdl": {
+    "title": "parseCsdl",
+    "description": "Parses XML or JSON CSDL without I/O. For ambiguous input, pass format\nexplicitly. JSON text must have an object root.",
+    "properties": [
+      {
+        "name": "input",
+        "type": "string | number | boolean | CsdlJsonInput[] | { [key: string]: CsdlJsonInput; } | null",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "ParseCsdlOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "parseCsdlJson": {
+    "title": "parseCsdlJson",
+    "properties": [
+      {
+        "name": "input",
+        "type": "string | number | boolean | CsdlJsonInput[] | { [key: string]: CsdlJsonInput; } | null",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "CsdlParseOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "CsdlResolvedFacet": {
+    "title": "CsdlResolvedFacet",
+    "properties": [
+      {
+        "name": "value",
+        "type": "T",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "\"explicit\" | \"default\"",
+        "required": true
+      }
+    ]
+  },
+  "findCsdlNode": {
+    "title": "findCsdlNode",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "getJsonProperties": {
+    "title": "getJsonProperties",
+    "properties": [
+      {
+        "name": "object",
+        "type": "CsdlJsonObject",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "getJsonProperty": {
+    "title": "getJsonProperty",
+    "properties": [
+      {
+        "name": "object",
+        "type": "CsdlJsonObject",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "getXmlAttribute": {
+    "title": "getXmlAttribute",
+    "properties": [
+      {
+        "name": "element",
+        "type": "CsdlXmlElement",
+        "required": true
+      },
+      {
+        "name": "localName",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "getXmlChildren": {
+    "title": "getXmlChildren",
+    "properties": [
+      {
+        "name": "element",
+        "type": "CsdlXmlElement",
+        "required": true
+      },
+      {
+        "name": "localName",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "resolveCsdlNullable": {
+    "title": "resolveCsdlNullable",
+    "description": "Resolves the Nullable facet for nullable-capable CSDL elements.\n\nThe two encodings deliberately have different defaults: XML defaults omitted\nNullable to true, while JSON CSDL defaults it to false. The source field lets\nsemantic compilers distinguish an explicit choice from an encoding default.",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      },
+      {
+        "name": "node",
+        "type": "CsdlJsonObject | CsdlXmlElement",
+        "required": true
+      }
+    ]
+  },
+  "walkCsdlNodes": {
+    "title": "walkCsdlNodes",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      }
+    ]
+  },
+  "canonicalizeCsdlDocument": {
+    "title": "canonicalizeCsdlDocument",
+    "description": "Produces the semantic input to the versioned hash. It excludes source\nlocations, source identity, raw input, comments, processing instructions,\ninsignificant XML whitespace, and JSON object-property ordering.",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      }
+    ]
+  },
+  "createCsdlArtifact": {
+    "title": "createCsdlArtifact",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "string | Uint8Array<ArrayBufferLike> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "hashCsdlDocument": {
+    "title": "hashCsdlDocument",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      }
+    ]
+  },
+  "hashCsdlSource": {
+    "title": "hashCsdlSource",
+    "properties": [
+      {
+        "name": "source",
+        "type": "string | Uint8Array<ArrayBufferLike>",
+        "required": true
+      }
+    ]
+  },
+  "serializeCsdlDocument": {
+    "title": "serializeCsdlDocument",
+    "description": "Serializes the plain-data public contract with stable object-key ordering.\nSource-order arrays (XML children, JSON properties, expressions) remain ordered.",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "CsdlSerializeOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "CsdlArtifact": {
+    "title": "CsdlArtifact",
+    "properties": [
+      {
+        "name": "contractVersion",
+        "type": "1",
+        "required": true
+      },
+      {
+        "name": "canonicalizationVersion",
+        "type": "\"odx-csdl-canonical-v1\"",
+        "required": true
+      },
+      {
+        "name": "algorithm",
+        "type": "\"SHA-256\"",
+        "required": true
+      },
+      {
+        "name": "documentHash",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "sourceHash",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "canonical",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "document",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "CsdlDiagnostic": {
+    "title": "CsdlDiagnostic",
+    "properties": [
+      {
+        "name": "code",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "severity",
+        "type": "CsdlDiagnosticSeverity",
+        "required": true
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "provenance",
+        "type": "CsdlProvenance",
+        "required": true
+      }
+    ]
+  },
+  "CsdlDocument": {
+    "title": "CsdlDocument",
+    "properties": [
+      {
+        "name": "contractVersion",
+        "type": "1",
+        "description": "Version of this package's serialized document contract, not the OData version.",
+        "required": true
+      },
+      {
+        "name": "idAlgorithm",
+        "type": "\"odx-csdl-id-v1\"",
+        "description": "Version of the deterministic node identity algorithm.",
+        "required": true
+      },
+      {
+        "name": "format",
+        "type": "CsdlFormat",
+        "required": true
+      },
+      {
+        "name": "odataVersion",
+        "type": "ODataVersion",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "CsdlSource",
+        "required": true
+      },
+      {
+        "name": "root",
+        "type": "CsdlJsonObject | CsdlXmlElement",
+        "required": true
+      },
+      {
+        "name": "schemas",
+        "type": "CsdlSchema[]",
+        "required": true
+      },
+      {
+        "name": "diagnostics",
+        "type": "CsdlDiagnostic[]",
+        "required": true
+      },
+      {
+        "name": "rawSource",
+        "type": "string | undefined",
+        "description": "Present only when includeRawSource is explicitly enabled.",
+        "required": false
+      }
+    ]
+  },
+  "CsdlJsonArray": {
+    "title": "CsdlJsonArray",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"array\"",
+        "required": true
+      },
+      {
+        "name": "items",
+        "type": "CsdlJsonNode[]",
+        "required": true
+      }
+    ]
+  },
+  "CsdlJsonObject": {
+    "title": "CsdlJsonObject",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"object\"",
+        "required": true
+      },
+      {
+        "name": "properties",
+        "type": "CsdlJsonProperty[]",
+        "description": "Properties retain source order and duplicates.",
+        "required": true
+      }
+    ]
+  },
+  "CsdlJsonPrimitive": {
+    "title": "CsdlJsonPrimitive",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"string\" | \"number\" | \"boolean\" | \"null\"",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "string | number | boolean | null",
+        "required": true
+      },
+      {
+        "name": "rawValue",
+        "type": "string",
+        "description": "Exact JSON token, preserving large integer, decimal, and escaped string lexemes.",
+        "required": true
+      }
+    ]
+  },
+  "CsdlJsonProperty": {
+    "title": "CsdlJsonProperty",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"property\"",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "CsdlJsonNode",
+        "required": true
+      }
+    ]
+  },
+  "CsdlParseOptions": {
+    "title": "CsdlParseOptions",
+    "properties": [
+      {
+        "name": "source",
+        "type": "CsdlSourceInput | undefined",
+        "required": false
+      },
+      {
+        "name": "includeRawSource",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "maxDepth",
+        "type": "number | undefined",
+        "description": "Maximum XML element or JSON container nesting. Defaults to 256.",
+        "required": false
+      }
+    ]
+  },
+  "CsdlParseResult": {
+    "title": "CsdlParseResult",
+    "properties": [
+      {
+        "name": "document",
+        "type": "CsdlDocument | null",
+        "required": true
+      },
+      {
+        "name": "diagnostics",
+        "type": "CsdlDiagnostic[]",
+        "required": true
+      }
+    ]
+  },
+  "CsdlProvenance": {
+    "title": "CsdlProvenance",
+    "properties": [
+      {
+        "name": "sourceId",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "range",
+        "type": "CsdlSourceRange | undefined",
+        "required": false
+      }
+    ]
+  },
+  "CsdlQualifiedName": {
+    "title": "CsdlQualifiedName",
+    "properties": [
+      {
+        "name": "qualified",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "local",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "prefix",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "namespace",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "CsdlSchema": {
+    "title": "CsdlSchema",
+    "properties": [
+      {
+        "name": "namespace",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "alias",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "nodeId",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "members",
+        "type": "CsdlSchemaMember[]",
+        "required": true
+      }
+    ]
+  },
+  "CsdlSchemaMember": {
+    "title": "CsdlSchemaMember",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "nodeId",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "overloadIndex",
+        "type": "number | undefined",
+        "required": false
+      }
+    ]
+  },
+  "CsdlSerializeOptions": {
+    "title": "CsdlSerializeOptions",
+    "properties": [
+      {
+        "name": "includeLocations",
+        "type": "boolean | undefined",
+        "required": false
+      },
+      {
+        "name": "includeRawSource",
+        "type": "boolean | undefined",
+        "required": false
+      }
+    ]
+  },
+  "CsdlSource": {
+    "title": "CsdlSource",
+    "properties": [
+      {
+        "name": "id",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "format",
+        "type": "CsdlFormat",
+        "required": true
+      },
+      {
+        "name": "uri",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "layer",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "CsdlSourceInput": {
+    "title": "CsdlSourceInput",
+    "properties": [
+      {
+        "name": "id",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "uri",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "layer",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "CsdlSourcePosition": {
+    "title": "CsdlSourcePosition",
+    "properties": [
+      {
+        "name": "offset",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "line",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "column",
+        "type": "number",
+        "required": true
+      }
+    ]
+  },
+  "CsdlSourceRange": {
+    "title": "CsdlSourceRange",
+    "properties": [
+      {
+        "name": "start",
+        "type": "CsdlSourcePosition",
+        "required": true
+      },
+      {
+        "name": "end",
+        "type": "CsdlSourcePosition",
+        "required": true
+      }
+    ]
+  },
+  "CsdlXmlAttribute": {
+    "title": "CsdlXmlAttribute",
+    "properties": [
+      {
+        "name": "name",
+        "type": "CsdlQualifiedName",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "rawValue",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "provenance",
+        "type": "CsdlProvenance",
+        "required": true
+      }
+    ]
+  },
+  "CsdlXmlElement": {
+    "title": "CsdlXmlElement",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"element\"",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "CsdlQualifiedName",
+        "required": true
+      },
+      {
+        "name": "namespaces",
+        "type": "Record<string, string>",
+        "description": "Namespace bindings in scope for this element. The empty key is the default namespace.",
+        "required": true
+      },
+      {
+        "name": "attributes",
+        "type": "CsdlXmlAttribute[]",
+        "required": true
+      },
+      {
+        "name": "children",
+        "type": "CsdlXmlNode[]",
+        "description": "Element order is significant and is never sorted by the parser.",
+        "required": true
+      }
+    ]
+  },
+  "CsdlXmlProcessingInstruction": {
+    "title": "CsdlXmlProcessingInstruction",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"processing-instruction\"",
+        "required": true
+      },
+      {
+        "name": "target",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "CsdlXmlText": {
+    "title": "CsdlXmlText",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"text\" | \"cdata\" | \"comment\"",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "parseCsdlXml": {
+    "title": "parseCsdlXml",
+    "properties": [
+      {
+        "name": "input",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "CsdlParseOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "ParseCsdlOptions": {
+    "title": "ParseCsdlOptions",
+    "properties": [
+      {
+        "name": "format",
+        "type": "\"xml\" | \"json\" | undefined",
+        "required": false
+      }
+    ]
+  },
   "fetchRealXsuaaToken": {
     "title": "fetchRealXsuaaToken",
     "description": "Fetches a real JWT token from SAP BTP XSUAA using Password Grant.\nUsed for local testing with real user data.",

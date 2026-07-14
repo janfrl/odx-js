@@ -5,6 +5,8 @@ integrations in Nuxt and SAP BTP environments.
 
 The durable architectural rule is separation of concerns:
 
+- `@bc8-odx/metadata` owns loss-aware, framework-neutral XML and JSON CSDL
+  ingestion and its versioned document contract.
 - `@bc8-odx/core` owns framework-agnostic OData types and utilities.
 - `@bc8-odx/proxy` owns server-side request handling, BTP integration, policy
   enforcement, telemetry, and internal Explorer endpoints.
@@ -17,6 +19,23 @@ The durable architectural rule is separation of concerns:
 - `packages/approuter` is the SAP approuter entry point for deployed access.
 
 ## Package Boundaries
+
+### `packages/metadata`
+
+Metadata is the ingestion boundary for semantic tooling. It exposes:
+
+- namespace-aware XML and token-aware JSON CSDL readers with structured diagnostics
+- a JSON-serializable, source-ordered document model with provenance and stable IDs
+- shallow schema/member discovery for both representations
+- representation-aware facet helpers such as `resolveCsdlNullable`
+- versioned serialization, canonicalization, source hashing, and document hashing
+
+Metadata must stay free of transport, Nuxt, Vue, Nitro, SAP UI, and generated
+client concerns. It preserves unknown and legacy constructs rather than silently
+normalizing them. It is not yet a linked semantic resolver and does not replace
+the established EDMX helpers used by current core, generation, or Explorer
+flows. Consumers may adopt it behind explicit adapter boundaries while the
+conformance corpus matures.
 
 ### `packages/core`
 
@@ -63,7 +82,8 @@ The Nuxt module is the host integration layer. Its setup flow is:
 8. Register the ODX Explorer as a Nuxt DevTools custom tab in development.
 
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
-OData behavior belongs in `core`; server request behavior belongs in `proxy`.
+OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in
+`metadata`; server request behavior belongs in `proxy`.
 
 ### `packages/explorer`
 

@@ -1,0 +1,44 @@
+{
+  "name": "@bc8-odx/metadata",
+  "type": "module",
+  "version": "0.0.1",
+  "private": false,
+  "description": "Framework-neutral OData CSDL metadata ingestion for ODX.",
+  "license": "MIT",
+  "homepage": "https://github.com/janfrl/odx-js#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/janfrl/odx-js.git",
+    "directory": "packages/metadata"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": ["LICENSE", "README.md", "dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.0.0 || ^24.0.0"
+  },
+  "scripts": {
+    "build": "unbuild",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "verify": "pnpm run test && pnpm run typecheck",
+    "prepack": "pnpm run build && pnpm run verify",
+    "prepare": "pnpm run build"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "unbuild": "3.6.1",
+    "vitest": "4.1.3"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "$Version": "4.01",
+  "$EntityContainer": "Catalog.Container",
+  "Catalog": {
+    "$Alias": "C",
+    "Book": {
+      "$Kind": "EntityType",
+      "$Key": ["ID"],
+      "ID": { "$Type": "Edm.Int64", "$Nullable": false },
+      "LargeExample": 9223372036854775807,
+      "Name": { "$Type": "Edm.String" },
+      "Name": { "$Type": "Edm.String", "@example.Custom": "retained" },
+      "@UI.HeaderInfo": { "$TypeName": "Book" }
+    },
+    "Find": [
+      { "$Kind": "Function", "$Parameter": [{ "$Name": "term", "$Type": "Edm.String" }] },
+      { "$Kind": "Function", "$Parameter": [{ "$Name": "term", "$Type": "Edm.String" }, { "$Name": "limit", "$Type": "Edm.Int32" }] }
+    ],
+    "Container": {
+      "$Kind": "EntityContainer",
+      "Books": { "$Collection": true, "$Type": "Catalog.Book" }
+    }
+  }
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Edmx xmlns:mx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.01">
+  <mx:DataServices>
+    <cs:Schema xmlns:cs="http://docs.oasis-open.org/odata/ns/edm" xmlns:ext="urn:example:extension" Namespace="Catalog" Alias="C" ext:mode="kept">
+      <cs:EntityType Name="Book">
+        <cs:Key><cs:PropertyRef Name="ID" /></cs:Key>
+        <cs:Property Name="ID" Type="Edm.Int64" Nullable="false" />
+        <ext:SearchHint Strategy="prefix" />
+        <cs:Annotation Term="UI.HeaderInfo">
+          <cs:Record><cs:PropertyValue Property="TypeName" String="Book" /></cs:Record>
+        </cs:Annotation>
+      </cs:EntityType>
+      <cs:Function Name="Find" IsBound="false">
+        <cs:Parameter Name="term" Type="Edm.String" />
+      </cs:Function>
+      <cs:Function Name="Find" IsBound="false">
+        <cs:Parameter Name="term" Type="Edm.String" />
+        <cs:Parameter Name="limit" Type="Edm.Int32" />
+      </cs:Function>
+    </cs:Schema>
+  </mx:DataServices>
+</mx:Edmx>

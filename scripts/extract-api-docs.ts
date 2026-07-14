@@ -28,6 +28,7 @@ export interface ApiItem {
 export type ApiReference = Record<string, ApiItem>
 
 const DEFAULT_ENTRY_POINTS = [
+  'packages/metadata/src/index.ts',
   'packages/core/src/index.ts',
   'packages/nuxt/src/module.ts',
 ]
