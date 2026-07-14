@@ -3,6 +3,28 @@
 This file summarizes the durable public and internal contracts. Detailed user
 guides and generated type reference live in `docs/content`.
 
+## Metadata Package
+
+`@bc8-odx/metadata` is the experimental framework-neutral CSDL ingestion
+boundary. Its primary functions are:
+
+- `parseCsdl(input, options)` for XML/JSON format detection
+- `parseCsdlXml(source, options)` and `parseCsdlJson(source, options)` for explicit representations
+- `walkCsdlNodes`, `findCsdlNode`, and representation-specific lookup helpers
+- `resolveCsdlNullable` for the distinct XML and JSON defaults
+- `serializeCsdlDocument` and `canonicalizeCsdlDocument`
+- `hashCsdlSource`, `hashCsdlDocument`, and `createCsdlArtifact`
+
+A successful parse returns a versioned `CsdlDocument`; a failed parse returns
+`document: null` with structured diagnostics. Unknown OData versions remain
+`unknown`. Raw input is opt-in, and parsed JSON object input reports that token
+locations, duplicate keys, and original numeric lexemes are unavailable.
+
+`documentHash` identifies the versioned canonical document. `sourceHash`
+identifies supplied UTF-8 string data or exact `Uint8Array` bytes. Neither is a
+standards-defined CSDL signature. See `packages/metadata/README.md` for current
+conformance limits and non-goals.
+
 ## Nuxt Module
 
 Install and register `@bc8-odx/nuxt` in `nuxt.config.ts`:

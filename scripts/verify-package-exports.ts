@@ -3,6 +3,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 const packageDirectories = [
+  'packages/metadata',
   'packages/core',
   'packages/proxy',
   'packages/nuxt',

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata">
+  <edmx:DataServices m:DataServiceVersion="2.0">
+    <Schema xmlns="http://schemas.microsoft.com/ado/2008/09/edm" xmlns:sap="http://www.sap.com/Protocols/SAPData" Namespace="Legacy" sap:schema-version="1">
+      <EntityType Name="Product" sap:label="Product"><Key><PropertyRef Name="ID" /></Key><Property Name="ID" Type="Edm.Int32" /></EntityType>
+      <Association Name="ProductCategory"><End Role="Product" Type="Legacy.Product" Multiplicity="*" /><End Role="Category" Type="Legacy.Category" Multiplicity="1" /></Association>
+      <EntityContainer Name="LegacyService" m:IsDefaultEntityContainer="true">
+        <EntitySet Name="Products" EntityType="Legacy.Product" />
+        <AssociationSet Name="ProductCategories" Association="Legacy.ProductCategory"><End Role="Product" EntitySet="Products" /><End Role="Category" EntitySet="Categories" /></AssociationSet>
+        <FunctionImport Name="Reset" m:HttpMethod="POST" ReturnType="Edm.Boolean" />
+      </EntityContainer>
+    </Schema>
+  </edmx:DataServices>
+</edmx:Edmx>

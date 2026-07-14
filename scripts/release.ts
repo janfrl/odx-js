@@ -18,6 +18,7 @@ async function main() {
   execCommand('pnpm verify')
 
   const publishOrder = [
+    '@bc8-odx/metadata',
     '@bc8-odx/core',
     '@bc8-odx/proxy',
     '@bc8-odx/explorer',
