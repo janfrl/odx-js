@@ -1,4 +1,4 @@
-import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'

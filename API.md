@@ -5,7 +5,7 @@ guides and generated type reference live in `docs/content`.
 
 ## Metadata Package
 
-`@bc8-odx/metadata` is the experimental framework-neutral CSDL ingestion
+`@me-tools/odx-metadata` is the experimental framework-neutral CSDL ingestion
 boundary. Its primary functions are:
 
 - `parseCsdl(input, options)` for XML/JSON format detection
@@ -27,11 +27,11 @@ conformance limits and non-goals.
 
 ## Nuxt Module
 
-Install and register `@bc8-odx/nuxt` in `nuxt.config.ts`:
+Install and register `@me-tools/odx-nuxt` in `nuxt.config.ts`:
 
 ```ts
 export default defineNuxtConfig({
-  modules: ['@bc8-odx/nuxt'],
+  modules: ['@me-tools/odx-nuxt'],
   odata: {
     services: [
       {
@@ -162,7 +162,7 @@ Keys may be strings, numbers, or composite key objects.
 
 ## Proxy Package
 
-`@bc8-odx/proxy` exports:
+`@me-tools/odx-proxy` exports:
 
 - `createODataHandler(config)` for standalone H3 usage.
 - `odataGuard(ctx)` and `ODataGuard` rule utilities.
@@ -175,7 +175,7 @@ Core log helpers include the `OdxLogStore` interface, `OdxMemoryLogStore`,
 implementations must redact sensitive headers and bound or omit payloads before
 entries are persisted.
 
-The Nitro module is available as `@bc8-odx/proxy/nitro`.
+The Nitro module is available as `@me-tools/odx-proxy/nitro`.
 
 ## Proxy Rules
 

@@ -2,7 +2,7 @@
   "name": "nuxt-sap-odata-playground",
   "private": true,
   "devDependencies": {
-    "@bc8-odx/nuxt": "workspace:*",
+    "@me-tools/odx-nuxt": "workspace:*",
     "@nuxt/ui": "^4.9.0"
   }
 }

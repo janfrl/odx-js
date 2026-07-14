@@ -1,4 +1,4 @@
-import type { Association, AssociationEnd, EntityMapping, NavigationProperty } from '@bc8-odx/core'
+import type { Association, AssociationEnd, EntityMapping, NavigationProperty } from '@me-tools/odx-core'
 import type { NodeTypesObject } from '@vue-flow/core'
 import { useVueFlow } from '@vue-flow/core'
 import ELK from 'elkjs/lib/elk.bundled.js'

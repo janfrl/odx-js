@@ -1,4 +1,4 @@
-import type { ODataRule } from '@bc8-odx/core'
+import type { ODataRule } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import type { FetchOptions } from 'ofetch'
 import process from 'node:process'

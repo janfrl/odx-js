@@ -1,4 +1,4 @@
-import { mergeHeaders } from '@bc8-odx/core'
+import { mergeHeaders } from '@me-tools/odx-core'
 
 /**
  * Restricted headers that should not be forwarded to the target OData service.

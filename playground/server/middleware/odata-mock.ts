@@ -1,4 +1,4 @@
-import type { ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineEventHandler, fromNodeMiddleware, useRuntimeConfig } from '#imports'

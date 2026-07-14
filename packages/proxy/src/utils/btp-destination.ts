@@ -159,7 +159,7 @@ export async function resolveBtpDestination(
 
   if (!destService?.credentials || !xsuaaService?.credentials) {
     if (process.env.NODE_ENV === 'production') {
-      console.warn(`[@bc8-odx/proxy] No BTP Service bindings found for "${serviceName}"`)
+      console.warn(`[@me-tools/odx-proxy] No BTP Service bindings found for "${serviceName}"`)
     }
     if (process.env.NODE_ENV === 'production' && options.allowMissingBindingFallback === false) {
       throw new Error(`Failed to resolve BTP destination "${serviceName}": Destination and XSUAA service bindings are required`)

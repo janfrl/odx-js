@@ -1,7 +1,7 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import type { Connector } from 'db0'
 import process from 'node:process'
-import { resetOdxLogStore, setOdxLogStore } from '@bc8-odx/core'
+import { resetOdxLogStore, setOdxLogStore } from '@me-tools/odx-core'
 import { createDatabase } from 'db0'
 import { OdxDb0LogStore } from './db0-log-store'
 

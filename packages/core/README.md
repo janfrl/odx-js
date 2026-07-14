@@ -1,11 +1,11 @@
-# @bc8-odx/core
+# @me-tools/odx-core
 
 Framework-agnostic OData types and low-level utilities for handling results, metadata, and query stringification.
 
 ## Installation
 
 ```bash
-pnpm add @bc8-odx/core
+pnpm add @me-tools/odx-core
 ```
 
 ## Verification
@@ -13,7 +13,7 @@ pnpm add @bc8-odx/core
 From the repository root:
 
 ```bash
-pnpm --filter @bc8-odx/core run verify
+pnpm --filter @me-tools/odx-core run verify
 ```
 
 This runs the focused core Vitest tests and then the same standalone core

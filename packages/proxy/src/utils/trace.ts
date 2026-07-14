@@ -1,7 +1,7 @@
-import type { OdxLogPayloadPolicy } from '@bc8-odx/core'
+import type { OdxLogPayloadPolicy } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import process from 'node:process'
-import { addODataLog, updateODataLog } from '@bc8-odx/core'
+import { addODataLog, updateODataLog } from '@me-tools/odx-core'
 import { configureOdxLogStore, isPersistentOdxLogStoreConfigured } from './log-store'
 
 function resolvePayloadPolicy(event: H3Event): OdxLogPayloadPolicy {

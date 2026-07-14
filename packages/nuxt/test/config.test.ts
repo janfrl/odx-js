@@ -1,4 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import { describe, expect, it } from 'vitest'
 import { createPublicODataConfig } from '../src/config'
 

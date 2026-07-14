@@ -136,7 +136,7 @@ export default defineNitroPlugin((nitro) => {
       catch (err: any) {
         addTrace('BTP', `Failed to resolve destination: ${err.message}`, { error: err }, 'error')
         if (process.env.NODE_ENV === 'production') {
-          console.error(`[@bc8-odx/proxy] BTP Destination Error [${matched.name}]:`, err.message)
+          console.error(`[@me-tools/odx-proxy] BTP Destination Error [${matched.name}]:`, err.message)
         }
       }
     }

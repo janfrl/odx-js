@@ -9,7 +9,7 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    '@bc8-odx/nuxt',
+    '@me-tools/odx-nuxt',
     '@nuxt/ui',
   ],
 

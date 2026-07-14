@@ -7,7 +7,7 @@ import {
   OdxMemoryLogStore,
   redactSensitiveHeaders,
   updateODataLog,
-} from '@bc8-odx/core'
+} from '@me-tools/odx-core'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 describe('proxy Dev Logs', () => {

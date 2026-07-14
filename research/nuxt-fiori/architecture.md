@@ -62,7 +62,7 @@ higher layers.
 Illustrative package:
 
 ```text
-@bc8-odx/metadata
+@me-tools/odx-metadata
 ```
 
 Required contract:
@@ -82,7 +82,7 @@ Required contract:
 - Retain raw source only as an optional diagnostic artifact, not as the primary
   API.
 
-This should be a separate package rather than expanding `@bc8-odx/core` with a
+This should be a separate package rather than expanding `@me-tools/odx-core` with a
 large parser and vocabulary dependency. All reusable packages remain published,
 consistent with the repository's packaging direction.
 
@@ -93,14 +93,14 @@ the npm scope and final names are a human decision.
 
 | Package | Responsibility | Dependencies |
 | --- | --- | --- |
-| `@happydesigns/fiori-core` | Semantic IR, expression evaluator, compiler, query/transaction planning, controller contracts, diagnostics | ODX metadata types; no framework/UI |
-| `@happydesigns/fiori-odx` | ODX transport and metadata ports, V2/V4 capability adapter | Fiori core + published ODX packages |
-| `@happydesigns/fiori-vue` | Vue subscriptions, injection, composables, component/controller lifecycle | Fiori core + Vue |
-| `@happydesigns/fiori-renderer-ui5` | Vue Smart Components and floorplans rendered with UI5 Web Components | Fiori Vue + selected UI5 WC packages |
-| `@happydesigns/fiori-renderer-nuxt-ui` | Vue renderer using Nuxt UI | Fiori Vue + Nuxt UI |
-| `@happydesigns/nuxt-fiori` | Nuxt module, build-time compiler, auto-imports, route/data integration, DevTools | Fiori core/ODX/Vue; renderer selected by config |
-| `@happydesigns/fiori-react` | Second-framework adapter and components after portability proof | Fiori core + React |
-| `@happydesigns/fiori-renderer-ui5-react` | Optional React UI5 WC renderer | Fiori React + UI5 WC React integration |
+| `@me-tools/fiori-core` | Semantic IR, expression evaluator, compiler, query/transaction planning, controller contracts, diagnostics | ODX metadata types; no framework/UI |
+| `@me-tools/fiori-odx` | ODX transport and metadata ports, V2/V4 capability adapter | Fiori core + published ODX packages |
+| `@me-tools/fiori-vue` | Vue subscriptions, injection, composables, component/controller lifecycle | Fiori core + Vue |
+| `@me-tools/fiori-renderer-ui5` | Vue Smart Components and floorplans rendered with UI5 Web Components | Fiori Vue + selected UI5 WC packages |
+| `@me-tools/fiori-renderer-nuxt-ui` | Vue renderer using Nuxt UI | Fiori Vue + Nuxt UI |
+| `@me-tools/nuxt-fiori` | Nuxt module, build-time compiler, auto-imports, route/data integration, DevTools | Fiori core/ODX/Vue; renderer selected by config |
+| `@me-tools/fiori-react` | Second-framework adapter and components after portability proof | Fiori core + React |
+| `@me-tools/fiori-renderer-ui5-react` | Optional React UI5 WC renderer | Fiori React + UI5 WC React integration |
 
 Every library package should be publishable. Playgrounds, benchmark apps, and
 service fixtures should be workspace applications or fixtures rather than

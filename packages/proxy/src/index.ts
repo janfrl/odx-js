@@ -1,4 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import { defineEventHandler } from 'h3'
 import odataHandler from './api/odata'
 import { resolveProxyTarget } from './utils/target'
@@ -26,7 +26,7 @@ export {
   sanitizeODataLog,
   setOdxLogStore,
   updateODataLog,
-} from '@bc8-odx/core'
+} from '@me-tools/odx-core'
 export type {
   ODataLog,
   OdxBoundedPayload,
@@ -37,7 +37,7 @@ export type {
   OdxLogStore,
   OdxLogUpdateOptions,
   ProxyTraceEntry,
-} from '@bc8-odx/core'
+} from '@me-tools/odx-core'
 
 /**
  * Creates a standalone h3 event handler for OData proxying.

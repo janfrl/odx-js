@@ -1,7 +1,7 @@
 # Security
 
 ODX sits between a browser or Nuxt application and one or more OData backends.
-Most security-sensitive behavior is in `@bc8-odx/proxy` and the SAP BTP
+Most security-sensitive behavior is in `@me-tools/odx-proxy` and the SAP BTP
 deployment configuration.
 
 ## Trust Boundaries

@@ -1,4 +1,4 @@
-import * as core from '@bc8-odx/core'
+import * as core from '@me-tools/odx-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const runtimeConfig = vi.hoisted(() => ({
@@ -20,8 +20,8 @@ vi.mock('#imports', () => ({
 }))
 
 // Mock core library
-vi.mock('@bc8-odx/core', async () => {
-  const actual = await vi.importActual('@bc8-odx/core')
+vi.mock('@me-tools/odx-core', async () => {
+  const actual = await vi.importActual('@me-tools/odx-core')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),

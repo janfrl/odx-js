@@ -1,7 +1,7 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import type { ODataProxyHooks } from '../src/types'
 import { createServer } from 'node:http'
-import { clearODataLogs, flattenOData, getODataLogs } from '@bc8-odx/core'
+import { clearODataLogs, flattenOData, getODataLogs } from '@me-tools/odx-core'
 import { toNodeListener } from 'h3'
 import { createHooks } from 'hookable'
 import { ofetch } from 'ofetch'
@@ -10,8 +10,8 @@ import { createBackend } from './fixtures/backend'
 import { listenOnLoopback } from './fixtures/listen'
 import { createProxyServer } from './fixtures/server'
 
-vi.mock('@bc8-odx/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@bc8-odx/core')>()
+vi.mock('@me-tools/odx-core', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@me-tools/odx-core')>()
   return {
     ...actual,
     flattenOData: vi.fn(actual.flattenOData),

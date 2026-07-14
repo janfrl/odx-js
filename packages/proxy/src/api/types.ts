@@ -1,4 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import fs from 'node:fs'
 import { createError, defineEventHandler, getQuery } from 'h3'
 import { join, resolve } from 'pathe'

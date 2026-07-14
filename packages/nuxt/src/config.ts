@@ -1,4 +1,4 @@
-import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import process from 'node:process'
 import { useLogger } from '@nuxt/kit'
 
@@ -27,7 +27,7 @@ function getBtpServiceConfig(serviceName?: string): Record<string, any> {
  * Resolves and merges module options with environment variables.
  */
 export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): ODataProxyConfig {
-  const logger = useLogger('@bc8-odx/nuxt')
+  const logger = useLogger('@me-tools/odx-nuxt')
 
   const btpOverrides = getBtpServiceConfig(options.btpConfigService)
 
@@ -38,7 +38,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
       return JSON.parse(envValue)
     }
     catch {
-      logger.warn('[@bc8-odx/nuxt] Ignoring malformed JSON from an OData environment override')
+      logger.warn('[@me-tools/odx-nuxt] Ignoring malformed JSON from an OData environment override')
       return {}
     }
   }

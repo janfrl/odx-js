@@ -5,14 +5,14 @@ integrations in Nuxt and SAP BTP environments.
 
 The durable architectural rule is separation of concerns:
 
-- `@bc8-odx/metadata` owns loss-aware, framework-neutral XML and JSON CSDL
+- `@me-tools/odx-metadata` owns loss-aware, framework-neutral XML and JSON CSDL
   ingestion and its versioned document contract.
-- `@bc8-odx/core` owns framework-agnostic OData types and utilities.
-- `@bc8-odx/proxy` owns server-side request handling, BTP integration, policy
+- `@me-tools/odx-core` owns framework-agnostic OData types and utilities.
+- `@me-tools/odx-proxy` owns server-side request handling, BTP integration, policy
   enforcement, telemetry, and internal Explorer endpoints.
-- `@bc8-odx/nuxt` owns Nuxt module registration, runtime config resolution,
+- `@me-tools/odx-nuxt` owns Nuxt module registration, runtime config resolution,
   auto-imported composables, type generation, and DevTools integration.
-- `@bc8-odx/explorer` owns the browser UI for schema, traffic, entity, and proxy
+- `@me-tools/odx-explorer` owns the browser UI for schema, traffic, entity, and proxy
   inspection.
 - `docs` owns the Docus documentation site and API-reference extraction.
 - `playground` is the local integration surface for development and examples.
@@ -56,7 +56,7 @@ Add low-level OData behavior here when it is useful outside Nuxt or Nitro.
 Proxy is the server boundary between applications and OData backends. It exposes:
 
 - `createODataHandler(config)` for standalone H3 usage.
-- `@bc8-odx/proxy/nitro` for Nitro module registration.
+- `@me-tools/odx-proxy/nitro` for Nitro module registration.
 - Proxied OData request handling under the configured `basePath`.
 - Internal Explorer APIs under `/__odx__`.
 - BTP destination and XSUAA integration.
@@ -161,7 +161,7 @@ The normal Nuxt runtime path is:
 1. Application code calls `useOData()`.
 2. The composable builds a service/entity URL from public runtime config.
 3. Proxied services call `basePath/service/entitySet`.
-4. Nitro routes the request through `@bc8-odx/proxy/nitro`.
+4. Nitro routes the request through `@me-tools/odx-proxy/nitro`.
 5. Proxy plugins resolve the target from an absolute URL, SAP BTP destination,
    or local SAP-style mock path.
 6. The proxy prepares headers, applies hooks and declarative rules, then sends

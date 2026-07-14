@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<{
   docsLabel: 'Read the docs',
   docsTo: '/en/ecosystem/introduction',
   githubLabel: 'Star on GitHub',
-  githubTo: 'https://github.com/janfrl/odx-js',
+  githubTo: 'https://github.com/me-tools/odx',
   title: 'Start with the package you need',
   description: 'Install one package or compose the full ODX stack. Core, Proxy, Nuxt, and Explorer are designed to work independently and together.',
 })
@@ -34,16 +34,16 @@ const links = computed(() => [
 const installMarkdown = `
 ::code-group
   \`\`\`bash [Nuxt]
-  pnpm add -D @bc8-odx/nuxt
+  pnpm add -D @me-tools/odx-nuxt
   \`\`\`
   \`\`\`bash [Proxy]
-  pnpm add @bc8-odx/proxy
+  pnpm add @me-tools/odx-proxy
   \`\`\`
   \`\`\`bash [Core]
-  pnpm add @bc8-odx/core
+  pnpm add @me-tools/odx-core
   \`\`\`
   \`\`\`bash [Explorer]
-  pnpm add -D @bc8-odx/explorer
+  pnpm add -D @me-tools/odx-explorer
   \`\`\`
 ::
 `

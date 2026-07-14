@@ -1,9 +1,9 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
-import { addODataLog, clearODataLogs, getODataLogs } from '@bc8-odx/core'
+import { addODataLog, clearODataLogs, getODataLogs } from '@me-tools/odx-core'
 import { createApp, createRouter, defineEventHandler, toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
 import { join } from 'pathe'
@@ -45,7 +45,7 @@ const securityContext = {
     if (name === 'company_id')
       return ['BECHTLE']
     if (name === 'auth')
-      return ['[{"id":"1000","name":"Bechtle AG"}]']
+      return ['[{"id":"1000","name":"Example Corp"}]']
     return []
   },
   getEmail: () => 'john.doe@example.test',
@@ -1101,7 +1101,7 @@ describe('production Explorer endpoint policy', () => {
         Usermail: 'john.doe@example.test',
         Userid: 'JDOE',
         Usercompany: 'BECHTLE',
-        Usercompanies: [{ id: '1000', name: 'Bechtle AG' }],
+        Usercompanies: [{ id: '1000', name: 'Example Corp' }],
       })
       expect(JSON.stringify(response)).not.toContain('raw-token-payload')
     }

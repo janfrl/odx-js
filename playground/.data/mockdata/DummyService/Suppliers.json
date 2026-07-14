@@ -1,4 +1,4 @@
 [
   { "ID": "S1", "Name": "SAP SE", "City": "Walldorf" },
-  { "ID": "S2", "Name": "Bechtle AG", "City": "Neckarsulm" }
+  { "ID": "S2", "Name": "Example Corp", "City": "Neckarsulm" }
 ]

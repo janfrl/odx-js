@@ -1,4 +1,4 @@
-import type { ODataPublicConfig } from '@bc8-odx/core'
+import type { ODataPublicConfig } from '@me-tools/odx-core'
 import { useRuntimeConfig } from '#imports'
 
 export function useODataBasePath(serviceName?: string): string {

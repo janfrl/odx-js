@@ -32,7 +32,7 @@ function initBtpModules(): void {
     }
   }
   catch (err: any) {
-    console.warn('[@bc8-odx/proxy] Failed to initialize SAP BTP security modules:', err.message)
+    console.warn('[@me-tools/odx-proxy] Failed to initialize SAP BTP security modules:', err.message)
   }
   finally {
     btpModulesLoaded = true

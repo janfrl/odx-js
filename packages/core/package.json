@@ -1,14 +1,15 @@
 {
-  "name": "@bc8-odx/core",
+  "name": "@me-tools/odx-core",
   "type": "module",
   "version": "0.0.1",
   "private": false,
   "description": "Framework-agnostic OData types and utilities for ODX.",
   "license": "MIT",
-  "homepage": "https://github.com/janfrl/odx-js#readme",
+  "homepage": "https://github.com/me-tools/odx#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/janfrl/odx-js.git"
+    "url": "https://github.com/me-tools/odx.git",
+    "directory": "packages/core"
   },
   "exports": {
     ".": {

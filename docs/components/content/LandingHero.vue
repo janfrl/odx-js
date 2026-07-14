@@ -48,7 +48,7 @@ const links = computed(() => [
   },
   {
     label: props.githubLabel,
-    to: 'https://github.com/janfrl/odx-js',
+    to: 'https://github.com/me-tools/odx',
     target: '_blank',
     color: 'neutral' as const,
     variant: 'subtle' as const,
@@ -236,7 +236,7 @@ export interface Category {
 
 const twoslashExtraFiles = {
   '/node_modules/#build/odx-types/demo/DemoServiceModel.d.ts': generatedModelSource,
-  '/node_modules/@bc8-odx/core/index.d.ts': `
+  '/node_modules/@me-tools/odx-core/index.d.ts': `
 export interface ODataAsyncData<T> {
   data: { value: T | null }
   pending: { value: boolean }
@@ -273,10 +273,10 @@ export interface ODataServiceRegistry {}
   '/node_modules/.nuxt/odx-types/demo/DemoServiceModel.d.ts': generatedModelSource,
   '/node_modules/.nuxt/odx-types/demo/DemoServiceModel.ts': generatedModelSource,
   '/node_modules/.nuxt/odx-types/index.d.ts': `
-import type { ODataService, ODataServiceRegistry } from '@bc8-odx/core'
+import type { ODataService, ODataServiceRegistry } from '@me-tools/odx-core'
 import type { Product, Category } from './demo/DemoServiceModel'
 
-declare module '@bc8-odx/core' {
+declare module '@me-tools/odx-core' {
   interface ODataServiceRegistry {
     demo: ODataService<'Products' | 'Categories', {
       Products: Product
@@ -286,7 +286,7 @@ declare module '@bc8-odx/core' {
 }
 `,
   '/node_modules/.nuxt/imports.d.ts': `
-import type { ODataServiceRegistry } from '@bc8-odx/core'
+import type { ODataServiceRegistry } from '@me-tools/odx-core'
 import './odx-types'
 
 declare global {

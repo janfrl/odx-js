@@ -1,11 +1,11 @@
-# @bc8-odx/explorer
+# @me-tools/odx-explorer
 
 A high-fidelity DevTools UI built with Nuxt UI for inspecting OData schemas, traffic, and entity data.
 
 ## Installation
 
 ```bash
-pnpm add @bc8-odx/explorer
+pnpm add @me-tools/odx-explorer
 ```
 
 ## Verification
@@ -13,7 +13,7 @@ pnpm add @bc8-odx/explorer
 Run the Explorer package tests without the full workspace test suite:
 
 ```bash
-pnpm --filter @bc8-odx/explorer run verify
+pnpm --filter @me-tools/odx-explorer run verify
 ```
 
 For documentation on the DevTools UI and debugging patterns, see the root

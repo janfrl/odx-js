@@ -1,4 +1,4 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import type { FetchOptions, FetchResponse } from 'ofetch'
 import type { ResolvedProxyTarget } from './utils/target'

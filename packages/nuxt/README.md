@@ -1,11 +1,11 @@
-# @bc8-odx/nuxt
+# @me-tools/odx-nuxt
 
 The official Nuxt module for the ODX ecosystem. It provides type-safe OData composables, automated SDK generation, and native DevTools integration.
 
 ## Installation
 
 ```bash
-pnpm add @bc8-odx/nuxt
+pnpm add @me-tools/odx-nuxt
 ```
 
 ## Verification
@@ -13,7 +13,7 @@ pnpm add @bc8-odx/nuxt
 From the repository root:
 
 ```bash
-pnpm --filter @bc8-odx/nuxt run verify
+pnpm --filter @me-tools/odx-nuxt run verify
 ```
 
 This runs the Nuxt package generation/module e2e tests, then prepares the

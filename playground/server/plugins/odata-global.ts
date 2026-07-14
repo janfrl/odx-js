@@ -1,4 +1,4 @@
-import { odataGuard } from '@bc8-odx/proxy'
+import { odataGuard } from '@me-tools/odx-proxy'
 import { defineNitroPlugin } from 'nitropack/runtime'
 
 export default defineNitroPlugin((nitro) => {

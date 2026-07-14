@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ODataServiceRegistry } from '@bc8-odx/core'
+import type { ODataServiceRegistry } from '@me-tools/odx-core'
 import { useOData, useODataBasePath } from '#imports'
 
 const minimalService: ODataServiceRegistry['MinimalLocal'] = useOData('MinimalLocal')

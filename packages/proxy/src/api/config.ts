@@ -1,6 +1,6 @@
-import type { EntityMapping, ODataExplorerConfigResponse, ODataExplorerServiceInfo, ODataProxyConfig } from '@bc8-odx/core'
+import type { EntityMapping, ODataExplorerConfigResponse, ODataExplorerServiceInfo, ODataProxyConfig } from '@me-tools/odx-core'
 import process from 'node:process'
-import { detectODataVersionFromContent, extractEntitiesFromEdmxContent } from '@bc8-odx/core/server'
+import { detectODataVersionFromContent, extractEntitiesFromEdmxContent } from '@me-tools/odx-core/server'
 import { defineEventHandler } from 'h3'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 import { readRuntimeMetadataSnapshot } from '../utils/metadata-refresh'

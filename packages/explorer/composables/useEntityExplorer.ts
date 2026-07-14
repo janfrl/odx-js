@@ -1,6 +1,6 @@
-import type { EntityMapping } from '@bc8-odx/core'
+import type { EntityMapping } from '@me-tools/odx-core'
 import type { EditorState } from './useODataState'
-import { flattenOData } from '@bc8-odx/core'
+import { flattenOData } from '@me-tools/odx-core'
 import { buildEntityPreviewCacheKey, buildRuntimeProxyUrl } from './useODataState'
 
 const editor = ref<EditorState>({

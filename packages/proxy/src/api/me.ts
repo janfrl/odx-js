@@ -70,10 +70,10 @@ export default defineEventHandler(async (event) => {
   // 3. Local Development Fallback: Provide a synthetic user to allow Explorer to work
   if (process.env.NODE_ENV !== 'production') {
     return {
-      Usermail: 'john.doe@bechtle.com',
+      Usermail: 'alex.doe@example.com',
       Userid: 'JDOE',
       Usercompany: 'BECHTLE',
-      Usercompanies: [{ id: '1000', name: 'Bechtle AG' }],
+      Usercompanies: [{ id: '1000', name: 'Example Corp' }],
       _synthetic: true,
     }
   }

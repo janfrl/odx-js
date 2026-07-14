@@ -1,14 +1,15 @@
 {
-  "name": "@bc8-odx/nuxt",
+  "name": "@me-tools/odx-nuxt",
   "type": "module",
   "version": "0.0.1",
   "private": false,
   "description": "Nuxt module for type-safe OData access, SDK generation, proxying, and DevTools integration.",
   "license": "MIT",
-  "homepage": "https://github.com/janfrl/odx-js#readme",
+  "homepage": "https://github.com/me-tools/odx#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/janfrl/odx-js.git"
+    "url": "https://github.com/me-tools/odx.git",
+    "directory": "packages/nuxt"
   },
   "exports": {
     ".": {
@@ -57,9 +58,9 @@
     "dev:prepare": "nuxt-module-build build --stub && nuxt-module-build prepare"
   },
   "dependencies": {
-    "@bc8-odx/core": "workspace:*",
-    "@bc8-odx/explorer": "workspace:*",
-    "@bc8-odx/proxy": "workspace:*",
+    "@me-tools/odx-core": "workspace:*",
+    "@me-tools/odx-explorer": "workspace:*",
+    "@me-tools/odx-proxy": "workspace:*",
     "@nuxt/devtools-kit": "3.2.4",
     "@nuxt/kit": "4.4.8",
     "@nuxt/schema": "4.4.8",

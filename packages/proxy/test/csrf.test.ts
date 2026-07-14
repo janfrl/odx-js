@@ -1,4 +1,4 @@
-import { fetchWithCsrf } from '@bc8-odx/core'
+import { fetchWithCsrf } from '@me-tools/odx-core'
 import { ofetch } from 'ofetch'
 import { describe, expect, it, vi } from 'vitest'
 

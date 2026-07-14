@@ -1,5 +1,5 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
-import { detectODataVersionFromContent, extractAssociationsFromEdmxContent, extractEntitiesFromEdmxContent } from '@bc8-odx/core/server'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
+import { detectODataVersionFromContent, extractAssociationsFromEdmxContent, extractEntitiesFromEdmxContent } from '@me-tools/odx-core/server'
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 import { readRuntimeMetadataSnapshot } from '../utils/metadata-refresh'

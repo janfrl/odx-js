@@ -16,7 +16,7 @@ export function setupDevToolsUI(nuxt: Nuxt, resolver: Resolver): void {
 
     try {
       const require = createRequire(import.meta.url)
-      return dirname(require.resolve('@bc8-odx/explorer/package.json'))
+      return dirname(require.resolve('@me-tools/odx-explorer/package.json'))
     }
     catch {
       return undefined

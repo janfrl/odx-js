@@ -21,7 +21,7 @@ export function createODataClient(options: ODataClientOptions): any {
       }
     },
     onResponseError({ response }) {
-      console.error('[@bc8-odx/core] request failed', response?._data || response)
+      console.error('[@me-tools/odx-core] request failed', response?._data || response)
     },
   })
 }

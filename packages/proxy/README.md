@@ -1,11 +1,11 @@
-# @bc8-odx/proxy
+# @me-tools/odx-proxy
 
 Framework-agnostic H3 server handlers for OData request proxying, CSRF token management, and development logging.
 
 ## Installation
 
 ```bash
-pnpm add @bc8-odx/proxy
+pnpm add @me-tools/odx-proxy
 ```
 
 ## Verification
@@ -13,14 +13,14 @@ pnpm add @bc8-odx/proxy
 From the repository root:
 
 ```bash
-pnpm --filter @bc8-odx/proxy run verify
+pnpm --filter @me-tools/odx-proxy run verify
 pnpm run bench:proxy
 ```
 
-`pnpm --filter @bc8-odx/proxy run verify` runs the proxy Vitest suite and
+`pnpm --filter @me-tools/odx-proxy run verify` runs the proxy Vitest suite and
 the same standalone fixture check as `pnpm run example:proxy`. It starts a
 local fixture backend and H3 proxy, then verifies proxied OData reads and
-header forwarding through `@bc8-odx/proxy`.
+header forwarding through `@me-tools/odx-proxy`.
 
 `pnpm run bench:proxy` runs the proxy performance benchmark. It verifies
 buffer and stream proxy responses match the fixture backend, then reports

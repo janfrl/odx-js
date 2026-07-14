@@ -15,7 +15,7 @@ export default defineBuildConfig({
     'ofetch',
     'hookable',
     'nitropack',
-    '@bc8-odx/core',
+    '@me-tools/odx-core',
     '@sap/xssec',
     '@sap/xsenv',
   ],

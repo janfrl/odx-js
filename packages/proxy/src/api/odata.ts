@@ -1,7 +1,7 @@
 import type { Hookable } from 'hookable'
 import type { ODataProxyHooks } from '../types'
 import process from 'node:process'
-import { flattenOData } from '@bc8-odx/core'
+import { flattenOData } from '@me-tools/odx-core'
 import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, setResponseStatus } from 'h3'
 import { ofetch } from 'ofetch'
 import { validateBtpAuth } from '../utils/auth'

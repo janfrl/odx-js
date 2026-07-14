@@ -1,9 +1,9 @@
-import type { ODataProxyConfig } from '@bc8-odx/core'
+import type { ODataProxyConfig } from '@me-tools/odx-core'
 import type { AddressInfo } from 'node:net'
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import process from 'node:process'
-import { createODataHandler } from '@bc8-odx/proxy'
+import { createODataHandler } from '@me-tools/odx-proxy'
 import { createApp, createRouter, toNodeListener } from 'h3'
 import { ofetch } from 'ofetch'
 import { createBackend } from '../packages/proxy/test/fixtures/backend'
@@ -101,7 +101,7 @@ async function main(): Promise<void> {
     )
 
     console.warn(JSON.stringify({
-      package: '@bc8-odx/proxy',
+      package: '@me-tools/odx-proxy',
       backendUrl: backend.url,
       proxyUrl: proxy.url,
       requestPath: '/api/odx/TestService/Products',

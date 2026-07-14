@@ -3,8 +3,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { $odata, flattenOData, stringifyQuery } from '@bc8-odx/core'
-import { detectODataVersion, extractEntitiesFromEdmx } from '@bc8-odx/core/server'
+import { $odata, flattenOData, stringifyQuery } from '@me-tools/odx-core'
+import { detectODataVersion, extractEntitiesFromEdmx } from '@me-tools/odx-core/server'
 
 interface TestItem {
   ID: string
@@ -115,7 +115,7 @@ async function main(): Promise<void> {
   assertStandaloneCoreBehavior(lowLevelResponse)
 
   console.warn(JSON.stringify({
-    package: '@bc8-odx/core',
+    package: '@me-tools/odx-core',
     version,
     entitySets: entities.map(entity => ({
       name: entity.name,

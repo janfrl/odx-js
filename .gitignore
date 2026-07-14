@@ -19,6 +19,7 @@ dist
 
 # Nuxt
 .nuxt
+.nuxtrc
 
 # ODX persistent EDMX cache (survives .nuxt cleanups, should not be committed)
 .odx

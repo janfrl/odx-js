@@ -1,4 +1,4 @@
-import type { ODataLog as CoreODataLog, ProxyTraceEntry as CoreProxyTraceEntry, EntityMapping, ODataServiceConfig } from '@bc8-odx/core'
+import type { ODataLog as CoreODataLog, ProxyTraceEntry as CoreProxyTraceEntry, EntityMapping, ODataServiceConfig } from '@me-tools/odx-core'
 
 const RE_ABSOLUTE_HTTP_URL = /^https?:\/\//i
 const RE_LEADING_SLASHES = /^\/+/

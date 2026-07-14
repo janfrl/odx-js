@@ -1,4 +1,4 @@
-import type { EntityMapping, ODataProxyConfig, ODataServiceConfig } from '@bc8-odx/core'
+import type { EntityMapping, ODataProxyConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import type { Nuxt } from '@nuxt/schema'
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
@@ -7,11 +7,11 @@ import http from 'node:http'
 import https from 'node:https'
 import { createRequire } from 'node:module'
 import process from 'node:process'
-import { extractEntitiesFromEdmx } from '@bc8-odx/core/server'
+import { extractEntitiesFromEdmx } from '@me-tools/odx-core/server'
 import { consola } from 'consola'
 import { join, resolve } from 'pathe'
 
-const logger = consola.withTag('@bc8-odx/nuxt')
+const logger = consola.withTag('@me-tools/odx-nuxt')
 const METADATA_DOWNLOAD_TIMEOUT_MS = 30_000
 const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
@@ -96,7 +96,7 @@ export function generateRegistryDts(
   serviceEntities: Record<string, EntityMapping[]>,
   serviceModelFiles: Record<string, string>,
 ): string {
-  const indexDtsLines = ['import type { ODataServiceRegistry, ODataService } from "@bc8-odx/core"']
+  const indexDtsLines = ['import type { ODataServiceRegistry, ODataService } from "@me-tools/odx-core"']
   const serviceModelAliases: Record<string, string> = {}
 
   for (const [svcName, modelFile] of Object.entries(serviceModelFiles)) {
@@ -105,7 +105,7 @@ export function generateRegistryDts(
     indexDtsLines.push(`import * as ${modelAlias} from "./${svcName}/${modelFile}"`)
   }
 
-  indexDtsLines.push('\ndeclare module "@bc8-odx/core" {')
+  indexDtsLines.push('\ndeclare module "@me-tools/odx-core" {')
   indexDtsLines.push('  interface ODataServiceRegistry {')
   for (const [svcName, entities] of Object.entries(serviceEntities)) {
     const entityNames = entities.map(e => e.name)
@@ -202,11 +202,11 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
                 fs.mkdirSync(tempDir, { recursive: true })
               fs.copyFileSync(persistentCacheFile, tempFile)
             }
-            logger.warn(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name}, using cache: ${err.message}`)
+            logger.warn(`[@me-tools/odx-nuxt] Could not download metadata for ${svc.name}, using cache: ${err.message}`)
             inputPath = tempFile
           }
           else {
-            logger.error(`[@bc8-odx/nuxt] Could not download metadata for ${svc.name}:`, err.message)
+            logger.error(`[@me-tools/odx-nuxt] Could not download metadata for ${svc.name}:`, err.message)
             continue
           }
         }

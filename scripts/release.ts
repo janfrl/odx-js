@@ -18,11 +18,11 @@ async function main() {
   execCommand('pnpm verify')
 
   const publishOrder = [
-    '@bc8-odx/metadata',
-    '@bc8-odx/core',
-    '@bc8-odx/proxy',
-    '@bc8-odx/explorer',
-    '@bc8-odx/nuxt',
+    '@me-tools/odx-metadata',
+    '@me-tools/odx-core',
+    '@me-tools/odx-proxy',
+    '@me-tools/odx-explorer',
+    '@me-tools/odx-nuxt',
   ]
 
   for (const packageName of publishOrder) {

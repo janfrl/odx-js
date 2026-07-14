@@ -1,6 +1,6 @@
-import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@bc8-odx/core'
+import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
-import { $odata, flattenOData, stringifyQuery } from '@bc8-odx/core'
+import { $odata, flattenOData, stringifyQuery } from '@me-tools/odx-core'
 import { useODataBasePath } from './useODataBasePath'
 
 const RE_SINGLE_QUOTE = /'/g
