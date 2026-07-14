@@ -108,8 +108,11 @@ discovery and is not cited as decision evidence.
 | [SAP Open UX Tools](https://github.com/SAP/open-ux-tools) | Apache-2.0, published `@sap-ux` modules intended for reusable Fiori tooling. The installed 2026-07-14 spike established bounded build-time suitability for vocabulary and annotation-core packages. |
 | [`@sap-ux/annotation-generator`](https://www.npmjs.com/package/@sap-ux/annotation-generator) | Confirms maintained packages for entity-model and annotation conversion/type work; primarily generation tooling. |
 | [SAP annotation language server](https://www.npmjs.com/package/@sap/ux-cds-odata-language-server-extension) | Documents the breadth of OASIS and SAP vocabularies already modeled by SAP tooling. |
-| [`@sap-ux/odata-vocabularies`](https://github.com/SAP/open-ux-tools/tree/main/packages/odata-vocabularies) | Installed 1.0.4 spike confirmed 24 current OASIS/SAP vocabularies, term/type lookup, applicability, inheritance, and documentation behind an Apache-2.0 Node API. Accepted for build-time use. |
-| [`@sap-ux/odata-annotation-core`](https://github.com/SAP/open-ux-tools/tree/main/packages/odata-annotation-core) | Installed 1.0.1 spike confirmed public alias, identifier, qualified-name, and annotation-path resolution. Accepted for build-time use. |
+| [`@sap-ux/odata-vocabularies`](https://github.com/SAP/open-ux-tools/tree/main/packages/odata-vocabularies) | Installed 1.0.4 spike confirmed 24 current OASIS/SAP vocabularies, term/type lookup, applicability, inheritance, and documentation behind an Apache-2.0 Node API. Retained as a vocabulary-breadth oracle after the portable implementation decision. |
+| [`@sap-ux/odata-annotation-core`](https://github.com/SAP/open-ux-tools/tree/main/packages/odata-annotation-core) | Installed 1.0.1 spike confirmed public alias, identifier, qualified-name, and annotation-path resolution. Retained as a compatibility oracle after the portable implementation decision. |
+| [SAP Cloud SDK for JavaScript](https://github.com/SAP/cloud-sdk-js) | The 2026-07-15 registry audit found that its OData clients and generator bring server connectivity, HTTP, date/number, filesystem, and code-generation concerns that overlap rather than improve the portable ODX/Nuxt Fiori boundary. |
+| [SAP Open UX OData](https://github.com/SAP/open-ux-odata) | Owns the FE mock server and legacy annotation/EDMX packages. Useful for private development fixtures, but not a portable product dependency. |
+| [SAP OData package audit](./sap-odata-package-audit.md) | Records current versions, sizes, dependency graphs, layer decisions, and the packed end-to-end implementation result. |
 
 ## Negative results and limits
 
@@ -123,11 +126,7 @@ discovery and is not cited as decision evidence.
   management component was found in the official component catalog during this
   review. Absence from the catalog is recorded as a dated observation, not a
   permanent product claim.
-- The 2026-07-14 [SAP Open UX package spike](./sap-open-ux-package-spike.md)
-  accepted `@sap-ux/odata-vocabularies` and
-  `@sap-ux/odata-annotation-core` for isolated build-time use. SAP XML/entity
-  converters remain comparison oracles because production use would duplicate
-  ODX metadata ownership.
+- The 2026-07-14 [SAP Open UX package spike](./sap-open-ux-package-spike.md) established that two focused packages could be isolated at build time. The broader 2026-07-15 [SAP OData package audit](./sap-odata-package-audit.md) selected an owned portable implementation for the first slice and retained all SAP converters/catalogs as oracles.
 - The research did not run comparative bundles, browser traces, accessibility
   audits, or live SAP-service compatibility tests. Those are deliberately
   specified as the next experiment rather than simulated in this report.

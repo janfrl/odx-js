@@ -305,7 +305,7 @@ Goal: decide whether the product boundary is real.
 
 1. Spike a lossless metadata model without changing existing ODX APIs.
 2. Build deterministic V2 structural, V4 transactional, and scale fixtures.
-3. Integrate the accepted SAP vocabulary/name/path packages behind the owned compiler boundary and retain SAP converters only as comparison oracles.
+3. Use the owned portable projection proven by the 2026-07-15 SAP package audit; retain SAP vocabulary, name/path, and converter packages as comparison oracles.
 4. Compile golden semantic bundles and diagnostics.
 5. Implement headless collection, filter, object/form, operation, message,
    draft, side-effect, and transaction traces.
