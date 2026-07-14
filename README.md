@@ -32,6 +32,7 @@ reusable npm package.
 - [`SECURITY.md`](./SECURITY.md) - trust boundaries, auth, headers, secrets, logging, CSRF, and review triggers.
 - [`DOMAIN_MODEL.md`](./DOMAIN_MODEL.md) - stable ODX, OData, proxy, generation, and Explorer concepts.
 - [`DESIGN.md`](./DESIGN.md) - Nuxt UI design system guidance for the docs site and Explorer.
+- [research/](./research/) - durable ecosystem and architecture research, including the Nuxt Fiori direction.
 
 ## ✨ Features
 
