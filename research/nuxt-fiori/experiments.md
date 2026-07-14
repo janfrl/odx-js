@@ -28,6 +28,12 @@ performance/accessibility baselines.
 | H7 | SAP Open UX packages can reduce compiler maintenance. | They are Node-only, unstable, incomplete for runtime semantics, or harder to isolate than a focused parser. |
 | H8 | A separate Nuxt Fiori repository produces a clean public ODX seam. | The product repeatedly needs ODX internals or coordinated private changes across repositories. |
 
+H7 is provisionally satisfied for a bounded dependency surface. The
+[2026-07-14 package spike](./sap-open-ux-package-spike.md) accepted SAP's
+vocabulary and annotation-core packages for build-time lookup while rejecting
+its duplicate parsers/models as production dependencies. Compatibility and
+bundle-isolation fixtures remain required before the hypothesis is closed.
+
 ## Fixtures
 
 ### Fixture A: structural OData V2
@@ -97,7 +103,7 @@ Build no UI.
 Compare:
 
 1. a focused lossless ODX metadata representation;
-2. SAP Open UX annotation/entity-model packages behind an adapter;
+2. the accepted SAP vocabulary/name/path packages behind an owned compiler adapter, with SAP converters used only as result oracles;
 3. a minimal owned parser only where required.
 
 Test:

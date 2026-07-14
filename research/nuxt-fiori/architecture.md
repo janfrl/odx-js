@@ -520,7 +520,7 @@ owned contracts.
 | Candidate | Recommendation |
 | --- | --- |
 | ODX | Required transport/metadata foundation. |
-| SAP Open UX annotation packages | Spike for build-time parsing/types/conversion. Wrap behind the semantic compiler; reject if Node-only, unstable, incomplete, or bundle-heavy. |
+| SAP Open UX annotation packages | Accept `@sap-ux/odata-vocabularies` and `@sap-ux/odata-annotation-core` for isolated build-time use behind owned compiler contracts. Keep SAP XML/entity/legacy converters as test oracles, not production dependencies. |
 | UI5 Web Components | Initial renderer dependency, imported per component. |
 | Nuxt UI | First-class alternative renderer and Vue-native baseline. |
 | TanStack Table core | Evaluate for controlled collection presentation state; do not let it own OData semantics. |

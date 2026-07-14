@@ -305,7 +305,7 @@ Goal: decide whether the product boundary is real.
 
 1. Spike a lossless metadata model without changing existing ODX APIs.
 2. Build deterministic V2 structural, V4 transactional, and scale fixtures.
-3. Compare SAP Open UX reuse with a focused parser behind one adapter.
+3. Integrate the accepted SAP vocabulary/name/path packages behind the owned compiler boundary and retain SAP converters only as comparison oracles.
 4. Compile golden semantic bundles and diagnostics.
 5. Implement headless collection, filter, object/form, operation, message,
    draft, side-effect, and transaction traces.

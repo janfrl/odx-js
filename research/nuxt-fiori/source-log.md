@@ -105,9 +105,11 @@ discovery and is not cited as decision evidence.
 
 | Source | Evidence used |
 | --- | --- |
-| [SAP Open UX Tools](https://github.com/SAP/open-ux-tools) | Apache-2.0, published `@sap-ux` modules intended for reusable Fiori tooling. Runtime/browser suitability is not established by the project overview. |
+| [SAP Open UX Tools](https://github.com/SAP/open-ux-tools) | Apache-2.0, published `@sap-ux` modules intended for reusable Fiori tooling. The installed 2026-07-14 spike established bounded build-time suitability for vocabulary and annotation-core packages. |
 | [`@sap-ux/annotation-generator`](https://www.npmjs.com/package/@sap-ux/annotation-generator) | Confirms maintained packages for entity-model and annotation conversion/type work; primarily generation tooling. |
 | [SAP annotation language server](https://www.npmjs.com/package/@sap/ux-cds-odata-language-server-extension) | Documents the breadth of OASIS and SAP vocabularies already modeled by SAP tooling. |
+| [`@sap-ux/odata-vocabularies`](https://github.com/SAP/open-ux-tools/tree/main/packages/odata-vocabularies) | Installed 1.0.4 spike confirmed 24 current OASIS/SAP vocabularies, term/type lookup, applicability, inheritance, and documentation behind an Apache-2.0 Node API. Accepted for build-time use. |
+| [`@sap-ux/odata-annotation-core`](https://github.com/SAP/open-ux-tools/tree/main/packages/odata-annotation-core) | Installed 1.0.1 spike confirmed public alias, identifier, qualified-name, and annotation-path resolution. Accepted for build-time use. |
 
 ## Negative results and limits
 
@@ -121,9 +123,11 @@ discovery and is not cited as decision evidence.
   management component was found in the official component catalog during this
   review. Absence from the catalog is recorded as a dated observation, not a
   permanent product claim.
-- SAP Open UX annotation packages appear promising for build-time reuse, but
-  their browser compatibility, bundle cost, API stability, and coverage of
-  dynamic expressions were not validated by installing them.
+- The 2026-07-14 [SAP Open UX package spike](./sap-open-ux-package-spike.md)
+  accepted `@sap-ux/odata-vocabularies` and
+  `@sap-ux/odata-annotation-core` for isolated build-time use. SAP XML/entity
+  converters remain comparison oracles because production use would duplicate
+  ODX metadata ownership.
 - The research did not run comparative bundles, browser traces, accessibility
   audits, or live SAP-service compatibility tests. Those are deliberately
   specified as the next experiment rather than simulated in this report.
