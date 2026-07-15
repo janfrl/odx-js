@@ -31,4 +31,20 @@ describe('$odata fetcher', () => {
       query,
     }))
   })
+  it('forwards request options such as cancellation signals', async () => {
+    const client = vi.fn().mockResolvedValue({ value: [] })
+    const signal = new AbortController().signal
+
+    await $odata(client, 'S', 'GET', {
+      entitySet: 'E',
+      query: { $top: 2 },
+      signal,
+    })
+
+    expect(client).toHaveBeenCalledWith('S/E', {
+      method: 'GET',
+      query: { $top: 2 },
+      signal,
+    })
+  })
 })

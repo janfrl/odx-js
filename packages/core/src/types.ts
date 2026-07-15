@@ -149,6 +149,12 @@ export interface ODataEntitySet<T = any> {
    */
   list: (query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T[]>
   /**
+   * Performs an imperative list read without requiring a Nuxt composable
+   * setup context.
+   */
+  fetchList: (query?: ODataQuery<T>, options?: any) => Promise<T[]>
+
+  /**
    * Fetches a single entity by key.
    * Key can be a single value or an object for composite keys.
    */

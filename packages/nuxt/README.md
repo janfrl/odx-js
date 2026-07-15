@@ -8,6 +8,16 @@ The official Nuxt module for the ODX ecosystem. It provides type-safe OData comp
 pnpm add @me-tools/odx-nuxt
 ```
 
+## Reactive And Imperative Reads
+
+Use `entitySet.list()` during component or page setup when Nuxt `AsyncData`
+and SSR integration are desired. Use `entitySet.fetchList()` for later
+controller events or other imperative effects:
+
+```ts
+const products = await useOData('Northwind').entitySet('Products').fetchList({ $top: 20 }, { signal })
+```
+
 ## Verification
 
 From the repository root:

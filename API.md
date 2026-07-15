@@ -153,10 +153,15 @@ Entity-set methods:
 | Method | HTTP | Return |
 | --- | --- | --- |
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
+| `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body)` | `POST` | `Promise<T>` |
 | `update(key, body)` | `PATCH` | `Promise<T>` |
 | `remove(key)` | `DELETE` | `Promise<unknown>` |
+
+Use `list` during Nuxt setup when SSR-aware `AsyncData` is desired. Use
+`fetchList` for imperative controller effects; it forwards cancellation and
+other request options to the configured ODX transport.
 
 Keys may be strings, numbers, or composite key objects.
 

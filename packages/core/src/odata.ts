@@ -13,12 +13,8 @@ export async function $odata<T = unknown>(
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
   options: FetchOptions<'json'> & { entitySet?: string } = {},
 ): Promise<T> {
-  const path = options.entitySet ? `${service}/${options.entitySet}` : service
-  const res = await client<T>(path, {
-    method,
-    query: options.query,
-    body: options.body,
-    headers: options.headers,
-  })
+  const { entitySet, ...requestOptions } = options
+  const path = entitySet ? `${service}/${entitySet}` : service
+  const res = await client<T>(path, { ...requestOptions, method })
   return flattenOData(res) as T
 }
