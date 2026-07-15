@@ -125,7 +125,11 @@ export interface ODataQuery<T = any> {
   /** Expand navigation properties. */
   $expand?: string
   /**
-   * Include the count of the matching entities.
+   * Include the count of matching entities in OData V4 responses.
+   */
+  $count?: boolean
+  /**
+   * Include the count of matching entities in OData V2 responses.
    * @default 'none'
    */
   $inlinecount?: 'allpages' | 'none'

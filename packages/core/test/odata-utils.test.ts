@@ -45,12 +45,14 @@ describe('oData Utils', () => {
         $filter: 'Name eq \'Test\'',
         $top: 10,
         $expand: 'Category',
+        $count: true,
         other: 'param',
       }
 
       const result = stringifyQuery(query)
       expect(result.$filter).toBe('Name eq \'Test\'')
       expect(result.$top).toBe('10')
+      expect(result.$count).toBe('true')
       expect(result.other).toBe('param')
     })
 

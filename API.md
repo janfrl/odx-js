@@ -160,6 +160,9 @@ Entity-set methods:
 
 Keys may be strings, numbers, or composite key objects.
 
+`ODataQuery` uses `$count` for OData V4 count intent and `$inlinecount` for
+OData V2.
+
 ## Proxy Package
 
 `@me-tools/odx-proxy` exports:

@@ -1670,9 +1670,15 @@
         "required": false
       },
       {
+        "name": "$count",
+        "type": "boolean | undefined",
+        "description": "Include the count of matching entities in OData V4 responses.",
+        "required": false
+      },
+      {
         "name": "$inlinecount",
         "type": "\"allpages\" | \"none\" | undefined",
-        "description": "Include the count of the matching entities.",
+        "description": "Include the count of matching entities in OData V2 responses.",
         "default": "'none'",
         "required": false
       },
