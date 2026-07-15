@@ -148,6 +148,17 @@ const service = useOData('Northwind')
 const { data } = await service.entitySet('Products').list()
 ```
 
+For imperative controller effects, use `fetchList()` or `fetchOne()` instead
+of creating Nuxt `AsyncData` outside setup:
+
+```ts
+const product = await service.entitySet('Products').fetchOne(
+  { ID: 1, Locale: 'en' },
+  { $select: ['ID', 'Name'] },
+  { signal },
+)
+```
+
 Entity-set methods:
 
 | Method | HTTP | Return |

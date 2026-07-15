@@ -160,6 +160,27 @@ describe('useOData Composable', () => {
         },
       )
     })
+
+    it('reads a single entity and forwards query and cancellation', async () => {
+      const signal = new AbortController().signal
+      const api = useOData('RoutedService' as any)
+
+      await api.entitySet('Products').fetchOne(
+        { ID: 1, Locale: 'en' },
+        { $select: ['ID', 'Name'] },
+        { signal },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')',
+        'GET',
+        {
+          query: { $select: ['ID', 'Name'] },
+          signal,
+        },
+      )
+    })
   })
   describe('mutations ($odata)', () => {
     it('calls $odata for create (POST)', async () => {

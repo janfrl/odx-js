@@ -1701,6 +1701,18 @@
         "required": true
       },
       {
+        "name": "fetchList",
+        "type": "(query?: ODataQuery<T>, options?: any) => Promise<T[]>",
+        "description": "Performs an imperative list read without requiring a Nuxt composable\nsetup context.",
+        "required": true
+      },
+      {
+        "name": "fetchOne",
+        "type": "(key: ODataKey, query?: ODataQuery<T>, options?: any) => Promise<T>",
+        "description": "Performs an imperative single-entity read without requiring a Nuxt\ncomposable setup context.",
+        "required": true
+      },
+      {
         "name": "get",
         "type": "(key: ODataKey, query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T>",
         "description": "Fetches a single entity by key.\nKey can be a single value or an object for composite keys.",

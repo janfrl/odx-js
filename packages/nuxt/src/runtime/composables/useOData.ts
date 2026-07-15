@@ -84,6 +84,18 @@ export function useOData(service?: string): any {
         query: stringifyQuery(query || {}),
       }),
 
+      fetchOne: (
+        key: ODataKey,
+        query?: ODataQuery<TModel>,
+        options?: unknown,
+      ): Promise<TModel> => {
+        const itemPath = `${fullPath}(${formatKey(key)})`
+        return $odata<TModel>(client, itemPath, 'GET', {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+        })
+      },
+
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
         return useFetch(itemPath, {

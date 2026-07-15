@@ -18,6 +18,14 @@ controller events or other imperative effects:
 const products = await useOData('Northwind').entitySet('Products').fetchList({ $top: 20 }, { signal })
 ```
 
+Use `fetchOne()` for imperative key reads outside Nuxt `AsyncData` setup:
+
+```ts
+const product = await useOData('Northwind')
+  .entitySet('Products')
+  .fetchOne({ ID: 1, Locale: 'en' }, { $select: ['ID', 'Name'] }, { signal })
+```
+
 ## Verification
 
 From the repository root:
