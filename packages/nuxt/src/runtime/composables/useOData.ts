@@ -1,9 +1,10 @@
-import type { ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import { $odata, flattenOData, stringifyQuery } from '@me-tools/odx-core'
 import { useODataBasePath } from './useODataBasePath'
 
 const RE_SINGLE_QUOTE = /'/g
+const RE_QUALIFIED_ACTION = /^(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*$/u
 const RE_LEADING_SLASHES = /^\/+/
 const RE_TRAILING_SLASHES = /\/+$/
 interface ODataFetchClient {
@@ -105,17 +106,49 @@ export function useOData(service?: string): any {
         }) as unknown as ODataAsyncDataPromise<TModel>
       },
 
-      create: (body: Partial<TModel>): Promise<TModel> =>
-        $odata<TModel>(client, fullPath, 'POST', { body }),
+      create: (body: Partial<TModel>, options?: any): Promise<TModel> =>
+        $odata<TModel>(client, fullPath, 'POST', {
+          ...(options as any),
+          body,
+        }),
 
-      update: (key: ODataKey, body: Partial<TModel>): Promise<TModel> => {
+      update: (key: ODataKey, body: Partial<TModel>, options?: any): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return $odata<TModel>(client, itemPath, 'PATCH', { body })
+        return $odata<TModel>(client, itemPath, 'PATCH', {
+          ...(options as any),
+          body,
+        })
       },
 
-      remove: (key: ODataKey): Promise<unknown> => {
+      remove: (key: ODataKey, options?: any): Promise<unknown> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
-        return $odata<unknown>(client, itemPath, 'DELETE')
+        return options === undefined
+          ? $odata<unknown>(client, itemPath, 'DELETE')
+          : $odata<unknown>(client, itemPath, 'DELETE', options)
+      },
+
+      invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
+        action: string,
+        invocation: ODataActionInvocation<TParameters> = {},
+        options?: any,
+      ): Promise<TResult> => {
+        if (!RE_QUALIFIED_ACTION.test(action)) {
+          throw new TypeError(
+            `OData action "${action}" requires a qualified name.`,
+          )
+        }
+        const bindingPath = invocation.key === undefined
+          ? fullPath
+          : `${fullPath}(${formatKey(invocation.key)})`
+        return $odata<TResult>(
+          client,
+          joinUrlSegments(bindingPath, action),
+          'POST',
+          {
+            ...(options as any),
+            body: invocation.parameters ?? {},
+          },
+        )
       },
     }
   }

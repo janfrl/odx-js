@@ -99,7 +99,18 @@ export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncDat
  * Possible types for OData entity keys.
  * Supports single keys (string/number) and composite keys (object).
  */
-export type ODataKey = string | number | Record<string, string | number>
+export type ODataKey
+  = | string
+    | number
+    | boolean
+    | Record<string, string | number | boolean>
+
+export interface ODataActionInvocation<TParameters = Record<string, unknown>> {
+  /** Entity key for an entity-bound action. Omit for collection/service actions. */
+  key?: ODataKey
+  /** OData action parameters serialized as the POST body. */
+  parameters?: TParameters
+}
 
 /**
  * Structured OData query options.
@@ -168,15 +179,21 @@ export interface ODataEntitySet<T = any> {
   /**
    * Creates a new entity.
    */
-  create: (body: Partial<T>) => Promise<T>
+  create: (body: Partial<T>, options?: any) => Promise<T>
   /**
    * Updates an existing entity.
    */
-  update: (key: ODataKey, body: Partial<T>) => Promise<T>
+  update: (key: ODataKey, body: Partial<T>, options?: any) => Promise<T>
   /**
    * Deletes an entity.
    */
-  remove: (key: ODataKey) => Promise<any>
+  remove: (key: ODataKey, options?: any) => Promise<any>
+  /** Invokes an unbound, collection-bound, or entity-bound OData action. */
+  invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
+    action: string,
+    invocation?: ODataActionInvocation<TParameters>,
+    options?: any,
+  ) => Promise<TResult>
 }
 
 /**
@@ -189,6 +206,8 @@ export type ODataService<E extends string = string, M extends Record<string, any
    * Accesses a specific entity set of the service.
    */
   entitySet: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : any>
+  /** Invokes a service-level unbound OData action. */
+  invoke: ODataEntitySet<never>['invoke']
 } & {
   /**
    * Direct access to entity sets via properties.

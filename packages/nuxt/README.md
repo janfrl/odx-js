@@ -26,6 +26,24 @@ const product = await useOData('Northwind')
   .fetchOne({ ID: 1, Locale: 'en' }, { $select: ['ID', 'Name'] }, { signal })
 ```
 
+Create, update, and remove also accept request options for cancellation and
+concurrency headers. Invoke qualified actions at the service, collection, or
+entity binding path:
+
+```ts
+await useOData('Northwind').entitySet('Products').update(
+  1,
+  { Name: 'Updated' },
+  { signal, headers: { 'If-Match': etag } },
+)
+
+await useOData('Northwind').entitySet('Products').invoke(
+  'Northwind.ArchiveProduct',
+  { key: 1, parameters: { Reason: 'obsolete' } },
+  { signal },
+)
+```
+
 ## Verification
 
 From the repository root:

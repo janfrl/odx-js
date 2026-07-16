@@ -1627,6 +1627,23 @@
       }
     ]
   },
+  "ODataActionInvocation": {
+    "title": "ODataActionInvocation",
+    "properties": [
+      {
+        "name": "key",
+        "type": "ODataKey | undefined",
+        "description": "Entity key for an entity-bound action. Omit for collection/service actions.",
+        "required": false
+      },
+      {
+        "name": "parameters",
+        "type": "TParameters | undefined",
+        "description": "OData action parameters serialized as the POST body.",
+        "required": false
+      }
+    ]
+  },
   "ODataQuery": {
     "title": "ODataQuery",
     "description": "Structured OData query options.\nT: The model type of the entity being queried.",
@@ -1720,20 +1737,26 @@
       },
       {
         "name": "create",
-        "type": "(body: Partial<T>) => Promise<T>",
+        "type": "(body: Partial<T>, options?: any) => Promise<T>",
         "description": "Creates a new entity.",
         "required": true
       },
       {
         "name": "update",
-        "type": "(key: ODataKey, body: Partial<T>) => Promise<T>",
+        "type": "(key: ODataKey, body: Partial<T>, options?: any) => Promise<T>",
         "description": "Updates an existing entity.",
         "required": true
       },
       {
         "name": "remove",
-        "type": "(key: ODataKey) => Promise<any>",
+        "type": "(key: ODataKey, options?: any) => Promise<any>",
         "description": "Deletes an entity.",
+        "required": true
+      },
+      {
+        "name": "invoke",
+        "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: any) => Promise<TResult>",
+        "description": "Invokes an unbound, collection-bound, or entity-bound OData action.",
         "required": true
       }
     ]

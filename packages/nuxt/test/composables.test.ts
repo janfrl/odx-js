@@ -287,6 +287,77 @@ describe('useOData Composable', () => {
         'DELETE',
       )
     })
+
+    it('forwards mutation cancellation and concurrency headers', async () => {
+      const api = useOData('MyService')
+      const signal = new AbortController().signal
+      const headers = { 'If-Match': 'W/"product-1"' }
+
+      await api.entitySet('Products').update(
+        1,
+        { Name: 'Updated' },
+        { headers, signal },
+      )
+      await api.entitySet('Products').remove(1, { headers, signal })
+
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)',
+        'PATCH',
+        { body: { Name: 'Updated' }, headers, signal },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)',
+        'DELETE',
+        { headers, signal },
+      )
+    })
+
+    it('invokes service, collection, and entity-bound actions', async () => {
+      const api = useOData('MyService')
+      const signal = new AbortController().signal
+
+      await api.invoke('Demo.ResetCatalog', {
+        parameters: { KeepAudit: true },
+      }, { signal })
+      await api.entitySet('Products').invoke('Demo.ReleaseAll')
+      await api.entitySet('Products').invoke('Demo.ArchiveProduct', {
+        key: { ID: 1, Active: true },
+        parameters: { Reason: 'obsolete' },
+      })
+
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/MyService/Demo.ResetCatalog',
+        'POST',
+        { body: { KeepAudit: true }, signal },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/MyService/Products/Demo.ReleaseAll',
+        'POST',
+        { body: {} },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        3,
+        expect.any(Function),
+        '/api/odx/MyService/Products(ID=1,Active=true)/Demo.ArchiveProduct',
+        'POST',
+        { body: { Reason: 'obsolete' } },
+      )
+    })
+
+    it('rejects action names that could alter the request path', () => {
+      const api = useOData('MyService')
+
+      expect(() => api.invoke('../Demo.Reset')).toThrow('qualified name')
+      expect(core.$odata).not.toHaveBeenCalled()
+    })
   })
 
   describe('proxy Behavior', () => {

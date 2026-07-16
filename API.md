@@ -165,16 +165,23 @@ Entity-set methods:
 | --- | --- | --- |
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
+| `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
-| `create(body)` | `POST` | `Promise<T>` |
-| `update(key, body)` | `PATCH` | `Promise<T>` |
-| `remove(key)` | `DELETE` | `Promise<unknown>` |
+| `create(body, options?)` | `POST` | `Promise<T>` |
+| `update(key, body, options?)` | `PATCH` | `Promise<T>` |
+| `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
+| `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
 
 Use `list` during Nuxt setup when SSR-aware `AsyncData` is desired. Use
 `fetchList` for imperative controller effects; it forwards cancellation and
 other request options to the configured ODX transport.
 
-Keys may be strings, numbers, or composite key objects.
+Mutation options are forwarded to the same transport, including `signal` and
+headers such as `If-Match`. `invoke` requires a qualified action name. Omit the
+invocation key for unbound or collection-bound actions and provide it for an
+entity-bound action; `parameters` become the POST body.
+
+Keys may be strings, numbers, booleans, or composite key objects.
 
 `ODataQuery` uses `$count` for OData V4 count intent and `$inlinecount` for
 OData V2.
