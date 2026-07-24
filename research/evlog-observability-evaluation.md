@@ -1,6 +1,6 @@
 # evlog observability evaluation
 
-Status: neutral ODX foundation implemented; evlog host pilot pending
+Status: neutral ODX foundation and bounded host pilot implemented
 Evaluated version: `evlog@2.22.3`
 Evaluation date: 2026-07-24
 
@@ -14,6 +14,8 @@ evlog and `OdxLogStore` solve different problems:
 - `OdxLogStore` retains OData request history and step-level proxy traces for the ODX Explorer.
 
 Connect both through shared, privacy-safe correlation fields. Do not copy OData payloads or unrestricted trace details into evlog. No production dependency should be added until the pilot meets the gates below.
+The completed pilot keeps evlog as a root development dependency only. It does
+not add evlog to any published ODX package.
 
 ## Why evaluate evlog
 
@@ -40,6 +42,16 @@ At evaluation time:
 - `log.fork()` is not supported by the Nitro/Nuxt integration, so evlog cannot automatically correlate child events below a Nitro request;
 - releases are frequent; the pilot must pin an exact version and gate upgrades.
 
+The executable pilot also found two integration constraints that are not
+obvious from the high-level documentation:
+
+- `evlog/nitro` sets `nitro.options.noExternals = true` globally. This caused
+  the ODX Nuxt fixture build to pull unrelated application dependencies into
+  the server bundle and fail on the SAP mock-server toolchain;
+- the normal Nuxt/Nitro request event is sealed before an ODX streamed response
+  publishes its completion summary. Enriching that event from
+  `odx:proxy:telemetry` therefore drops the ODX fields.
+
 ## Fit by layer
 
 | Layer | Fit | Decision |
@@ -47,7 +59,7 @@ At evaluation time:
 | `@me-tools/odx-metadata` | Poor | Keep deterministic parsing free of runtime logging. Expose diagnostics as data. |
 | `@me-tools/odx-core` | Poor | Keep transports and `OdxLogStore` framework-neutral. |
 | `@me-tools/odx-proxy` | Good | Produce a sanitized operation summary; do not import evlog. |
-| `@me-tools/odx-nuxt` | Very good | Own the optional Nitro-request adapter. |
+| `@me-tools/odx-nuxt` | Possible later | Keep the adapter host-owned until the lifecycle and bundling constraints are resolved. |
 | ODX Explorer | Complementary | Keep detailed request history and proxy steps; link by correlation ID. |
 | `@me-tools/fiori-core` | Poor | Report lifecycle events through an owned optional port. |
 | `@me-tools/fiori-odx` | Possible later | Propagate operation/request identifiers without depending on evlog. |
@@ -62,13 +74,13 @@ flowchart LR
   Transport -->|"correlation headers"| Proxy["ODX proxy"]
   Proxy --> Trace["sanitized ODX summary"]
   Proxy --> Store["OdxLogStore / Explorer"]
-  Trace --> Adapter["ODX Nuxt adapter"]
-  Adapter --> Event["evlog Nitro wide event"]
+  Trace --> Adapter["Nuxt host adapter"]
+  Adapter --> Event["dedicated evlog ODX wide event"]
   Event --> Drain["configured drain"]
   Store -. "same request ID" .-> Event
 ```
 
-The application creates or accepts an operation ID. ODX propagates it and a request ID through approved headers. The proxy owns OData phase timing and outcomes. `@me-tools/odx-nuxt` maps the allowlisted summary into the current Nitro logger. evlog owns request assembly, sampling, formatting, and drains.
+The application creates or accepts an operation ID. ODX propagates it and a request ID through approved headers. The proxy owns OData phase timing and outcomes. A host adapter starts a dedicated request logger from the early proxy hook and completes it from the allowlisted summary. evlog owns event assembly, sampling, formatting, and drains.
 
 The adapter must use explicit request context. It must not assume AsyncLocalStorage can correlate child work in Nuxt while `log.fork()` is unsupported there.
 
@@ -122,16 +134,27 @@ Production OData payload logging remains disabled. evlog does not change the pol
 
 ## Pilot
 
-Pilot in a Nuxt fixture/playground and the ODX proxy integration:
+The Nuxt integration fixture now runs a bounded application-level pilot:
 
 - install an exact evlog version at application level;
-- enable its Nuxt module with client transport disabled;
-- add a host adapter for proxy routes;
-- enrich the request event with one sanitized ODX summary;
+- initialize only evlog's framework-neutral server logger and a test drain;
+- start a dedicated host logger from `odx:proxy:request`;
+- expose that logger on the H3 event for other server layers;
+- finalize it from `odx:proxy:telemetry` after proxy completion;
+- replace the raw OData path with `/api/odx/:service/:entitySet`;
 - link its `OdxLogStore` record by request ID;
-- first use a test drain, then one vendor drain outside production.
+- keep the Nuxt client plugin, browser transport, and ingest route absent.
 
 Do not instrument every Fiori controller/component during this pilot.
+
+The E2E test proves one event for a streamed request, shared ODX/evlog request
+IDs, and absence of the filter literal, `$filter`, configured bearer token, and
+custom request header. The working adapter is intentionally fixture-owned at
+`test/fixtures/basic/server/plugins/evlog-odx.ts`.
+A production fixture build succeeds, and searching every generated client
+JavaScript asset finds zero evlog references. Node runtime behavior is proven,
+and the Cloudflare Pages preset builds without Node compatibility after removing
+a redundant Node-only SAP mock route. A real Worker runtime smoke test remains.
 
 ### Acceptance gates
 
@@ -159,7 +182,13 @@ These events should share the operation ID but remain independent of evlog. Nuxt
 
 ## Recommended next action
 
-The opt-in correlation and sanitized proxy-summary contract is now implemented
-with security, streaming, Nuxt configuration, and performance tests. The next
-step is a fixture-only evlog application pilot with client transport disabled.
-The durable contract remains useful if evlog changes or is replaced.
+Keep the vendor-neutral ODX summary contract and the successful fixture pilot,
+but do not promote evlog into `@me-tools/odx-nuxt` yet. The official Nitro
+module's global `noExternals` mutation and the normal request logger's streamed
+completion timing are too invasive for a default integration.
+
+If operational observability becomes a near-term product requirement, extract
+the proven lifecycle adapter into a separate optional package and validate a
+real drain on Node and one edge preset. In parallel, report or track the two
+upstream limitations and compare the same ODX contract with an OpenTelemetry
+adapter. The durable ODX API remains useful whichever backend wins.

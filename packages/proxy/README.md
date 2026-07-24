@@ -26,10 +26,11 @@ OpenTelemetry, or a drain provider.
 ```ts
 nitroApp.hooks.hook('odx:proxy:request', ({ event }) => {
   event.context.odxOperationId = 'list-report.load:products'
+  operationLogger.start(event)
 })
 
-nitroApp.hooks.hook('odx:proxy:telemetry', ({ summary }) => {
-  operationalLogger.set({ odx: summary })
+nitroApp.hooks.hook('odx:proxy:telemetry', ({ event, summary }) => {
+  operationLogger.complete(event, { odx: summary })
 })
 ```
 
@@ -47,9 +48,12 @@ host observability event to link to Explorer diagnostics without duplicating
 payload history.
 
 Telemetry hook failures are isolated from the proxied response. Hook handlers
-should enrich the host request logger and leave slow exporting to that logger's
-post-response drain. The optional `odxOperationId` accepts only 1-128 ASCII
-word, dot, colon, or hyphen characters; invalid identifiers are omitted.
+should leave slow exporting to their observability drain. A streamed response
+can complete after a generic HTTP request logger has already sealed its event,
+so adapters should start a dedicated operation logger from the request hook and
+finalize it from the telemetry hook. The optional `odxOperationId` accepts only
+1-128 ASCII word, dot, colon, or hyphen characters; invalid identifiers are
+omitted.
 
 See
 [`research/evlog-observability-evaluation.md`](../../research/evlog-observability-evaluation.md)

@@ -41,4 +41,79 @@ describe('nuxt ODX Module Integration', async () => {
     expect(response.authorization).toBe('Bearer test-token-123')
     expect(response.xCustomTest).toBe('it-works')
   })
+
+  it('projects privacy-safe ODX telemetry into one evlog wide event', async () => {
+    const privateFilterValue = 'private-test-value'
+    await $fetch('/__test__/evlog', {
+      method: 'DELETE',
+    })
+    await $fetch('/api/odx/TestService/TestItems', {
+      query: {
+        $filter: `Title eq '${privateFilterValue}'`,
+      },
+    })
+
+    await expect.poll(async () => await $fetch<any[]>('/__test__/evlog')).toHaveLength(1)
+    const events = await $fetch<any[]>('/__test__/evlog')
+    const event = events.find(candidate =>
+      candidate.operation === 'odx.proxy'
+      && candidate.odx?.serviceId === 'TestService',
+    )
+
+    expect(event).toBeDefined()
+    expect(event).toMatchObject({
+      operation: 'odx.proxy',
+      path: '/api/odx/:service/:entitySet',
+      requestId: event.odx.requestId,
+      host: { integrationLayer: 'service-hook' },
+      odx: {
+        schemaVersion: 1,
+        operationId: 'catalog.list:test-items',
+        serviceId: 'TestService',
+        entitySetId: 'TestItems',
+        method: 'GET',
+        outcome: 'success',
+        targetKind: 'mock',
+        status: 200,
+      },
+    })
+
+    const serialized = JSON.stringify(event)
+    expect(serialized).not.toContain(privateFilterValue)
+    expect(serialized).not.toContain('$filter')
+    expect(serialized).not.toContain('test-token-123')
+    expect(serialized).not.toContain('it-works')
+  })
+
+  it('emits one correlated failure event without backend details', async () => {
+    await $fetch('/__test__/evlog', {
+      method: 'DELETE',
+    })
+
+    await expect($fetch('/api/odx/TestService/EntityThatDoesNotExist')).rejects.toMatchObject({
+      status: 404,
+    })
+
+    await expect.poll(async () => await $fetch<any[]>('/__test__/evlog')).toHaveLength(1)
+    const [event] = await $fetch<any[]>('/__test__/evlog')
+
+    expect(event).toMatchObject({
+      operation: 'odx.proxy',
+      path: '/api/odx/:service/:entitySet',
+      requestId: event.odx.requestId,
+      status: 404,
+      host: { integrationLayer: 'service-hook' },
+      odx: {
+        schemaVersion: 1,
+        serviceId: 'TestService',
+        entitySetId: 'EntityThatDoesNotExist',
+        outcome: 'failure',
+        status: 404,
+      },
+    })
+
+    const serialized = JSON.stringify(event)
+    expect(serialized).not.toContain('Not Found')
+    expect(serialized).not.toContain('EntityThatDoesNotExist?')
+  })
 })
