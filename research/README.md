@@ -9,3 +9,6 @@ root-level project documentation.
 
 - [`nuxt-fiori/`](./nuxt-fiori/) - metadata-driven Smart Components and a
   possible Nuxt Fiori application framework built on ODX.
+- [`evlog-observability-evaluation.md`](./evlog-observability-evaluation.md) -
+  evidence, boundaries, and pilot gates for optional cross-layer operational
+  observability with evlog.
