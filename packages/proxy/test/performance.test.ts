@@ -238,9 +238,11 @@ async function writeBenchmarkOutput(summaries: MeasurementSummary[]): Promise<vo
 describeBenchmark('proxy performance baseline', () => {
   let backendServer: Server
   let proxyServer: Server
+  let telemetryProxyServer: Server
   let devtoolsProxyServer: Server
   let backendUrl: string
   let proxyUrl: string
+  let telemetryProxyUrl: string
   let devtoolsProxyUrl: string
 
   beforeAll(async () => {
@@ -275,6 +277,25 @@ describeBenchmark('proxy performance baseline', () => {
     const proxy = await listen(createProxyServer(config))
     proxyServer = proxy.server
     proxyUrl = proxy.url
+
+    const telemetryConfig: ODataProxyConfig = {
+      ...config,
+      services: [
+        {
+          name: 'TelemetryBufferService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+        },
+      ],
+      telemetry: {
+        enabled: true,
+      },
+    }
+
+    const telemetryProxy = await listen(createProxyServer(telemetryConfig))
+    telemetryProxyServer = telemetryProxy.server
+    telemetryProxyUrl = telemetryProxy.url
 
     const devtoolsConfig: ODataProxyConfig = {
       ...config,
@@ -313,6 +334,7 @@ describeBenchmark('proxy performance baseline', () => {
     await Promise.all([
       closeServer(backendServer),
       closeServer(proxyServer),
+      closeServer(telemetryProxyServer),
       closeServer(devtoolsProxyServer),
     ])
   }, 20000)
@@ -321,6 +343,7 @@ describeBenchmark('proxy performance baseline', () => {
     const smallDirect = await measureSequential('small seq direct', '/Products', () => ofetch(`${backendUrl}/Products`))
     const smallBuffered = await measureSequential('small seq buffer', '/api/odx/BufferService/Products', () => ofetch(`${proxyUrl}/api/odx/BufferService/Products`))
     const smallStreamed = await measureSequential('small seq stream', '/api/odx/StreamService/Products', () => ofetch(`${proxyUrl}/api/odx/StreamService/Products`))
+    const telemetryBuffered = await measureSequential('small seq telemetry buffer', '/api/odx/TelemetryBufferService/Products', () => ofetch(`${telemetryProxyUrl}/api/odx/TelemetryBufferService/Products`))
 
     const largeDirect = await measureSequential('large seq direct', '/LargeProducts', () => ofetch(`${backendUrl}/LargeProducts`))
     const largeBuffered = await measureSequential('large seq buffer', '/api/odx/BufferService/LargeProducts', () => ofetch(`${proxyUrl}/api/odx/BufferService/LargeProducts`))
@@ -338,6 +361,7 @@ describeBenchmark('proxy performance baseline', () => {
       smallDirect,
       smallBuffered,
       smallStreamed,
+      telemetryBuffered,
       largeDirect,
       largeBuffered,
       largeStreamed,
@@ -363,6 +387,8 @@ describeBenchmark('proxy performance baseline', () => {
     assignAverageOverhead(concurrentBuffered, concurrentDirect)
     assignAverageOverhead(concurrentStreamed, concurrentDirect)
     assignAverageOverhead(devtoolsBuffered, devtoolsBaseline)
+    assignAverageOverhead(telemetryBuffered, smallBuffered)
+    expect(telemetryBuffered.overheadAvgMs).toBeLessThan(1)
 
     for (const summary of [
       smallBuffered,

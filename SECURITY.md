@@ -192,6 +192,13 @@ Logs may include:
 behavior. Do not add production payload logging without a documented security
 review.
 
+Operational telemetry uses a separate allowlisted summary and must never copy
+request context, URLs, query literals, entity keys, headers, bodies, backend
+errors, or `proxyTrace.details`. Treat client-provided operation identifiers as
+untrusted; the proxy bounds their length and character set before publishing
+them. Observability adapters may add stronger redaction but must not weaken the
+ODX allowlist. Adapter or drain failure must not change the OData response.
+
 Headers are redacted before storage when their names contain or match sensitive
 credential/session material, including:
 

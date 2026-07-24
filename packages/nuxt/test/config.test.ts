@@ -1,6 +1,6 @@
 import type { ODataProxyConfig } from '@me-tools/odx-core'
 import { describe, expect, it } from 'vitest'
-import { createPublicODataConfig } from '../src/config'
+import { createPublicODataConfig, resolveModuleConfig } from '../src/config'
 
 describe('public OData runtime configuration', () => {
   it('keeps proxied backend URLs private while preserving direct service URLs', () => {
@@ -39,6 +39,18 @@ describe('public OData runtime configuration', () => {
           url: 'https://services.example.test/odata',
         },
       ],
+    })
+  })
+
+  it('keeps operational telemetry opt-in', () => {
+    const nuxtOptions = {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    }
+
+    expect(resolveModuleConfig({}, nuxtOptions).telemetry).toEqual({ enabled: false })
+    expect(resolveModuleConfig({ telemetry: { enabled: true } }, nuxtOptions).telemetry).toEqual({
+      enabled: true,
     })
   })
 })

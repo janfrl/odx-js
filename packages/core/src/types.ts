@@ -245,6 +245,10 @@ export interface ODataProxyConfig {
    * concrete Nitro/Hookable type without coupling core to a server framework.
    */
   hooks?: unknown
+  telemetry?: {
+    enabled?: boolean
+  }
+
   devtools?: {
     enabled?: boolean
     maxLogs?: number
@@ -369,6 +373,14 @@ export interface ModuleOptions {
   buildDir?: string
   rootDir?: string
   btpConfigService?: string
+  telemetry?: {
+    /**
+     * Publish privacy-safe completed-request summaries to the host hook.
+     * @default false
+     */
+    enabled?: boolean
+  }
+
   devtools?: {
     /** @default true */
     enabled?: boolean

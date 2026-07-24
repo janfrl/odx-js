@@ -147,6 +147,9 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     services,
     buildDir: nuxtOptions.buildDir,
     rootDir: nuxtOptions.rootDir,
+    telemetry: {
+      enabled: options.telemetry?.enabled === true,
+    },
     devtools: {
       enabled: options.devtools?.enabled !== false,
       maxLogs: options.devtools?.maxLogs ?? 100,

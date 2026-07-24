@@ -8,6 +8,53 @@ Framework-agnostic H3 server handlers for OData request proxying, CSRF token man
 pnpm add @me-tools/odx-proxy
 ```
 
+## Operational telemetry
+
+Operational telemetry is opt-in:
+
+```ts
+export default defineNuxtConfig({
+  odata: { telemetry: { enabled: true } },
+})
+```
+
+When enabled, the proxy publishes one privacy-safe summary after each completed
+buffered or streamed request through the `odx:proxy:telemetry` hook. This contract is
+observability-vendor neutral: `@me-tools/odx-proxy` does not depend on evlog,
+OpenTelemetry, or a drain provider.
+
+```ts
+nitroApp.hooks.hook('odx:proxy:request', ({ event }) => {
+  event.context.odxOperationId = 'list-report.load:products'
+})
+
+nitroApp.hooks.hook('odx:proxy:telemetry', ({ summary }) => {
+  operationalLogger.set({ odx: summary })
+})
+```
+
+The summary contains only allowlisted operational facts:
+
+- generated request ID and an optional sanitized operation ID;
+- service and entity-set identifiers;
+- HTTP method, proxy mode, and target kind;
+- status, outcome, and duration.
+
+It deliberately excludes URLs, query and filter values, entity keys, request
+and response bodies, headers, backend errors, and proxy trace details. The
+request ID is also used by the development `OdxLogStore` entry, allowing a
+host observability event to link to Explorer diagnostics without duplicating
+payload history.
+
+Telemetry hook failures are isolated from the proxied response. Hook handlers
+should enrich the host request logger and leave slow exporting to that logger's
+post-response drain. The optional `odxOperationId` accepts only 1-128 ASCII
+word, dot, colon, or hyphen characters; invalid identifiers are omitted.
+
+See
+[`research/evlog-observability-evaluation.md`](../../research/evlog-observability-evaluation.md)
+for the evlog fit assessment, security boundaries, and pilot gates.
+
 ## Verification
 
 From the repository root:
@@ -25,8 +72,9 @@ header forwarding through `@me-tools/odx-proxy`.
 `pnpm run bench:proxy` runs the proxy performance benchmark. It verifies
 buffer and stream proxy responses match the fixture backend, then reports
 direct, proxied, concurrent, and DevTools logging timing baselines. Scenarios
-with a direct or logging baseline include both absolute average overhead and
-relative average overhead percentage. The table also reports the median
+with a direct, telemetry-disabled, or logging baseline include absolute and
+relative average overhead. Operational telemetry has a dedicated 1 ms
+enabled-versus-disabled average-overhead gate. The table also reports the median
 per-round average and per-round standard deviation so local noise is visible.
 Use
 `ODX_PROXY_BENCHMARK_OUTPUT=reports/proxy-benchmark.json` to also write the

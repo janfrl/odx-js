@@ -1,6 +1,6 @@
 # evlog observability evaluation
 
-Status: proposed pilot
+Status: neutral ODX foundation implemented; evlog host pilot pending
 Evaluated version: `evlog@2.22.3`
 Evaluation date: 2026-07-24
 
@@ -159,4 +159,7 @@ These events should share the operation ID but remain independent of evlog. Nuxt
 
 ## Recommended next action
 
-Implement correlation and the sanitized proxy-summary contract first, with a no-op default and tests. Then add the evlog application pilot. The durable contract remains useful if evlog changes or is replaced.
+The opt-in correlation and sanitized proxy-summary contract is now implemented
+with security, streaming, Nuxt configuration, and performance tests. The next
+step is a fixture-only evlog application pilot with client transport disabled.
+The durable contract remains useful if evlog changes or is replaced.

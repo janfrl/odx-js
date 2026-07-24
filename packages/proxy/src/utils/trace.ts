@@ -27,15 +27,16 @@ function shouldEnableTraceLogging(event: H3Event): boolean {
  * Encapsulates the tracing and logging state for a single proxy request.
  */
 export class DevToolsTracer {
-  readonly id = Math.random().toString(36).substring(7)
+  readonly id: string
   readonly startTime = Date.now()
   readonly trace: any[]
   readonly enabled: boolean
   readonly payloadPolicy: OdxLogPayloadPolicy
 
-  constructor(event: H3Event) {
+  constructor(event: H3Event, id = Math.random().toString(36).substring(7)) {
     this.enabled = shouldEnableTraceLogging(event)
     this.payloadPolicy = resolvePayloadPolicy(event)
+    this.id = id
     this.trace = []
     event.context.proxyTrace = this.addTrace.bind(this)
   }
@@ -109,12 +110,20 @@ export class DevToolsTracer {
   /**
    * Registers a callback to update the log when the response is finished (for streaming).
    */
-  registerStreamFinish(event: H3Event): void {
-    if (!this.enabled)
+  registerStreamFinish(event: H3Event, onFinish?: (status: number) => void | Promise<void>): void {
+    if (!this.enabled && !onFinish)
       return
 
     event.node.res.on('finish', () => {
-      void this.updateLog(event.node.res.statusCode, '[Streamed Response]')
+      const status = event.node.res.statusCode
+      const tasks: Array<Promise<unknown>> = []
+      if (this.enabled) {
+        tasks.push(Promise.resolve(this.updateLog(status, '[Streamed Response]')))
+      }
+      if (onFinish) {
+        tasks.push(Promise.resolve().then(() => onFinish(status)))
+      }
+      void Promise.allSettled(tasks)
     })
   }
 }

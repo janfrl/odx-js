@@ -27,6 +27,7 @@ describe('proxy integration', () => {
   let disabledProxyUrl: string
   const hooks = createHooks<ODataProxyHooks>()
 
+  const disabledHooks = createHooks<ODataProxyHooks>()
   beforeAll(async () => {
     // 1. Spin up dummy backend
     backendServer = createServer(toNodeListener(createBackend()))
@@ -46,6 +47,12 @@ describe('proxy integration', () => {
           url: '', // Results in relative /sap/opu/odata/sap/MockService
           strategy: 'proxied',
           proxyMode: 'buffer',
+        },
+        {
+          name: 'StreamService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'stream',
         },
         {
           name: 'DirectService',
@@ -76,6 +83,9 @@ describe('proxy integration', () => {
       buildDir: '',
       rootDir: '',
       mode: 'sdk',
+      telemetry: {
+        enabled: true,
+      },
       devtools: {
         enabled: true,
         maxLogs: 100,
@@ -96,10 +106,13 @@ describe('proxy integration', () => {
           proxyMode: 'buffer',
         },
       ],
+      telemetry: {
+        enabled: false,
+      },
       devtools: {
         enabled: false,
       },
-      hooks: createHooks<ODataProxyHooks>(),
+      hooks: disabledHooks,
     }
 
     disabledProxyServer = createServer(toNodeListener(createProxyServer(disabledConfig)))
@@ -198,6 +211,8 @@ describe('proxy integration', () => {
 
   it('skips log-only flattening for buffered responses when DevTools are disabled', async () => {
     clearODataLogs()
+    const telemetrySpy = vi.fn()
+    disabledHooks.hookOnce('odx:proxy:telemetry', telemetrySpy)
 
     const flattenODataMock = vi.mocked(flattenOData)
     flattenODataMock.mockClear()
@@ -205,6 +220,7 @@ describe('proxy integration', () => {
     const response = await ofetch.raw(`${disabledProxyUrl}/api/odx/DisabledDevToolsService/Products`)
 
     expect(response.status).toBe(200)
+    expect(telemetrySpy).not.toHaveBeenCalled()
     expect(response._data).toEqual({
       d: {
         results: [
@@ -213,7 +229,57 @@ describe('proxy integration', () => {
       },
     })
     expect(flattenODataMock).not.toHaveBeenCalled()
+
     expect(await getODataLogs()).toEqual([])
+  })
+
+  it('correlates operational summaries with the Explorer log record', async () => {
+    clearODataLogs()
+    const telemetrySpy = vi.fn()
+    hooks.hookOnce('odx:proxy:request', ({ event }) => {
+      event.context.odxOperationId = 'list-report.load:products'
+    })
+    hooks.hookOnce('odx:proxy:telemetry', telemetrySpy)
+
+    await ofetch(`${proxyUrl}/api/odx/TestService/Products?$filter=Name eq 'Private'`)
+
+    const [log] = await getODataLogs()
+    expect(telemetrySpy).toHaveBeenCalledOnce()
+    const [{ summary }] = telemetrySpy.mock.calls[0]!
+    expect(summary).toMatchObject({
+      requestId: log?.id,
+      operationId: 'list-report.load:products',
+      serviceId: 'TestService',
+      entitySetId: 'Products',
+      method: 'GET',
+      proxyMode: 'buffer',
+      targetKind: 'url',
+      status: 200,
+      outcome: 'success',
+    })
+    expect(summary).not.toHaveProperty('url')
+    expect(summary).not.toHaveProperty('requestBody')
+    expect(summary).not.toHaveProperty('responseBody')
+    expect(JSON.stringify(summary)).not.toContain('Private')
+  })
+
+  it('publishes telemetry after a streamed response finishes', async () => {
+    const telemetrySpy = vi.fn()
+    hooks.hookOnce('odx:proxy:telemetry', telemetrySpy)
+
+    await ofetch(`${proxyUrl}/api/odx/StreamService/Products`)
+    await vi.waitFor(() => expect(telemetrySpy).toHaveBeenCalledOnce())
+
+    const [{ summary }] = telemetrySpy.mock.calls[0]!
+    expect(summary).toMatchObject({
+      serviceId: 'StreamService',
+      entitySetId: 'Products',
+      method: 'GET',
+      proxyMode: 'stream',
+      targetKind: 'url',
+      status: 200,
+      outcome: 'success',
+    })
   })
 
   it('triggers interception hooks', async () => {

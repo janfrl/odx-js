@@ -6,9 +6,12 @@ import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, se
 import { ofetch } from 'ofetch'
 import { validateBtpAuth } from '../utils/auth'
 import { prepareProxyHeaders } from '../utils/headers'
+import { OdxProxyTelemetry, resolveOdxProxyTargetKind } from '../utils/operational-telemetry'
 import { odataGuard } from '../utils/rules'
 import { DevToolsTracer } from '../utils/trace'
 import { parseODataRequest, resolveTargetUrl } from '../utils/url'
+
+const ENTITY_SET_IDENTIFIER = /^[\w.]+/
 
 function omitManagedAuthorization(headers: Record<string, string>, authHeader?: string): void {
   if (authHeader && headers.authorization === authHeader) {
@@ -21,8 +24,9 @@ function omitManagedAuthorization(headers: Record<string, string>, authHeader?: 
  * Supports both streaming (high performance) and buffering (for DevTools/interception).
  */
 export default defineEventHandler(async (event): Promise<any> => {
-  const tracer = new DevToolsTracer(event)
   const config = event.context.odataConfig
+  const tracer = new DevToolsTracer(event, config.telemetry?.enabled ? globalThis.crypto.randomUUID() : undefined)
+  let telemetry: OdxProxyTelemetry | undefined
   const targetConfig = event.context.proxyTarget
 
   if (!targetConfig) {
@@ -34,7 +38,35 @@ export default defineEventHandler(async (event): Promise<any> => {
   }
 
   try {
-    // 1. Security Validation (Production Only)
+    const nitroApp = (event.context as any).nitroApp
+    const configuredHooks = config?.hooks as Hookable<ODataProxyHooks> | undefined
+    const eventHooks = event.context.odataHooks as Hookable<ODataProxyHooks> | undefined
+    const hooks = configuredHooks || eventHooks || nitroApp?.hooks
+    const mode = targetConfig.proxyMode || (tracer.enabled ? 'buffer' : 'stream')
+
+    // 1. Request Classification & Telemetry Initialization
+    const request = parseODataRequest(event, config?.basePath)
+    const matched = config?.services?.find((svc: any) =>
+      svc.name.toLowerCase() === request.serviceName.toLowerCase()
+      || (svc.route && svc.route.toLowerCase() === request.serviceName.toLowerCase()),
+    )
+    const serviceName = matched?.name || request.serviceName
+    const entitySetId = request.segments[1]?.match(ENTITY_SET_IDENTIFIER)?.[0]
+    telemetry = config.telemetry?.enabled
+      ? new OdxProxyTelemetry(event, hooks, {
+          requestId: tracer.id,
+          serviceId: serviceName,
+          ...(entitySetId ? { entitySetId } : {}),
+          method: event.method,
+          proxyMode: mode,
+          targetKind: resolveOdxProxyTargetKind({
+            destination: matched?.destination,
+            isRelative: targetConfig.isRelative,
+          }),
+        })
+      : undefined
+
+    // 2. Security Validation (Production Only)
     if (process.env.NODE_ENV === 'production') {
       tracer.addTrace('Security', 'Validating BTP Authentication...')
       await validateBtpAuth(event)
@@ -42,14 +74,6 @@ export default defineEventHandler(async (event): Promise<any> => {
         tracer.addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName?.() }, 'success')
       }
     }
-
-    // 2. Request Parsing & URL Resolution
-    const request = parseODataRequest(event, config?.basePath)
-    const matched = config?.services?.find((svc: any) =>
-      svc.name.toLowerCase() === request.serviceName.toLowerCase()
-      || (svc.route && svc.route.toLowerCase() === request.serviceName.toLowerCase()),
-    )
-    const serviceName = matched?.name || request.serviceName
     let targetUrl = resolveTargetUrl(event, targetConfig.url, request, targetConfig.isRelative, serviceName)
 
     tracer.addTrace('Proxy', `Forwarding request to: ${targetUrl}`)
@@ -74,10 +98,6 @@ export default defineEventHandler(async (event): Promise<any> => {
     // 5. Rule & Hook Execution
     const isDirect = targetConfig.strategy === 'direct'
     const fetchOptions: any = { method: event.method, headers: { ...finalHeaders } }
-    const nitroApp = (event.context as any).nitroApp
-    const configuredHooks = config?.hooks as Hookable<ODataProxyHooks> | undefined
-    const eventHooks = event.context.odataHooks as Hookable<ODataProxyHooks> | undefined
-    const hooks = configuredHooks || eventHooks || nitroApp?.hooks
 
     if (!isDirect) {
       const hookCtx = { event, serviceName, fetchOptions, url: targetUrl }
@@ -107,7 +127,6 @@ export default defineEventHandler(async (event): Promise<any> => {
     }
 
     // 6. Proxy Execution (Hybrid Mode)
-    const mode = targetConfig.proxyMode || (tracer.enabled ? 'buffer' : 'stream')
 
     if (mode === 'buffer') {
       try {
@@ -136,6 +155,7 @@ export default defineEventHandler(async (event): Promise<any> => {
           ? flattenOData(responseData)
           : undefined
         await tracer.updateLog(responseStatus, responseLogBody)
+        await telemetry?.complete(responseStatus)
         return responseStatus === 204 ? '' : responseData
       }
       catch (err: any) {
@@ -145,12 +165,15 @@ export default defineEventHandler(async (event): Promise<any> => {
         // Re-throw as an h3 error so that the original SAP response body (e.g. permission
         // denied) is forwarded to the client instead of being swallowed by Nitro's error
         // serializer, which would strip the structured error payload.
+        await telemetry?.complete(status)
         throw createError({ statusCode: status, data: err.data ?? null })
       }
     }
 
     // High Performance Streaming
-    tracer.registerStreamFinish(event)
+    tracer.registerStreamFinish(event, async (status) => {
+      await telemetry?.complete(status)
+    })
     return proxyRequest(event, targetUrl, {
       headers: finalHeaders,
       cookieDomainRewrite: { '*': '' },
@@ -160,6 +183,7 @@ export default defineEventHandler(async (event): Promise<any> => {
     const status = err.statusCode || err.status || 500
     const message = err.statusMessage || err.message || 'Internal Proxy Error'
     await tracer.updateLog(status, { error: message })
+    await telemetry?.complete(status)
     throw err
   }
 })

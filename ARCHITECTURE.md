@@ -169,6 +169,13 @@ The normal Nuxt runtime path is:
 7. Responses are returned to the application. In development, request telemetry
    is stored for the Explorer.
 
+When enabled, each completed proxy request publishes an allowlisted operational summary
+through `odx:proxy:telemetry`. The summary is independent from development log
+storage and contains correlation IDs, semantic service/entity-set identifiers,
+method, proxy mode, target kind, status, outcome, and duration only. Nuxt hosts
+may project it into an observability system. Portable ODX packages do not
+depend on a logging vendor, and Explorer remains the owner of detailed traces.
+
 Development telemetry is still a sensitive surface. Traffic logs now pass
 through the core `OdxLogStore` boundary before storage. The default store is
 memory-backed for local development and tests, supports append, update, list,

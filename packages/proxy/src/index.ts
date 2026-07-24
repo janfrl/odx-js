@@ -8,6 +8,10 @@ export type {
   ODataProxyHooks,
   ODataProxyRequestContext,
   ODataProxyResponseContext,
+  OdxProxyOutcome,
+  OdxProxyTargetKind,
+  OdxProxyTelemetryContext,
+  OdxProxyTelemetrySummary,
   SapSecurityContext,
 } from './types'
 export { odataGuard } from './utils/rules'
