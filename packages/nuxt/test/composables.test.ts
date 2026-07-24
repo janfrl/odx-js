@@ -207,6 +207,38 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('creates a child through a validated navigation path', async () => {
+      const api = useOData('RoutedService' as any)
+      const signal = new AbortController().signal
+
+      await api.entitySet('Products').createNavigation(
+        { ID: 1, Locale: 'en' },
+        ['Items'],
+        { Product: 'Desk', Amount: '125.50' },
+        { signal },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Items',
+        'POST',
+        {
+          body: { Product: 'Desk', Amount: '125.50' },
+          signal,
+        },
+      )
+    })
+
+    it('rejects empty or unsafe navigation paths', () => {
+      const entitySet = useOData('MyService').entitySet('Products')
+
+      expect(() => entitySet.createNavigation(1, [], {})).toThrow(TypeError)
+      expect(() => entitySet.createNavigation(
+        1,
+        ['Items?$filter=ID'],
+        {},
+      )).toThrow(TypeError)
+    })
     it('calls $odata for update (PATCH)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').update(1, { Name: 'Updated' })

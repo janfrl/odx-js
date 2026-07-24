@@ -181,6 +181,16 @@ export interface ODataEntitySet<T = any> {
    */
   create: (body: Partial<T>, options?: any) => Promise<T>
   /**
+   * Creates a new entity through a collection-valued navigation property of
+   * an existing parent entity.
+   */
+  createNavigation: <TResult = unknown>(
+    key: ODataKey,
+    navigationPath: readonly string[],
+    body: Readonly<Record<string, unknown>>,
+    options?: any,
+  ) => Promise<TResult>
+  /**
    * Updates an existing entity.
    */
   update: (key: ODataKey, body: Partial<T>, options?: any) => Promise<T>

@@ -5,6 +5,7 @@ import { useODataBasePath } from './useODataBasePath'
 
 const RE_SINGLE_QUOTE = /'/g
 const RE_QUALIFIED_ACTION = /^(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*$/u
+const RE_NAVIGATION_SEGMENT = /^[A-Za-z_]\w*$/u
 const RE_LEADING_SLASHES = /^\/+/
 const RE_TRAILING_SLASHES = /\/+$/
 interface ODataFetchClient {
@@ -56,6 +57,15 @@ export function useOData(service?: string): any {
       .join(',')
   }
 
+  const formatNavigationPath = (navigationPath: readonly string[]): string => {
+    if (navigationPath.length === 0
+      || navigationPath.some(segment => !RE_NAVIGATION_SEGMENT.test(segment))) {
+      throw new TypeError(
+        'An OData navigation path requires one or more valid identifier segments.',
+      )
+    }
+    return navigationPath.join('/')
+  }
   const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataEntitySet<TModel> => {
     const basePath = useODataBasePath(serviceName)
     const isDirect = basePath.startsWith('http')
@@ -112,6 +122,21 @@ export function useOData(service?: string): any {
           body,
         }),
 
+      createNavigation: <TResult = unknown>(
+        key: ODataKey,
+        navigationPath: readonly string[],
+        body: Readonly<Record<string, unknown>>,
+        options?: any,
+      ): Promise<TResult> => {
+        const navigationUrl = joinUrlSegments(
+          `${fullPath}(${formatKey(key)})`,
+          formatNavigationPath(navigationPath),
+        )
+        return $odata<TResult>(client, navigationUrl, 'POST', {
+          ...(options as any),
+          body,
+        })
+      },
       update: (key: ODataKey, body: Partial<TModel>, options?: any): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatKey(key)})`
         return $odata<TModel>(client, itemPath, 'PATCH', {
