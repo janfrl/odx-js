@@ -169,6 +169,7 @@ Entity-set methods:
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
 | `createNavigation(key, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
+| `updateNavigation(key, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
@@ -179,10 +180,13 @@ other request options to the configured ODX transport.
 
 Mutation options are forwarded to the same transport, including `signal` and
 headers such as `If-Match`. `createNavigation` posts to a collection-valued
-navigation of a typed parent key. Its non-empty path accepts identifier segments
-only, keeping keys, navigation structure, and payload separate until the ODX
-client boundary. `invoke` requires a qualified action name. Omit the invocation
-key for unbound or collection-bound actions and provide it for an entity-bound
+navigation of a typed parent key. `updateNavigation` patches a related entity;
+its `update` argument contains the `body` and an optional `targetKey`. Omit the
+target key for a single-valued navigation and provide it for an entity in a
+collection-valued navigation. Both navigation mutations require a non-empty path
+of identifier segments, keeping keys, navigation structure, and payload separate
+until the ODX client boundary. `invoke` requires a qualified action name. Omit
+the invocation key for unbound or collection-bound actions and provide it for an entity-bound
 action; `parameters` become the POST body.
 
 Keys may be strings, numbers, booleans, or composite key objects.

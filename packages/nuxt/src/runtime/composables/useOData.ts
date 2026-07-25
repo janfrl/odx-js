@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import { $odata, flattenOData, stringifyQuery } from '@me-tools/odx-core'
 import { useODataBasePath } from './useODataBasePath'
@@ -135,6 +135,24 @@ export function useOData(service?: string): any {
         return $odata<TResult>(client, navigationUrl, 'POST', {
           ...(options as any),
           body,
+        })
+      },
+      updateNavigation: <TResult = unknown>(
+        key: ODataKey,
+        navigationPath: readonly string[],
+        update: ODataNavigationUpdate,
+        options?: any,
+      ): Promise<TResult> => {
+        const navigationUrl = joinUrlSegments(
+          `${fullPath}(${formatKey(key)})`,
+          formatNavigationPath(navigationPath),
+        )
+        const targetUrl = update.targetKey === undefined
+          ? navigationUrl
+          : `${navigationUrl}(${formatKey(update.targetKey)})`
+        return $odata<TResult>(client, targetUrl, 'PATCH', {
+          ...(options as any),
+          body: update.body,
         })
       },
       update: (key: ODataKey, body: Partial<TModel>, options?: any): Promise<TModel> => {

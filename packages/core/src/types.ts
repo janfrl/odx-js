@@ -191,6 +191,17 @@ export interface ODataEntitySet<T = any> {
     options?: any,
   ) => Promise<TResult>
   /**
+   * Updates an entity addressed through a navigation property of an existing
+   * parent entity. Omit `targetKey` for a single-valued navigation and provide
+   * it for an entity in a collection-valued navigation.
+   */
+  updateNavigation: <TResult = unknown>(
+    key: ODataKey,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: any,
+  ) => Promise<TResult>
+  /**
    * Updates an existing entity.
    */
   update: (key: ODataKey, body: Partial<T>, options?: any) => Promise<T>
@@ -204,6 +215,14 @@ export interface ODataEntitySet<T = any> {
     invocation?: ODataActionInvocation<TParameters>,
     options?: any,
   ) => Promise<TResult>
+}
+
+/** Describes a PATCH target below a parent entity navigation path. */
+export interface ODataNavigationUpdate {
+  /** PATCH payload for the related entity. */
+  body: Readonly<Record<string, unknown>>
+  /** Related entity key for a collection navigation; omit for a to-one navigation. */
+  targetKey?: ODataKey
 }
 
 /**

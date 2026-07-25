@@ -239,6 +239,60 @@ describe('useOData Composable', () => {
         {},
       )).toThrow(TypeError)
     })
+    it('updates a single-valued navigation target', async () => {
+      const api = useOData('RoutedService' as any)
+      const headers = { 'If-Match': 'W/"supplier-1"' }
+
+      await api.entitySet('Products').updateNavigation(
+        { ID: 1, Locale: 'en' },
+        ['Supplier'],
+        { body: { Name: 'Modern Office GmbH' } },
+        { headers },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Supplier',
+        'PATCH',
+        { body: { Name: 'Modern Office GmbH' }, headers },
+      )
+    })
+
+    it('updates a keyed entity in a collection-valued navigation', async () => {
+      const api = useOData('RoutedService' as any)
+
+      await api.entitySet('Products').updateNavigation(
+        1,
+        ['Items'],
+        {
+          targetKey: { ItemID: 'A/B', Locale: 'en' },
+          body: { Quantity: 3 },
+        },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(1)/Items(ItemID=\'A%2FB\',Locale=\'en\')',
+        'PATCH',
+        { body: { Quantity: 3 } },
+      )
+    })
+
+    it('rejects unsafe update navigation paths before transport', () => {
+      const entitySet = useOData('MyService').entitySet('Products')
+
+      expect(() => entitySet.updateNavigation(
+        1,
+        [],
+        { body: { Name: 'Updated' } },
+      )).toThrow(TypeError)
+      expect(() => entitySet.updateNavigation(
+        1,
+        ['Items(1)'],
+        { body: { Name: 'Updated' } },
+      )).toThrow(TypeError)
+    })
+
     it('calls $odata for update (PATCH)', async () => {
       const api = useOData('MyService')
       await api.entitySet('Products').update(1, { Name: 'Updated' })
