@@ -25,6 +25,24 @@ identifies supplied UTF-8 string data or exact `Uint8Array` bytes. Neither is a
 standards-defined CSDL signature. See `packages/metadata/README.md` for current
 conformance limits and non-goals.
 
+## Core Package
+
+`@me-tools/odx-core` exposes framework-neutral OData request utilities.
+`serializeODataChangeSet(requests, options?)` creates one OData V4 multipart
+batch containing an atomic changeset. Each non-GET operation retains its
+service-relative path, JSON body, headers, and unique Content-ID. Unsafe
+absolute paths, control characters, empty sets, and invalid or duplicate MIME
+boundaries fail before transport.
+
+`parseODataChangeSetResponse(body, contentType)` validates nested multipart or
+single-error batch responses and returns immutable per-operation status,
+headers, and parsed body values. Any non-2xx member throws
+`ODataChangeSetError` with the complete parsed response set; an outer HTTP 200
+alone is never interpreted as mutation success.
+
+The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It contains
+no Nuxt, Node.js, URL-construction, or transport behavior.
+
 ## Nuxt Module
 
 Install and register `@me-tools/odx-nuxt` in `nuxt.config.ts`:

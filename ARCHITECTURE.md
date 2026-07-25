@@ -44,6 +44,8 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
 - OData configuration and domain types from `src/types.ts`.
 - OData helpers such as `$odata`, `flattenOData`, `stringifyQuery`,
   `mergeHeaders`, and `sanitizeBaseURL`.
+- Multipart changeset serialization and response parsing for atomic OData V4
+  writes; service-relative URL construction and transport remain adapters.
 - EDMX parsing utilities from the `./server` export.
 - CSRF-aware request support through `fetchWithCsrf`.
 - The `OdxLogStore` traffic-log boundary, default in-memory store, redaction
