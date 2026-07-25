@@ -35,7 +35,9 @@ const { useOData } = await import('../src/runtime/composables/useOData')
 describe('useOData Composable', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    globalThis.$fetch = vi.fn() as any
+    const fetchMock = vi.fn() as any
+    fetchMock.raw = vi.fn()
+    globalThis.$fetch = fetchMock
     runtimeConfig.public.odata.basePath = '/api/odx'
     runtimeConfig.public.odata.services = [
       { name: 'RoutedService', url: 'https://example.com/routed', route: 'routed-api', strategy: 'proxied' },
@@ -443,6 +445,132 @@ describe('useOData Composable', () => {
 
       expect(() => api.invoke('../Demo.Reset')).toThrow('qualified name')
       expect(core.$odata).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('atomic changesets', () => {
+    it('posts root and navigation updates as one service-level batch', async () => {
+      const signal = new AbortController().signal
+      const responseBody = [
+        '--batch_response',
+        'Content-Type: multipart/mixed; boundary=changeset_response',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 200 OK',
+        'Content-Type: application/json',
+        '',
+        '{"ID":2,"Name":"Updated supplier"}',
+        '--changeset_response--',
+        '--batch_response--',
+        '',
+      ].join('\r\n')
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: responseBody,
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+
+      const responses = await api.changeSet([
+        {
+          kind: 'update',
+          entitySet: 'Products',
+          key: 1,
+          body: { Name: 'Updated product' },
+          headers: { 'If-Match': 'W/"product-1"' },
+        },
+        {
+          kind: 'update-navigation',
+          entitySet: 'Products',
+          key: 1,
+          navigationPath: ['Supplier'],
+          targetKey: 2,
+          body: { Name: 'Updated supplier' },
+          headers: { 'If-Match': 'W/"supplier-2"' },
+        },
+      ], { signal, headers: { 'X-Correlation-ID': 'test-1' } })
+
+      expect(responses).toEqual([
+        { status: 204, headers: {} },
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+          body: { ID: 2, Name: 'Updated supplier' },
+        },
+      ])
+      expect(raw).toHaveBeenCalledOnce()
+      const [url, options] = raw.mock.calls[0] as [string, any]
+      expect(url).toBe('/api/odx/routed-api/$batch')
+      expect(options).toMatchObject({
+        method: 'POST',
+        signal,
+        headers: {
+          accept: 'multipart/mixed',
+          'odata-version': '4.0',
+          'x-correlation-id': 'test-1',
+        },
+      })
+      expect(options.headers['content-type']).toMatch(/^multipart\/mixed; boundary=batch_/u)
+      expect(options.body).toContain('PATCH Products(1) HTTP/1.1')
+      expect(options.body).toContain('PATCH Products(1)/Supplier(2) HTTP/1.1')
+      expect(options.body).toContain('If-Match: W/"product-1"')
+      expect(options.body).toContain('If-Match: W/"supplier-2"')
+    })
+
+    it('uses the configured direct service root for batch requests', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+
+      await useOData('DirectService' as any).changeSet([
+        { kind: 'update', entitySet: 'Products', key: 'A/B', body: { Active: true } },
+      ])
+
+      expect(raw).toHaveBeenCalledWith(
+        'https://external.com/odata/$batch',
+        expect.objectContaining({ method: 'POST' }),
+      )
+      expect(raw.mock.calls[0]?.[1].body).toContain("PATCH Products('A%2FB') HTTP/1.1")
+    })
+
+    it('rejects unsafe entity and navigation path segments before transport', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      const api = useOData('MyService')
+
+      await expect(api.changeSet([
+        { kind: 'update', entitySet: '../Products', key: 1, body: {} },
+      ])).rejects.toThrow('valid identifier')
+      await expect(api.changeSet([
+        {
+          kind: 'update-navigation',
+          entitySet: 'Products',
+          key: 1,
+          navigationPath: ['../Supplier'],
+          body: {},
+        },
+      ])).rejects.toThrow('valid identifier segments')
+      expect(raw).not.toHaveBeenCalled()
     })
   })
 

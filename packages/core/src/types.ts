@@ -225,6 +225,31 @@ export interface ODataNavigationUpdate {
   targetKey?: ODataKey
 }
 
+/** Updates an entity as one member of an atomic OData changeset. */
+export interface ODataAtomicUpdate {
+  readonly kind: 'update'
+  readonly entitySet: string
+  readonly key: ODataKey
+  readonly body: Readonly<Record<string, unknown>>
+  readonly headers?: Readonly<Record<string, string>>
+}
+
+/** Updates a related entity as one member of an atomic OData changeset. */
+export interface ODataAtomicNavigationUpdate {
+  readonly kind: 'update-navigation'
+  readonly entitySet: string
+  readonly key: ODataKey
+  readonly navigationPath: readonly string[]
+  readonly targetKey?: ODataKey
+  readonly body: Readonly<Record<string, unknown>>
+  readonly headers?: Readonly<Record<string, string>>
+}
+
+/** A mutation supported by the typed service-level atomic changeset API. */
+export type ODataAtomicMutation =
+  | ODataAtomicUpdate
+  | ODataAtomicNavigationUpdate
+
 /**
  * Generic OData Service interface.
  * E: Union of available entity set names.
@@ -237,6 +262,14 @@ export type ODataService<E extends string = string, M extends Record<string, any
   entitySet: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : any>
   /** Invokes a service-level unbound OData action. */
   invoke: ODataEntitySet<never>['invoke']
+  /**
+   * Executes one or more updates as a single atomic OData changeset.
+   * The promise rejects when the server rejects any changeset member.
+   */
+  changeSet: (
+    mutations: readonly ODataAtomicMutation[],
+    options?: any,
+  ) => Promise<readonly import('./odata-changeset').ODataChangeSetResponse[]>
 } & {
   /**
    * Direct access to entity sets via properties.

@@ -83,6 +83,10 @@ The Nuxt module is the host integration layer. Its setup flow is:
 7. Generate OData model and registry types during `prepare:types`.
 8. Register the ODX Explorer as a Nuxt DevTools custom tab in development.
 
+The runtime composable maps typed service-level root and navigation updates to
+framework-neutral changesets and owns service URL resolution plus `$batch`
+transport.
+
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
 OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in
 `metadata`; server request behavior belongs in `proxy`.

@@ -207,6 +207,20 @@ until the ODX client boundary. `invoke` requires a qualified action name. Omit
 the invocation key for unbound or collection-bound actions and provide it for an entity-bound
 action; `parameters` become the POST body.
 
+Service-level methods:
+
+| Method | HTTP | Return |
+| --- | --- | --- |
+| `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
+
+`changeSet` accepts typed root `update` and `update-navigation` mutations and
+serializes them into one atomic OData V4 changeset. Each mutation keeps its own
+key, payload, and optional headers such as `If-Match`; request options such as
+`signal` and correlation headers apply to the outer batch request. The method
+rejects if any changeset member fails, so callers must not infer success from
+the outer batch status alone. Entity-set and navigation names are validated as
+identifier segments before transport.
+
 Keys may be strings, numbers, booleans, or composite key objects.
 
 `ODataQuery` uses `$count` for OData V4 count intent and `$inlinecount` for

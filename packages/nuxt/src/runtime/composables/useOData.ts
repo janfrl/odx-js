@@ -1,6 +1,6 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataEntitySet, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetResponse, ODataEntitySet, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
-import { $odata, flattenOData, stringifyQuery } from '@me-tools/odx-core'
+import { $odata, flattenOData, mergeHeaders, parseODataChangeSetResponse, serializeODataChangeSet, stringifyQuery } from '@me-tools/odx-core'
 import { useODataBasePath } from './useODataBasePath'
 
 const RE_SINGLE_QUOTE = /'/g
@@ -10,6 +10,10 @@ const RE_LEADING_SLASHES = /^\/+/
 const RE_TRAILING_SLASHES = /\/+$/
 interface ODataFetchClient {
   <T>(path: string, options?: any): Promise<T>
+  raw: <T>(path: string, options?: any) => Promise<{
+    _data?: T
+    headers: { get: (name: string) => string | null }
+  }>
 }
 
 /**
@@ -66,19 +70,23 @@ export function useOData(service?: string): any {
     }
     return navigationPath.join('/')
   }
-  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataEntitySet<TModel> => {
+  const formatEntitySet = (entitySet: string): string => {
+    if (!RE_NAVIGATION_SEGMENT.test(entitySet)) {
+      throw new TypeError(`OData entity set "${entitySet}" requires a valid identifier.`)
+    }
+    return entitySet
+  }
+
+  const resolveServicePath = (serviceName: string): string => {
     const basePath = useODataBasePath(serviceName)
-    const isDirect = basePath.startsWith('http')
+    if (basePath.startsWith('http'))
+      return normalizeUrlBase(basePath)
+    return joinUrlSegments(basePath, resolveServiceRoute(serviceName))
+  }
 
-    let fullPath = ''
-    if (isDirect) {
-      fullPath = entitySet ? joinUrlSegments(basePath, entitySet) : normalizeUrlBase(basePath)
-    }
-    else {
-      const route = resolveServiceRoute(serviceName)
-      fullPath = entitySet ? joinUrlSegments(basePath, route, entitySet) : joinUrlSegments(basePath, route)
-    }
-
+  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataEntitySet<TModel> => {
+    const servicePath = resolveServicePath(serviceName)
+    const fullPath = entitySet ? joinUrlSegments(servicePath, entitySet) : servicePath
     return {
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         return useFetch(fullPath, {
@@ -196,8 +204,52 @@ export function useOData(service?: string): any {
     }
   }
 
+  const createChangeSet = (serviceName: string) => async (
+    mutations: readonly ODataAtomicMutation[],
+    options: any = {},
+  ): Promise<readonly ODataChangeSetResponse[]> => {
+    const requests = mutations.map((mutation) => {
+      const entityPath = `${formatEntitySet(mutation.entitySet)}(${formatKey(mutation.key)})`
+      const path = mutation.kind === 'update'
+        ? entityPath
+        : (() => {
+            const navigationPath = `${entityPath}/${formatNavigationPath(mutation.navigationPath)}`
+            return mutation.targetKey === undefined
+              ? navigationPath
+              : `${navigationPath}(${formatKey(mutation.targetKey)})`
+          })()
+      return {
+        method: 'PATCH' as const,
+        path,
+        headers: mutation.headers,
+        body: mutation.body,
+      }
+    })
+    const payload = serializeODataChangeSet(requests)
+    const response = await client.raw<string>(
+      joinUrlSegments(resolveServicePath(serviceName), '$batch'),
+      {
+        ...options,
+        method: 'POST',
+        headers: mergeHeaders(options.headers, {
+          Accept: 'multipart/mixed',
+          'Content-Type': payload.contentType,
+          'OData-Version': '4.0',
+        }),
+        body: payload.body,
+      },
+    )
+    const contentType = response.headers.get('content-type') ?? ''
+    if (typeof response._data !== 'string') {
+      throw new TypeError('The OData batch response body must be text.')
+    }
+    return parseODataChangeSetResponse(response._data, contentType)
+  }
+
   const createServiceProxy = (serviceName: string): ODataService => {
-    const rootMethods = createMethods(serviceName)
+    const rootMethods = Object.assign(createMethods(serviceName), {
+      changeSet: createChangeSet(serviceName),
+    })
     return new Proxy(rootMethods as any, {
       get(target, prop) {
         if (prop === 'entitySet') {
