@@ -18,6 +18,55 @@ The durable architectural rule is separation of concerns:
 - `playground` is the local integration surface for development and examples.
 - `packages/approuter` is the SAP approuter entry point for deployed access.
 
+## Nuxt Fiori Integration Contract
+
+ODX is the protocol and transport foundation for Nuxt Fiori, but it remains a
+general OData toolkit and must not import Fiori semantics. Nuxt Fiori owns
+annotation-derived application behavior; ODX owns loss-aware metadata,
+protocol-safe request construction, concrete transports, proxy policy, and
+backend integration.
+
+The cross-repository contract is not proven yet. Nuxt Fiori currently declares
+`@me-tools/odx-nuxt` as a peer, mirrors parts of the unpublished metadata and
+entity-set contracts, and runs its application tests through a fixture
+transport. Those adapters are bootstrap scaffolding, not evidence that the
+complete product stack works on ODX.
+
+Before the first public prerelease:
+
+1. ODX packages must be packed and installed into a clean Nuxt Fiori consumer.
+2. That consumer must exercise CSDL ingestion, collection and entity reads,
+   relative navigation, atomic changesets, and the supported draft lifecycle.
+3. Compile-time and runtime conformance tests must replace hand-maintained
+   contract mirrors.
+4. Fixture and ODX transports must run in parallel until their public behavior
+   agrees.
+5. Published ODX and Nuxt Fiori versions must be covered by an explicit
+   compatibility matrix.
+
+Reusable OData key, resource-path, query, and batch construction belongs in
+`odx-core`; HTTP execution, Nuxt `AsyncData`, runtime configuration, and
+cancellation adaptation belong in `odx-nuxt`. Moving those protocol operations
+does not make core a transport client. The portable imperative entity-set
+surface and the Nuxt setup-time `AsyncData` surface should remain distinguishable
+so non-Nuxt consumers do not need to emulate Vue-shaped contracts.
+
+`odx-metadata` is the target CSDL ingestion implementation. The older core EDMX
+extractor remains only until characterization tests prove equivalent version,
+entity, navigation, Explorer, and generation behavior. It must not evolve into
+a second semantic parser.
+
+ODX and Nuxt Fiori remain separate repositories and release independently.
+They should share provenance and compatibility discipline, not lockstep
+versions. If the packed-consumer contract cannot be kept continuously green,
+the separation is no longer earning its integration cost and a shared workspace
+should be reconsidered.
+
+The allowlisted ODX telemetry summary and `operationId` correlation seam are the
+shared observability contract. evlog may be provided by a host adapter, but it
+must not become a dependency of metadata, core, Nuxt Fiori semantics, or a
+renderer.
+
 ## Package Boundaries
 
 ### `packages/metadata`
