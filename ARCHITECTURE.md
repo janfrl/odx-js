@@ -26,23 +26,20 @@ annotation-derived application behavior; ODX owns loss-aware metadata,
 protocol-safe request construction, concrete transports, proxy policy, and
 backend integration.
 
-The cross-repository contract is not proven yet. Nuxt Fiori currently declares
-`@me-tools/odx-nuxt` as a peer, mirrors parts of the unpublished metadata and
-entity-set contracts, and runs its application tests through a fixture
-transport. Those adapters are bootstrap scaffolding, not evidence that the
-complete product stack works on ODX.
+The first cross-repository contract is now executable rather than aspirational.
+A clean temporary consumer installs packed artifacts from both repositories,
+parses CSDL through `odx-metadata`, builds its Nuxt application, and exercises
+reads, relative navigation, updates, atomic changesets, and canonical draft
+operations through the production ODX proxy. ODX CI repeats that consumer on
+Node 24 against Nuxt Fiori `main` after the ordinary ODX verification matrix.
 
-Before the first public prerelease:
-
-1. ODX packages must be packed and installed into a clean Nuxt Fiori consumer.
-2. That consumer must exercise CSDL ingestion, collection and entity reads,
-   relative navigation, atomic changesets, and the supported draft lifecycle.
-3. Compile-time and runtime conformance tests must replace hand-maintained
-   contract mirrors.
-4. Fixture and ODX transports must run in parallel until their public behavior
-   agrees.
-5. Published ODX and Nuxt Fiori versions must be covered by an explicit
-   compatibility matrix.
+Nuxt Fiori still declares `@me-tools/odx-nuxt` as a peer and retains a thin
+structural entity-set port so its framework-neutral packages do not depend on a
+Nuxt transport. Compile-time assignability and packed runtime tests protect that
+boundary, but directly shared published transport types and a released-version
+compatibility matrix remain prerequisites for the first public prerelease.
+Fixture and ODX transports must continue to run in parallel until their public
+behavior agrees.
 
 Reusable OData key, resource-path, query, and batch construction belongs in
 `odx-core`; HTTP execution, Nuxt `AsyncData`, runtime configuration, and
