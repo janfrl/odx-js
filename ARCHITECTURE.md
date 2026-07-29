@@ -31,7 +31,10 @@ A clean temporary consumer installs packed artifacts from both repositories,
 parses CSDL through `odx-metadata`, builds its Nuxt application, and exercises
 reads, relative navigation, updates, atomic changesets, and canonical draft
 operations through the production ODX proxy. Nuxt Fiori CI repeats that
-consumer against public ODX `main` after its ordinary product verification.
+consumer against public ODX `main` after its ordinary product verification,
+and ODX CI runs the same consumer against the ODX checkout under test on Node
+24. The consumer contract is implemented once while both change directions are
+protected before merge.
 
 Nuxt Fiori still declares `@me-tools/odx-nuxt` as a peer and retains a thin
 structural entity-set port so its framework-neutral packages do not depend on a

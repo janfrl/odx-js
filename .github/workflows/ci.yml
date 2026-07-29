@@ -40,3 +40,20 @@ jobs:
 
       - name: Check generated artifact drift
         run: git diff --exit-code
+
+      - name: Check out Nuxt Fiori contract consumer
+        if: matrix.node-version == 24
+        uses: actions/checkout@v5
+        with:
+          repository: me-tools/nuxt-fiori
+          path: .integration/nuxt-fiori
+
+      - name: Install Nuxt Fiori contract consumer
+        if: matrix.node-version == 24
+        working-directory: .integration/nuxt-fiori
+        run: corepack pnpm@11.11.0 install --frozen-lockfile
+
+      - name: Verify packed Nuxt Fiori consumer
+        if: matrix.node-version == 24
+        working-directory: .integration/nuxt-fiori
+        run: corepack pnpm@11.11.0 verify:odx-consumer -- --odx-root "$GITHUB_WORKSPACE" --skip-build
