@@ -30,8 +30,8 @@ The first cross-repository contract is now executable rather than aspirational.
 A clean temporary consumer installs packed artifacts from both repositories,
 parses CSDL through `odx-metadata`, builds its Nuxt application, and exercises
 reads, relative navigation, updates, atomic changesets, and canonical draft
-operations through the production ODX proxy. ODX CI repeats that consumer on
-Node 24 against Nuxt Fiori `main` after the ordinary ODX verification matrix.
+operations through the production ODX proxy. Nuxt Fiori CI repeats that
+consumer against public ODX `main` after its ordinary product verification.
 
 Nuxt Fiori still declares `@me-tools/odx-nuxt` as a peer and retains a thin
 structural entity-set port so its framework-neutral packages do not depend on a
