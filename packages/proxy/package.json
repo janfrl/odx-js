@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@me-tools/odx-core": "workspace:*",
+    "@me-tools/odx-metadata": "workspace:*",
     "@sap/xsenv": "^6.1.0",
     "@sap/xssec": "^4.13.0",
     "db0": "^0.3.4",

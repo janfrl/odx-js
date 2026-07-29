@@ -8,6 +8,11 @@ Framework-agnostic H3 server handlers for OData request proxying, CSRF token man
 pnpm add @me-tools/odx-proxy
 ```
 
+Explorer schema responses are projected from the loss-aware
+`@me-tools/odx-metadata` CSDL document. Raw XML is parsed once; entity,
+association, navigation, version, and namespace summaries share that parsed
+source instead of maintaining endpoint-specific XML regular expressions.
+
 ## Operational telemetry
 
 Operational telemetry is opt-in:

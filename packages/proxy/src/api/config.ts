@@ -1,9 +1,9 @@
 import type { EntityMapping, ODataExplorerConfigResponse, ODataExplorerServiceInfo, ODataProxyConfig } from '@me-tools/odx-core'
 import process from 'node:process'
-import { detectODataVersionFromContent, extractEntitiesFromEdmxContent } from '@me-tools/odx-core/server'
 import { defineEventHandler } from 'h3'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 import { readRuntimeMetadataSnapshot } from '../utils/metadata-refresh'
+import { tryParseMetadataSchema } from '../utils/metadata-schema'
 
 function sanitizeServiceForProduction(service: any): ODataExplorerServiceInfo {
   return {
@@ -27,11 +27,14 @@ export default defineEventHandler((event) => {
 
   const enhancedServices = services.map((svc) => {
     let entities: EntityMapping[] = []
+    let version: 'v2' | 'v4' | null = null
     const metadata = readRuntimeMetadataSnapshot(config, svc, { sanitizeFailureReasons: isProductionExplorerRuntime() })
-    const version = metadata.xml ? detectODataVersionFromContent(metadata.xml) : null
 
-    if (metadata.xml)
-      entities = extractEntitiesFromEdmxContent(metadata.xml)
+    if (metadata.xml) {
+      const projection = tryParseMetadataSchema(metadata.xml)
+      entities = projection?.entities ?? []
+      version = projection?.version ?? null
+    }
 
     return {
       ...svc,

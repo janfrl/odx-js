@@ -1,14 +1,8 @@
 import type { ODataProxyConfig } from '@me-tools/odx-core'
-import { detectODataVersionFromContent, extractAssociationsFromEdmxContent, extractEntitiesFromEdmxContent } from '@me-tools/odx-core/server'
 import { createError, defineEventHandler, getQuery, setHeader } from 'h3'
 import { enforceExplorerEndpointPolicy, isProductionExplorerRuntime } from '../utils/explorer-policy'
 import { readRuntimeMetadataSnapshot } from '../utils/metadata-refresh'
-
-const RE_SCHEMA_NAMESPACE = /<Schema\s+Namespace="([^"]+)"/
-const RE_ENTITY_TYPE = /<EntityType Name="([^"]+)">/g
-const RE_ASSOCIATION = /<Association Name="([^"]+)">/g
-const RE_NAV_PROP = /<NavigationProperty Name="([^"]+)"/g
-const RE_NAME_ATTR = /"([^"]+)"/
+import { parseMetadataSchema } from '../utils/metadata-schema'
 
 export default defineEventHandler((event) => {
   enforceExplorerEndpointPolicy(event, 'schema')
@@ -67,10 +61,7 @@ export default defineEventHandler((event) => {
 
   try {
     const xml = metadata.xml
-    const version = detectODataVersionFromContent(xml)
-    const entities = extractEntitiesFromEdmxContent(xml)
-    const associations = extractAssociationsFromEdmxContent(xml)
-    const namespace = xml.match(RE_SCHEMA_NAMESPACE)?.[1] || ''
+    const { associations, entities, namespace, raw, version } = parseMetadataSchema(xml)
 
     const result = {
       name: serviceName,
@@ -89,11 +80,7 @@ export default defineEventHandler((event) => {
         bytes: metadata.bytes,
       },
       // Basic raw schema info for the graph
-      raw: {
-        entityTypes: xml.match(RE_ENTITY_TYPE)?.map(m => m.match(RE_NAME_ATTR)![1]) || [],
-        associations: xml.match(RE_ASSOCIATION)?.map(m => m.match(RE_NAME_ATTR)![1]) || [],
-        navigationProperties: xml.match(RE_NAV_PROP)?.map(m => m.match(RE_NAME_ATTR)![1]) || [],
-      },
+      raw,
     }
 
     return result

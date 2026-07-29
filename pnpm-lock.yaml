@@ -324,6 +324,9 @@ importers:
       '@me-tools/odx-core':
         specifier: workspace:*
         version: link:../core
+      '@me-tools/odx-metadata':
+        specifier: workspace:*
+        version: link:../metadata
       '@sap/xsenv':
         specifier: ^6.1.0
         version: 6.1.0
