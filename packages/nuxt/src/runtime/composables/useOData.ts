@@ -61,14 +61,19 @@ export function useOData(service?: string): any {
       .join(',')
   }
 
-  const formatNavigationPath = (navigationPath: readonly string[]): string => {
-    if (navigationPath.length === 0
-      || navigationPath.some(segment => !RE_NAVIGATION_SEGMENT.test(segment))) {
+  const formatNavigationPath = (
+    navigationPath: string | readonly string[],
+  ): string => {
+    const segments = typeof navigationPath === 'string'
+      ? navigationPath.split('/')
+      : navigationPath
+    if (segments.length === 0
+      || segments.some(segment => !RE_NAVIGATION_SEGMENT.test(segment))) {
       throw new TypeError(
         'An OData navigation path requires one or more valid identifier segments.',
       )
     }
-    return navigationPath.join('/')
+    return segments.join('/')
   }
   const formatEntitySet = (entitySet: string): string => {
     if (!RE_NAVIGATION_SEGMENT.test(entitySet)) {
@@ -102,6 +107,22 @@ export function useOData(service?: string): any {
         ...(options as any),
         query: stringifyQuery(query || {}),
       }),
+
+      fetchNavigationList: (
+        key: ODataKey,
+        navigationPath: string | readonly string[],
+        query?: ODataQuery<TModel>,
+        options?: unknown,
+      ): Promise<TModel[]> => {
+        const navigationUrl = joinUrlSegments(
+          `${fullPath}(${formatKey(key)})`,
+          formatNavigationPath(navigationPath),
+        )
+        return $odata<TModel[]>(client, navigationUrl, 'GET', {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+        })
+      },
 
       fetchOne: (
         key: ODataKey,
@@ -232,7 +253,7 @@ export function useOData(service?: string): any {
         ...options,
         method: 'POST',
         headers: mergeHeaders(options.headers, {
-          Accept: 'multipart/mixed',
+          'Accept': 'multipart/mixed',
           'Content-Type': payload.contentType,
           'OData-Version': '4.0',
         }),

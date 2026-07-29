@@ -26,6 +26,15 @@ const product = await useOData('Northwind')
   .fetchOne({ ID: 1, Locale: 'en' }, { $select: ['ID', 'Name'] }, { signal })
 ```
 
+Read a related collection without constructing an OData resource path in the
+consumer:
+
+```ts
+const relatedProducts = await useOData('Northwind')
+  .entitySet('Products')
+  .fetchNavigationList(1, 'Category/RelatedProducts', { $top: 20 }, { signal })
+```
+
 Create, update, and remove also accept request options for cancellation and
 concurrency headers. Invoke qualified actions at the service, collection, or
 entity binding path:

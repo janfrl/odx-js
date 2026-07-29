@@ -166,6 +166,18 @@ export interface ODataEntitySet<T = any> {
   fetchList: (query?: ODataQuery<T>, options?: any) => Promise<T[]>
 
   /**
+   * Performs an imperative collection read relative to an existing entity.
+   * The navigation path accepts either a single slash-delimited path or
+   * validated path segments.
+   */
+  fetchNavigationList: (
+    key: ODataKey,
+    navigationPath: string | readonly string[],
+    query?: ODataQuery<T>,
+    options?: any,
+  ) => Promise<T[]>
+
+  /**
    * Performs an imperative single-entity read without requiring a Nuxt
    * composable setup context.
    */
@@ -246,9 +258,9 @@ export interface ODataAtomicNavigationUpdate {
 }
 
 /** A mutation supported by the typed service-level atomic changeset API. */
-export type ODataAtomicMutation =
-  | ODataAtomicUpdate
-  | ODataAtomicNavigationUpdate
+export type ODataAtomicMutation
+  = | ODataAtomicUpdate
+    | ODataAtomicNavigationUpdate
 
 /**
  * Generic OData Service interface.

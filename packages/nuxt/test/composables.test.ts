@@ -183,6 +183,44 @@ describe('useOData Composable', () => {
         },
       )
     })
+
+    it('reads a collection relative to an entity', async () => {
+      const signal = new AbortController().signal
+      const api = useOData('RoutedService' as any)
+
+      await api.entitySet('Products').fetchNavigationList(
+        { ID: 1, Locale: 'en' },
+        'Category/RelatedProducts',
+        { $select: ['ID', 'Name'], $top: 3 },
+        { signal },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Category/RelatedProducts',
+        'GET',
+        {
+          query: { $select: ['ID', 'Name'], $top: 3 },
+          signal,
+        },
+      )
+    })
+
+    it('accepts segmented navigation reads and rejects unsafe paths', async () => {
+      const entitySet = useOData('MyService').entitySet('Products')
+
+      await entitySet.fetchNavigationList(1, ['Category', 'RelatedProducts'])
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)/Category/RelatedProducts',
+        'GET',
+        { query: {} },
+      )
+      expect(() => entitySet.fetchNavigationList(1, '')).toThrow(TypeError)
+      expect(() => entitySet.fetchNavigationList(1, '/Items')).toThrow(TypeError)
+      expect(() => entitySet.fetchNavigationList(1, 'Items?$filter=ID')).toThrow(TypeError)
+    })
   })
   describe('mutations ($odata)', () => {
     it('calls $odata for create (POST)', async () => {
@@ -515,7 +553,7 @@ describe('useOData Composable', () => {
         method: 'POST',
         signal,
         headers: {
-          accept: 'multipart/mixed',
+          'accept': 'multipart/mixed',
           'odata-version': '4.0',
           'x-correlation-id': 'test-1',
         },
@@ -551,7 +589,7 @@ describe('useOData Composable', () => {
         'https://external.com/odata/$batch',
         expect.objectContaining({ method: 'POST' }),
       )
-      expect(raw.mock.calls[0]?.[1].body).toContain("PATCH Products('A%2FB') HTTP/1.1")
+      expect(raw.mock.calls[0]?.[1].body).toContain('PATCH Products(\'A%2FB\') HTTP/1.1')
     })
 
     it('rejects unsafe entity and navigation path segments before transport', async () => {

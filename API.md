@@ -183,6 +183,7 @@ Entity-set methods:
 | --- | --- | --- |
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
+| `fetchNavigationList(key, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
@@ -194,7 +195,10 @@ Entity-set methods:
 
 Use `list` during Nuxt setup when SSR-aware `AsyncData` is desired. Use
 `fetchList` for imperative controller effects; it forwards cancellation and
-other request options to the configured ODX transport.
+other request options to the configured ODX transport. `fetchNavigationList`
+performs the same imperative read relative to a keyed parent entity. Its
+navigation path can be a slash-delimited string or an array of validated
+identifier segments.
 
 Mutation options are forwarded to the same transport, including `signal` and
 headers such as `If-Match`. `createNavigation` posts to a collection-valued
