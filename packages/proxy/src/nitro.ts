@@ -6,9 +6,11 @@ import { dirname, resolve } from 'pathe'
 import './types'
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url))
-const sourceDirectory = existsSync(resolve(moduleDirectory, 'api/odata.ts'))
+const usesBuiltRuntime = existsSync(resolve(moduleDirectory, 'api/odata.mjs'))
+const sourceDirectory = usesBuiltRuntime
   ? moduleDirectory
   : resolve(moduleDirectory, '../src')
+const runtimeExtension = usesBuiltRuntime ? '.mjs' : '.ts'
 
 export default defineNitroModule({
   setup(nitro) {
@@ -21,28 +23,28 @@ export default defineNitroModule({
     // Register handlers using absolute paths
     nitro.options.handlers.push({
       route: `${config.basePath}/**`,
-      handler: resolve(sourceDirectory, './api/odata.ts'),
+      handler: resolve(sourceDirectory, `./api/odata${runtimeExtension}`),
     })
 
     // Register BTP Auth plugins
     nitro.options.plugins = nitro.options.plugins || []
-    nitro.options.plugins.push(resolve(sourceDirectory, './plugins/auth-btp.ts'))
-    nitro.options.plugins.push(resolve(sourceDirectory, './plugins/btp-auth.ts'))
+    nitro.options.plugins.push(resolve(sourceDirectory, `./plugins/auth-btp${runtimeExtension}`))
+    nitro.options.plugins.push(resolve(sourceDirectory, `./plugins/btp-auth${runtimeExtension}`))
 
     // Also register the internal API handlers
     const internalHandlers = [
-      { route: '/__odx__/logs', handler: './api/logs.ts' },
-      { route: '/__odx__/config', handler: './api/config.ts' },
-      { route: '/__odx__/generate', handler: './api/generate.ts' },
-      { route: '/__odx__/schema', handler: './api/schema.ts' },
-      { route: '/__odx__/types', handler: './api/types.ts' },
-      { route: '/__odx__/me', handler: './api/me.ts' },
+      { route: '/__odx__/logs', handler: './api/logs' },
+      { route: '/__odx__/config', handler: './api/config' },
+      { route: '/__odx__/generate', handler: './api/generate' },
+      { route: '/__odx__/schema', handler: './api/schema' },
+      { route: '/__odx__/types', handler: './api/types' },
+      { route: '/__odx__/me', handler: './api/me' },
     ]
 
     for (const h of internalHandlers) {
       nitro.options.handlers.push({
         route: h.route,
-        handler: resolve(sourceDirectory, h.handler),
+        handler: resolve(sourceDirectory, `${h.handler}${runtimeExtension}`),
       })
     }
   },
