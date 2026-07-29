@@ -54,12 +54,12 @@ so non-Nuxt consumers do not need to emulate Vue-shaped contracts.
 `odx-metadata` is the target CSDL ingestion implementation. The core `./server`
 entry now exposes an explicit CSDL-document compatibility adapter, with corpus
 characterization for V2/V4 versions and entities, V2 associations, navigation,
-aliases, and duplicate local type names. Explorer schema and config endpoints
-consume that adapter and derive graph summaries from the parsed document rather
-than reparsing XML with regular expressions. The older regex/file extractor
-remains only until the Nuxt generation path uses the adapter and a broader
-customer corpus proves equivalent behavior. It must not evolve into a second
-semantic parser.
+aliases, and duplicate local type names. Explorer schema/config endpoints and
+Nuxt type generation consume that adapter; graph summaries are derived from the
+parsed document rather than reparsing XML with regular expressions. The older
+regex/file extractor now has no production callers and remains temporarily as a
+compatibility API until a broader customer corpus proves equivalent behavior.
+It must not evolve into a second semantic parser.
 
 ODX and Nuxt Fiori remain separate repositories and release independently.
 They should share provenance and compatibility discipline, not lockstep

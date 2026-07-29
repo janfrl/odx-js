@@ -78,3 +78,8 @@ valid identifiers, use bracket or functional access instead, for example
 
 Service names are also used in generated output and metadata cache paths, so
 avoid path separator characters such as `/` and `\` in service names.
+
+Registry generation parses each metadata file through `@me-tools/odx-metadata`
+and projects entity sets through the core CSDL adapter before invoking the SDK
+generator. Malformed metadata fails preparation with source-aware diagnostics
+instead of producing a silently incomplete registry.

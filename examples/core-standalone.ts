@@ -4,7 +4,8 @@ import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { $odata, flattenOData, stringifyQuery } from '@me-tools/odx-core'
-import { detectODataVersion, extractEntitiesFromEdmx } from '@me-tools/odx-core/server'
+import { detectODataVersionFromCsdlDocument, extractEntitiesFromCsdlDocument } from '@me-tools/odx-core/server'
+import { parseCsdl } from '@me-tools/odx-metadata'
 
 interface TestItem {
   ID: string
@@ -38,8 +39,13 @@ const rootDir = resolve(here, '..')
 const edmxPath = resolve(rootDir, 'test/fixtures/basic/edmx/test-v2.edmx')
 const mockDataPath = resolve(rootDir, 'test/fixtures/basic/server/mockdata/TestService/TestItems.json')
 
-const version = detectODataVersion(edmxPath)
-const entities = extractEntitiesFromEdmx(edmxPath)
+const parsedMetadata = parseCsdl(readFileSync(edmxPath, 'utf8'), {
+  format: 'xml',
+  source: { id: edmxPath },
+})
+assert.ok(parsedMetadata.document, 'Expected the basic EDMX fixture to produce a CSDL document')
+const version = detectODataVersionFromCsdlDocument(parsedMetadata.document)
+const entities = extractEntitiesFromCsdlDocument(parsedMetadata.document)
 const query = stringifyQuery({
   $select: ['ID', 'Title'],
   $top: 2,

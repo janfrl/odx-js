@@ -257,6 +257,9 @@ importers:
       '@me-tools/odx-core':
         specifier: workspace:*
         version: link:../core
+      '@me-tools/odx-metadata':
+        specifier: workspace:*
+        version: link:../metadata
       '@me-tools/odx-explorer':
         specifier: workspace:*
         version: link:../explorer

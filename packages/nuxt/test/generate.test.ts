@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
 import { EventEmitter } from 'node:events'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
 import { tmpdir } from 'node:os'
@@ -37,7 +37,7 @@ function createMockRequest() {
   return request
 }
 
-function createNuxtTypeGenerationHarness(serviceName: string) {
+function createNuxtTypeGenerationHarness(serviceName: string, metadataPath = minimalMetadataPath) {
   const rootDir = createTempRoot()
   const buildDir = join(rootDir, '.nuxt')
   let prepareTypesHook: ((payload: { references: { path: string }[] }) => Promise<void>) | undefined
@@ -57,7 +57,7 @@ function createNuxtTypeGenerationHarness(serviceName: string) {
     services: [
       {
         name: serviceName,
-        url: minimalMetadataPath,
+        url: metadataPath,
       },
     ],
   } as any)
@@ -129,6 +129,17 @@ describe('type Generation Logic', () => {
       },
     )
 
+    it('rejects malformed metadata before invoking the SDK generator', async () => {
+      const root = createTempRoot()
+      const metadataPath = join(root, 'invalid.edmx')
+      writeFileSync(metadataPath, '<edmx:Edmx>')
+      const harness = createNuxtTypeGenerationHarness('InvalidMetadata', metadataPath)
+
+      await expect(harness.runPrepareTypes()).rejects.toThrow(
+        `Could not parse OData metadata at ${metadataPath}`,
+      )
+      expect(execFileSync).not.toHaveBeenCalled()
+    })
     it('preserves safe non-identifier service names for type generation', async () => {
       const harness = createNuxtTypeGenerationHarness('Sales-Order')
 

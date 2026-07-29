@@ -7,7 +7,8 @@ import http from 'node:http'
 import https from 'node:https'
 import { createRequire } from 'node:module'
 import process from 'node:process'
-import { extractEntitiesFromEdmx } from '@me-tools/odx-core/server'
+import { extractEntitiesFromCsdlDocument } from '@me-tools/odx-core/server'
+import { parseCsdl } from '@me-tools/odx-metadata'
 import { consola } from 'consola'
 import { join, resolve } from 'pathe'
 
@@ -130,6 +131,19 @@ function formatTypeKey(value: string): string {
   return toTypeScriptIdentifier(value) === value ? value : JSON.stringify(value)
 }
 
+function extractEntitiesFromMetadata(xml: string, sourcePath: string): EntityMapping[] {
+  const result = parseCsdl(xml, {
+    format: 'xml',
+    source: { id: sourcePath },
+  })
+  if (result.document !== null)
+    return extractEntitiesFromCsdlDocument(result.document)
+
+  const reason = result.diagnostics
+    .map(diagnostic => diagnostic.message)
+    .join('; ')
+  throw new Error(`Could not parse OData metadata at ${sourcePath}: ${reason || 'no CSDL document produced'}`)
+}
 function assertValidServiceNameForTypeGeneration(serviceName: string): void {
   if (RE_PATH_SEPARATOR.test(serviceName)) {
     throw new Error(
@@ -216,7 +230,10 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
       }
 
       // Extract entities for the virtual registry
-      serviceEntities[svc.name] = extractEntitiesFromEdmx(inputPath)
+      serviceEntities[svc.name] = extractEntitiesFromMetadata(
+        fs.readFileSync(inputPath, 'utf8'),
+        inputPath,
+      )
 
       // Run generation
       const outDir = join(outRoot, svc.name)

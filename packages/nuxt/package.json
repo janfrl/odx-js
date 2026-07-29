@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@me-tools/odx-core": "workspace:*",
+    "@me-tools/odx-metadata": "workspace:*",
     "@me-tools/odx-explorer": "workspace:*",
     "@me-tools/odx-proxy": "workspace:*",
     "@nuxt/devtools-kit": "3.2.4",
