@@ -8,6 +8,11 @@ Portable path helpers include `formatODataKey`, `createODataEntityPath`,
 construct service-relative protocol paths without depending on Nuxt, Node.js,
 or a transport client.
 
+The `@me-tools/odx-core/server` entry also projects parsed
+`@me-tools/odx-metadata` documents into the established entity, navigation,
+association, and version contracts. This is the migration boundary away from
+the legacy file-based EDMX extractor.
+
 ## Installation
 
 ```bash

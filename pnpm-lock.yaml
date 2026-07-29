@@ -168,6 +168,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@me-tools/odx-metadata':
+        specifier: workspace:*
+        version: link:../metadata
       ofetch:
         specifier: ^1.5.1
         version: 1.5.1

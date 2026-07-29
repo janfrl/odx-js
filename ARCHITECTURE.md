@@ -51,10 +51,13 @@ does not make core a transport client. The portable imperative entity-set
 surface and the Nuxt setup-time `AsyncData` surface should remain distinguishable
 so non-Nuxt consumers do not need to emulate Vue-shaped contracts.
 
-`odx-metadata` is the target CSDL ingestion implementation. The older core EDMX
-extractor remains only until characterization tests prove equivalent version,
-entity, navigation, Explorer, and generation behavior. It must not evolve into
-a second semantic parser.
+`odx-metadata` is the target CSDL ingestion implementation. The core `./server`
+entry now exposes an explicit CSDL-document compatibility adapter, with corpus
+characterization for V2/V4 versions and entities, V2 associations, navigation,
+aliases, and duplicate local type names. The older regex/file extractor remains
+only until the Explorer and generation paths use the adapter and a broader
+customer corpus proves equivalent behavior. It must not evolve into a second
+semantic parser.
 
 ODX and Nuxt Fiori remain separate repositories and release independently.
 They should share provenance and compatibility discipline, not lockstep

@@ -1,6 +1,11 @@
 import type { Association, AssociationEnd, EntityMapping, EntityProperty, NavigationProperty } from './types.ts'
 import fs from 'node:fs'
 
+export {
+  detectODataVersionFromCsdlDocument,
+  extractAssociationsFromCsdlDocument,
+  extractEntitiesFromCsdlDocument,
+} from './csdl-adapter'
 const RE_XML_ATTRIBUTES = /([\w:-]+)="([^"]*)"/g
 const RE_ENTITY_TYPE_OPEN = /<[\w:]*EntityType\s/i
 const RE_ENTITY_TYPE_CLOSE = /<\/[\w:]*EntityType>/i

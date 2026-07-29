@@ -330,9 +330,12 @@ export function detectXmlVersion(root: CsdlXmlElement): ODataVersion {
   const rootVersion = xmlAttribute(root, 'Version')?.value
   if (rootVersion === '4.0' || rootVersion === '4.01')
     return rootVersion
-  if (rootVersion !== undefined)
+  if (rootVersion !== undefined && rootVersion !== '1.0')
     return 'unknown'
-
+  if (rootVersion === '1.0'
+    && root.name.namespace === 'http://schemas.microsoft.com/ado/2007/06/edmx') {
+    return '2.0'
+  }
   let dataServiceVersion: string | undefined
   const visit = (node: CsdlXmlNode): void => {
     if (dataServiceVersion || node.kind !== 'element')

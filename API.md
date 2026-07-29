@@ -47,6 +47,13 @@ alone is never interpreted as mutation success.
 The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It
 contains no Nuxt, Node.js, or transport behavior.
 
+The `@me-tools/odx-core/server` entry accepts loss-aware metadata documents
+through `detectODataVersionFromCsdlDocument`,
+`extractEntitiesFromCsdlDocument`, and
+`extractAssociationsFromCsdlDocument`. These functions provide the established
+core projection without reparsing XML. File-based EDMX helpers remain available
+for compatibility during migration.
+
 ## Nuxt Module
 
 Install and register `@me-tools/odx-nuxt` in `nuxt.config.ts`:

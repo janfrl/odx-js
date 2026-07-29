@@ -50,6 +50,7 @@ The public contract consists only of JSON-serializable data and framework-neutra
 - JSON text retains property order, duplicate properties, exact primitive tokens in `rawValue`, and source ranges. Numeric `value` is only a convenience value and may be approximate.
 - Stable node IDs and provenance paths use the versioned `odx-csdl-id-v1` algorithm.
 - Unknown versions and recoverable information loss produce structured diagnostics. An unknown version is never silently treated as V2 or V4.
+- Standard OData V2 documents using the EDMX 1.0 envelope and Microsoft 2007 EDMX namespace are recognized even when DataServiceVersion is omitted.
 - `schemas` is a shallow discovery index over the preserved document; it is not a linked or vocabulary-aware semantic model.
 - `resolveCsdlNullable` retains the representation-specific defaults: omitted XML `Nullable` defaults to `true`, while omitted JSON `$Nullable` defaults to `false`.
 - Parsing performs no I/O and never resolves XML entities or CSDL references.

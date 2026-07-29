@@ -89,6 +89,13 @@ describe('xML CSDL ingestion', () => {
     expect(() => JSON.stringify(document)).not.toThrow()
   })
 
+  it('recognizes the standard EDMX 1.0 envelope as OData V2', () => {
+    const result = parseCsdlXml(
+      '<edmx:Edmx xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" Version="1.0"><edmx:DataServices /></edmx:Edmx>',
+    )
+    expect(requireDocument(result).odataVersion).toBe('2.0')
+    expect(result.diagnostics).toEqual([])
+  })
   it('keeps V2 associations, roles, function imports, and SAP extensions without converting them', () => {
     const result = parseCsdlXml(fixture('v2.xml'))
     const document = requireDocument(result)
