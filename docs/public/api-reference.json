@@ -1351,6 +1351,122 @@
       }
     ]
   },
+  "serializeODataChangeSet": {
+    "title": "serializeODataChangeSet",
+    "properties": [
+      {
+        "name": "requests",
+        "type": "readonly ODataChangeSetRequest[]",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "SerializeODataChangeSetOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "parseODataChangeSetResponse": {
+    "title": "parseODataChangeSetResponse",
+    "properties": [
+      {
+        "name": "body",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "ODataChangeSetRequest": {
+    "title": "ODataChangeSetRequest",
+    "properties": [
+      {
+        "name": "method",
+        "type": "ODataChangeSetMethod",
+        "required": true
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      },
+      {
+        "name": "body",
+        "type": "unknown",
+        "required": false
+      }
+    ]
+  },
+  "ODataChangeSetPayload": {
+    "title": "ODataChangeSetPayload",
+    "properties": [
+      {
+        "name": "body",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "batchBoundary",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "changeSetBoundary",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "ODataChangeSetResponse": {
+    "title": "ODataChangeSetResponse",
+    "properties": [
+      {
+        "name": "status",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>>",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "unknown",
+        "required": false
+      }
+    ]
+  },
+  "SerializeODataChangeSetOptions": {
+    "title": "SerializeODataChangeSetOptions",
+    "properties": [
+      {
+        "name": "batchBoundary",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "changeSetBoundary",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
   "createODataClient": {
     "title": "createODataClient",
     "properties": [
@@ -1388,6 +1504,94 @@
       {
         "name": "options",
         "type": "any",
+        "required": true
+      }
+    ]
+  },
+  "validateODataIdentifier": {
+    "title": "validateODataIdentifier",
+    "description": "Validates and returns one OData identifier without path delimiters.",
+    "properties": [
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "default": "'OData identifier'",
+        "required": false
+      }
+    ]
+  },
+  "validateODataQualifiedName": {
+    "title": "validateODataQualifiedName",
+    "description": "Validates and returns a namespace-qualified OData name.",
+    "properties": [
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "default": "'OData qualified name'",
+        "required": false
+      }
+    ]
+  },
+  "formatODataKey": {
+    "title": "formatODataKey",
+    "description": "Serializes a primitive or composite OData entity key for a resource path.",
+    "properties": [
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      }
+    ]
+  },
+  "formatODataNavigationPath": {
+    "title": "formatODataNavigationPath",
+    "description": "Validates and joins one or more navigation-property segments.",
+    "properties": [
+      {
+        "name": "navigationPath",
+        "type": "string | readonly string[]",
+        "required": true
+      }
+    ]
+  },
+  "joinODataPath": {
+    "title": "joinODataPath",
+    "description": "Joins already-addressable OData path fragments without altering URL schemes.",
+    "properties": [
+      {
+        "name": "base",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "segments",
+        "type": "readonly string[]",
+        "required": true
+      }
+    ]
+  },
+  "createODataEntityPath": {
+    "title": "createODataEntityPath",
+    "description": "Creates an exact entity resource path from a set name and key.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
         "required": true
       }
     ]
@@ -1724,6 +1928,12 @@
         "required": true
       },
       {
+        "name": "fetchNavigationList",
+        "type": "(key: ODataKey, navigationPath: string | readonly string[], query?: ODataQuery<T>, options?: any) => Promise<T[]>",
+        "description": "Performs an imperative collection read relative to an existing entity.\nThe navigation path accepts either a single slash-delimited path or\nvalidated path segments.",
+        "required": true
+      },
+      {
         "name": "fetchOne",
         "type": "(key: ODataKey, query?: ODataQuery<T>, options?: any) => Promise<T>",
         "description": "Performs an imperative single-entity read without requiring a Nuxt\ncomposable setup context.",
@@ -1739,6 +1949,18 @@
         "name": "create",
         "type": "(body: Partial<T>, options?: any) => Promise<T>",
         "description": "Creates a new entity.",
+        "required": true
+      },
+      {
+        "name": "createNavigation",
+        "type": "<TResult = unknown>(key: ODataKey, navigationPath: readonly string[], body: Readonly<Record<string, unknown>>, options?: any) => Promise<TResult>",
+        "description": "Creates a new entity through a collection-valued navigation property of\nan existing parent entity.",
+        "required": true
+      },
+      {
+        "name": "updateNavigation",
+        "type": "<TResult = unknown>(key: ODataKey, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: any) => Promise<TResult>",
+        "description": "Updates an entity addressed through a navigation property of an existing\nparent entity. Omit `targetKey` for a single-valued navigation and provide\nit for an entity in a collection-valued navigation.",
         "required": true
       },
       {
@@ -1758,6 +1980,96 @@
         "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: any) => Promise<TResult>",
         "description": "Invokes an unbound, collection-bound, or entity-bound OData action.",
         "required": true
+      }
+    ]
+  },
+  "ODataNavigationUpdate": {
+    "title": "ODataNavigationUpdate",
+    "description": "Describes a PATCH target below a parent entity navigation path.",
+    "properties": [
+      {
+        "name": "body",
+        "type": "Readonly<Record<string, unknown>>",
+        "description": "PATCH payload for the related entity.",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey | undefined",
+        "description": "Related entity key for a collection navigation; omit for a to-one navigation.",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicUpdate": {
+    "title": "ODataAtomicUpdate",
+    "description": "Updates an entity as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"update\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "Readonly<Record<string, unknown>>",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicNavigationUpdate": {
+    "title": "ODataAtomicNavigationUpdate",
+    "description": "Updates a related entity as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"update-navigation\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey | undefined",
+        "required": false
+      },
+      {
+        "name": "body",
+        "type": "Readonly<Record<string, unknown>>",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
       }
     ]
   },
@@ -1828,6 +2140,11 @@
         "name": "hooks",
         "type": "unknown",
         "description": "Optional host-specific hook dispatcher. The proxy package supplies the\nconcrete Nitro/Hookable type without coupling core to a server framework.",
+        "required": false
+      },
+      {
+        "name": "telemetry",
+        "type": "{ enabled?: boolean; } | undefined",
         "required": false
       },
       {
@@ -2103,6 +2420,11 @@
       {
         "name": "btpConfigService",
         "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "telemetry",
+        "type": "{ enabled?: boolean; } | undefined",
         "required": false
       },
       {
