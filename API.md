@@ -203,6 +203,7 @@ Entity-set methods:
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
+| `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 
 Use `list` during Nuxt setup when SSR-aware `AsyncData` is desired. Use
 `fetchList` for imperative controller effects; it forwards cancellation and
@@ -220,13 +221,18 @@ collection-valued navigation. Both navigation mutations require a non-empty path
 of identifier segments, keeping keys, navigation structure, and payload separate
 until the ODX client boundary. `invoke` requires a qualified action name. Omit
 the invocation key for unbound or collection-bound actions and provide it for an entity-bound
-action; `parameters` become the POST body.
+action; `parameters` become the POST body. `invokeFunction` uses the same binding
+shape for qualified OData V4 functions, but sends `GET` and serializes each
+parameter from an explicit `{ type, value }` descriptor into the inline function
+call. Supported values are primitive EDM types; unsupported or malformed values
+are rejected before transport.
 
 Service-level methods:
 
 | Method | HTTP | Return |
 | --- | --- | --- |
 | `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
+| `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 
 `changeSet` accepts typed root `update` and `update-navigation` mutations and
 serializes them into one atomic OData V4 changeset. Each mutation keeps its own

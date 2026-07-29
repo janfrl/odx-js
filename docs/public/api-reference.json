@@ -1542,6 +1542,34 @@
       }
     ]
   },
+  "formatODataFunctionParameter": {
+    "title": "formatODataFunctionParameter",
+    "description": "Serializes one typed primitive for OData V4 function inline-parameter syntax.",
+    "properties": [
+      {
+        "name": "parameter",
+        "type": "ODataFunctionParameter",
+        "required": true
+      }
+    ]
+  },
+  "formatODataFunctionCall": {
+    "title": "formatODataFunctionCall",
+    "description": "Creates a validated qualified function call segment with inline parameters.",
+    "properties": [
+      {
+        "name": "qualifiedName",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "parameters",
+        "type": "Readonly<Record<string, ODataFunctionParameter>>",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
   "formatODataKey": {
     "title": "formatODataKey",
     "description": "Serializes a primitive or composite OData entity key for a resource path.",
@@ -1831,6 +1859,45 @@
       }
     ]
   },
+  "ODataFunctionParameter": {
+    "title": "ODataFunctionParameter",
+    "properties": [
+      {
+        "name": "type",
+        "type": "string",
+        "description": "Primitive EDM type used to serialize the URL literal safely.",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "ODataFunctionParameterValue",
+        "required": true
+      }
+    ]
+  },
+  "ODataFunctionInvocation": {
+    "title": "ODataFunctionInvocation",
+    "properties": [
+      {
+        "name": "key",
+        "type": "ODataKey | undefined",
+        "description": "Entity key for an entity- or navigation-bound function.",
+        "required": false
+      },
+      {
+        "name": "navigationPath",
+        "type": "string | readonly string[] | undefined",
+        "description": "Optional navigation binding below the keyed entity.",
+        "required": false
+      },
+      {
+        "name": "parameters",
+        "type": "Readonly<Record<string, ODataFunctionParameter>> | undefined",
+        "description": "Typed non-binding parameters serialized with OData inline syntax.",
+        "required": false
+      }
+    ]
+  },
   "ODataActionInvocation": {
     "title": "ODataActionInvocation",
     "properties": [
@@ -1979,6 +2046,12 @@
         "name": "invoke",
         "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: any) => Promise<TResult>",
         "description": "Invokes an unbound, collection-bound, or entity-bound OData action.",
+        "required": true
+      },
+      {
+        "name": "invokeFunction",
+        "type": "<TResult = unknown>(functionName: string, invocation?: ODataFunctionInvocation, options?: any) => Promise<TResult>",
+        "description": "Invokes an unbound, collection-, entity-, or navigation-bound OData function.",
         "required": true
       }
     ]

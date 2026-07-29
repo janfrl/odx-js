@@ -485,6 +485,55 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('invokes service, collection, and navigation-bound functions with GET', async () => {
+      const api = useOData('MyService')
+      const signal = new AbortController().signal
+
+      await api.invokeFunction('Demo.ServiceDefaults', {
+        parameters: { Locale: { type: 'Edm.String', value: 'en-US' } },
+      }, { signal })
+      await api.entitySet('Products').invokeFunction('Demo.CollectionDefaults')
+      await api.entitySet('Products').invokeFunction('Demo.ItemDefaults', {
+        key: 1,
+        navigationPath: ['Items'],
+        parameters: {
+          Name: { type: 'Edm.String', value: 'Desk' },
+          Quantity: { type: 'Edm.Int32', value: 2 },
+        },
+      })
+
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/MyService/Demo.ServiceDefaults(Locale=\'en-US\')',
+        'GET',
+        { signal },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/MyService/Products/Demo.CollectionDefaults()',
+        'GET',
+        undefined,
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        3,
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)/Items/Demo.ItemDefaults(Name=\'Desk\',Quantity=2)',
+        'GET',
+        undefined,
+      )
+    })
+
+    it('rejects unsafe or incomplete function bindings before transport', () => {
+      const products = useOData('MyService').entitySet('Products')
+
+      expect(() => products.invokeFunction('../Demo.Defaults')).toThrow('qualified name')
+      expect(() => products.invokeFunction('Demo.Defaults', {
+        navigationPath: ['Items'],
+      })).toThrow('requires an entity key')
+      expect(core.$odata).not.toHaveBeenCalled()
+    })
     it('rejects action names that could alter the request path', () => {
       const api = useOData('MyService')
 

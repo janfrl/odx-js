@@ -105,6 +105,23 @@ export type ODataKey
     | boolean
     | Record<string, string | number | boolean>
 
+export type ODataFunctionParameterValue = string | number | boolean | null
+
+export interface ODataFunctionParameter {
+  /** Primitive EDM type used to serialize the URL literal safely. */
+  readonly type: string
+  readonly value: ODataFunctionParameterValue
+}
+
+export interface ODataFunctionInvocation {
+  /** Entity key for an entity- or navigation-bound function. */
+  readonly key?: ODataKey
+  /** Optional navigation binding below the keyed entity. */
+  readonly navigationPath?: string | readonly string[]
+  /** Typed non-binding parameters serialized with OData inline syntax. */
+  readonly parameters?: Readonly<Record<string, ODataFunctionParameter>>
+}
+
 export interface ODataActionInvocation<TParameters = Record<string, unknown>> {
   /** Entity key for an entity-bound action. Omit for collection/service actions. */
   key?: ODataKey
@@ -227,6 +244,12 @@ export interface ODataEntitySet<T = any> {
     invocation?: ODataActionInvocation<TParameters>,
     options?: any,
   ) => Promise<TResult>
+  /** Invokes an unbound, collection-, entity-, or navigation-bound OData function. */
+  invokeFunction: <TResult = unknown>(
+    functionName: string,
+    invocation?: ODataFunctionInvocation,
+    options?: any,
+  ) => Promise<TResult>
 }
 
 /** Describes a PATCH target below a parent entity navigation path. */
@@ -274,6 +297,8 @@ export type ODataService<E extends string = string, M extends Record<string, any
   entitySet: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : any>
   /** Invokes a service-level unbound OData action. */
   invoke: ODataEntitySet<never>['invoke']
+  /** Invokes an unbound OData function. */
+  invokeFunction: ODataEntitySet<never>['invokeFunction']
   /**
    * Executes one or more updates as a single atomic OData changeset.
    * The promise rejects when the server rejects any changeset member.

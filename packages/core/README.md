@@ -4,7 +4,7 @@ Framework-agnostic OData types and low-level utilities for handling results,
 metadata, query stringification, and safe resource-path construction.
 
 Portable path helpers include `formatODataKey`, `createODataEntityPath`,
-`formatODataNavigationPath`, `joinODataPath`, and identifier validators. They
+`formatODataNavigationPath`, `formatODataFunctionCall`, `joinODataPath`, and identifier validators. They
 construct service-relative protocol paths without depending on Nuxt, Node.js,
 or a transport client.
 

@@ -51,6 +51,12 @@ await useOData('Northwind').entitySet('Products').invoke(
   { key: 1, parameters: { Reason: 'obsolete' } },
   { signal },
 )
+
+const defaults = await useOData('Northwind').entitySet('Products').invokeFunction(
+  'Northwind.GetProductDefaults',
+  { parameters: { Locale: { type: 'Edm.String', value: 'en-US' } } },
+  { signal },
+)
 ```
 
 ## Verification

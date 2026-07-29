@@ -1,9 +1,10 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetResponse, ODataEntitySet, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
   createODataEntityPath,
   flattenOData,
+  formatODataFunctionCall,
   formatODataKey,
   formatODataNavigationPath,
   joinODataPath,
@@ -163,6 +164,38 @@ export function useOData(service?: string): any {
           : $odata<unknown>(client, itemPath, 'DELETE', options)
       },
 
+      invokeFunction: <TResult = unknown>(
+        functionName: string,
+        invocation: ODataFunctionInvocation = {},
+        options?: any,
+      ): Promise<TResult> => {
+        if (invocation.navigationPath !== undefined && invocation.key === undefined) {
+          throw new TypeError(
+            'An OData navigation-bound function requires an entity key.',
+          )
+        }
+        const entityPath = invocation.key === undefined
+          ? fullPath
+          : `${fullPath}(${formatODataKey(invocation.key)})`
+        const bindingPath = invocation.navigationPath === undefined
+          ? entityPath
+          : joinODataPath(
+              entityPath,
+              formatODataNavigationPath(invocation.navigationPath),
+            )
+        return $odata<TResult>(
+          client,
+          joinODataPath(
+            bindingPath,
+            formatODataFunctionCall(
+              functionName,
+              invocation.parameters,
+            ),
+          ),
+          'GET',
+          options,
+        )
+      },
       invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
         action: string,
         invocation: ODataActionInvocation<TParameters> = {},

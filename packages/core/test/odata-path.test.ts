@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   createODataEntityPath,
+  formatODataFunctionCall,
+  formatODataFunctionParameter,
   formatODataKey,
   formatODataNavigationPath,
   joinODataPath,
@@ -9,6 +11,33 @@ import {
 } from '../src/odata-path'
 
 describe('portable OData resource paths', () => {
+  it('formats typed OData V4 function parameters without path injection', () => {
+    expect(formatODataFunctionCall('Catalog.GetDefaults', {
+      Name: { type: 'Edm.String', value: 'A/B\'s desk' },
+      Quantity: { type: 'Edm.Int32', value: 2 },
+      Active: { type: 'Edm.Boolean', value: true },
+      At: { type: 'Edm.DateTimeOffset', value: '2026-07-29T09:15:00+02:00' },
+    })).toBe(
+      'Catalog.GetDefaults(Name=\'A%2FB\'\'s%20desk\',Quantity=2,Active=true,At=2026-07-29T09%3A15%3A00%2B02%3A00)',
+    )
+    expect(formatODataFunctionCall('Catalog.GetDefaults')).toBe('Catalog.GetDefaults()')
+    expect(formatODataFunctionParameter({ type: 'Edm.Duration', value: 'PT15M' }))
+      .toBe('duration\'PT15M\'')
+    expect(formatODataFunctionParameter({ type: 'Edm.Guid', value: null })).toBe('null')
+  })
+
+  it('rejects unsafe function names, parameter names, types, and values', () => {
+    expect(() => formatODataFunctionCall('../Catalog.GetDefaults')).toThrow('qualified name')
+    expect(() => formatODataFunctionCall('Catalog.GetDefaults', {
+      '../Name': { type: 'Edm.String', value: 'Desk' },
+    })).toThrow('valid identifier')
+    expect(() => formatODataFunctionParameter({ type: 'Edm.Int32', value: 1.5 }))
+      .toThrow('invalid value')
+    expect(() => formatODataFunctionParameter({ type: 'Edm.Guid', value: 'not-a-guid' }))
+      .toThrow('invalid value')
+    expect(() => formatODataFunctionParameter({ type: 'Catalog.Complex', value: 'x' }))
+      .toThrow('Unsupported')
+  })
   it('formats primitive and composite keys without losing field order', () => {
     expect(formatODataKey(7)).toBe('7')
     expect(formatODataKey(true)).toBe('true')

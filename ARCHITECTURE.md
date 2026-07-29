@@ -98,7 +98,7 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
 - OData configuration and domain types from `src/types.ts`.
 - OData helpers such as `$odata`, `flattenOData`, `stringifyQuery`,
   `mergeHeaders`, and `sanitizeBaseURL`.
-- Validated, service-relative OData key, entity, navigation, and action path
+- Validated, service-relative OData key, entity, navigation, action, and typed V4 function path
   construction, while service-root resolution and transport remain adapters.
 - Multipart changeset serialization and response parsing for atomic OData V4
   writes.
