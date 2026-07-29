@@ -87,6 +87,13 @@ describe('useOData Composable', () => {
       const result = api.entitySet('Items').get({ ID: 1, Type: 'Bob\'s' }) as any
       expect(result.url).toBe('/api/odx/MyService/Items(ID=1,Type=\'Bob\'\'s\')')
     })
+
+    it('rejects unsafe entity-set and composite-key identifiers', () => {
+      const api = useOData('MyService')
+
+      expect(() => api.entitySet('../Products').get(1)).toThrow('valid identifier')
+      expect(() => api.entitySet('Products').get({ '../ID': 1 })).toThrow('valid identifier')
+    })
   })
 
   describe('uRL Construction', () => {

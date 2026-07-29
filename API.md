@@ -28,6 +28,10 @@ conformance limits and non-goals.
 ## Core Package
 
 `@me-tools/odx-core` exposes framework-neutral OData request utilities.
+`formatODataKey`, `createODataEntityPath`, `formatODataNavigationPath`, and
+`joinODataPath` provide validated, transport-neutral OData resource-path
+construction. `validateODataIdentifier` and `validateODataQualifiedName` reject
+path-altering entity, key-field, navigation, and action names before transport.
 `serializeODataChangeSet(requests, options?)` creates one OData V4 multipart
 batch containing an atomic changeset. Each non-GET operation retains its
 service-relative path, JSON body, headers, and unique Content-ID. Unsafe
@@ -40,8 +44,8 @@ headers, and parsed body values. Any non-2xx member throws
 `ODataChangeSetError` with the complete parsed response set; an outer HTTP 200
 alone is never interpreted as mutation success.
 
-The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It contains
-no Nuxt, Node.js, URL-construction, or transport behavior.
+The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It
+contains no Nuxt, Node.js, or transport behavior.
 
 ## Nuxt Module
 

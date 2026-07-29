@@ -1,13 +1,21 @@
 import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetResponse, ODataEntitySet, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
-import { $odata, flattenOData, mergeHeaders, parseODataChangeSetResponse, serializeODataChangeSet, stringifyQuery } from '@me-tools/odx-core'
+import {
+  $odata,
+  createODataEntityPath,
+  flattenOData,
+  formatODataKey,
+  formatODataNavigationPath,
+  joinODataPath,
+  mergeHeaders,
+  parseODataChangeSetResponse,
+  serializeODataChangeSet,
+  stringifyQuery,
+  validateODataIdentifier,
+  validateODataQualifiedName,
+} from '@me-tools/odx-core'
 import { useODataBasePath } from './useODataBasePath'
 
-const RE_SINGLE_QUOTE = /'/g
-const RE_QUALIFIED_ACTION = /^(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*$/u
-const RE_NAVIGATION_SEGMENT = /^[A-Za-z_]\w*$/u
-const RE_LEADING_SLASHES = /^\/+/
-const RE_TRAILING_SLASHES = /\/+$/
 interface ODataFetchClient {
   <T>(path: string, options?: any): Promise<T>
   raw: <T>(path: string, options?: any) => Promise<{
@@ -26,8 +34,6 @@ export function useOData<T extends RegisteredServiceNames>(service: T): T extend
 export function useOData(service?: string): any {
   const client = globalThis.$fetch as unknown as ODataFetchClient
 
-  const formatStringKeyLiteral = (value: string): string => `'${encodeURIComponent(value).replace(RE_SINGLE_QUOTE, '\'\'')}'`
-
   const resolveServiceRoute = (serviceName: string): string => {
     const config = useRuntimeConfig()
     const publicConfig = config.public.odata as unknown as ODataPublicConfig
@@ -35,63 +41,21 @@ export function useOData(service?: string): any {
     return serviceConfig?.route || serviceName
   }
 
-  const normalizeUrlBase = (value: string): string => value.replace(RE_TRAILING_SLASHES, '')
-
-  const joinUrlSegments = (base: string, ...segments: string[]): string => {
-    const normalizedBase = normalizeUrlBase(base)
-    const normalizedSegments = segments
-      .filter(Boolean)
-      .map(segment => segment.replace(RE_LEADING_SLASHES, '').replace(RE_TRAILING_SLASHES, ''))
-      .filter(Boolean)
-
-    return normalizedSegments.length > 0
-      ? [normalizedBase, ...normalizedSegments].join('/')
-      : normalizedBase
-  }
-
-  /**
-   * Formats a single or composite key for OData URLs.
-   */
-  const formatKey = (key: ODataKey): string => {
-    if (typeof key !== 'object') {
-      return typeof key === 'string' ? formatStringKeyLiteral(key) : String(key)
-    }
-    return Object.entries(key)
-      .map(([k, v]) => `${k}=${typeof v === 'string' ? formatStringKeyLiteral(v) : v}`)
-      .join(',')
-  }
-
-  const formatNavigationPath = (
-    navigationPath: string | readonly string[],
-  ): string => {
-    const segments = typeof navigationPath === 'string'
-      ? navigationPath.split('/')
-      : navigationPath
-    if (segments.length === 0
-      || segments.some(segment => !RE_NAVIGATION_SEGMENT.test(segment))) {
-      throw new TypeError(
-        'An OData navigation path requires one or more valid identifier segments.',
-      )
-    }
-    return segments.join('/')
-  }
-  const formatEntitySet = (entitySet: string): string => {
-    if (!RE_NAVIGATION_SEGMENT.test(entitySet)) {
-      throw new TypeError(`OData entity set "${entitySet}" requires a valid identifier.`)
-    }
-    return entitySet
-  }
-
   const resolveServicePath = (serviceName: string): string => {
     const basePath = useODataBasePath(serviceName)
     if (basePath.startsWith('http'))
-      return normalizeUrlBase(basePath)
-    return joinUrlSegments(basePath, resolveServiceRoute(serviceName))
+      return joinODataPath(basePath)
+    return joinODataPath(basePath, resolveServiceRoute(serviceName))
   }
 
   const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataEntitySet<TModel> => {
     const servicePath = resolveServicePath(serviceName)
-    const fullPath = entitySet ? joinUrlSegments(servicePath, entitySet) : servicePath
+    const fullPath = entitySet
+      ? joinODataPath(
+          servicePath,
+          validateODataIdentifier(entitySet, 'OData entity set'),
+        )
+      : servicePath
     return {
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         return useFetch(fullPath, {
@@ -114,9 +78,9 @@ export function useOData(service?: string): any {
         query?: ODataQuery<TModel>,
         options?: unknown,
       ): Promise<TModel[]> => {
-        const navigationUrl = joinUrlSegments(
-          `${fullPath}(${formatKey(key)})`,
-          formatNavigationPath(navigationPath),
+        const navigationUrl = joinODataPath(
+          `${fullPath}(${formatODataKey(key)})`,
+          formatODataNavigationPath(navigationPath),
         )
         return $odata<TModel[]>(client, navigationUrl, 'GET', {
           ...(options as any),
@@ -129,7 +93,7 @@ export function useOData(service?: string): any {
         query?: ODataQuery<TModel>,
         options?: unknown,
       ): Promise<TModel> => {
-        const itemPath = `${fullPath}(${formatKey(key)})`
+        const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'GET', {
           ...(options as any),
           query: stringifyQuery(query || {}),
@@ -137,7 +101,7 @@ export function useOData(service?: string): any {
       },
 
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {
-        const itemPath = `${fullPath}(${formatKey(key)})`
+        const itemPath = `${fullPath}(${formatODataKey(key)})`
         return useFetch(itemPath, {
           ...(options as any),
           query: stringifyQuery(query || {}),
@@ -157,9 +121,9 @@ export function useOData(service?: string): any {
         body: Readonly<Record<string, unknown>>,
         options?: any,
       ): Promise<TResult> => {
-        const navigationUrl = joinUrlSegments(
-          `${fullPath}(${formatKey(key)})`,
-          formatNavigationPath(navigationPath),
+        const navigationUrl = joinODataPath(
+          `${fullPath}(${formatODataKey(key)})`,
+          formatODataNavigationPath(navigationPath),
         )
         return $odata<TResult>(client, navigationUrl, 'POST', {
           ...(options as any),
@@ -172,20 +136,20 @@ export function useOData(service?: string): any {
         update: ODataNavigationUpdate,
         options?: any,
       ): Promise<TResult> => {
-        const navigationUrl = joinUrlSegments(
-          `${fullPath}(${formatKey(key)})`,
-          formatNavigationPath(navigationPath),
+        const navigationUrl = joinODataPath(
+          `${fullPath}(${formatODataKey(key)})`,
+          formatODataNavigationPath(navigationPath),
         )
         const targetUrl = update.targetKey === undefined
           ? navigationUrl
-          : `${navigationUrl}(${formatKey(update.targetKey)})`
+          : `${navigationUrl}(${formatODataKey(update.targetKey)})`
         return $odata<TResult>(client, targetUrl, 'PATCH', {
           ...(options as any),
           body: update.body,
         })
       },
       update: (key: ODataKey, body: Partial<TModel>, options?: any): Promise<TModel> => {
-        const itemPath = `${fullPath}(${formatKey(key)})`
+        const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'PATCH', {
           ...(options as any),
           body,
@@ -193,7 +157,7 @@ export function useOData(service?: string): any {
       },
 
       remove: (key: ODataKey, options?: any): Promise<unknown> => {
-        const itemPath = `${fullPath}(${formatKey(key)})`
+        const itemPath = `${fullPath}(${formatODataKey(key)})`
         return options === undefined
           ? $odata<unknown>(client, itemPath, 'DELETE')
           : $odata<unknown>(client, itemPath, 'DELETE', options)
@@ -204,17 +168,13 @@ export function useOData(service?: string): any {
         invocation: ODataActionInvocation<TParameters> = {},
         options?: any,
       ): Promise<TResult> => {
-        if (!RE_QUALIFIED_ACTION.test(action)) {
-          throw new TypeError(
-            `OData action "${action}" requires a qualified name.`,
-          )
-        }
+        validateODataQualifiedName(action, 'OData action')
         const bindingPath = invocation.key === undefined
           ? fullPath
-          : `${fullPath}(${formatKey(invocation.key)})`
+          : `${fullPath}(${formatODataKey(invocation.key)})`
         return $odata<TResult>(
           client,
-          joinUrlSegments(bindingPath, action),
+          joinODataPath(bindingPath, action),
           'POST',
           {
             ...(options as any),
@@ -230,14 +190,14 @@ export function useOData(service?: string): any {
     options: any = {},
   ): Promise<readonly ODataChangeSetResponse[]> => {
     const requests = mutations.map((mutation) => {
-      const entityPath = `${formatEntitySet(mutation.entitySet)}(${formatKey(mutation.key)})`
+      const entityPath = createODataEntityPath(mutation.entitySet, mutation.key)
       const path = mutation.kind === 'update'
         ? entityPath
         : (() => {
-            const navigationPath = `${entityPath}/${formatNavigationPath(mutation.navigationPath)}`
+            const navigationPath = joinODataPath(entityPath, formatODataNavigationPath(mutation.navigationPath))
             return mutation.targetKey === undefined
               ? navigationPath
-              : `${navigationPath}(${formatKey(mutation.targetKey)})`
+              : `${navigationPath}(${formatODataKey(mutation.targetKey)})`
           })()
       return {
         method: 'PATCH' as const,
@@ -248,7 +208,7 @@ export function useOData(service?: string): any {
     })
     const payload = serializeODataChangeSet(requests)
     const response = await client.raw<string>(
-      joinUrlSegments(resolveServicePath(serviceName), '$batch'),
+      joinODataPath(resolveServicePath(serviceName), '$batch'),
       {
         ...options,
         method: 'POST',
