@@ -49,6 +49,22 @@ instrumentation rather than ODX/Fiori feature correctness. It must therefore
 remain a separate non-gating experiment until its output is deterministic,
 privacy-safe, and demonstrably adds signal beyond the existing compatibility
 ledger and runtime evidence.
+The executable CLI experiment confirmed that it is not ready for this stack:
+
+- `map --all --json --no-write` scored the instrumented ODX Nuxt fixture at 38,
+  reported zero instrumented routes, and marked all three discovered routes
+  dark. Static route inspection did not recognize the dedicated Nitro plugin
+  that the E2E test proves emits one correlated wide event, and it counted two
+  test-only memory-drain routes as production entry points.
+- A separate Nuxt Fiori playground run was stopped by pnpm's high-risk trust
+  downgrade protection for the transitive
+  `@oxc-parser/binding-darwin-x64@0.82.3` package because the selected artifact
+  had weaker provenance evidence than an earlier release. The repository must
+  not bypass that supply-chain check merely to obtain a diagnostic score.
+
+Consequently, neither `--minScore` nor `--baseline` belongs in CI yet. Revisit
+only after plugin/hook instrumentation and route exclusions are represented
+accurately and the transitive provenance regression is resolved upstream.
 
 The executable pilot also found two integration constraints that are not
 obvious from the high-level documentation:
