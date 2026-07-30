@@ -218,6 +218,27 @@ but do not promote evlog into `@me-tools/odx-nuxt` yet. The official Nitro
 module's global `noExternals` mutation and the normal request logger's streamed
 completion timing are too invasive for a default integration.
 
+### Re-evaluation triggers
+
+Re-run the executable pilot when an evlog release provides at least one of
+these material changes:
+
+- Nitro/Nuxt request loggers can create correlated child operations or otherwise
+  remain writable through streamed ODX completion;
+- the Nitro module stops setting global `noExternals` or scopes bundling changes
+  to evlog itself;
+- a documented Nitro telemetry lifecycle exposes response, error, cancellation,
+  streaming completion, and runtime `waitUntil` without replacing the
+  host-owned ODX event contract;
+- the CLI recognizes Nitro plugins and hooks and can exclude test-only routes.
+
+An announcement or preview is a monitoring signal, not acceptance evidence.
+For every qualifying release, update the pinned fixture version and repeat the
+privacy, one-event, request-correlation, Node, edge, static, client-asset,
+streaming, drain-failure, and p95-overhead gates. Promote the integration only
+when that evidence is green and the portable ODX contract remains independent
+of evlog.
+
 If operational observability becomes a near-term product requirement, extract
 the proven lifecycle adapter into a separate optional package and validate a
 real drain on Node and one edge preset. In parallel, report or track the two
