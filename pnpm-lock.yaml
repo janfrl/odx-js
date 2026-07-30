@@ -78,8 +78,8 @@ importers:
         specifier: 9.39.4
         version: 9.39.4(jiti@2.7.0)
       evlog:
-        specifier: 2.22.3
-        version: 2.22.3(@nuxt/kit@4.4.8(magicast@0.5.3))(ai@6.0.221(zod@4.4.3))(express@5.2.1)(h3@1.15.11)(nitropack@2.13.4(better-sqlite3@12.6.2)(oxc-parser@0.133.0)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(xml2js@0.6.2))(ofetch@1.5.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
+        specifier: 2.22.4
+        version: 2.22.4(ai@6.0.221(zod@4.4.3))(express@5.2.1)(h3@1.15.11)(nitropack@2.13.4(better-sqlite3@12.6.2)(oxc-parser@0.133.0)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(xml2js@0.6.2))(ofetch@1.5.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))
       h3:
         specifier: 1.15.11
         version: 1.15.11
@@ -6338,8 +6338,8 @@ packages:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
 
-  evlog@2.22.3:
-    resolution: {integrity: sha512-xybbUKtV26ezgyagT0aZ6tigIjwQuc4mI0Fm52goospAdGAA4ApC+keC36Bsxt1Gm7vT8W429T3WIsqMc8nwMQ==}
+  evlog@2.22.4:
+    resolution: {integrity: sha512-u0hsh+FudUWkqqfrlWGI1CvSd2pz1iWkLWjawGcvbnLp9BHZqY1xS7BlRt21/Qq/rs60IODaei/Wbmry/q/zeg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@nestjs/common': '>=11.1.28'
@@ -17330,9 +17330,8 @@ snapshots:
     dependencies:
       eventsource-parser: 3.0.6
 
-  evlog@2.22.3(@nuxt/kit@4.4.8(magicast@0.5.3))(ai@6.0.221(zod@4.4.3))(express@5.2.1)(h3@1.15.11)(nitropack@2.13.4(better-sqlite3@12.6.2)(oxc-parser@0.133.0)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(xml2js@0.6.2))(ofetch@1.5.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)):
+  evlog@2.22.4(ai@6.0.221(zod@4.4.3))(express@5.2.1)(h3@1.15.11)(nitropack@2.13.4(better-sqlite3@12.6.2)(oxc-parser@0.133.0)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0))(xml2js@0.6.2))(ofetch@1.5.1)(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.0)):
     optionalDependencies:
-      '@nuxt/kit': 4.4.8(magicast@0.5.3)
       ai: 6.0.221(zod@4.4.3)
       express: 5.2.1
       h3: 1.15.11

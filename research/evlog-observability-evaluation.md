@@ -1,8 +1,8 @@
 # evlog observability evaluation
 
 Status: neutral ODX foundation and bounded host pilot implemented
-Evaluated version: `evlog@2.22.3`
-Evaluation date: 2026-07-24
+Evaluated version: `evlog@2.22.4`
+Evaluation date: 2026-07-30
 
 ## Decision
 
@@ -42,6 +42,14 @@ At evaluation time:
 - `log.fork()` is not supported by the Nitro/Nuxt integration, so evlog cannot automatically correlate child events below a Nitro request;
 - releases are frequent; the pilot must pin an exact version and gate upgrades.
 
+The 2026-07-30 re-evaluation also covered `@evlog/cli@0.3.0`. The CLI can map
+Nuxt 4 entry points and compare observability coverage against a baseline. That
+is potentially useful as a repository diagnostic, but it measures logging
+instrumentation rather than ODX/Fiori feature correctness. It must therefore
+remain a separate non-gating experiment until its output is deterministic,
+privacy-safe, and demonstrably adds signal beyond the existing compatibility
+ledger and runtime evidence.
+
 The executable pilot also found two integration constraints that are not
 obvious from the high-level documentation:
 
@@ -51,6 +59,13 @@ obvious from the high-level documentation:
 - the normal Nuxt/Nitro request event is sealed before an ODX streamed response
   publishes its completion summary. Enriching that event from
   `odx:proxy:telemetry` therefore drops the ODX fields.
+
+Both constraints still apply with `evlog@2.22.4`: the Nitro v2 module continues
+to set global `noExternals`, and the official compatibility table still marks
+`log.fork()` as unavailable for Nitro/Nuxt. The 2.22.4 release fixes permanently
+rejected telemetry outbox batches, Nuxt server auto-import type discovery, and
+streaming-response handling, but it does not justify replacing the dedicated
+host-owned logger used by this pilot.
 
 ## Fit by layer
 
@@ -192,3 +207,8 @@ the proven lifecycle adapter into a separate optional package and validate a
 real drain on Node and one edge preset. In parallel, report or track the two
 upstream limitations and compare the same ODX contract with an OpenTelemetry
 adapter. The durable ODX API remains useful whichever backend wins.
+
+Evaluate `@evlog/cli map --baseline` separately on ODX and Nuxt Fiori before
+adding it to CI. Adopt it only if the map is stable across machines, can exclude
+portable packages where runtime logging is intentionally absent, and catches a
+real regression that the existing test and compatibility gates miss.
