@@ -83,6 +83,33 @@ rejected telemetry outbox batches, Nuxt server auto-import type discovery, and
 streaming-response handling, but it does not justify replacing the dedicated
 host-owned logger used by this pilot.
 
+### Announced telemetry and Nitro direction
+
+The current evlog site now highlights both a Telemetry integration and a
+dedicated Nitro v3 entry point. Inspection of the pinned `2.22.4` package makes
+the scope relevant to this decision explicit:
+
+- the advertised Telemetry integration captures Vercel AI SDK model, token,
+  tool, abort, and streaming measurements. It may be useful for future
+  AI-assisted application tooling, but it is not a Nitro request lifecycle and
+  does not complete the ODX proxy event contract;
+- `evlog/nitro/v3` scopes `noExternals` to `["evlog"]` instead of assigning the
+  global boolean used by the Nitro v2 module. This is the first concrete upstream
+  change that addresses one pilot blocker;
+- the current ODX/Nuxt matrix still runs on Nitro `2.13.x`, and the published
+  compatibility table still does not provide `log.fork()` for Nitro/Nuxt.
+  Switching entry points early would therefore test a runtime the supported
+  Nuxt stack does not use while leaving streamed child-operation correlation
+  unresolved.
+
+Plan a bounded Nitro v3 re-run when the supported Nuxt line itself adopts Nitro
+v3. That matrix must run the existing privacy, streaming, drain-failure, edge,
+static, asset, and overhead gates with the official `evlog/nitro/v3` module. A
+green scoped-bundling result can retire the custom initialization workaround;
+promotion still requires a lifecycle that can retain or correlate the final ODX
+stream summary. Until then, keep AI telemetry and ODX operational telemetry as
+separate opt-in host concerns.
+
 ## Fit by layer
 
 | Layer | Fit | Decision |
