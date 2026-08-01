@@ -231,6 +231,17 @@ export interface ODataEntitySet<T = any> {
     options?: any,
   ) => Promise<TResult>
   /**
+   * Deletes an entity addressed through a contained collection-valued
+   * navigation while preserving the exact parent and related-entity identity.
+   * This is an entity DELETE, not a non-contained relationship `$ref` unlink.
+   */
+  removeNavigation: (
+    key: ODataKey,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: any,
+  ) => Promise<unknown>
+  /**
    * Updates an existing entity.
    */
   update: (key: ODataKey, body: Partial<T>, options?: any) => Promise<T>
@@ -280,9 +291,31 @@ export interface ODataAtomicNavigationUpdate {
   readonly headers?: Readonly<Record<string, string>>
 }
 
+/** Creates a related entity as one member of an atomic OData changeset. */
+export interface ODataAtomicNavigationCreate {
+  readonly kind: 'create-navigation'
+  readonly entitySet: string
+  readonly key: ODataKey
+  readonly navigationPath: readonly string[]
+  readonly body: Readonly<Record<string, unknown>>
+  readonly headers?: Readonly<Record<string, string>>
+}
+
+/** Deletes a related entity as one member of an atomic OData changeset. */
+export interface ODataAtomicNavigationDelete {
+  readonly kind: 'delete-navigation'
+  readonly entitySet: string
+  readonly key: ODataKey
+  readonly navigationPath: readonly string[]
+  readonly targetKey: ODataKey
+  readonly headers?: Readonly<Record<string, string>>
+}
+
 /** A mutation supported by the typed service-level atomic changeset API. */
 export type ODataAtomicMutation
   = | ODataAtomicUpdate
+    | ODataAtomicNavigationCreate
+    | ODataAtomicNavigationDelete
     | ODataAtomicNavigationUpdate
 
 /**
@@ -300,7 +333,7 @@ export type ODataService<E extends string = string, M extends Record<string, any
   /** Invokes an unbound OData function. */
   invokeFunction: ODataEntitySet<never>['invokeFunction']
   /**
-   * Executes one or more updates as a single atomic OData changeset.
+   * Executes one or more mutations as a single atomic OData changeset.
    * The promise rejects when the server rejects any changeset member.
    */
   changeSet: (

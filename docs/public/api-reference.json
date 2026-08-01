@@ -2031,6 +2031,12 @@
         "required": true
       },
       {
+        "name": "removeNavigation",
+        "type": "(key: ODataKey, navigationPath: readonly string[], targetKey: ODataKey, options?: any) => Promise<unknown>",
+        "description": "Deletes an entity addressed through a collection-valued navigation\nproperty while preserving the exact parent and related-entity identity.",
+        "required": true
+      },
+      {
         "name": "update",
         "type": "(key: ODataKey, body: Partial<T>, options?: any) => Promise<T>",
         "description": "Updates an existing entity.",
@@ -2137,6 +2143,78 @@
       {
         "name": "body",
         "type": "Readonly<Record<string, unknown>>",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicNavigationCreate": {
+    "title": "ODataAtomicNavigationCreate",
+    "description": "Creates a related entity as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"create-navigation\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "Readonly<Record<string, unknown>>",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicNavigationDelete": {
+    "title": "ODataAtomicNavigationDelete",
+    "description": "Deletes a related entity as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"delete-navigation\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey",
         "required": true
       },
       {

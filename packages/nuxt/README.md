@@ -36,8 +36,21 @@ const relatedProducts = await useOData('Northwind')
 ```
 
 Create, update, and remove also accept request options for cancellation and
-concurrency headers. Invoke qualified actions at the service, collection, or
-entity binding path:
+concurrency headers. Contained collection members retain their exact parent path;
+`removeNavigation` deletes the addressed entity and is not a `$ref` unlink:
+
+```ts
+await useOData('Northwind')
+  .entitySet('Products')
+  .removeNavigation(1, ['Items'], { ItemID: 42 }, {
+    headers: { 'If-Match': etag },
+  })
+```
+
+`changeSet()` accepts `create-navigation`, `update-navigation`, and
+`delete-navigation` mutations in addition to top-level updates, so related
+entity edits can be committed atomically. Invoke qualified actions at the
+service, collection, or entity binding path:
 
 ```ts
 await useOData('Northwind').entitySet('Products').update(

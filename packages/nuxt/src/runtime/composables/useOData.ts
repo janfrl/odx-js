@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -149,6 +149,21 @@ export function useOData(service?: string): any {
           body: update.body,
         })
       },
+      removeNavigation: (
+        key: ODataKey,
+        navigationPath: readonly string[],
+        targetKey: ODataKey,
+        options?: any,
+      ): Promise<unknown> => {
+        const navigationUrl = joinODataPath(
+          `${fullPath}(${formatODataKey(key)})`,
+          formatODataNavigationPath(navigationPath),
+        )
+        const targetUrl = `${navigationUrl}(${formatODataKey(targetKey)})`
+        return options === undefined
+          ? $odata<unknown>(client, targetUrl, 'DELETE')
+          : $odata<unknown>(client, targetUrl, 'DELETE', options)
+      },
       update: (key: ODataKey, body: Partial<TModel>, options?: any): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'PATCH', {
@@ -228,15 +243,20 @@ export function useOData(service?: string): any {
         ? entityPath
         : (() => {
             const navigationPath = joinODataPath(entityPath, formatODataNavigationPath(mutation.navigationPath))
-            return mutation.targetKey === undefined
-              ? navigationPath
-              : `${navigationPath}(${formatODataKey(mutation.targetKey)})`
+            return 'targetKey' in mutation && mutation.targetKey !== undefined
+              ? `${navigationPath}(${formatODataKey(mutation.targetKey)})`
+              : navigationPath
           })()
+      const method: ODataChangeSetMethod = mutation.kind === 'create-navigation'
+        ? 'POST'
+        : mutation.kind === 'delete-navigation'
+          ? 'DELETE'
+          : 'PATCH'
       return {
-        method: 'PATCH' as const,
+        method,
         path,
         headers: mutation.headers,
-        body: mutation.body,
+        ...('body' in mutation ? { body: mutation.body } : {}),
       }
     })
     const payload = serializeODataChangeSet(requests)

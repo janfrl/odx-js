@@ -286,6 +286,44 @@ describe('useOData Composable', () => {
         {},
       )).toThrow(TypeError)
     })
+    it('removes a keyed entity from a collection-valued navigation', async () => {
+      const api = useOData('RoutedService' as any)
+      const headers = { 'If-Match': 'W/"item-1"' }
+
+      await api.entitySet('Products').removeNavigation(
+        { ID: 1, Locale: 'en' },
+        ['Items'],
+        { ItemID: 'A/B', Locale: 'en' },
+        { headers },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Items(ItemID=\'A%2FB\',Locale=\'en\')',
+        'DELETE',
+        { headers },
+      )
+    })
+
+    it('omits request options when removing a navigation member without options', async () => {
+      const entitySet = useOData('MyService').entitySet('Products')
+
+      await entitySet.removeNavigation(1, ['Items'], 2)
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)/Items(2)',
+        'DELETE',
+      )
+    })
+
+    it('rejects unsafe remove navigation paths before transport', () => {
+      const entitySet = useOData('MyService').entitySet('Products')
+
+      expect(() => entitySet.removeNavigation(1, [], 2)).toThrow(TypeError)
+      expect(() => entitySet.removeNavigation(1, ['Items(1)'], 2)).toThrow(TypeError)
+    })
+
     it('updates a single-valued navigation target', async () => {
       const api = useOData('RoutedService' as any)
       const headers = { 'If-Match': 'W/"supplier-1"' }
@@ -619,6 +657,54 @@ describe('useOData Composable', () => {
       expect(options.body).toContain('PATCH Products(1)/Supplier(2) HTTP/1.1')
       expect(options.body).toContain('If-Match: W/"product-1"')
       expect(options.body).toContain('If-Match: W/"supplier-2"')
+    })
+
+    it('serializes navigation creates and deletes in one atomic changeset', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: multipart/mixed; boundary=changeset_response',
+          '',
+          '--changeset_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '',
+          '--changeset_response--',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+
+      await useOData('RoutedService' as any).changeSet([
+        {
+          kind: 'create-navigation',
+          entitySet: 'Products',
+          key: 1,
+          navigationPath: ['Items'],
+          body: { Product: 'Desk' },
+        },
+        {
+          kind: 'delete-navigation',
+          entitySet: 'Products',
+          key: 1,
+          navigationPath: ['Items'],
+          targetKey: { ItemID: 'A/B' },
+          headers: { 'If-Match': 'W/"item-1"' },
+        },
+      ])
+
+      const body = raw.mock.calls[0]?.[1].body as string
+      expect(body).toContain('POST Products(1)/Items HTTP/1.1')
+      expect(body).toContain('{"Product":"Desk"}')
+      expect(body).toContain('DELETE Products(1)/Items(ItemID=\'A%2FB\') HTTP/1.1')
+      expect(body).toContain('If-Match: W/"item-1"')
+      const deletePart = body.slice(body.indexOf('DELETE Products(1)/Items'))
+      expect(deletePart).not.toContain('Content-Type: application/json')
+      expect(deletePart).not.toContain('{}')
     })
 
     it('uses the configured direct service root for batch requests', async () => {
