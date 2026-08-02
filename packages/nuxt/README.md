@@ -49,6 +49,13 @@ const tags = await useOData('Northwind')
   .fetchNavigationList(item, ['Tags'])
 ```
 
+`entitySet.supportsContainedNavigationSources === true` is the explicit
+runtime compatibility signal for structured sources such as nested contained
+rows. Libraries integrating with ODX should require this marker instead of
+inferring support from the presence of `fetchNavigationList`: older releases
+exposed the same method name but interpreted its first argument only as an
+entity key.
+
 Create, update, and remove also accept request options for cancellation and
 concurrency headers. Contained collection members retain their exact parent path;
 `removeNavigation` deletes the addressed entity and is not a `$ref` unlink:

@@ -70,6 +70,7 @@ export function useOData(service?: string): any {
       )
     }
     return {
+      supportsContainedNavigationSources: true,
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         return useFetch(fullPath, {
           ...(options as any),

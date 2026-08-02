@@ -193,6 +193,12 @@ export interface ODataQuery<T = any> {
  */
 export interface ODataEntitySet<T = any> {
   /**
+   * Explicit runtime capability marker for structured contained-navigation
+   * sources. Consumers must not infer this support from method names because
+   * older ODX releases accepted only an entity key in the same position.
+   */
+  readonly supportsContainedNavigationSources?: true
+  /**
    * Fetches a list of entities.
    */
   list: (query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T[]>

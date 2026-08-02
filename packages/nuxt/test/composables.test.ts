@@ -45,6 +45,12 @@ describe('useOData Composable', () => {
     ]
   })
 
+  it('advertises structured contained-navigation source support explicitly', () => {
+    const entitySet = useOData('MyService').entitySet('Products')
+
+    expect(entitySet.supportsContainedNavigationSources).toBe(true)
+  })
+
   describe('key Formatting', () => {
     it('formats single keys correctly', () => {
       const api = useOData('MyService')
