@@ -1880,8 +1880,8 @@
     "description": "One keyed containment hop below an entity-set root.",
     "properties": [
       {
-        "name": "navigationProperty",
-        "type": "string",
+        "name": "navigationPath",
+        "type": "readonly string[]",
         "required": true
       },
       {

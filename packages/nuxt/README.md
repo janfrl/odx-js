@@ -41,7 +41,7 @@ Contained rows use the same API with a structured source:
 const item = {
   kind: 'contained-entity' as const,
   rootKey: 1,
-  path: [{ navigationProperty: 'Items', key: 2 }],
+  path: [{ navigationPath: ['Items'], key: 2 }],
 }
 
 const tags = await useOData('Northwind')

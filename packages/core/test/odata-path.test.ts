@@ -81,11 +81,11 @@ describe('portable OData resource paths', () => {
       kind: 'contained-entity',
       rootKey: { ID: 1, IsActiveEntity: false },
       path: [
-        { navigationProperty: 'Items', key: { ItemID: 'A/B' } },
-        { navigationProperty: 'Schedules', key: 3 },
+        { navigationPath: ['Category', 'Items'], key: { ItemID: 'A/B' } },
+        { navigationPath: ['Schedules'], key: 3 },
       ],
     })).toBe(
-      'Products(ID=1,IsActiveEntity=false)/Items(ItemID=\'A%2FB\')/Schedules(3)',
+      'Products(ID=1,IsActiveEntity=false)/Category/Items(ItemID=\'A%2FB\')/Schedules(3)',
     )
   })
 
@@ -98,7 +98,7 @@ describe('portable OData resource paths', () => {
     expect(() => createODataNavigationSourcePath('Products', {
       kind: 'contained-entity',
       rootKey: 1,
-      path: [{ navigationProperty: '../Items', key: 2 }],
+      path: [{ navigationPath: ['../Items'], key: 2 }],
     })).toThrow('valid identifier')
   })
 })

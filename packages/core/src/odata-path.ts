@@ -203,9 +203,6 @@ export function createODataNavigationSourcePath(
   }
   return source.path.reduce((current, segment) => joinODataPath(
     current,
-    `${validateODataIdentifier(
-      segment.navigationProperty,
-      'OData containment navigation property',
-    )}(${formatODataKey(segment.key)})`,
+    `${formatODataNavigationPath(segment.navigationPath)}(${formatODataKey(segment.key)})`,
   ), createODataEntityPath(entitySet, source.rootKey))
 }

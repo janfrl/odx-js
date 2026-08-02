@@ -107,7 +107,7 @@ export type ODataKey
 
 /** One keyed containment hop below an entity-set root. */
 export interface ODataContainedEntitySegment {
-  readonly navigationProperty: string
+  readonly navigationPath: readonly string[]
   readonly key: ODataKey
 }
 

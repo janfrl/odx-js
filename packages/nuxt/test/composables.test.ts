@@ -235,7 +235,7 @@ describe('useOData Composable', () => {
       await entitySet.fetchNavigationList({
         kind: 'contained-entity',
         rootKey: { ID: 1, IsActiveEntity: false },
-        path: [{ navigationProperty: 'Items', key: { ItemID: 'A/B' } }],
+        path: [{ navigationPath: ['Items'], key: { ItemID: 'A/B' } }],
       }, ['Tags'], { $select: ['ID'] })
 
       expect(core.$odata).toHaveBeenCalledWith(
@@ -298,7 +298,7 @@ describe('useOData Composable', () => {
       const source = {
         kind: 'contained-entity' as const,
         rootKey: 1,
-        path: [{ navigationProperty: 'Items', key: 2 }],
+        path: [{ navigationPath: ['Items'], key: 2 }],
       }
 
       await entitySet.createNavigation(source, ['Tags'], { Name: 'Priority' })
@@ -773,7 +773,7 @@ describe('useOData Composable', () => {
         key: {
           kind: 'contained-entity',
           rootKey: 1,
-          path: [{ navigationProperty: 'Items', key: 2 }],
+          path: [{ navigationPath: ['Items'], key: 2 }],
         },
         navigationPath: ['Tags'],
         body: { Name: 'Priority' },
