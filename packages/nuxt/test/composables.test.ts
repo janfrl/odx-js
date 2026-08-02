@@ -228,6 +228,23 @@ describe('useOData Composable', () => {
       expect(() => entitySet.fetchNavigationList(1, '/Items')).toThrow(TypeError)
       expect(() => entitySet.fetchNavigationList(1, 'Items?$filter=ID')).toThrow(TypeError)
     })
+
+    it('reads navigation collections relative to contained entities', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+
+      await entitySet.fetchNavigationList({
+        kind: 'contained-entity',
+        rootKey: { ID: 1, IsActiveEntity: false },
+        path: [{ navigationProperty: 'Items', key: { ItemID: 'A/B' } }],
+      }, ['Tags'], { $select: ['ID'] })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,IsActiveEntity=false)/Items(ItemID=\'A%2FB\')/Tags',
+        'GET',
+        { query: { $select: ['ID'] } },
+      )
+    })
   })
   describe('mutations ($odata)', () => {
     it('calls $odata for create (POST)', async () => {
@@ -273,6 +290,33 @@ describe('useOData Composable', () => {
           body: { Product: 'Desk', Amount: '125.50' },
           signal,
         },
+      )
+    })
+
+    it('mutates navigation children below a contained entity', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+      const source = {
+        kind: 'contained-entity' as const,
+        rootKey: 1,
+        path: [{ navigationProperty: 'Items', key: 2 }],
+      }
+
+      await entitySet.createNavigation(source, ['Tags'], { Name: 'Priority' })
+      await entitySet.updateNavigation(source, ['Tags'], {
+        targetKey: 3,
+        body: { Name: 'Important' },
+      })
+      await entitySet.removeNavigation(source, ['Tags'], 3)
+
+      const calls = (core.$odata as ReturnType<typeof vi.fn>).mock.calls
+      expect(calls.at(-3)?.[1]).toBe(
+        '/api/odx/routed-api/Products(1)/Items(2)/Tags',
+      )
+      expect(calls.at(-2)?.[1]).toBe(
+        '/api/odx/routed-api/Products(1)/Items(2)/Tags(3)',
+      )
+      expect(calls.at(-1)?.[1]).toBe(
+        '/api/odx/routed-api/Products(1)/Items(2)/Tags(3)',
       )
     })
 
@@ -705,6 +749,38 @@ describe('useOData Composable', () => {
       const deletePart = body.slice(body.indexOf('DELETE Products(1)/Items'))
       expect(deletePart).not.toContain('Content-Type: application/json')
       expect(deletePart).not.toContain('{}')
+    })
+
+    it('serializes contained navigation sources in atomic changesets', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+
+      await useOData('RoutedService' as any).changeSet([{
+        kind: 'create-navigation',
+        entitySet: 'Products',
+        key: {
+          kind: 'contained-entity',
+          rootKey: 1,
+          path: [{ navigationProperty: 'Items', key: 2 }],
+        },
+        navigationPath: ['Tags'],
+        body: { Name: 'Priority' },
+      }])
+
+      const body = raw.mock.calls[0]?.[1].body as string
+      expect(body).toContain('POST Products(1)/Items(2)/Tags HTTP/1.1')
     })
 
     it('uses the configured direct service root for batch requests', async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createODataEntityPath,
+  createODataNavigationSourcePath,
   formatODataFunctionCall,
   formatODataFunctionParameter,
   formatODataKey,
@@ -74,5 +75,30 @@ describe('portable OData resource paths', () => {
     expect(createODataEntityPath('Products', { ID: '1', IsActiveEntity: false }))
       .toBe('Products(ID=\'1\',IsActiveEntity=false)')
     expect(() => createODataEntityPath('../Products', 1)).toThrow('valid identifier')
+  })
+  it('creates exact contained navigation source paths', () => {
+    expect(createODataNavigationSourcePath('Products', {
+      kind: 'contained-entity',
+      rootKey: { ID: 1, IsActiveEntity: false },
+      path: [
+        { navigationProperty: 'Items', key: { ItemID: 'A/B' } },
+        { navigationProperty: 'Schedules', key: 3 },
+      ],
+    })).toBe(
+      'Products(ID=1,IsActiveEntity=false)/Items(ItemID=\'A%2FB\')/Schedules(3)',
+    )
+  })
+
+  it('rejects empty and unsafe contained navigation sources', () => {
+    expect(() => createODataNavigationSourcePath('Products', {
+      kind: 'contained-entity',
+      rootKey: 1,
+      path: [],
+    })).toThrow('at least one keyed containment segment')
+    expect(() => createODataNavigationSourcePath('Products', {
+      kind: 'contained-entity',
+      rootKey: 1,
+      path: [{ navigationProperty: '../Items', key: 2 }],
+    })).toThrow('valid identifier')
   })
 })

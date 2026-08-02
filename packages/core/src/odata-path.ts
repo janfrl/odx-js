@@ -1,4 +1,10 @@
-import type { ODataFunctionParameter, ODataFunctionParameterValue, ODataKey } from './types'
+import type {
+  ODataContainedEntitySource,
+  ODataFunctionParameter,
+  ODataFunctionParameterValue,
+  ODataKey,
+  ODataNavigationSource,
+} from './types'
 
 const RE_IDENTIFIER = /^[A-Za-z_]\w*$/u
 const RE_QUALIFIED_NAME = /^(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*$/u
@@ -169,4 +175,37 @@ export function joinODataPath(base: string, ...segments: readonly string[]): str
 /** Creates an exact entity resource path from a set name and key. */
 export function createODataEntityPath(entitySet: string, key: ODataKey): string {
   return `${validateODataIdentifier(entitySet, 'OData entity set')}(${formatODataKey(key)})`
+}
+
+function isContainedEntitySource(
+  source: ODataNavigationSource,
+): source is ODataContainedEntitySource {
+  return typeof source === 'object'
+    && source !== null
+    && 'kind' in source
+    && source.kind === 'contained-entity'
+    && 'rootKey' in source
+    && 'path' in source
+    && Array.isArray(source.path)
+}
+
+/** Creates the exact keyed source path for a navigation operation. */
+export function createODataNavigationSourcePath(
+  entitySet: string,
+  source: ODataNavigationSource,
+): string {
+  if (!isContainedEntitySource(source))
+    return createODataEntityPath(entitySet, source)
+  if (source.path.length === 0) {
+    throw new TypeError(
+      'A contained entity source requires at least one keyed containment segment.',
+    )
+  }
+  return source.path.reduce((current, segment) => joinODataPath(
+    current,
+    `${validateODataIdentifier(
+      segment.navigationProperty,
+      'OData containment navigation property',
+    )}(${formatODataKey(segment.key)})`,
+  ), createODataEntityPath(entitySet, source.rootKey))
 }

@@ -105,6 +105,26 @@ export type ODataKey
     | boolean
     | Record<string, string | number | boolean>
 
+/** One keyed containment hop below an entity-set root. */
+export interface ODataContainedEntitySegment {
+  readonly navigationProperty: string
+  readonly key: ODataKey
+}
+
+/**
+ * Structured source for navigation operations below a contained entity.
+ * Keeping keys separate from navigation names prevents callers from building
+ * executable OData resource paths with string concatenation.
+ */
+export interface ODataContainedEntitySource {
+  readonly kind: 'contained-entity'
+  readonly rootKey: ODataKey
+  readonly path: readonly ODataContainedEntitySegment[]
+}
+
+/** Root entity key or an exact contained entity below that root. */
+export type ODataNavigationSource = ODataKey | ODataContainedEntitySource
+
 export type ODataFunctionParameterValue = string | number | boolean | null
 
 export interface ODataFunctionParameter {
@@ -188,7 +208,7 @@ export interface ODataEntitySet<T = any> {
    * validated path segments.
    */
   fetchNavigationList: (
-    key: ODataKey,
+    source: ODataNavigationSource,
     navigationPath: string | readonly string[],
     query?: ODataQuery<T>,
     options?: any,
@@ -214,7 +234,7 @@ export interface ODataEntitySet<T = any> {
    * an existing parent entity.
    */
   createNavigation: <TResult = unknown>(
-    key: ODataKey,
+    source: ODataNavigationSource,
     navigationPath: readonly string[],
     body: Readonly<Record<string, unknown>>,
     options?: any,
@@ -225,7 +245,7 @@ export interface ODataEntitySet<T = any> {
    * it for an entity in a collection-valued navigation.
    */
   updateNavigation: <TResult = unknown>(
-    key: ODataKey,
+    source: ODataNavigationSource,
     navigationPath: readonly string[],
     update: ODataNavigationUpdate,
     options?: any,
@@ -236,7 +256,7 @@ export interface ODataEntitySet<T = any> {
    * This is an entity DELETE, not a non-contained relationship `$ref` unlink.
    */
   removeNavigation: (
-    key: ODataKey,
+    source: ODataNavigationSource,
     navigationPath: readonly string[],
     targetKey: ODataKey,
     options?: any,
@@ -284,7 +304,7 @@ export interface ODataAtomicUpdate {
 export interface ODataAtomicNavigationUpdate {
   readonly kind: 'update-navigation'
   readonly entitySet: string
-  readonly key: ODataKey
+  readonly key: ODataNavigationSource
   readonly navigationPath: readonly string[]
   readonly targetKey?: ODataKey
   readonly body: Readonly<Record<string, unknown>>
@@ -295,7 +315,7 @@ export interface ODataAtomicNavigationUpdate {
 export interface ODataAtomicNavigationCreate {
   readonly kind: 'create-navigation'
   readonly entitySet: string
-  readonly key: ODataKey
+  readonly key: ODataNavigationSource
   readonly navigationPath: readonly string[]
   readonly body: Readonly<Record<string, unknown>>
   readonly headers?: Readonly<Record<string, string>>
@@ -305,7 +325,7 @@ export interface ODataAtomicNavigationCreate {
 export interface ODataAtomicNavigationDelete {
   readonly kind: 'delete-navigation'
   readonly entitySet: string
-  readonly key: ODataKey
+  readonly key: ODataNavigationSource
   readonly navigationPath: readonly string[]
   readonly targetKey: ODataKey
   readonly headers?: Readonly<Record<string, string>>

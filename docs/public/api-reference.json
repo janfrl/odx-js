@@ -1624,6 +1624,22 @@
       }
     ]
   },
+  "createODataNavigationSourcePath": {
+    "title": "createODataNavigationSourcePath",
+    "description": "Creates the exact keyed source path for a navigation operation.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "ODataNavigationSource",
+        "required": true
+      }
+    ]
+  },
   "EntityProperty": {
     "title": "EntityProperty",
     "properties": [
@@ -1859,6 +1875,43 @@
       }
     ]
   },
+  "ODataContainedEntitySegment": {
+    "title": "ODataContainedEntitySegment",
+    "description": "One keyed containment hop below an entity-set root.",
+    "properties": [
+      {
+        "name": "navigationProperty",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      }
+    ]
+  },
+  "ODataContainedEntitySource": {
+    "title": "ODataContainedEntitySource",
+    "description": "Structured source for navigation operations below a contained entity.\nKeeping keys separate from navigation names prevents callers from building\nexecutable OData resource paths with string concatenation.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"contained-entity\"",
+        "required": true
+      },
+      {
+        "name": "rootKey",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "path",
+        "type": "readonly ODataContainedEntitySegment[]",
+        "required": true
+      }
+    ]
+  },
   "ODataFunctionParameter": {
     "title": "ODataFunctionParameter",
     "properties": [
@@ -1996,7 +2049,7 @@
       },
       {
         "name": "fetchNavigationList",
-        "type": "(key: ODataKey, navigationPath: string | readonly string[], query?: ODataQuery<T>, options?: any) => Promise<T[]>",
+        "type": "(source: ODataNavigationSource, navigationPath: string | readonly string[], query?: ODataQuery<T>, options?: any) => Promise<T[]>",
         "description": "Performs an imperative collection read relative to an existing entity.\nThe navigation path accepts either a single slash-delimited path or\nvalidated path segments.",
         "required": true
       },
@@ -2020,20 +2073,20 @@
       },
       {
         "name": "createNavigation",
-        "type": "<TResult = unknown>(key: ODataKey, navigationPath: readonly string[], body: Readonly<Record<string, unknown>>, options?: any) => Promise<TResult>",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], body: Readonly<Record<string, unknown>>, options?: any) => Promise<TResult>",
         "description": "Creates a new entity through a collection-valued navigation property of\nan existing parent entity.",
         "required": true
       },
       {
         "name": "updateNavigation",
-        "type": "<TResult = unknown>(key: ODataKey, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: any) => Promise<TResult>",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: any) => Promise<TResult>",
         "description": "Updates an entity addressed through a navigation property of an existing\nparent entity. Omit `targetKey` for a single-valued navigation and provide\nit for an entity in a collection-valued navigation.",
         "required": true
       },
       {
         "name": "removeNavigation",
-        "type": "(key: ODataKey, navigationPath: readonly string[], targetKey: ODataKey, options?: any) => Promise<unknown>",
-        "description": "Deletes an entity addressed through a collection-valued navigation\nproperty while preserving the exact parent and related-entity identity.",
+        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: any) => Promise<unknown>",
+        "description": "Deletes an entity addressed through a contained collection-valued\nnavigation while preserving the exact parent and related-entity identity.\nThis is an entity DELETE, not a non-contained relationship `$ref` unlink.",
         "required": true
       },
       {
@@ -2127,7 +2180,7 @@
       },
       {
         "name": "key",
-        "type": "ODataKey",
+        "type": "ODataNavigationSource",
         "required": true
       },
       {
@@ -2168,7 +2221,7 @@
       },
       {
         "name": "key",
-        "type": "ODataKey",
+        "type": "ODataNavigationSource",
         "required": true
       },
       {
@@ -2204,7 +2257,7 @@
       },
       {
         "name": "key",
-        "type": "ODataKey",
+        "type": "ODataNavigationSource",
         "required": true
       },
       {

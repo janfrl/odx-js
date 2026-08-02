@@ -1,8 +1,9 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
   createODataEntityPath,
+  createODataNavigationSourcePath,
   flattenOData,
   formatODataFunctionCall,
   formatODataKey,
@@ -57,6 +58,17 @@ export function useOData(service?: string): any {
           validateODataIdentifier(entitySet, 'OData entity set'),
         )
       : servicePath
+    const navigationSourcePath = (source: ODataNavigationSource): string => {
+      if (entitySet === undefined) {
+        throw new TypeError(
+          'An OData navigation operation requires an entity set.',
+        )
+      }
+      return joinODataPath(
+        servicePath,
+        createODataNavigationSourcePath(entitySet, source),
+      )
+    }
     return {
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         return useFetch(fullPath, {
@@ -74,13 +86,13 @@ export function useOData(service?: string): any {
       }),
 
       fetchNavigationList: (
-        key: ODataKey,
+        source: ODataNavigationSource,
         navigationPath: string | readonly string[],
         query?: ODataQuery<TModel>,
         options?: unknown,
       ): Promise<TModel[]> => {
         const navigationUrl = joinODataPath(
-          `${fullPath}(${formatODataKey(key)})`,
+          navigationSourcePath(source),
           formatODataNavigationPath(navigationPath),
         )
         return $odata<TModel[]>(client, navigationUrl, 'GET', {
@@ -117,13 +129,13 @@ export function useOData(service?: string): any {
         }),
 
       createNavigation: <TResult = unknown>(
-        key: ODataKey,
+        source: ODataNavigationSource,
         navigationPath: readonly string[],
         body: Readonly<Record<string, unknown>>,
         options?: any,
       ): Promise<TResult> => {
         const navigationUrl = joinODataPath(
-          `${fullPath}(${formatODataKey(key)})`,
+          navigationSourcePath(source),
           formatODataNavigationPath(navigationPath),
         )
         return $odata<TResult>(client, navigationUrl, 'POST', {
@@ -132,13 +144,13 @@ export function useOData(service?: string): any {
         })
       },
       updateNavigation: <TResult = unknown>(
-        key: ODataKey,
+        source: ODataNavigationSource,
         navigationPath: readonly string[],
         update: ODataNavigationUpdate,
         options?: any,
       ): Promise<TResult> => {
         const navigationUrl = joinODataPath(
-          `${fullPath}(${formatODataKey(key)})`,
+          navigationSourcePath(source),
           formatODataNavigationPath(navigationPath),
         )
         const targetUrl = update.targetKey === undefined
@@ -150,13 +162,13 @@ export function useOData(service?: string): any {
         })
       },
       removeNavigation: (
-        key: ODataKey,
+        source: ODataNavigationSource,
         navigationPath: readonly string[],
         targetKey: ODataKey,
         options?: any,
       ): Promise<unknown> => {
         const navigationUrl = joinODataPath(
-          `${fullPath}(${formatODataKey(key)})`,
+          navigationSourcePath(source),
           formatODataNavigationPath(navigationPath),
         )
         const targetUrl = `${navigationUrl}(${formatODataKey(targetKey)})`
@@ -238,7 +250,9 @@ export function useOData(service?: string): any {
     options: any = {},
   ): Promise<readonly ODataChangeSetResponse[]> => {
     const requests = mutations.map((mutation) => {
-      const entityPath = createODataEntityPath(mutation.entitySet, mutation.key)
+      const entityPath = mutation.kind === 'update'
+        ? createODataEntityPath(mutation.entitySet, mutation.key)
+        : createODataNavigationSourcePath(mutation.entitySet, mutation.key)
       const path = mutation.kind === 'update'
         ? entityPath
         : (() => {

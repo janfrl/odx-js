@@ -35,6 +35,20 @@ const relatedProducts = await useOData('Northwind')
   .fetchNavigationList(1, 'Category/RelatedProducts', { $top: 20 }, { signal })
 ```
 
+Contained rows use the same API with a structured source:
+
+```ts
+const item = {
+  kind: 'contained-entity' as const,
+  rootKey: 1,
+  path: [{ navigationProperty: 'Items', key: 2 }],
+}
+
+const tags = await useOData('Northwind')
+  .entitySet('Products')
+  .fetchNavigationList(item, ['Tags'])
+```
+
 Create, update, and remove also accept request options for cancellation and
 concurrency headers. Contained collection members retain their exact parent path;
 `removeNavigation` deletes the addressed entity and is not a `$ref` unlink:

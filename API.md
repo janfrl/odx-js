@@ -194,13 +194,13 @@ Entity-set methods:
 | --- | --- | --- |
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
-| `fetchNavigationList(key, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
+| `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
-| `createNavigation(key, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
-| `updateNavigation(key, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
-| `removeNavigation(key, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
+| `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
+| `updateNavigation(source, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
+| `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
@@ -211,7 +211,10 @@ Use `list` during Nuxt setup when SSR-aware `AsyncData` is desired. Use
 other request options to the configured ODX transport. `fetchNavigationList`
 performs the same imperative read relative to a keyed parent entity. Its
 navigation path can be a slash-delimited string or an array of validated
-identifier segments.
+identifier segments. The `source` is normally an `ODataKey`; for a contained
+row it can instead be an `ODataContainedEntitySource` with a root key and
+ordered keyed containment segments. This represents paths such as
+`Products(1)/Items(2)/Tags` without accepting executable path strings.
 
 Mutation options are forwarded to the same transport, including `signal` and
 headers such as `If-Match`. `createNavigation` posts to a collection-valued
