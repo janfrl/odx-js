@@ -92,6 +92,8 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `forwardAuthHeader` | Forward incoming Authorization header through ODX. | `true` |
 | `services` | Configured OData service definitions. | `[]` |
 | `btpConfigService` | User-provided service name for BTP config overrides. | `odx-config` |
+| `security.sapXsuaa` | Load SAP XSUAA validation in a Node.js Nitro host. Keep disabled for portable edge targets. | `false` |
+| `telemetry.enabled` | Publish privacy-safe completed-request summaries through the host hook. | `false` |
 | `devtools.enabled` | Enable the Explorer in Nuxt DevTools during development. | `true` |
 | `devtools.maxLogs` | Maximum in-memory traffic log entries. | `100` |
 | `devtools.logPayloads` | Store bounded request/response payload previews in development traffic logs. | `true` |

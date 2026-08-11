@@ -33,9 +33,12 @@ Relevant behavior:
   `/__odx__/client/*`, and the supported proxy runtime API routes
   `/__odx__/{config,logs,schema,generate,types,me}`.
 - `packages/proxy/src/plugins/auth-btp.ts` validates SAP security context for
-  `/api/*` and `/__odx__/*` when `NODE_ENV=production`, `VCAP_SERVICES` exists,
-  and XSUAA credentials are available.
-- `packages/proxy/src/api/odata.ts` also validates BTP auth in production.
+  `/api/*` and `/__odx__/*` when `security.sapXsuaa` is explicitly enabled,
+  `NODE_ENV=production`, `VCAP_SERVICES` exists, and XSUAA credentials are
+  available. The adapter is Node-only and remains out of portable Nitro
+  workers unless selected by the host.
+- `packages/proxy/src/api/odata.ts` consumes a host-provided security context;
+  it does not load a second authentication implementation.
 - `/__odx__/me` returns the official SAP security context when available,
   decodes a bearer token as fallback outside production, and returns a
   synthetic local user only outside production. Production responses omit raw
@@ -49,6 +52,16 @@ user information.
 
 If authentication behavior changes, update `xs-security.json`,
 `packages/approuter/xs-app.json`, and this file together.
+
+Enable the SAP adapter only for a Node.js BTP deployment:
+
+```ts
+export default defineNuxtConfig({
+  odata: {
+    security: { sapXsuaa: true },
+  },
+})
+```
 
 ## Authorization And Policy
 

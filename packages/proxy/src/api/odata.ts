@@ -1,10 +1,8 @@
 import type { Hookable } from 'hookable'
 import type { ODataProxyHooks } from '../types'
-import process from 'node:process'
 import { flattenOData } from '@me-tools/odx-core'
 import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, setResponseStatus } from 'h3'
 import { ofetch } from 'ofetch'
-import { validateBtpAuth } from '../utils/auth'
 import { prepareProxyHeaders } from '../utils/headers'
 import { OdxProxyTelemetry, resolveOdxProxyTargetKind } from '../utils/operational-telemetry'
 import { odataGuard } from '../utils/rules'
@@ -66,13 +64,10 @@ export default defineEventHandler(async (event): Promise<any> => {
         })
       : undefined
 
-    // 2. Security Validation (Production Only)
-    if (process.env.NODE_ENV === 'production') {
-      tracer.addTrace('Security', 'Validating BTP Authentication...')
-      await validateBtpAuth(event)
-      if (event.context.securityContext) {
-        tracer.addTrace('Security', 'XSUAA Authentication successful', { user: event.context.securityContext.getLogonName?.() }, 'success')
-      }
+    // Host authentication is supplied by an explicit runtime adapter. The
+    // proxy handler only consumes the resulting security context.
+    if (event.context.securityContext) {
+      tracer.addTrace('Security', 'Host authentication successful', { user: event.context.securityContext.getLogonName?.() }, 'success')
     }
     let targetUrl = resolveTargetUrl(event, targetConfig.url, request, targetConfig.isRelative, serviceName)
 

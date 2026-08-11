@@ -72,6 +72,13 @@ shared observability contract. evlog may be provided by a host adapter, but it
 must not become a dependency of metadata, core, Nuxt Fiori semantics, or a
 renderer.
 
+Portable proxy handling and SAP host authentication are separate runtime
+concerns. The base Nitro integration registers portable request routing on all
+supported Nitro targets. SAP XSUAA validation is an explicit Node-only adapter
+selected with `security.sapXsuaa`; its SDK must not enter edge-worker bundles.
+The proxy handler consumes the resulting security context without loading a
+second authentication implementation.
+
 ## Package Boundaries
 
 ### `packages/metadata`

@@ -53,4 +53,16 @@ describe('public OData runtime configuration', () => {
       enabled: true,
     })
   })
+
+  it('keeps the Node-only SAP XSUAA adapter opt-in', () => {
+    const nuxtOptions = {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    }
+
+    expect(resolveModuleConfig({}, nuxtOptions).security).toEqual({ sapXsuaa: false })
+    expect(resolveModuleConfig({ security: { sapXsuaa: true } }, nuxtOptions).security).toEqual({
+      sapXsuaa: true,
+    })
+  })
 })

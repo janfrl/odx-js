@@ -406,6 +406,14 @@ export interface ODataProxyConfig {
   telemetry?: {
     enabled?: boolean
   }
+  security?: {
+    /**
+     * Enable SAP XSUAA token validation in the Node.js Nitro host.
+     * This adapter is opt-in so portable Nitro targets do not bundle the
+     * Node-only SAP security SDK.
+     */
+    sapXsuaa?: boolean
+  }
 
   devtools?: {
     enabled?: boolean
@@ -537,6 +545,15 @@ export interface ModuleOptions {
      * @default false
      */
     enabled?: boolean
+  }
+  security?: {
+    /**
+     * Enable SAP XSUAA token validation in the Node.js Nitro host.
+     * Requires `@sap/xsenv` and `@sap/xssec` and must not be enabled for
+     * non-Node deployment targets.
+     * @default false
+     */
+    sapXsuaa?: boolean
   }
 
   devtools?: {

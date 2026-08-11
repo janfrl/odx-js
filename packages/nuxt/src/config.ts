@@ -150,6 +150,9 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     telemetry: {
       enabled: options.telemetry?.enabled === true,
     },
+    security: {
+      sapXsuaa: options.security?.sapXsuaa === true,
+    },
     devtools: {
       enabled: options.devtools?.enabled !== false,
       maxLogs: options.devtools?.maxLogs ?? 100,
