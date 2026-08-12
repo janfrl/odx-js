@@ -125,6 +125,19 @@ export interface ODataContainedEntitySource {
 /** Root entity key or an exact contained entity below that root. */
 export type ODataNavigationSource = ODataKey | ODataContainedEntitySource
 
+/**
+ * Portable options shared by imperative OData reads and mutations.
+ *
+ * Framework adapters may accept additional transport-specific properties, but
+ * portable consumers can rely on cancellation and exact request headers without
+ * importing Nuxt, ofetch, or Node.js types.
+ */
+export interface ODataRequestOptions {
+  readonly signal?: AbortSignal
+  readonly headers?: Readonly<Record<string, string>>
+  readonly [key: string]: unknown
+}
+
 export type ODataFunctionParameterValue = string | number | boolean | null
 
 export interface ODataFunctionParameter {
@@ -183,6 +196,8 @@ export interface ODataQuery<T = any> {
   $inlinecount?: 'allpages' | 'none'
   /** Search expression (OData V4). */
   $search?: string
+  /** Aggregation pipeline (OData V4 Data Aggregation extension). */
+  $apply?: string
   /** Allow for custom query parameters. */
   [key: string]: any
 }
@@ -206,7 +221,7 @@ export interface ODataEntitySet<T = any> {
    * Performs an imperative list read without requiring a Nuxt composable
    * setup context.
    */
-  fetchList: (query?: ODataQuery<T>, options?: any) => Promise<T[]>
+  fetchList: (query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<T[]>
 
   /**
    * Performs an imperative collection read relative to an existing entity.
@@ -217,14 +232,14 @@ export interface ODataEntitySet<T = any> {
     source: ODataNavigationSource,
     navigationPath: string | readonly string[],
     query?: ODataQuery<T>,
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<T[]>
 
   /**
    * Performs an imperative single-entity read without requiring a Nuxt
    * composable setup context.
    */
-  fetchOne: (key: ODataKey, query?: ODataQuery<T>, options?: any) => Promise<T>
+  fetchOne: (key: ODataKey, query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<T>
 
   /**
    * Fetches a single entity by key.
@@ -234,7 +249,7 @@ export interface ODataEntitySet<T = any> {
   /**
    * Creates a new entity.
    */
-  create: (body: Partial<T>, options?: any) => Promise<T>
+  create: (body: Partial<T>, options?: ODataRequestOptions) => Promise<T>
   /**
    * Creates a new entity through a collection-valued navigation property of
    * an existing parent entity.
@@ -243,7 +258,7 @@ export interface ODataEntitySet<T = any> {
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     body: Readonly<Record<string, unknown>>,
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<TResult>
   /**
    * Updates an entity addressed through a navigation property of an existing
@@ -254,7 +269,7 @@ export interface ODataEntitySet<T = any> {
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     update: ODataNavigationUpdate,
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<TResult>
   /**
    * Deletes an entity addressed through a contained collection-valued
@@ -265,27 +280,27 @@ export interface ODataEntitySet<T = any> {
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     targetKey: ODataKey,
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<unknown>
   /**
    * Updates an existing entity.
    */
-  update: (key: ODataKey, body: Partial<T>, options?: any) => Promise<T>
+  update: (key: ODataKey, body: Partial<T>, options?: ODataRequestOptions) => Promise<T>
   /**
    * Deletes an entity.
    */
-  remove: (key: ODataKey, options?: any) => Promise<any>
+  remove: (key: ODataKey, options?: ODataRequestOptions) => Promise<unknown>
   /** Invokes an unbound, collection-bound, or entity-bound OData action. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
     invocation?: ODataActionInvocation<TParameters>,
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<TResult>
   /** Invokes an unbound, collection-, entity-, or navigation-bound OData function. */
   invokeFunction: <TResult = unknown>(
     functionName: string,
     invocation?: ODataFunctionInvocation,
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<TResult>
 }
 
@@ -364,7 +379,7 @@ export type ODataService<E extends string = string, M extends Record<string, any
    */
   changeSet: (
     mutations: readonly ODataAtomicMutation[],
-    options?: any,
+    options?: ODataRequestOptions,
   ) => Promise<readonly import('./odata-changeset').ODataChangeSetResponse[]>
 } & {
   /**

@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -80,7 +80,7 @@ export function useOData(service?: string): any {
       },
       fetchList: (
         query?: ODataQuery<TModel>,
-        options?: unknown,
+        options?: ODataRequestOptions,
       ): Promise<TModel[]> => $odata<TModel[]>(client, fullPath, 'GET', {
         ...(options as any),
         query: stringifyQuery(query || {}),
@@ -90,7 +90,7 @@ export function useOData(service?: string): any {
         source: ODataNavigationSource,
         navigationPath: string | readonly string[],
         query?: ODataQuery<TModel>,
-        options?: unknown,
+        options?: ODataRequestOptions,
       ): Promise<TModel[]> => {
         const navigationUrl = joinODataPath(
           navigationSourcePath(source),
@@ -105,7 +105,7 @@ export function useOData(service?: string): any {
       fetchOne: (
         key: ODataKey,
         query?: ODataQuery<TModel>,
-        options?: unknown,
+        options?: ODataRequestOptions,
       ): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'GET', {
@@ -123,7 +123,7 @@ export function useOData(service?: string): any {
         }) as unknown as ODataAsyncDataPromise<TModel>
       },
 
-      create: (body: Partial<TModel>, options?: any): Promise<TModel> =>
+      create: (body: Partial<TModel>, options?: ODataRequestOptions): Promise<TModel> =>
         $odata<TModel>(client, fullPath, 'POST', {
           ...(options as any),
           body,
@@ -133,7 +133,7 @@ export function useOData(service?: string): any {
         source: ODataNavigationSource,
         navigationPath: readonly string[],
         body: Readonly<Record<string, unknown>>,
-        options?: any,
+        options?: ODataRequestOptions,
       ): Promise<TResult> => {
         const navigationUrl = joinODataPath(
           navigationSourcePath(source),
@@ -148,7 +148,7 @@ export function useOData(service?: string): any {
         source: ODataNavigationSource,
         navigationPath: readonly string[],
         update: ODataNavigationUpdate,
-        options?: any,
+        options?: ODataRequestOptions,
       ): Promise<TResult> => {
         const navigationUrl = joinODataPath(
           navigationSourcePath(source),
@@ -166,7 +166,7 @@ export function useOData(service?: string): any {
         source: ODataNavigationSource,
         navigationPath: readonly string[],
         targetKey: ODataKey,
-        options?: any,
+        options?: ODataRequestOptions,
       ): Promise<unknown> => {
         const navigationUrl = joinODataPath(
           navigationSourcePath(source),
@@ -177,7 +177,7 @@ export function useOData(service?: string): any {
           ? $odata<unknown>(client, targetUrl, 'DELETE')
           : $odata<unknown>(client, targetUrl, 'DELETE', options)
       },
-      update: (key: ODataKey, body: Partial<TModel>, options?: any): Promise<TModel> => {
+      update: (key: ODataKey, body: Partial<TModel>, options?: ODataRequestOptions): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'PATCH', {
           ...(options as any),
@@ -185,7 +185,7 @@ export function useOData(service?: string): any {
         })
       },
 
-      remove: (key: ODataKey, options?: any): Promise<unknown> => {
+      remove: (key: ODataKey, options?: ODataRequestOptions): Promise<unknown> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return options === undefined
           ? $odata<unknown>(client, itemPath, 'DELETE')
@@ -195,7 +195,7 @@ export function useOData(service?: string): any {
       invokeFunction: <TResult = unknown>(
         functionName: string,
         invocation: ODataFunctionInvocation = {},
-        options?: any,
+        options?: ODataRequestOptions,
       ): Promise<TResult> => {
         if (invocation.navigationPath !== undefined && invocation.key === undefined) {
           throw new TypeError(
@@ -227,7 +227,7 @@ export function useOData(service?: string): any {
       invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
         action: string,
         invocation: ODataActionInvocation<TParameters> = {},
-        options?: any,
+        options?: ODataRequestOptions,
       ): Promise<TResult> => {
         validateODataQualifiedName(action, 'OData action')
         const bindingPath = invocation.key === undefined
@@ -248,7 +248,7 @@ export function useOData(service?: string): any {
 
   const createChangeSet = (serviceName: string) => async (
     mutations: readonly ODataAtomicMutation[],
-    options: any = {},
+    options: ODataRequestOptions = {},
   ): Promise<readonly ODataChangeSetResponse[]> => {
     const requests = mutations.map((mutation) => {
       const entityPath = mutation.kind === 'update'

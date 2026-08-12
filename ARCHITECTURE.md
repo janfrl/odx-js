@@ -38,11 +38,15 @@ protected before merge.
 
 Nuxt Fiori still declares `@me-tools/odx-nuxt` as a peer and retains a thin
 structural entity-set port so its framework-neutral packages do not depend on a
-Nuxt transport. Compile-time assignability and packed runtime tests protect that
-boundary, but directly shared published transport types and a released-version
-compatibility matrix remain prerequisites for the first public prerelease.
-Fixture and ODX transports must continue to run in parallel until their public
-behavior agrees.
+Nuxt transport. ODX now names the portable imperative request-options contract
+and its analytical `$apply` query member. The clean packed consumer proves
+shared request-option compatibility, exact key, navigation-source, and
+atomic-mutation compatibility, as well as entity-set assignability across the
+public package boundary.
+Published shared types, removal of the remaining metadata mirror, and a
+released-version compatibility matrix remain prerequisites for the first public
+prerelease. Fixture and ODX transports must continue to run in parallel until
+their public behavior agrees.
 
 Reusable OData key, resource-path, query, and batch construction belongs in
 `odx-core`; HTTP execution, Nuxt `AsyncData`, runtime configuration, and
