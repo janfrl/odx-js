@@ -131,6 +131,7 @@ without the surrounding lint, workspace typecheck, and publication checks.
 | `pnpm --filter @me-tools/odx-core run verify` | Runs the focused core Vitest tests and standalone fixture check through the package-local script. |
 | `pnpm --filter @me-tools/odx-proxy run verify` | Runs the proxy package Vitest suite and standalone fixture check through the package-local script. |
 | `pnpm --filter @me-tools/odx-nuxt run verify` | Runs the Nuxt package Vitest suite and minimal playground check through the package-local script. |
+| `pnpm --filter @me-tools/odx-nuxt run test:live:northwind` | Opt-in live smoke against the public Northwind V4 service; it is intentionally outside the repository gate. |
 | `pnpm --filter @me-tools/odx-explorer run verify` | Runs the Explorer package Vitest suite without the full workspace test run. |
 | `pnpm --filter odx-approuter run verify` | Runs the AppRouter deployment config consistency check against `mta.yaml`. |
 | `pnpm --filter docs run verify` | Runs docs metadata extraction and API reference extraction without starting the docs dev server. |

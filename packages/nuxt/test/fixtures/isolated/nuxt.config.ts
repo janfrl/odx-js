@@ -10,7 +10,7 @@ export default defineNuxtConfig({
       {
         name: 'NorthwindIsolated',
         url: 'https://services.odata.org/V4/Northwind/Northwind.svc/',
-        strategy: 'direct',
+        strategy: 'proxied',
       },
     ],
   },

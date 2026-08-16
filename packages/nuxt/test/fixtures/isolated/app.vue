@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { useOData } from '#imports'
 // useFetch returns { data, error, ... } where data is a Ref
-const { data } = await useOData('NorthwindIsolated').entitySet('Categories').list()
+const { data } = await useOData('NorthwindIsolated')
+  .entitySet('Categories')
+  .list({ $top: 1 })
 </script>
 
 <template>

@@ -51,6 +51,7 @@
     "playground:check": "nuxi prepare playground/minimal && node playground/minimal/verify.mjs",
     "prepare": "nuxt-module-build build --stub && nuxt-module-build prepare && nuxi prepare test/fixtures/isolated",
     "test": "vitest run",
+    "test:live:northwind": "vitest run --config vitest.live.config.ts",
     "verify": "vitest run && pnpm run playground:check",
     "build": "nuxt-module-build build",
     "typecheck": "tsc --noEmit -p tsconfig.json",

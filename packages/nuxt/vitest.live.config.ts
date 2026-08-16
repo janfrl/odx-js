@@ -8,10 +8,9 @@ export default defineConfig({
     },
   },
   test: {
-    name: 'nuxt',
+    name: 'nuxt-live-northwind',
     environment: 'node',
-    include: ['test/**/*.test.ts'],
-    // Disable parallelism because these tests start heavy Nuxt servers
+    include: ['live/**/*.test.ts'],
     fileParallelism: false,
     hookTimeout: 60000,
     teardownTimeout: 30000,
