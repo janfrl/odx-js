@@ -3,6 +3,11 @@
 Framework-agnostic OData types and low-level utilities for handling results,
 metadata, query stringification, and safe resource-path construction.
 
+The package also exports `prepareSapCsrfHeaders` and `fetchWithCsrf` for
+server/edge transports. These helpers are not browser transports: browsers
+cannot read SAP `Set-Cookie` responses or emit the matching `Cookie` header.
+Browser applications should send mutations through `@me-tools/odx-proxy`.
+
 Portable path helpers include `formatODataKey`, `createODataEntityPath`,
 `formatODataNavigationPath`, `formatODataFunctionCall`, `joinODataPath`, and identifier validators. They
 construct service-relative protocol paths without depending on Nuxt, Node.js,
