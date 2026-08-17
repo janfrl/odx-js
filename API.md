@@ -125,6 +125,7 @@ Each service is an `ODataServiceConfig`.
 | `auth` | Service-specific Basic, Bearer, or mock auth data. |
 | `headers` | Service-specific outbound headers. |
 | `rules` | Declarative proxy policy rules. |
+| `csrf` | Private server policy. Set `{ mode: 'sap' }` to enable request-scoped SAP token/session preparation; generic OData defaults to `none`. |
 
 ## Environment Overrides
 
@@ -149,6 +150,8 @@ NUXT_ODATA_SERVICES_NORTHWIND_AUTH_USERNAME=...
 NUXT_ODATA_SERVICES_NORTHWIND_AUTH_PASSWORD=...
 NUXT_ODATA_SERVICES_NORTHWIND_HEADERS='{"x-client":"odx"}'
 NUXT_ODATA_SERVICES_NORTHWIND_HEADERS_X_API_KEY=...
+NUXT_ODATA_SERVICES_NORTHWIND_CSRF_MODE=sap
+NUXT_ODATA_SERVICES_NORTHWIND_CSRF_FETCH_METHOD=HEAD
 ```
 
 The service key is the uppercase service name.

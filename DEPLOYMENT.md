@@ -219,6 +219,31 @@ Use environment variables or BTP services for deployment-specific secrets and
 backend URLs. Do not commit credentials, tenant-specific destinations, or local
 `default-env.json`.
 
+SAP CSRF preparation is opt-in for proxied mutations. Enable it on SAP
+services and select `GET` only when the backend does not support the default
+`HEAD` token request:
+
+```ts
+export default defineNuxtConfig({
+  odata: {
+    services: [
+      {
+        name: 'SapCatalog',
+        url: '',
+        destination: 'SAP_CATALOG',
+        csrf: { mode: 'sap', fetchMethod: 'GET' },
+      },
+      { name: 'StandardOData', url: 'https://example.test/odata' },
+    ],
+  },
+})
+```
+
+The matching environment overrides are
+`NUXT_ODATA_SERVICES_<NAME>_CSRF_MODE` (`sap` or `none`) and
+`NUXT_ODATA_SERVICES_<NAME>_CSRF_FETCH_METHOD` (`HEAD` or `GET`). Token and
+session cookies stay inside the proxy request and are never browser config.
+
 ## Metadata And Type Cache
 
 Remote EDMX metadata is cached in two places:

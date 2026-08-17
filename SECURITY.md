@@ -158,9 +158,27 @@ deployment-specific values.
 
 ## CSRF
 
-`fetchWithCsrf` performs a HEAD preflight with `x-csrf-token: Fetch` for
-mutating methods and forwards the returned token and session cookies to the
-final request.
+Proxied SAP services can enable a request-scoped CSRF preflight for `POST`,
+`PUT`, `PATCH`, `MERGE`, and `DELETE` with `csrf: { mode: 'sap' }`. The default `HEAD`
+request sends `x-csrf-token: Fetch`; services that require a read request can
+select `GET`.
+The returned token and all session cookies are forwarded only to the matching
+backend mutation. They are not exposed in browser runtime config or DevTools
+request-header logs, and backend `Set-Cookie` headers are not forwarded to the
+browser. A missing token fails closed before the mutation is sent.
+
+The generic OData default is `csrf: { mode: 'none' }`, so existing non-SAP
+services remain unchanged. Direct services do not use the server-side CSRF
+flow. ODX currently performs a fresh preflight for each protected mutation; it
+does not cache tokens across requests or automatically replay a rejected
+mutation.
+
+`prepareSapCsrfHeaders` owns the server/edge token/session preparation contract,
+and `fetchWithCsrf` provides the matching imperative server/edge request helper.
+Browsers cannot read `Set-Cookie` or set a `Cookie` request header, so client
+code must use the proxy instead. The proxy uses the preparation contract for
+both buffered and streamed responses so
+hooks, rules, ETags, and response handling remain on the normal proxy path.
 
 Changes to mutation handling must preserve SAP CSRF behavior for OData V2 and
 V4 services.

@@ -1264,6 +1264,17 @@
       }
     ]
   },
+  "OdxMemoryLogStore": {
+    "title": "OdxMemoryLogStore",
+    "properties": [
+      {
+        "name": "defaults",
+        "type": "OdxLogAppendOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
   "$odata": {
     "title": "$odata",
     "description": "Low-level OData utility.\nExecutes a single OData request using the provided client.",
@@ -1467,6 +1478,27 @@
       }
     ]
   },
+  "ODataChangeSetError": {
+    "title": "ODataChangeSetError",
+    "properties": [
+      {
+        "name": "code",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "responses",
+        "type": "readonly ODataChangeSetResponse[]",
+        "default": "[]",
+        "required": false
+      }
+    ]
+  },
   "createODataClient": {
     "title": "createODataClient",
     "properties": [
@@ -1492,9 +1524,9 @@
       }
     ]
   },
-  "fetchWithCsrf": {
-    "title": "fetchWithCsrf",
-    "description": "Executes a fetch request with automatic SAP CSRF token handling.\nWorks for both OData V2 and V4.\nFor mutations (POST, PUT, PATCH, DELETE), it first performs a HEAD request\nto fetch a valid CSRF token and session cookies.",
+  "prepareSapCsrfHeaders": {
+    "title": "prepareSapCsrfHeaders",
+    "description": "Prepares request headers for SAP OData V2 and V4 mutations. Safe methods\npass through without a preflight request.",
     "properties": [
       {
         "name": "targetUrl",
@@ -1503,10 +1535,95 @@
       },
       {
         "name": "options",
-        "type": "any",
-        "required": true
+        "type": "SapCsrfPreparationOptions",
+        "default": "{}",
+        "required": false
       }
     ]
+  },
+  "fetchWithCsrf": {
+    "title": "fetchWithCsrf",
+    "description": "Performs a server/edge request with a request-scoped SAP CSRF token and its\nmatching backend session cookies. Browsers must use the ODX proxy because\nthey cannot read Set-Cookie or emit a Cookie request header.",
+    "properties": [
+      {
+        "name": "targetUrl",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<R, any>",
+        "default": "{}",
+        "required": false
+      },
+      {
+        "name": "csrfOptions",
+        "type": "Pick<SapCsrfPreparationOptions, \"fetchMethod\">",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "SapCsrfPreparationOptions": {
+    "title": "SapCsrfPreparationOptions",
+    "description": "Server/edge options for a request-scoped SAP CSRF token preflight.",
+    "properties": [
+      {
+        "name": "method",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "headers",
+        "type": "HeadersInit | Record<string, unknown> | undefined",
+        "required": false
+      },
+      {
+        "name": "fetchMethod",
+        "type": "SapCsrfFetchMethod | undefined",
+        "required": false
+      },
+      {
+        "name": "agent",
+        "type": "unknown",
+        "required": false
+      },
+      {
+        "name": "dispatcher",
+        "type": "any",
+        "required": false
+      },
+      {
+        "name": "signal",
+        "type": "AbortSignal | null | undefined",
+        "required": false
+      },
+      {
+        "name": "timeout",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "retry",
+        "type": "number | false | undefined",
+        "required": false
+      },
+      {
+        "name": "retryDelay",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "retryStatusCodes",
+        "type": "number[] | undefined",
+        "required": false
+      }
+    ]
+  },
+  "SapCsrfTokenError": {
+    "title": "SapCsrfTokenError",
+    "description": "Raised when an explicitly protected SAP mutation cannot obtain a token.",
+    "properties": []
   },
   "validateODataIdentifier": {
     "title": "validateODataIdentifier",
@@ -1802,6 +1919,12 @@
         "required": false
       },
       {
+        "name": "csrf",
+        "type": "{ mode?: \"sap\" | \"none\"; fetchMethod?: \"HEAD\" | \"GET\"; } | undefined",
+        "description": "SAP CSRF policy for proxied mutations. Generic OData services default to\n`none`; set `mode: 'sap'` to enable request-scoped token preparation.",
+        "required": false
+      },
+      {
         "name": "destination",
         "type": "string | undefined",
         "required": false
@@ -1912,6 +2035,22 @@
       }
     ]
   },
+  "ODataRequestOptions": {
+    "title": "ODataRequestOptions",
+    "description": "Portable options shared by imperative OData reads and mutations.\n\nFramework adapters may accept additional transport-specific properties, but\nportable consumers can rely on cancellation and exact request headers without\nimporting Nuxt, ofetch, or Node.js types.",
+    "properties": [
+      {
+        "name": "signal",
+        "type": "AbortSignal | undefined",
+        "required": false
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
   "ODataFunctionParameter": {
     "title": "ODataFunctionParameter",
     "properties": [
@@ -2018,7 +2157,7 @@
       },
       {
         "name": "$inlinecount",
-        "type": "\"allpages\" | \"none\" | undefined",
+        "type": "\"none\" | \"allpages\" | undefined",
         "description": "Include the count of matching entities in OData V2 responses.",
         "default": "'none'",
         "required": false
@@ -2028,6 +2167,12 @@
         "type": "string | undefined",
         "description": "Search expression (OData V4).",
         "required": false
+      },
+      {
+        "name": "$apply",
+        "type": "string | undefined",
+        "description": "Aggregation pipeline (OData V4 Data Aggregation extension).",
+        "required": false
       }
     ]
   },
@@ -2036,6 +2181,12 @@
     "description": "Interface for a specific OData Entity Set.\nT: The model type of the entity.",
     "properties": [
       {
+        "name": "supportsContainedNavigationSources",
+        "type": "true | undefined",
+        "description": "Explicit runtime capability marker for structured contained-navigation\nsources. Consumers must not infer this support from method names because\nolder ODX releases accepted only an entity key in the same position.",
+        "required": false
+      },
+      {
         "name": "list",
         "type": "(query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T[]>",
         "description": "Fetches a list of entities.",
@@ -2043,19 +2194,19 @@
       },
       {
         "name": "fetchList",
-        "type": "(query?: ODataQuery<T>, options?: any) => Promise<T[]>",
+        "type": "(query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<T[]>",
         "description": "Performs an imperative list read without requiring a Nuxt composable\nsetup context.",
         "required": true
       },
       {
         "name": "fetchNavigationList",
-        "type": "(source: ODataNavigationSource, navigationPath: string | readonly string[], query?: ODataQuery<T>, options?: any) => Promise<T[]>",
+        "type": "(source: ODataNavigationSource, navigationPath: string | readonly string[], query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<T[]>",
         "description": "Performs an imperative collection read relative to an existing entity.\nThe navigation path accepts either a single slash-delimited path or\nvalidated path segments.",
         "required": true
       },
       {
         "name": "fetchOne",
-        "type": "(key: ODataKey, query?: ODataQuery<T>, options?: any) => Promise<T>",
+        "type": "(key: ODataKey, query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<T>",
         "description": "Performs an imperative single-entity read without requiring a Nuxt\ncomposable setup context.",
         "required": true
       },
@@ -2067,49 +2218,49 @@
       },
       {
         "name": "create",
-        "type": "(body: Partial<T>, options?: any) => Promise<T>",
+        "type": "(body: Partial<T>, options?: ODataRequestOptions) => Promise<T>",
         "description": "Creates a new entity.",
         "required": true
       },
       {
         "name": "createNavigation",
-        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], body: Readonly<Record<string, unknown>>, options?: any) => Promise<TResult>",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], body: Readonly<Record<string, unknown>>, options?: ODataRequestOptions) => Promise<TResult>",
         "description": "Creates a new entity through a collection-valued navigation property of\nan existing parent entity.",
         "required": true
       },
       {
         "name": "updateNavigation",
-        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: any) => Promise<TResult>",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: ODataRequestOptions) => Promise<TResult>",
         "description": "Updates an entity addressed through a navigation property of an existing\nparent entity. Omit `targetKey` for a single-valued navigation and provide\nit for an entity in a collection-valued navigation.",
         "required": true
       },
       {
         "name": "removeNavigation",
-        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: any) => Promise<unknown>",
+        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: ODataRequestOptions) => Promise<unknown>",
         "description": "Deletes an entity addressed through a contained collection-valued\nnavigation while preserving the exact parent and related-entity identity.\nThis is an entity DELETE, not a non-contained relationship `$ref` unlink.",
         "required": true
       },
       {
         "name": "update",
-        "type": "(key: ODataKey, body: Partial<T>, options?: any) => Promise<T>",
+        "type": "(key: ODataKey, body: Partial<T>, options?: ODataRequestOptions) => Promise<T>",
         "description": "Updates an existing entity.",
         "required": true
       },
       {
         "name": "remove",
-        "type": "(key: ODataKey, options?: any) => Promise<any>",
+        "type": "(key: ODataKey, options?: ODataRequestOptions) => Promise<unknown>",
         "description": "Deletes an entity.",
         "required": true
       },
       {
         "name": "invoke",
-        "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: any) => Promise<TResult>",
+        "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: ODataRequestOptions) => Promise<TResult>",
         "description": "Invokes an unbound, collection-bound, or entity-bound OData action.",
         "required": true
       },
       {
         "name": "invokeFunction",
-        "type": "<TResult = unknown>(functionName: string, invocation?: ODataFunctionInvocation, options?: any) => Promise<TResult>",
+        "type": "<TResult = unknown>(functionName: string, invocation?: ODataFunctionInvocation, options?: ODataRequestOptions) => Promise<TResult>",
         "description": "Invokes an unbound, collection-, entity-, or navigation-bound OData function.",
         "required": true
       }
@@ -2349,6 +2500,11 @@
       {
         "name": "telemetry",
         "type": "{ enabled?: boolean; } | undefined",
+        "required": false
+      },
+      {
+        "name": "security",
+        "type": "{ sapXsuaa?: boolean; } | undefined",
         "required": false
       },
       {
@@ -2629,6 +2785,11 @@
       {
         "name": "telemetry",
         "type": "{ enabled?: boolean; } | undefined",
+        "required": false
+      },
+      {
+        "name": "security",
+        "type": "{ sapXsuaa?: boolean; } | undefined",
         "required": false
       },
       {

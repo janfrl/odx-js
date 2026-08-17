@@ -13,6 +13,21 @@ Explorer schema responses are projected from the loss-aware
 association, navigation, version, and namespace summaries share that parsed
 source instead of maintaining endpoint-specific XML regular expressions.
 
+## SAP CSRF mutations
+
+SAP services can opt into request-scoped CSRF preparation with
+`csrf: { mode: 'sap' }`. ODX fetches a token plus its session cookies, then
+applies them to the matching
+buffered or streamed backend request. Missing tokens fail closed. `If-Match`
+is preserved and responses forward allowlisted OData metadata headers such as
+`etag` and `sap-message`. Absolute backend `location` values are not
+forwarded because they may disclose private destination hosts.
+
+The generic OData default is `csrf: { mode: 'none' }`. Use
+`csrf: { mode: 'sap', fetchMethod: 'GET' }` when the SAP service does not
+support `HEAD` token requests. Tokens are not cached or automatically retried
+in the current contract.
+
 ## Operational telemetry
 
 Operational telemetry is opt-in:
