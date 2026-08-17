@@ -9,6 +9,13 @@ node_modules
 .temp
 .tmp
 .cache
+/tmp/
+/.tmp-*/
+
+# Local scratch artifacts
+/.codex-*.patch
+/.codex-visual-temp/
+/nf-*.png
 
 # Yarn
 **/.yarn/cache
