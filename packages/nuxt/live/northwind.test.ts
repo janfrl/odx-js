@@ -11,11 +11,12 @@ describe('northwind live smoke', async () => {
     nuxtConfig: createNitroE2ETestConfig() as any,
   })
 
-  it('renders a non-empty Categories read through the server proxy', async () => {
+  it('normalizes equivalent V2 and V4 Categories reads through the server proxy', async () => {
     const html = await $fetch('/')
 
-    expect(html).toMatch(/First Category:\s*[^<\s][^<]*/u)
-    expect(html).not.toContain('No data found')
-    expect(html).not.toContain('Data is empty array')
+    expect(html).toContain('First V4 Category: Beverages')
+    expect(html).toContain('First V2 Category: Beverages')
+    expect(html).not.toContain('No V4 data found')
+    expect(html).not.toContain('No V2 data found')
   }, 30000)
 })

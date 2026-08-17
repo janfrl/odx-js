@@ -85,6 +85,13 @@ describe('nuxt ODX Module Integration', async () => {
     expect(serialized).not.toContain('it-works')
   })
 
+  it('renders a canonical Northwind V2 query through the generated composable and local proxy', async () => {
+    const html = await $fetch<string>('/')
+
+    expect(html).toContain('Northwind Category: Beverages')
+    expect(html).not.toContain('Northwind Category: missing')
+  })
+
   it('emits one correlated failure event without backend details', async () => {
     await $fetch('/__test__/evlog', {
       method: 'DELETE',

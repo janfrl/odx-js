@@ -16,6 +16,7 @@ import {
   validateODataIdentifier,
   validateODataQualifiedName,
 } from '@me-tools/odx-core'
+import { computed, isReactive, isRef, toValue } from 'vue'
 import { useODataBasePath } from './useODataBasePath'
 
 interface ODataFetchClient {
@@ -35,6 +36,24 @@ export function useOData(): ODataServiceRegistry
 export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService
 export function useOData(service?: string): any {
   const client = globalThis.$fetch as unknown as ODataFetchClient
+
+  const createJsonReadOptions = (options?: unknown): Record<string, any> => {
+    const requestOptions = (options ?? {}) as Record<string, any>
+    const headers = requestOptions.headers
+    const mergedHeaders = isRef(headers) || isReactive(headers) || typeof headers === 'function'
+      ? computed(() => mergeHeaders(
+          { accept: 'application/json' },
+          toValue(headers) as HeadersInit | undefined,
+        ))
+      : mergeHeaders(
+          { accept: 'application/json' },
+          headers as HeadersInit | undefined,
+        )
+    return {
+      ...requestOptions,
+      headers: mergedHeaders,
+    }
+  }
 
   const resolveServiceRoute = (serviceName: string): string => {
     const config = useRuntimeConfig()
@@ -72,8 +91,9 @@ export function useOData(service?: string): any {
     return {
       supportsContainedNavigationSources: true,
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
+        const requestOptions = createJsonReadOptions(options)
         return useFetch(fullPath, {
-          ...(options as any),
+          ...requestOptions,
           query: stringifyQuery(query || {}),
           transform: (data: any) => flattenOData(data),
         }) as unknown as ODataAsyncDataPromise<TModel[]>
@@ -116,8 +136,9 @@ export function useOData(service?: string): any {
 
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
+        const requestOptions = createJsonReadOptions(options)
         return useFetch(itemPath, {
-          ...(options as any),
+          ...requestOptions,
           query: stringifyQuery(query || {}),
           transform: (data: any) => flattenOData(data),
         }) as unknown as ODataAsyncDataPromise<TModel>

@@ -8,8 +8,13 @@ export default defineNuxtConfig({
   odata: {
     services: [
       {
-        name: 'NorthwindIsolated',
+        name: 'NorthwindV4Isolated',
         url: 'https://services.odata.org/V4/Northwind/Northwind.svc/',
+        strategy: 'proxied',
+      },
+      {
+        name: 'NorthwindV2Isolated',
+        url: 'https://services.odata.org/V2/Northwind/Northwind.svc/',
         strategy: 'proxied',
       },
     ],

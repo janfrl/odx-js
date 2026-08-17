@@ -1,5 +1,6 @@
 import * as core from '@me-tools/odx-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { computed, ref } from 'vue'
 
 const runtimeConfig = vi.hoisted(() => ({
   public: {
@@ -107,6 +108,40 @@ describe('useOData Composable', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').list() as any
       expect(result.url).toBe('/api/odx/MyService/Products')
+      expect(result.options.headers).toEqual({ accept: 'application/json' })
+    })
+
+    it('preserves read headers while allowing an explicit accept override', () => {
+      const api = useOData('MyService')
+      const result = api.entitySet('Products').get(1, undefined, {
+        headers: {
+          'Accept': 'application/json;odata.metadata=minimal',
+          'X-Correlation-ID': 'request-1',
+        },
+      }) as any
+
+      expect(result.options.headers).toEqual({
+        'accept': 'application/json;odata.metadata=minimal',
+        'x-correlation-id': 'request-1',
+      })
+    })
+
+    it('preserves reactive read headers and explicit accept overrides', () => {
+      const accept = ref('application/json;odata.metadata=minimal')
+      const headers = computed(() => ({
+        'Accept': accept.value,
+        'X-Correlation-ID': 'request-1',
+      }))
+      const api = useOData('MyService')
+      const result = api.entitySet('Products').list(undefined, { headers }) as any
+
+      expect(result.options.headers.value).toEqual({
+        'accept': 'application/json;odata.metadata=minimal',
+        'x-correlation-id': 'request-1',
+      })
+
+      accept.value = 'application/json;odata.metadata=full'
+      expect(result.options.headers.value.accept).toBe('application/json;odata.metadata=full')
     })
 
     it('constructs proxied list URLs with the configured service route', () => {

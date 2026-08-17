@@ -17,6 +17,12 @@ export default defineNuxtConfig({
           'x-custom-test': 'it-works',
         },
       },
+      {
+        name: 'Northwind',
+        route: 'northwind',
+        url: 'edmx/northwind-v2.edmx',
+        strategy: 'proxied',
+      },
     ],
   },
   compatibilityDate: '2025-07-15',

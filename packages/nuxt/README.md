@@ -105,16 +105,22 @@ This runs the Nuxt package generation/module e2e tests, then prepares the
 minimal Nuxt playground and verifies the generated ODX service registry types
 plus typed composable usage in the playground app.
 
+The normal package suite includes a checked-in Northwind V2 compatibility
+fixture. It verifies generated service typing, bounded query forwarding, JSON
+content negotiation, V2 envelope normalization, and Nuxt SSR without network
+access.
+
 The public Northwind service smoke is intentionally separate from `verify`:
 
 ```bash
 pnpm --filter @me-tools/odx-nuxt run test:live:northwind
 ```
 
-It fetches the V4 service metadata and one bounded Categories read through the
-Nuxt server proxy. The command is an opt-in observation of a public,
-read-only demo service; it is not a CI gate or evidence of SAP/BTP/Fiori
-compatibility.
+It fetches the V2 and V4 service metadata and performs equivalent bounded,
+filtered Categories reads through the Nuxt server proxy. The assertion proves
+that both response envelopes normalize to the same canonical sample entity.
+The command is an opt-in observation of a public, read-only demo service; it is
+not a CI gate or evidence of SAP/BTP/Fiori compatibility.
 
 For full documentation, getting started guides, and module configuration, see
 the root documentation in this repository.
