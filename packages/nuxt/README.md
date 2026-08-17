@@ -34,7 +34,8 @@ const { data: page } = await useOData('Northwind')
 `entitySet.supportsCollectionPages === true` is the explicit runtime signal
 for this additive capability; the original `ODataEntitySet` structural
 contract remains unchanged.
-Generated Nuxt service declarations use the additive `ODataPagedService` type;
+Generated Nuxt service declarations use the additive `ODataVersionedService`
+type, which extends the count-aware `ODataPagedService` capability;
 the base `ODataService` contract remains valid for existing implementations.
 
 Use `fetchOne()` for imperative key reads outside Nuxt `AsyncData` setup:
@@ -44,6 +45,28 @@ const product = await useOData('Northwind')
   .entitySet('Products')
   .fetchOne({ ID: 1, Locale: 'en' }, { $select: ['ID', 'Name'] }, { signal })
 ```
+
+When the next mutation must be conditional, use the explicit response read.
+It returns the flattened entity plus only its ETag concurrency validator;
+arbitrary response headers remain private:
+
+```ts
+const { data: product, etag } = await useOData('Northwind')
+  .entitySet('Products')
+  .fetchOneWithResponse(1, { $select: ['ID', 'Name'] }, { signal })
+
+await useOData('Northwind').entitySet('Products').update(
+  product.ID,
+  { Name: 'Updated' },
+  { headers: etag ? { 'If-Match': etag } : undefined },
+)
+```
+
+The HTTP `ETag` header takes precedence. OData V4 `@odata.etag` and V2
+`__metadata.etag` are used only as compatibility fallbacks when the header is
+absent. Existing `get()` and `fetchOne()` remain body-only.
+`entitySet.supportsEntityResponses === true` is the explicit runtime
+capability signal.
 
 Read a related collection without constructing an OData resource path in the
 consumer:

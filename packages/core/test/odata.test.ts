@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { $odata } from '../src/odata'
+import { $odata, $odataWithResponse } from '../src/odata'
 
 describe('$odata fetcher', () => {
   it('constructs the correct URL for basic requests', async () => {
@@ -68,5 +68,65 @@ describe('$odata fetcher', () => {
       },
       method: 'GET',
     })
+  })
+})
+
+describe('$odataWithResponse fetcher', () => {
+  const createClient = (body: unknown, etag: string | null = null) => ({
+    raw: vi.fn().mockResolvedValue({
+      _data: body,
+      headers: { get: vi.fn().mockReturnValue(etag) },
+    }),
+  })
+
+  it('preserves the response ETag without exposing transport headers', async () => {
+    const client = createClient({ d: { ID: 1, Name: 'Desk' } }, 'W/"header-1"')
+
+    const response = await $odataWithResponse<{ ID: number, Name: string }>(
+      client,
+      'S/Products(1)',
+      'GET',
+      { query: { $select: 'ID,Name' } },
+    )
+
+    expect(response).toEqual({
+      data: { ID: 1, Name: 'Desk' },
+      etag: 'W/"header-1"',
+    })
+    expect(client.raw).toHaveBeenCalledWith('S/Products(1)', {
+      headers: { accept: 'application/json' },
+      method: 'GET',
+      query: { $select: 'ID,Name' },
+    })
+  })
+
+  it('prefers the HTTP ETag over body metadata', async () => {
+    const client = createClient({
+      d: {
+        __metadata: { etag: 'W/"body-1"' },
+        ID: 1,
+      },
+    }, 'W/"header-1"')
+
+    await expect($odataWithResponse(client, 'S/Products(1)')).resolves.toEqual({
+      data: { ID: 1 },
+      etag: 'W/"header-1"',
+    })
+  })
+
+  it.each([
+    [{ '@odata.etag': 'W/"v4-1"', 'ID': 1 }, 'W/"v4-1"'],
+    [{ d: { __metadata: { etag: 'W/"v2-1"' }, ID: 1 } }, 'W/"v2-1"'],
+  ])('falls back to an OData body ETag', async (body, etag) => {
+    const response = await $odataWithResponse<{ ID: number }>(createClient(body), 'S/Products(1)')
+
+    expect(response.data.ID).toBe(1)
+    expect(response.etag).toBe(etag)
+  })
+
+  it('omits the ETag when no valid validator is present', async () => {
+    const response = await $odataWithResponse(createClient({ d: { ID: 1 } }), 'S/Products(1)')
+
+    expect(response).toEqual({ data: { ID: 1 } })
   })
 })

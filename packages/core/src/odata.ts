@@ -1,4 +1,5 @@
 import type { FetchOptions } from 'ofetch'
+import type { ODataEntityResponse } from './types'
 import { flattenOData, mergeHeaders } from './odata-utils'
 
 export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
@@ -21,4 +22,62 @@ export async function $odata<T = unknown>(
     method,
   })
   return flattenOData(res) as T
+}
+
+/**
+ * Executes an entity read while retaining only the ETag transport metadata
+ * needed for optimistic concurrency. The HTTP header is authoritative; body
+ * annotations are compatibility fallbacks for OData V4 and V2 services.
+ */
+export async function $odataWithResponse<T = unknown>(
+  client: {
+    raw: <R>(path: string, options?: any) => Promise<{
+      _data?: R
+      headers: { get: (name: string) => string | null }
+    }>
+  },
+  service: string,
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
+): Promise<ODataEntityResponse<T>> {
+  const { entitySet, headers, ...requestOptions } = options
+  const path = entitySet ? `${service}/${entitySet}` : service
+  const response = await client.raw<unknown>(path, {
+    ...requestOptions,
+    headers: mergeHeaders({ accept: 'application/json' }, headers as HeadersInit | undefined),
+    method,
+  })
+  const body = response._data
+  const headerEtag = normalizeEtag(response.headers.get('etag'))
+  const etag = headerEtag ?? extractBodyEtag(body)
+
+  return {
+    data: flattenOData(body) as T,
+    ...(etag ? { etag } : {}),
+  }
+}
+
+function normalizeEtag(value: unknown): string | undefined {
+  if (typeof value !== 'string')
+    return undefined
+  const normalized = value.trim()
+  return normalized.length > 0 ? normalized : undefined
+}
+
+function extractBodyEtag(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return undefined
+
+  const record = body as Record<string, unknown>
+  const v4Etag = normalizeEtag(record['@odata.etag'])
+  if (v4Etag)
+    return v4Etag
+
+  const v2Entity = record.d
+  if (!v2Entity || typeof v2Entity !== 'object' || Array.isArray(v2Entity))
+    return undefined
+  const metadata = (v2Entity as Record<string, unknown>).__metadata
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata))
+    return undefined
+  return normalizeEtag((metadata as Record<string, unknown>).etag)
 }

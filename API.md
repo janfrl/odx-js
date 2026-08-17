@@ -204,6 +204,7 @@ Entity-set methods:
 | `listNavigation<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<TResult[]>` compatible promise |
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
+| `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
@@ -249,6 +250,18 @@ Request the matching protocol count option with `$count: true` for V4 or
 `supportsCollectionPages === true`; the additive methods live on
 `ODataPagedEntitySet` and `ODataPagedService` so existing structural
 `ODataEntitySet` and `ODataService` implementations remain valid.
+
+Use `fetchOneWithResponse` when a later update or delete must carry the
+entity's optimistic-concurrency validator. It intentionally exposes only the
+flattened `data` and optional `etag`, not general transport headers. HTTP
+`ETag` is authoritative; OData V4 `@odata.etag` and V2
+`d.__metadata.etag` are fallbacks. Pass the returned value explicitly as an
+`If-Match` mutation header. ODX does not cache validators, retry failed
+mutations, or silently change the body-only behavior of `get` and `fetchOne`.
+The method lives on the additive `ODataVersionedEntitySet` and
+`ODataVersionedService` contracts; runtime entity sets advertise it with
+`supportsEntityResponses === true`, leaving existing structural page clients
+source-compatible.
 
 Service-level methods:
 

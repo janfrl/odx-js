@@ -1,4 +1,4 @@
-import { createError, defineEventHandler, getHeaders, getMethod, getQuery, getRequestURL } from 'h3'
+import { createError, defineEventHandler, getHeaders, getMethod, getQuery, getRequestURL, setHeader } from 'h3'
 
 export default defineEventHandler((event) => {
   if (getMethod(event) !== 'GET') {
@@ -19,6 +19,8 @@ export default defineEventHandler((event) => {
     ) {
       throw createError({ statusCode: 400, statusMessage: 'Unexpected Northwind key query' })
     }
+
+    setHeader(event, 'ETag', 'W/"northwind-category-1"')
 
     return {
       d: createCategory(),

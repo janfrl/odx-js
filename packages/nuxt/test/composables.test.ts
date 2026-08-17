@@ -27,6 +27,7 @@ vi.mock('@me-tools/odx-core', async () => {
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
+    $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
     flattenOData,
     stringifyQuery: vi.fn(q => q),
     toODataCollectionPage,
@@ -53,6 +54,7 @@ describe('useOData Composable', () => {
 
     expect(entitySet.supportsContainedNavigationSources).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
+    expect(entitySet.supportsEntityResponses).toBe(true)
   })
 
   describe('key Formatting', () => {
@@ -228,6 +230,27 @@ describe('useOData Composable', () => {
   })
 
   describe('imperative reads', () => {
+    it('preserves an entity ETag through an explicit response read', async () => {
+      const signal = new AbortController().signal
+
+      const response = await useOData('MyService').entitySet('Products').fetchOneWithResponse(
+        1,
+        { $select: ['ID', 'Name'] },
+        { signal },
+      )
+
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-1"' })
+      expect(core.$odataWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/MyService/Products(1)',
+        'GET',
+        {
+          query: { $select: ['ID', 'Name'] },
+          signal,
+        },
+      )
+    })
+
     it('uses the promise transport and forwards cancellation', async () => {
       const signal = new AbortController().signal
       const api = useOData('RoutedService' as any)

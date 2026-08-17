@@ -115,6 +115,15 @@ export interface ODataCollectionPage<T> {
 }
 
 /**
+ * An entity read together with its optimistic-concurrency validator.
+ * Arbitrary transport headers and OData metadata intentionally remain hidden.
+ */
+export interface ODataEntityResponse<T> {
+  data: T
+  etag?: string
+}
+
+/**
  * Possible types for OData entity keys.
  * Supports single keys (string/number) and composite keys (object).
  */
@@ -350,6 +359,24 @@ export interface ODataPagedEntitySet<T = any> extends ODataEntitySet<T> {
   ) => ODataAsyncDataPromise<TResult[]>
 }
 
+/**
+ * Entity-set client with explicit access to optimistic-concurrency metadata.
+ * Kept separate so existing structural `ODataPagedEntitySet` implementations
+ * remain source-compatible.
+ */
+export interface ODataVersionedEntitySet<T = any> extends ODataPagedEntitySet<T> {
+  readonly supportsEntityResponses: true
+  /**
+   * Imperatively reads one entity and preserves its ETag for a subsequent
+   * conditional mutation. Existing `fetchOne` remains body-only.
+   */
+  fetchOneWithResponse: (
+    key: ODataKey,
+    query?: ODataQuery<T>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataEntityResponse<T>>
+}
+
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
   /** PATCH payload for the related entity. */
@@ -418,7 +445,7 @@ type ODataServiceContract<
   /**
    * Accesses a specific entity set of the service.
    */
-  entitySet: <Name extends E>(name: Name) => TEntitySet & ODataEntitySet<Name extends keyof M ? M[Name] : any>
+  entitySet: <Name extends E>(name: Name) => ODataEntitySetWithModel<TEntitySet, Name extends keyof M ? M[Name] : any>
   /** Invokes a service-level unbound OData action. */
   invoke: ODataEntitySet<never>['invoke']
   /** Invokes an unbound OData function. */
@@ -435,8 +462,15 @@ type ODataServiceContract<
   /**
    * Direct access to entity sets via properties.
    */
-  [K in E]: TEntitySet & ODataEntitySet<K extends keyof M ? M[K] : any>
+  [K in E]: ODataEntitySetWithModel<TEntitySet, K extends keyof M ? M[K] : any>
 }
+
+type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
+  = TEntitySet extends ODataVersionedEntitySet<any>
+    ? ODataVersionedEntitySet<TModel>
+    : TEntitySet extends ODataPagedEntitySet<any>
+      ? ODataPagedEntitySet<TModel>
+      : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -447,6 +481,10 @@ export type ODataService<E extends string = string, M extends Record<string, any
  */
 export type ODataPagedService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataPagedEntitySet<any>>
+
+/** OData service whose entity sets expose explicit entity response metadata. */
+export type ODataVersionedService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataVersionedEntitySet<any>>
 
 /**
  * Global registry for OData services.

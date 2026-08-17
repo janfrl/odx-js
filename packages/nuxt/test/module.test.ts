@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { $fetch, setup } from '@nuxt/test-utils/e2e'
+import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
 import { describe, expect, it } from 'vitest'
 import { createNitroE2ETestConfig } from './nitro-test-config'
 
@@ -98,6 +98,17 @@ describe('nuxt ODX Module Integration', async () => {
     expect(html).not.toContain('Northwind Page Category: missing')
     expect(html).not.toContain('Northwind Category Detail: missing')
     expect(html).not.toContain('Northwind Related Product: missing')
+  })
+
+  it('forwards a canonical Northwind entity ETag through the proxy', async () => {
+    const response = await fetch('/api/odx/northwind/Categories(1)?%24select=CategoryID%2CCategoryName', {
+      headers: { accept: 'application/json' },
+    })
+
+    expect(response.headers.get('etag')).toBe('W/"northwind-category-1"')
+    await expect(response.json()).resolves.toMatchObject({
+      d: { CategoryID: 1, CategoryName: 'Beverages' },
+    })
   })
 
   it('emits one correlated failure event without backend details', async () => {

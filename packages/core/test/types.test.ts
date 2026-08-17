@@ -1,11 +1,14 @@
 import type {
   ODataCollectionPage,
+  ODataEntityResponse,
   ODataEntitySet,
   ODataPagedEntitySet,
   ODataPagedService,
   ODataQuery,
   ODataRequestOptions,
   ODataService,
+  ODataVersionedEntitySet,
+  ODataVersionedService,
 } from '../src'
 import { describe, expectTypeOf, it } from 'vitest'
 
@@ -37,5 +40,14 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataPagedEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<Product>>()
+  })
+
+  it('specializes additive entity-response reads without widening to any', () => {
+    type ProductsService = ODataVersionedService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchOneWithResponse']>>>()
+      .toEqualTypeOf<ODataEntityResponse<Product>>()
   })
 })

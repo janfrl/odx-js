@@ -13,6 +13,11 @@ Portable path helpers include `formatODataKey`, `createODataEntityPath`,
 construct service-relative protocol paths without depending on Nuxt, Node.js,
 or a transport client.
 
+For optimistic concurrency, `$odataWithResponse` is the additive low-level
+entity read. It returns `{ data, etag? }`, preferring the HTTP `ETag` header
+and falling back to OData V4 or V2 body annotations. `$odata` remains the
+body-only helper, and arbitrary response headers are not exposed.
+
 The `@me-tools/odx-core/server` entry also projects parsed
 `@me-tools/odx-metadata` documents into the established entity, navigation,
 association, and version contracts. This is the migration boundary away from
