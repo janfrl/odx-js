@@ -111,6 +111,53 @@ describe('nuxt ODX Module Integration', async () => {
     })
   })
 
+  it('enforces a deterministic Northwind optimistic-concurrency round trip', async () => {
+    await $fetch('/__test__/northwind', { method: 'DELETE' })
+    try {
+      const currentEtag = 'W/"northwind-category-1"'
+      const updatedEtag = 'W/"northwind-category-2"'
+      const path = '/api/odx/northwind/Categories(1)?%24select=CategoryID%2CCategoryName'
+
+      const updated = await fetch(path, {
+        body: JSON.stringify({ CategoryName: 'Hot Beverages' }),
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'if-match': currentEtag,
+        },
+        method: 'PATCH',
+      })
+
+      expect(updated.status).toBe(200)
+      expect(updated.headers.get('etag')).toBe(updatedEtag)
+      await expect(updated.json()).resolves.toMatchObject({
+        d: { CategoryID: 1, CategoryName: 'Hot Beverages' },
+      })
+
+      const stale = await fetch(path, {
+        body: JSON.stringify({ CategoryName: 'Stale Update' }),
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'if-match': currentEtag,
+        },
+        method: 'PATCH',
+      })
+      expect(stale.status).toBe(412)
+
+      const persisted = await fetch(path, {
+        headers: { accept: 'application/json' },
+      })
+      expect(persisted.headers.get('etag')).toBe(updatedEtag)
+      await expect(persisted.json()).resolves.toMatchObject({
+        d: { CategoryName: 'Hot Beverages' },
+      })
+    }
+    finally {
+      await $fetch('/__test__/northwind', { method: 'DELETE' })
+    }
+  })
+
   it('emits one correlated failure event without backend details', async () => {
     await $fetch('/__test__/evlog', {
       method: 'DELETE',

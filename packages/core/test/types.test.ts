@@ -1,5 +1,7 @@
 import type {
   ODataCollectionPage,
+  ODataConcurrencyEntitySet,
+  ODataConcurrencyService,
   ODataEntityResponse,
   ODataEntitySet,
   ODataPagedEntitySet,
@@ -49,5 +51,14 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchOneWithResponse']>>>()
       .toEqualTypeOf<ODataEntityResponse<Product>>()
+  })
+
+  it('adds mutation responses without widening the versioned read contract', () => {
+    type ProductsService = ODataConcurrencyService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataConcurrencyEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateWithResponse']>>>()
+      .toEqualTypeOf<{ data?: Product, etag?: string }>()
   })
 })

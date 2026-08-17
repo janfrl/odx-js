@@ -124,6 +124,16 @@ export interface ODataEntityResponse<T> {
 }
 
 /**
+ * An entity mutation response with an optional representation. OData services
+ * may legitimately answer PATCH with `204 No Content` while still returning
+ * the next ETag header.
+ */
+export interface ODataMutationResponse<T> {
+  data?: T
+  etag?: string
+}
+
+/**
  * Possible types for OData entity keys.
  * Supports single keys (string/number) and composite keys (object).
  */
@@ -377,6 +387,24 @@ export interface ODataVersionedEntitySet<T = any> extends ODataPagedEntitySet<T>
   ) => Promise<ODataEntityResponse<T>>
 }
 
+/**
+ * Entity-set client with an explicit optimistic-concurrency mutation path.
+ * Kept separate so structural implementations of `ODataVersionedEntitySet`
+ * remain source-compatible.
+ */
+export interface ODataConcurrencyEntitySet<T = any> extends ODataVersionedEntitySet<T> {
+  readonly supportsOptimisticConcurrency: true
+  /**
+   * Conditionally updates one entity while preserving the response ETag.
+   * Existing `update` remains body-only and source-compatible.
+   */
+  updateWithResponse: (
+    key: ODataKey,
+    body: Partial<T>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<T>>
+}
+
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
   /** PATCH payload for the related entity. */
@@ -466,11 +494,13 @@ type ODataServiceContract<
 }
 
 type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
-  = TEntitySet extends ODataVersionedEntitySet<any>
-    ? ODataVersionedEntitySet<TModel>
-    : TEntitySet extends ODataPagedEntitySet<any>
-      ? ODataPagedEntitySet<TModel>
-      : ODataEntitySet<TModel>
+  = TEntitySet extends ODataConcurrencyEntitySet<any>
+    ? ODataConcurrencyEntitySet<TModel>
+    : TEntitySet extends ODataVersionedEntitySet<any>
+      ? ODataVersionedEntitySet<TModel>
+      : TEntitySet extends ODataPagedEntitySet<any>
+        ? ODataPagedEntitySet<TModel>
+        : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -485,6 +515,10 @@ export type ODataPagedService<E extends string = string, M extends Record<string
 /** OData service whose entity sets expose explicit entity response metadata. */
 export type ODataVersionedService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataVersionedEntitySet<any>>
+
+/** OData service with explicit optimistic-concurrency mutation responses. */
+export type ODataConcurrencyService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataConcurrencyEntitySet<any>>
 
 /**
  * Global registry for OData services.

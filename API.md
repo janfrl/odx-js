@@ -211,6 +211,7 @@ Entity-set methods:
 | `updateNavigation(source, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
+| `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
@@ -259,9 +260,21 @@ flattened `data` and optional `etag`, not general transport headers. HTTP
 `If-Match` mutation header. ODX does not cache validators, retry failed
 mutations, or silently change the body-only behavior of `get` and `fetchOne`.
 The method lives on the additive `ODataVersionedEntitySet` and
-`ODataVersionedService` contracts; runtime entity sets advertise it with
+`ODataVersionedService` read contracts; runtime entity sets advertise it with
 `supportsEntityResponses === true`, leaving existing structural page clients
 source-compatible.
+
+Use `updateWithResponse` for the corresponding conditional PATCH when the
+consumer must retain the validator returned for the updated representation.
+Pass the previously read ETag through `options.headers['If-Match']`; a stale
+validator remains an ordinary backend `412 Precondition Failed`, while a
+successful response yields its next ETag and, when the service returns one,
+the flattened entity representation. A valid `204 No Content` response has no
+`data` property. The method lives on the separate additive
+`ODataConcurrencyEntitySet` / `ODataConcurrencyService` capability, advertised
+by `supportsOptimisticConcurrency === true`, so existing structural versioned
+read clients remain source-compatible. The existing `update` method remains
+body-only.
 
 Service-level methods:
 

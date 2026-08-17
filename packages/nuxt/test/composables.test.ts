@@ -27,6 +27,7 @@ vi.mock('@me-tools/odx-core', async () => {
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
+    $odataMutationWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"' })),
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
     flattenOData,
     stringifyQuery: vi.fn(q => q),
@@ -55,6 +56,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsContainedNavigationSources).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
+    expect(entitySet.supportsOptimisticConcurrency).toBe(true)
   })
 
   describe('key Formatting', () => {
@@ -248,6 +250,24 @@ describe('useOData Composable', () => {
           query: { $select: ['ID', 'Name'] },
           signal,
         },
+      )
+    })
+
+    it('preserves the next ETag from a conditional entity update', async () => {
+      const headers = { 'If-Match': 'W/"entity-1"' }
+
+      const response = await useOData('MyService').entitySet('Products').updateWithResponse(
+        1,
+        { Name: 'Updated' },
+        { headers },
+      )
+
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odataMutationWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/MyService/Products(1)',
+        'PATCH',
+        { body: { Name: 'Updated' }, headers },
       )
     })
 

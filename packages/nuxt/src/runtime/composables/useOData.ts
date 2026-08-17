@@ -1,7 +1,8 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataCollectionPage, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataServiceRegistry, ODataVersionedEntitySet, ODataVersionedService, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataCollectionPage, ODataConcurrencyEntitySet, ODataConcurrencyService, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
+  $odataMutationWithResponse,
   $odataWithResponse,
   createODataEntityPath,
   createODataNavigationSourcePath,
@@ -35,7 +36,7 @@ interface ODataFetchClient {
  * or standard method calls.
  */
 export function useOData(): ODataServiceRegistry
-export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataVersionedService
+export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataConcurrencyService
 export function useOData(service?: string): any {
   const client = globalThis.$fetch as unknown as ODataFetchClient
 
@@ -76,7 +77,7 @@ export function useOData(service?: string): any {
     return joinODataPath(basePath, resolveServiceRoute(serviceName))
   }
 
-  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataVersionedEntitySet<TModel> => {
+  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataConcurrencyEntitySet<TModel> => {
     const servicePath = resolveServicePath(serviceName)
     const fullPath = entitySet
       ? joinODataPath(
@@ -99,6 +100,7 @@ export function useOData(service?: string): any {
       supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
       supportsEntityResponses: true,
+      supportsOptimisticConcurrency: true,
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         const requestOptions = createJsonReadOptions(options)
         return useFetch(fullPath, {
@@ -265,6 +267,18 @@ export function useOData(service?: string): any {
         })
       },
 
+      updateWithResponse: (
+        key: ODataKey,
+        body: Partial<TModel>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TModel>> => {
+        const itemPath = `${fullPath}(${formatODataKey(key)})`
+        return $odataMutationWithResponse<TModel>(client, itemPath, 'PATCH', {
+          ...(options as any),
+          body,
+        })
+      },
+
       remove: (key: ODataKey, options?: ODataRequestOptions): Promise<unknown> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return options === undefined
@@ -375,7 +389,7 @@ export function useOData(service?: string): any {
     return parseODataChangeSetResponse(response._data, contentType)
   }
 
-  const createServiceProxy = (serviceName: string): ODataVersionedService => {
+  const createServiceProxy = (serviceName: string): ODataConcurrencyService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
       changeSet: createChangeSet(serviceName),
     })

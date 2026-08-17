@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { $odata, $odataWithResponse } from '../src/odata'
+import { $odata, $odataMutationWithResponse, $odataWithResponse } from '../src/odata'
 
 describe('$odata fetcher', () => {
   it('constructs the correct URL for basic requests', async () => {
@@ -98,6 +98,40 @@ describe('$odataWithResponse fetcher', () => {
       method: 'GET',
       query: { $select: 'ID,Name' },
     })
+  })
+
+  it('preserves conditional PATCH options and the next entity ETag', async () => {
+    const client = createClient({ d: { ID: 1, Name: 'Standing Desk' } }, 'W/"entity-2"')
+    const headers = { 'If-Match': 'W/"entity-1"' }
+
+    await expect($odataMutationWithResponse<{ ID: number, Name: string }>(
+      client,
+      'S/Products(1)',
+      'PATCH',
+      { body: { Name: 'Standing Desk' }, headers },
+    )).resolves.toEqual({
+      data: { ID: 1, Name: 'Standing Desk' },
+      etag: 'W/"entity-2"',
+    })
+    expect(client.raw).toHaveBeenCalledWith('S/Products(1)', {
+      body: { Name: 'Standing Desk' },
+      headers: {
+        'accept': 'application/json',
+        'if-match': 'W/"entity-1"',
+      },
+      method: 'PATCH',
+    })
+  })
+
+  it('preserves a PATCH ETag when the service returns 204 without a body', async () => {
+    const client = createClient(undefined, 'W/"entity-2"')
+    const response = await $odataMutationWithResponse(
+      client,
+      'S/Products(1)',
+      'PATCH',
+    )
+
+    expect(response).toEqual({ etag: 'W/"entity-2"' })
   })
 
   it('prefers the HTTP ETag over body metadata', async () => {

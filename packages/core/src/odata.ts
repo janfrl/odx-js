@@ -1,5 +1,5 @@
 import type { FetchOptions } from 'ofetch'
-import type { ODataEntityResponse } from './types'
+import type { ODataEntityResponse, ODataMutationResponse } from './types'
 import { flattenOData, mergeHeaders } from './odata-utils'
 
 export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
@@ -37,9 +37,49 @@ export async function $odataWithResponse<T = unknown>(
     }>
   },
   service: string,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
+  method: 'GET' = 'GET',
   options: FetchOptions<'json'> & { entitySet?: string } = {},
 ): Promise<ODataEntityResponse<T>> {
+  const response = await requestWithResponse(client, service, method, options)
+  return {
+    data: flattenOData(response.body) as T,
+    ...(response.etag ? { etag: response.etag } : {}),
+  }
+}
+
+/**
+ * Executes an entity mutation while preserving its next ETag. The entity
+ * representation is optional because PATCH may validly return 204.
+ */
+export async function $odataMutationWithResponse<T = unknown>(
+  client: {
+    raw: <R>(path: string, options?: any) => Promise<{
+      _data?: R
+      headers: { get: (name: string) => string | null }
+    }>
+  },
+  service: string,
+  method: 'POST' | 'PATCH' | 'DELETE',
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
+): Promise<ODataMutationResponse<T>> {
+  const response = await requestWithResponse(client, service, method, options)
+  return {
+    ...(response.body === undefined ? {} : { data: flattenOData(response.body) as T }),
+    ...(response.etag ? { etag: response.etag } : {}),
+  }
+}
+
+async function requestWithResponse(
+  client: {
+    raw: <R>(path: string, options?: any) => Promise<{
+      _data?: R
+      headers: { get: (name: string) => string | null }
+    }>
+  },
+  service: string,
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  options: FetchOptions<'json'> & { entitySet?: string },
+): Promise<{ body: unknown, etag?: string }> {
   const { entitySet, headers, ...requestOptions } = options
   const path = entitySet ? `${service}/${entitySet}` : service
   const response = await client.raw<unknown>(path, {
@@ -51,10 +91,7 @@ export async function $odataWithResponse<T = unknown>(
   const headerEtag = normalizeEtag(response.headers.get('etag'))
   const etag = headerEtag ?? extractBodyEtag(body)
 
-  return {
-    data: flattenOData(body) as T,
-    ...(etag ? { etag } : {}),
-  }
+  return { body, ...(etag ? { etag } : {}) }
 }
 
 function normalizeEtag(value: unknown): string | undefined {
