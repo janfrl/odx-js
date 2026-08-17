@@ -2,7 +2,7 @@ import type { ODataProxyConfig } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
-import { resolveBtpDestination } from './btp-destination'
+import { isLocalBtpFallbackAllowed, resolveBtpDestination } from './btp-destination'
 
 export interface ResolvedProxyTarget {
   url: string
@@ -22,6 +22,8 @@ export async function resolveProxyTarget(
   serviceRoute: string,
   options: { allowBtpDestinationFallback?: boolean } = {},
 ): Promise<ResolvedProxyTarget | null> {
+  const allowBtpDestinationFallback = options.allowBtpDestinationFallback
+    ?? isLocalBtpFallbackAllowed()
   const matched = config.services?.find((s: any) =>
     s.name.toLowerCase() === serviceRoute.toLowerCase()
     || (s.route && s.route.toLowerCase() === serviceRoute.toLowerCase()),
@@ -63,7 +65,8 @@ export async function resolveProxyTarget(
       const btpTargetName = matched.destination || matched.name
       const authHeader = event.headers.get('authorization')
       const destination = await resolveBtpDestination(btpTargetName, authHeader || undefined, {
-        allowMissingBindingFallback: options.allowBtpDestinationFallback !== false,
+        allowMissingBindingFallback: allowBtpDestinationFallback,
+        allowResolutionFailureFallback: allowBtpDestinationFallback,
       })
       let authHeaderValue = ''
       if (destination.authTokens?.[0]) {
@@ -81,7 +84,7 @@ export async function resolveProxyTarget(
       }
     }
     catch (err) {
-      if (options.allowBtpDestinationFallback === false) {
+      if (!allowBtpDestinationFallback) {
         throw err
       }
 

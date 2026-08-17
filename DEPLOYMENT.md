@@ -119,6 +119,12 @@ Purpose:
 - Handles XSUAA validation, destination lookup, rules, hooks, headers, and
   telemetry.
 
+The local destination fallback is available only when `NODE_ENV` is explicitly
+`development` or `test`. Production, staging, unset, and custom environments
+stop the request when Destination/XSUAA bindings are missing or destination
+lookup fails; ODX does not silently route deployment traffic to
+`/sap/opu/odata/sap`.
+
 ### `odx-explorer`
 
 Path: `packages/explorer/.output`

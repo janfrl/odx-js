@@ -86,6 +86,13 @@ describe('proxy integration', () => {
           csrf: { mode: 'disabled' } as any,
         },
         {
+          name: 'FailClosedDestinationService',
+          url: '',
+          destination: 'MISSING_DESTINATION',
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+        },
+        {
           name: 'CsrfStreamService',
           url: backendUrl,
           strategy: 'proxied',
@@ -377,6 +384,36 @@ describe('proxy integration', () => {
     expect(await ofetch(`${backendUrl}/TokenlessCsrfStats`)).toEqual({
       tokenlessMutationCount: 0,
     })
+  })
+
+  it.each([
+    ['staging'],
+    [undefined],
+  ])('fails the standalone handler closed for unresolved destinations with NODE_ENV %s', async (nodeEnv) => {
+    const previousNodeEnv = process.env.NODE_ENV
+    const previousVcapServices = process.env.VCAP_SERVICES
+    if (nodeEnv === undefined)
+      delete process.env.NODE_ENV
+    else
+      process.env.NODE_ENV = nodeEnv
+    process.env.VCAP_SERVICES = '{}'
+
+    try {
+      const response = await ofetch.raw(`${proxyUrl}/api/odx/FailClosedDestinationService/Products`, {
+        ignoreResponseError: true,
+      })
+      expect(response.status).toBe(500)
+    }
+    finally {
+      if (previousNodeEnv === undefined)
+        delete process.env.NODE_ENV
+      else
+        process.env.NODE_ENV = previousNodeEnv
+      if (previousVcapServices === undefined)
+        delete process.env.VCAP_SERVICES
+      else
+        process.env.VCAP_SERVICES = previousVcapServices
+    }
   })
 
   it('skips log-only flattening for buffered responses when DevTools are disabled', async () => {

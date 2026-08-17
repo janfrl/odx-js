@@ -31,10 +31,15 @@ interface DestinationCacheEntry {
 
 interface ResolveBtpDestinationOptions {
   allowMissingBindingFallback?: boolean
+  allowResolutionFailureFallback?: boolean
 }
 
 const DESTINATION_CACHE_TTL_MS = 60_000
 const destinationCache = new Map<string, DestinationCacheEntry>()
+
+export function isLocalBtpFallbackAllowed(): boolean {
+  return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+}
 
 function createDestinationCacheKey(serviceName: string, userToken?: string): string {
   if (!userToken) {
@@ -146,22 +151,21 @@ export async function resolveBtpDestination(
   userToken?: string,
   options: ResolveBtpDestinationOptions = {},
 ): Promise<BtpDestination> {
+  const allowMissingBindingFallback = options.allowMissingBindingFallback
+    ?? isLocalBtpFallbackAllowed()
+  const allowResolutionFailureFallback = options.allowResolutionFailureFallback
+    ?? isLocalBtpFallbackAllowed()
   const cacheKey = createDestinationCacheKey(serviceName, userToken)
-  const cachedDestination = getCachedDestination(cacheKey)
-  if (cachedDestination) {
-    return cachedDestination
-  }
-
   const vcap = getVcapServices()
   const destService = vcap.destination?.[0]
   const xsuaaService = vcap.xsuaa?.[0]
   const connectivityService = vcap.connectivity?.[0]
 
   if (!destService?.credentials || !xsuaaService?.credentials) {
-    if (process.env.NODE_ENV === 'production') {
+    if (!isLocalBtpFallbackAllowed()) {
       console.warn(`[@me-tools/odx-proxy] No BTP Service bindings found for "${serviceName}"`)
     }
-    if (process.env.NODE_ENV === 'production' && options.allowMissingBindingFallback === false) {
+    if (!allowMissingBindingFallback) {
       throw new Error(`Failed to resolve BTP destination "${serviceName}": Destination and XSUAA service bindings are required`)
     }
     return {
@@ -170,6 +174,11 @@ export async function resolveBtpDestination(
       user: 'TECHNICAL_USER',
       password: 'MOCK_PASSWORD',
     }
+  }
+
+  const cachedDestination = getCachedDestination(cacheKey)
+  if (cachedDestination) {
+    return cachedDestination
   }
 
   try {
@@ -231,7 +240,7 @@ export async function resolveBtpDestination(
     return resolvedDestination
   }
   catch (err: any) {
-    if (process.env.NODE_ENV !== 'production') {
+    if (allowResolutionFailureFallback) {
       return {
         name: serviceName,
         url: '/sap/opu/odata/sap',

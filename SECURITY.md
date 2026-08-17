@@ -123,6 +123,13 @@ Incoming `Authorization` is forwarded only when `forwardAuthHeader` is not
 `false`. Authentication resolved from service config or a BTP destination
 always overrides the final `Authorization` header.
 
+Production BTP destination resolution fails closed. Missing Destination or
+XSUAA bindings, an unavailable Destination service, and invalid destination
+URLs reject the proxy request instead of routing it to the local SAP mock
+prefix. The relative fallback remains available only when `NODE_ENV` is
+explicitly `development` or `test`; unset and custom deployment environments
+fail closed.
+
 Restricted hop-by-hop headers include:
 
 - `host`

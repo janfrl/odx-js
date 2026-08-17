@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { defineNitroPlugin, useRuntimeConfig } from 'nitropack/runtime'
-import { resolveBtpDestination } from '../utils/btp-destination'
+import { isLocalBtpFallbackAllowed, resolveBtpDestination } from '../utils/btp-destination'
 
 const RE_QUERY_SPLIT = /\?/
 const RE_LEADING_SLASH = /^\//
@@ -135,8 +135,9 @@ export default defineNitroPlugin((nitro) => {
       }
       catch (err: any) {
         addTrace('BTP', `Failed to resolve destination: ${err.message}`, { error: err }, 'error')
-        if (process.env.NODE_ENV === 'production') {
+        if (!isLocalBtpFallbackAllowed()) {
           console.error(`[@me-tools/odx-proxy] BTP Destination Error [${matched.name}]:`, err.message)
+          throw err
         }
       }
     }

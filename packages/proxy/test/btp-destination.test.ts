@@ -59,6 +59,31 @@ describe('btp Destination Resolution', () => {
     expect(ofetch).not.toHaveBeenCalled()
   })
 
+  it('fails closed by default when production bindings are missing', async () => {
+    process.env.NODE_ENV = 'production'
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+
+    await expect(resolveBtpDestination('MissingBindingsProductionDefaultService')).rejects.toThrow(
+      'Failed to resolve BTP destination "MissingBindingsProductionDefaultService": Destination and XSUAA service bindings are required',
+    )
+    expect(ofetch).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['staging'],
+    [undefined],
+  ])('fails closed when NODE_ENV is %s', async (nodeEnv) => {
+    if (nodeEnv === undefined)
+      delete process.env.NODE_ENV
+    else
+      process.env.NODE_ENV = nodeEnv
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+
+    await expect(resolveBtpDestination(`MissingBindings-${nodeEnv ?? 'unset'}`)).rejects.toThrow(
+      'Destination and XSUAA service bindings are required',
+    )
+  })
+
   it('resolves a standard internet destination', async () => {
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: 'https://dest.api' } }],
@@ -176,6 +201,19 @@ describe('btp Destination Resolution', () => {
 
     await expect(resolveBtpDestination('FailingProductionService')).rejects.toThrow(
       'Failed to resolve BTP destination "FailingProductionService": destination unavailable',
+    )
+  })
+
+  it('honors an explicit strict policy when Destination Service calls fail in development', async () => {
+    process.env.NODE_ENV = 'development'
+    mockBtpBindings()
+
+    vi.mocked(ofetch).mockRejectedValueOnce(new Error('destination unavailable'))
+
+    await expect(resolveBtpDestination('StrictDevelopmentService', undefined, {
+      allowResolutionFailureFallback: false,
+    })).rejects.toThrow(
+      'Failed to resolve BTP destination "StrictDevelopmentService": destination unavailable',
     )
   })
 
@@ -390,6 +428,29 @@ describe('btp Destination Resolution', () => {
     expect(firstResult.url).toBe('https://cached-user-backend.example')
     expect(secondResult.url).toBe('https://cached-user-backend.example')
     expect(secondResult.authTokens?.[0].value).toBe('cached-user-auth-token')
+    expect(ofetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not let a cached destination hide missing bindings', async () => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'cached-dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: 'https://cached-backend.example' },
+      })
+
+    await expect(resolveBtpDestination('BindingsDisappearAfterCacheService')).resolves.toMatchObject({
+      url: 'https://cached-backend.example',
+    })
+
+    delete process.env.VCAP_SERVICES
+    vi.mocked(fs.existsSync).mockReturnValue(false)
+
+    await expect(resolveBtpDestination('BindingsDisappearAfterCacheService')).rejects.toThrow(
+      'Destination and XSUAA service bindings are required',
+    )
     expect(ofetch).toHaveBeenCalledTimes(2)
   })
 

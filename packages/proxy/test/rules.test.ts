@@ -513,6 +513,62 @@ describe('disabled DevTools proxy tracing', () => {
     })
     expect(event.context.proxyTrace).toEqual([])
   })
+
+  it.each([
+    ['production'],
+    ['staging'],
+    [undefined],
+  ])('does not route failed deployed destinations to the local mock with NODE_ENV %s', async (nodeEnv) => {
+    const originalNodeEnv = process.env.NODE_ENV
+    const originalVcapServices = process.env.VCAP_SERVICES
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const requestHooks: Array<(event: any) => Promise<void>> = []
+    const nitro = {
+      hooks: {
+        hook(name: string, callback: (event: any) => Promise<void>) {
+          if (name === 'request')
+            requestHooks.push(callback)
+        },
+      },
+    }
+
+    btpAuthPlugin(nitro as any)
+    useRuntimeConfigMock.mockReturnValue({
+      odata: {
+        basePath: '/api/odx',
+        services: [{
+          name: 'S4Service',
+          destination: 'S4_BACKEND',
+          strategy: 'proxied',
+        }],
+      },
+    })
+    const event = {
+      path: '/api/odx/S4Service/Products',
+      headers: new Headers(),
+      context: {},
+    } as any
+
+    try {
+      if (nodeEnv === undefined)
+        delete process.env.NODE_ENV
+      else
+        process.env.NODE_ENV = nodeEnv
+      process.env.VCAP_SERVICES = '{}'
+      await expect(requestHooks[0](event)).rejects.toThrow(
+        'Destination and XSUAA service bindings are required',
+      )
+      expect(event.context.proxyTarget).toBeUndefined()
+    }
+    finally {
+      process.env.NODE_ENV = originalNodeEnv
+      if (originalVcapServices === undefined)
+        delete process.env.VCAP_SERVICES
+      else
+        process.env.VCAP_SERVICES = originalVcapServices
+      consoleError.mockRestore()
+    }
+  })
 })
 
 describe('stored proxy rule trace redaction', () => {
