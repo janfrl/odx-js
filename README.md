@@ -84,6 +84,11 @@ const { data, refresh } = await useOData('Northwind').entitySet('Products').list
 </script>
 ```
 
+For count-aware tables, `listPage()` returns an SSR-safe
+`{ items, totalCount }` object and supports V4 `$count` as well as V2
+`$inlinecount` queries. `fetchPage()` provides the same result for imperative
+reads.
+
 ## 🛠️ Development
 The supported toolchain is Node.js 22 or 24 with pnpm 10 or 11. The repository
 pins the pnpm version used by CI through `packageManager`.

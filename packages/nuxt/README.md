@@ -18,6 +18,25 @@ controller events or other imperative effects:
 const products = await useOData('Northwind').entitySet('Products').fetchList({ $top: 20 }, { signal })
 ```
 
+Use the page variants when a List Report needs the backend count. The explicit
+object shape remains intact in Nuxt SSR payloads:
+
+```ts
+const { data: page } = await useOData('Northwind')
+  .entitySet('Products')
+  .listPage({ $inlinecount: 'allpages', $top: 20 })
+
+// page.value?.items and page.value?.totalCount
+```
+
+`fetchPage()` is the imperative equivalent. OData V4 services use
+`{ $count: true }` instead of `$inlinecount`.
+`entitySet.supportsCollectionPages === true` is the explicit runtime signal
+for this additive capability; the original `ODataEntitySet` structural
+contract remains unchanged.
+Generated Nuxt service declarations use the additive `ODataPagedService` type;
+the base `ODataService` contract remains valid for existing implementations.
+
 Use `fetchOne()` for imperative key reads outside Nuxt `AsyncData` setup:
 
 ```ts
@@ -107,8 +126,8 @@ plus typed composable usage in the playground app.
 
 The normal package suite includes a checked-in Northwind V2 compatibility
 fixture. It verifies generated service typing, bounded query forwarding, JSON
-content negotiation, V2 envelope normalization, and Nuxt SSR without network
-access.
+content negotiation, V2 envelope normalization, and SSR-safe inline count
+projection without network access.
 
 The public Northwind service smoke is intentionally separate from `verify`:
 

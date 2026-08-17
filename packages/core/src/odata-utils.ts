@@ -1,3 +1,7 @@
+import type { ODataCollectionPage } from './types'
+
+const RE_ODATA_COUNT = /^(?:0|[1-9]\d*)$/
+
 /**
  * Recursive flattener for OData V2/V4 structures and removes metadata.
  * Preserves count information if present.
@@ -31,10 +35,10 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
       ? data.value
       : undefined
   if (results) {
-    const count = data.__count || data['@odata.count'] || data.count
+    const totalCount = normalizeODataCount(readODataCollectionCount(data))
     const flattened = results.map((item: any) => flattenOData(item, depth + 1, maxDepth))
-    if (count !== undefined) {
-      (flattened as any).totalCount = Number(count)
+    if (totalCount !== undefined) {
+      (flattened as any).totalCount = totalCount
     }
     return flattened
   }
@@ -58,6 +62,56 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   // If we have no properties left after stripping (but we HAD an object), return null
   // This helps represents stripped metadata objects as null.
   return hasProperties ? flattened : null
+}
+
+/**
+ * Flattens an OData collection into an explicit page object. The explicit
+ * `totalCount` field is serializable across Nuxt SSR payload boundaries,
+ * unlike custom properties attached directly to arrays.
+ */
+export function toODataCollectionPage<T>(data: unknown): ODataCollectionPage<T> {
+  const sourceCount = Array.isArray(data) && Object.hasOwn(data, 'totalCount')
+    ? (data as T[] & { totalCount?: unknown }).totalCount
+    : undefined
+  const flattened = flattenOData(data)
+  if (!Array.isArray(flattened)) {
+    throw new TypeError('Expected an OData collection response.')
+  }
+
+  const count = sourceCount ?? (flattened as T[] & { totalCount?: unknown }).totalCount
+  const items = Array.from(flattened) as T[]
+  const totalCount = normalizeODataCount(count)
+  if (totalCount === undefined) {
+    return { items }
+  }
+  return { items, totalCount }
+}
+
+function readODataCollectionCount(data: Record<string, any>): unknown {
+  for (const property of ['__count', '@odata.count', 'count']) {
+    if (Object.hasOwn(data, property)) {
+      return data[property]
+    }
+  }
+  return undefined
+}
+
+function normalizeODataCount(count: unknown): number | undefined {
+  if (count === undefined) {
+    return undefined
+  }
+  if (typeof count === 'number') {
+    if (Number.isSafeInteger(count) && count >= 0) {
+      return count
+    }
+  }
+  else if (typeof count === 'string' && RE_ODATA_COUNT.test(count)) {
+    const parsed = Number(count)
+    if (Number.isSafeInteger(parsed)) {
+      return parsed
+    }
+  }
+  throw new TypeError('Expected the OData collection count to be a non-negative safe integer.')
 }
 
 function isODataV2Envelope(data: Record<string, any>): boolean {

@@ -9,6 +9,7 @@ export default defineEventHandler((event) => {
   const headers = getHeaders(event)
   if (
     query.$filter !== 'CategoryID eq 1'
+    || (query.$inlinecount !== undefined && query.$inlinecount !== 'allpages')
     || query.$select !== 'CategoryID,CategoryName'
     || query.$top !== '1'
   ) {
@@ -20,6 +21,7 @@ export default defineEventHandler((event) => {
 
   return {
     d: {
+      ...(query.$inlinecount === 'allpages' ? { __count: '49' } : {}),
       results: [{
         __metadata: {
           type: 'NorthwindModel.Category',

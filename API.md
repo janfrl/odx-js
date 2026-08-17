@@ -198,7 +198,9 @@ Entity-set methods:
 | Method | HTTP | Return |
 | --- | --- | --- |
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
+| `listPage(query?, options?)` | `GET` | Nuxt `AsyncData<{ items: T[]; totalCount?: number }>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
+| `fetchPage(query?, options?)` | `GET` | `Promise<{ items: T[]; totalCount?: number }>` |
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
@@ -237,6 +239,15 @@ shape for qualified OData V4 functions, but sends `GET` and serializes each
 parameter from an explicit `{ type, value }` descriptor into the inline function
 call. Supported values are primitive EDM types; unsupported or malformed values
 are rejected before transport.
+
+Use `listPage` or `fetchPage` when the consumer needs an OData V4
+`@odata.count` or V2 `__count`. Their explicit `{ items, totalCount }` result
+survives Nuxt SSR serialization; custom properties attached to arrays do not.
+Request the matching protocol count option with `$count: true` for V4 or
+`$inlinecount: 'allpages'` for V2. Runtime entity sets expose
+`supportsCollectionPages === true`; the additive methods live on
+`ODataPagedEntitySet` and `ODataPagedService` so existing structural
+`ODataEntitySet` and `ODataService` implementations remain valid.
 
 Service-level methods:
 

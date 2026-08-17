@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from '../src/odata-utils'
+import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery, toODataCollectionPage } from '../src/odata-utils'
 
 describe('oData Utils', () => {
   describe('sanitizeBaseURL', () => {
@@ -175,6 +175,68 @@ describe('oData Utils', () => {
       const data = { bin: new Uint8Array([1, 2, 3, 4, 5]) }
       const flattened = flattenOData(data)
       expect(flattened.bin).toBe('[Binary Data, 5 bytes]')
+    })
+  })
+
+  describe('toODataCollectionPage', () => {
+    it('returns an SSR-serializable V2 page with an explicit count', () => {
+      const page = toODataCollectionPage<{ ID: number }>({
+        d: {
+          __count: '49',
+          results: [{ ID: 1, __metadata: { type: 'Demo.Product' } }],
+        },
+      })
+
+      expect(page).toEqual({ items: [{ ID: 1 }], totalCount: 49 })
+      expect(JSON.parse(JSON.stringify(page))).toEqual(page)
+    })
+
+    it('normalizes an OData V4 count', () => {
+      expect(toODataCollectionPage<{ ID: number }>({
+        '@odata.count': 2,
+        'value': [{ ID: 1 }, { ID: 2 }],
+      })).toEqual({
+        items: [{ ID: 1 }, { ID: 2 }],
+        totalCount: 2,
+      })
+    })
+
+    it('preserves a count from an already flattened imperative response', () => {
+      const items = [{ ID: 1 }] as Array<{ ID: number }> & { totalCount?: number }
+      items.totalCount = 0
+
+      expect(toODataCollectionPage<{ ID: number }>(items)).toEqual({
+        items: [{ ID: 1 }],
+        totalCount: 0,
+      })
+    })
+
+    it('preserves a numeric zero count from a raw collection envelope', () => {
+      expect(toODataCollectionPage({ results: [], __count: 0 })).toEqual({
+        items: [],
+        totalCount: 0,
+      })
+    })
+
+    it('rejects non-collection responses', () => {
+      expect(() => toODataCollectionPage({ d: { ID: 1 } })).toThrow('collection response')
+    })
+
+    it.each([
+      '',
+      ' ',
+      '1e2',
+      '0x10',
+      'many',
+      -1,
+      1.5,
+      Number.MAX_SAFE_INTEGER + 1,
+      false,
+      true,
+      null,
+      [],
+    ])('rejects the malformed count %j', (count) => {
+      expect(() => toODataCollectionPage({ results: [], __count: count })).toThrow('non-negative safe integer')
     })
   })
 })

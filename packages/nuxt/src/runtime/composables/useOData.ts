@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataEntitySet, ODataFunctionInvocation, ODataKey, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataCollectionPage, ODataFunctionInvocation, ODataKey, ODataNavigationSource, ODataNavigationUpdate, ODataPagedEntitySet, ODataPagedService, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -13,6 +13,7 @@ import {
   parseODataChangeSetResponse,
   serializeODataChangeSet,
   stringifyQuery,
+  toODataCollectionPage,
   validateODataIdentifier,
   validateODataQualifiedName,
 } from '@me-tools/odx-core'
@@ -33,7 +34,7 @@ interface ODataFetchClient {
  * or standard method calls.
  */
 export function useOData(): ODataServiceRegistry
-export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataService
+export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataPagedService
 export function useOData(service?: string): any {
   const client = globalThis.$fetch as unknown as ODataFetchClient
 
@@ -55,6 +56,11 @@ export function useOData(service?: string): any {
     }
   }
 
+  const createPageReadKey = (path: string, query: Readonly<Record<string, string>>): string => {
+    const entries = Object.entries(query).sort(([left], [right]) => left.localeCompare(right))
+    return `odx-page:${path}:${JSON.stringify(entries)}`
+  }
+
   const resolveServiceRoute = (serviceName: string): string => {
     const config = useRuntimeConfig()
     const publicConfig = config.public.odata as unknown as ODataPublicConfig
@@ -69,7 +75,7 @@ export function useOData(service?: string): any {
     return joinODataPath(basePath, resolveServiceRoute(serviceName))
   }
 
-  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataEntitySet<TModel> => {
+  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataPagedEntitySet<TModel> => {
     const servicePath = resolveServicePath(serviceName)
     const fullPath = entitySet
       ? joinODataPath(
@@ -89,6 +95,7 @@ export function useOData(service?: string): any {
       )
     }
     return {
+      supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         const requestOptions = createJsonReadOptions(options)
@@ -98,6 +105,16 @@ export function useOData(service?: string): any {
           transform: (data: any) => flattenOData(data),
         }) as unknown as ODataAsyncDataPromise<TModel[]>
       },
+      listPage: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<ODataCollectionPage<TModel>> => {
+        const requestOptions = createJsonReadOptions(options)
+        const requestQuery = stringifyQuery(query || {})
+        return useFetch(fullPath, {
+          ...requestOptions,
+          key: requestOptions.key ?? createPageReadKey(fullPath, requestQuery),
+          query: requestQuery,
+          transform: (data: any) => toODataCollectionPage<TModel>(data),
+        }) as unknown as ODataAsyncDataPromise<ODataCollectionPage<TModel>>
+      },
       fetchList: (
         query?: ODataQuery<TModel>,
         options?: ODataRequestOptions,
@@ -105,6 +122,16 @@ export function useOData(service?: string): any {
         ...(options as any),
         query: stringifyQuery(query || {}),
       }),
+      fetchPage: async (
+        query?: ODataQuery<TModel>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataCollectionPage<TModel>> => {
+        const items = await $odata<TModel[]>(client, fullPath, 'GET', {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+        })
+        return toODataCollectionPage<TModel>(items)
+      },
 
       fetchNavigationList: (
         source: ODataNavigationSource,
@@ -316,7 +343,7 @@ export function useOData(service?: string): any {
     return parseODataChangeSetResponse(response._data, contentType)
   }
 
-  const createServiceProxy = (serviceName: string): ODataService => {
+  const createServiceProxy = (serviceName: string): ODataPagedService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
       changeSet: createChangeSet(serviceName),
     })

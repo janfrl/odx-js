@@ -105,6 +105,16 @@ export interface ODataAsyncData<T> {
 export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncData<T>>
 
 /**
+ * Serializable collection result for list UIs that need the server-side count.
+ * Unlike an extra property attached to an array, this shape survives Nuxt SSR
+ * payload serialization.
+ */
+export interface ODataCollectionPage<T> {
+  items: T[]
+  totalCount?: number
+}
+
+/**
  * Possible types for OData entity keys.
  * Supports single keys (string/number) and composite keys (object).
  */
@@ -313,6 +323,22 @@ export interface ODataEntitySet<T = any> {
   ) => Promise<TResult>
 }
 
+/**
+ * Entity-set client with explicit, SSR-safe collection page reads. This
+ * extends the original entity-set contract without making existing structural
+ * implementations of `ODataEntitySet` add new required methods.
+ */
+export interface ODataPagedEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsCollectionPages: true
+  /**
+   * Fetches entities and preserves an OData V2 `__count` or V4 `@odata.count`
+   * in an SSR-safe object shape.
+   */
+  listPage: (query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<ODataCollectionPage<T>>
+  /** Imperative counterpart to `listPage`. */
+  fetchPage: (query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<ODataCollectionPage<T>>
+}
+
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
   /** PATCH payload for the related entity. */
@@ -373,11 +399,15 @@ export type ODataAtomicMutation
  * E: Union of available entity set names.
  * M: Mapping of entity set names to their model types.
  */
-export type ODataService<E extends string = string, M extends Record<string, any> = any> = {
+type ODataServiceContract<
+  E extends string,
+  M extends Record<string, any>,
+  TEntitySet extends ODataEntitySet<any>,
+> = {
   /**
    * Accesses a specific entity set of the service.
    */
-  entitySet: <Name extends E>(name: Name) => ODataEntitySet<Name extends keyof M ? M[Name] : any>
+  entitySet: <Name extends E>(name: Name) => TEntitySet & ODataEntitySet<Name extends keyof M ? M[Name] : any>
   /** Invokes a service-level unbound OData action. */
   invoke: ODataEntitySet<never>['invoke']
   /** Invokes an unbound OData function. */
@@ -394,8 +424,18 @@ export type ODataService<E extends string = string, M extends Record<string, any
   /**
    * Direct access to entity sets via properties.
    */
-  [K in E]: ODataEntitySet<K extends keyof M ? M[K] : any>
+  [K in E]: TEntitySet & ODataEntitySet<K extends keyof M ? M[K] : any>
 }
+
+export type ODataService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataEntitySet<any>>
+
+/**
+ * OData service whose entity sets expose explicit collection-page reads.
+ * Kept separate so structural implementations of `ODataService` remain valid.
+ */
+export type ODataPagedService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataPagedEntitySet<any>>
 
 /**
  * Global registry for OData services.

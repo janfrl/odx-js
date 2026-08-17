@@ -1,5 +1,8 @@
 import type {
+  ODataCollectionPage,
   ODataEntitySet,
+  ODataPagedEntitySet,
+  ODataPagedService,
   ODataQuery,
   ODataRequestOptions,
   ODataService,
@@ -23,5 +26,16 @@ describe('portable imperative transport types', () => {
 
   it('declares analytical apply as a portable query option', () => {
     expectTypeOf<ODataQuery<Product>['$apply']>().toEqualTypeOf<string | undefined>()
+  })
+
+  it('adds count-aware pages without widening the base entity-set contract', () => {
+    type BaseProductsService = ODataService<'Products', { Products: Product }>
+    type ProductsService = ODataPagedService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<BaseProductsService['Products']>().toEqualTypeOf<ODataEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataPagedEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchPage']>>>()
+      .toEqualTypeOf<ODataCollectionPage<Product>>()
   })
 })

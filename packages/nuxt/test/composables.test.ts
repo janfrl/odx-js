@@ -23,11 +23,13 @@ vi.mock('#imports', () => ({
 // Mock core library
 vi.mock('@me-tools/odx-core', async () => {
   const actual = await vi.importActual('@me-tools/odx-core')
+  const { toODataCollectionPage } = await import('../../core/src/odata-utils')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
     flattenOData: vi.fn(data => data),
     stringifyQuery: vi.fn(q => q),
+    toODataCollectionPage,
   }
 })
 
@@ -46,10 +48,11 @@ describe('useOData Composable', () => {
     ]
   })
 
-  it('advertises structured contained-navigation source support explicitly', () => {
+  it('advertises optional runtime capabilities explicitly', () => {
     const entitySet = useOData('MyService').entitySet('Products')
 
     expect(entitySet.supportsContainedNavigationSources).toBe(true)
+    expect(entitySet.supportsCollectionPages).toBe(true)
   })
 
   describe('key Formatting', () => {
@@ -109,6 +112,40 @@ describe('useOData Composable', () => {
       const result = api.entitySet('Products').list() as any
       expect(result.url).toBe('/api/odx/MyService/Products')
       expect(result.options.headers).toEqual({ accept: 'application/json' })
+    })
+
+    it('projects counted collection reads into an SSR-safe page', () => {
+      const api = useOData('MyService')
+      const result = api.entitySet('Products').listPage({ $count: true }) as any
+
+      expect(result.url).toBe('/api/odx/MyService/Products')
+      expect(result.options.key).toContain('odx-page:/api/odx/MyService/Products:')
+      expect(result.options.query).toEqual({ $count: true })
+      expect(result.options.transform({
+        '@odata.count': 2,
+        'value': [{ ID: 1 }, { ID: 2 }],
+      })).toEqual({
+        items: [{ ID: 1 }, { ID: 2 }],
+        totalCount: 2,
+      })
+    })
+
+    it('keeps list and page AsyncData entries distinct for the same query', () => {
+      const api = useOData('MyService').entitySet('Products')
+      const query = { $top: 1 }
+      const list = api.list(query) as any
+      const page = api.listPage(query) as any
+
+      expect(list.options.key).toBeUndefined()
+      expect(page.options.key).toContain('odx-page:/api/odx/MyService/Products:')
+    })
+
+    it('preserves an explicit page AsyncData key', () => {
+      const page = useOData('MyService').entitySet('Products').listPage(undefined, {
+        key: 'products-page',
+      }) as any
+
+      expect(page.options.key).toBe('products-page')
     })
 
     it('preserves read headers while allowing an explicit accept override', () => {
@@ -206,6 +243,32 @@ describe('useOData Composable', () => {
         'GET',
         {
           query: { $select: ['ID', 'Name'], $top: 2 },
+          signal,
+        },
+      )
+    })
+
+    it('preserves count information through fetchPage', async () => {
+      const items = [{ ID: 1 }] as Array<{ ID: number }> & { totalCount?: number }
+      items.totalCount = 49
+      vi.mocked(core.$odata).mockResolvedValueOnce(items)
+      const signal = new AbortController().signal
+
+      const page = await useOData('MyService').entitySet('Products').fetchPage({
+        $inlinecount: 'allpages',
+      }, {
+        headers: { 'X-Correlation-ID': 'page-1' },
+        signal,
+      })
+
+      expect(page).toEqual({ items: [{ ID: 1 }], totalCount: 49 })
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products',
+        'GET',
+        {
+          headers: { 'X-Correlation-ID': 'page-1' },
+          query: { $inlinecount: 'allpages' },
           signal,
         },
       )

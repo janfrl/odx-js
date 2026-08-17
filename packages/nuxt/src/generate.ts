@@ -97,7 +97,7 @@ export function generateRegistryDts(
   serviceEntities: Record<string, EntityMapping[]>,
   serviceModelFiles: Record<string, string>,
 ): string {
-  const indexDtsLines = ['import type { ODataServiceRegistry, ODataService } from "@me-tools/odx-core"']
+  const indexDtsLines = ['import type { ODataServiceRegistry, ODataPagedService } from "@me-tools/odx-core"']
   const serviceModelAliases: Record<string, string> = {}
 
   for (const [svcName, modelFile] of Object.entries(serviceModelFiles)) {
@@ -114,7 +114,7 @@ export function generateRegistryDts(
     const modelMapping = serviceModelFiles[svcName]
       ? `{ ${entities.map(e => `"${e.name}": ${serviceModelAliases[svcName]}.${e.type}`).join(', ')} }`
       : 'Record<string, any>'
-    indexDtsLines.push(`    ${formatTypeKey(svcName)}: ODataService<${entityUnion}, ${modelMapping}>`)
+    indexDtsLines.push(`    ${formatTypeKey(svcName)}: ODataPagedService<${entityUnion}, ${modelMapping}>`)
   }
   indexDtsLines.push('  }')
   indexDtsLines.push('}')
