@@ -212,6 +212,8 @@ Entity-set methods:
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
+| `merge(key, body, options?)` | `MERGE` | `Promise<T>` |
+| `mergeWithResponse(key, body, options?)` | `MERGE` | `Promise<{ data?: T; etag?: string }>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
@@ -275,6 +277,14 @@ the flattened entity representation. A valid `204 No Content` response has no
 by `supportsOptimisticConcurrency === true`, so existing structural versioned
 read clients remain source-compatible. The existing `update` method remains
 body-only.
+
+SAP Gateway OData V2 services that require `MERGE` can use the explicit
+`merge` and `mergeWithResponse` counterparts. ODX does not silently replace
+PATCH with MERGE or infer an update verb from service metadata; both protocol
+operations remain visible and independently testable. These methods belong to
+the separate additive `ODataMergeEntitySet` / `ODataMergeService` capability,
+advertised by `supportsMerge === true`; existing concurrency contracts are not
+widened.
 
 Service-level methods:
 

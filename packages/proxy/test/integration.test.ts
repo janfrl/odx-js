@@ -348,12 +348,26 @@ describe('proxy integration', () => {
     })
 
     expect(response.status).toBe(200)
+    expect(response.headers.get('etag')).toBe('W/"2"')
     expect(response._data.d).toMatchObject({
       Name: 'Merged Cabinet',
       csrfValidated: true,
       sessionValidated: true,
       preflightMethod,
     })
+
+    const stale = await ofetch.raw(`${proxyUrl}/api/odx/${serviceName}/CsrfProducts`, {
+      method: 'MERGE',
+      headers: {
+        'content-type': 'application/json',
+        'if-match': 'W/"stale"',
+      },
+      body: JSON.stringify({
+        Name: 'Rejected stale update',
+      }),
+      ignoreResponseError: true,
+    })
+    expect(stale.status).toBe(412)
   })
 
   it.each([

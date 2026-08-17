@@ -4,6 +4,8 @@ import type {
   ODataConcurrencyService,
   ODataEntityResponse,
   ODataEntitySet,
+  ODataMergeEntitySet,
+  ODataMergeService,
   ODataPagedEntitySet,
   ODataPagedService,
   ODataQuery,
@@ -59,6 +61,17 @@ describe('portable imperative transport types', () => {
 
     expectTypeOf<ProductsEntitySet>().toExtend<ODataConcurrencyEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateWithResponse']>>>()
+      .toEqualTypeOf<{ data?: Product, etag?: string }>()
+  })
+
+  it('adds explicit MERGE without widening the concurrency contract', () => {
+    type ProductsService = ODataMergeService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataMergeEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['merge']>>>()
+      .toEqualTypeOf<Product>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeWithResponse']>>>()
       .toEqualTypeOf<{ data?: Product, etag?: string }>()
   })
 })

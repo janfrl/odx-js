@@ -92,10 +92,16 @@ export function createBackend(): App {
     const validSession = cookie.includes('SAP_SESSIONID=fresh')
       && cookie.includes('sap-usercontext=sap-client=100')
 
-    if (!validToken || !validSession || headers['if-match'] !== 'W/"1"') {
+    if (!validToken || !validSession) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Invalid SAP mutation session',
+      })
+    }
+    if (headers['if-match'] !== 'W/"1"') {
+      throw createError({
+        statusCode: 412,
+        statusMessage: 'Precondition Failed',
       })
     }
 

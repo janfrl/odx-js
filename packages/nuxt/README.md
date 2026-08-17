@@ -34,7 +34,7 @@ const { data: page } = await useOData('Northwind')
 `entitySet.supportsCollectionPages === true` is the explicit runtime signal
 for this additive capability; the original `ODataEntitySet` structural
 contract remains unchanged.
-Generated Nuxt service declarations use the additive `ODataConcurrencyService`
+Generated Nuxt service declarations use the additive `ODataMergeService`
 type, which extends the response-aware `ODataVersionedService` and count-aware
 `ODataPagedService` capabilities;
 the base `ODataService` contract remains valid for existing implementations.
@@ -72,6 +72,11 @@ absent. Existing `get()` and `fetchOne()` remain body-only.
 read capability signal. `supportsOptimisticConcurrency === true` identifies
 the separate conditional-mutation response capability, without widening the
 existing structural service contracts.
+
+For SAP Gateway OData V2 services that require the legacy update verb, use
+`merge()` or `mergeWithResponse()` explicitly. PATCH remains the default
+`update()` behavior; ODX never changes the verb implicitly. Runtime entity sets
+advertise this separate capability with `supportsMerge === true`.
 
 Read a related collection without constructing an OData resource path in the
 consumer:

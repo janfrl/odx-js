@@ -134,6 +134,33 @@ describe('$odataWithResponse fetcher', () => {
     expect(response).toEqual({ etag: 'W/"entity-2"' })
   })
 
+  it('preserves conditional MERGE options and the next entity ETag', async () => {
+    const client = createClient({ d: { ID: 1, Name: 'Standing Desk' } }, 'W/"entity-2"')
+
+    const response = await $odataMutationWithResponse<{ ID: number, Name: string }>(
+      client,
+      'S/Products(1)',
+      'MERGE',
+      {
+        body: { Name: 'Standing Desk' },
+        headers: { 'If-Match': 'W/"entity-1"' },
+      },
+    )
+
+    expect(response).toEqual({
+      data: { ID: 1, Name: 'Standing Desk' },
+      etag: 'W/"entity-2"',
+    })
+    expect(client.raw).toHaveBeenCalledWith('S/Products(1)', {
+      body: { Name: 'Standing Desk' },
+      headers: {
+        'accept': 'application/json',
+        'if-match': 'W/"entity-1"',
+      },
+      method: 'MERGE',
+    })
+  })
+
   it('prefers the HTTP ETag over body metadata', async () => {
     const client = createClient({
       d: {

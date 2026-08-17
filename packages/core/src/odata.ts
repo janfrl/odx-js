@@ -11,7 +11,7 @@ export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './o
 export async function $odata<T = unknown>(
   client: { <R>(path: string, options?: any): Promise<R> },
   service: string,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET',
+  method: 'GET' | 'POST' | 'PATCH' | 'MERGE' | 'DELETE' = 'GET',
   options: FetchOptions<'json'> & { entitySet?: string } = {},
 ): Promise<T> {
   const { entitySet, headers, ...requestOptions } = options
@@ -49,7 +49,7 @@ export async function $odataWithResponse<T = unknown>(
 
 /**
  * Executes an entity mutation while preserving its next ETag. The entity
- * representation is optional because PATCH may validly return 204.
+ * representation is optional because an update may validly return 204.
  */
 export async function $odataMutationWithResponse<T = unknown>(
   client: {
@@ -59,7 +59,7 @@ export async function $odataMutationWithResponse<T = unknown>(
     }>
   },
   service: string,
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'POST' | 'PATCH' | 'MERGE' | 'DELETE',
   options: FetchOptions<'json'> & { entitySet?: string } = {},
 ): Promise<ODataMutationResponse<T>> {
   const response = await requestWithResponse(client, service, method, options)
@@ -77,7 +77,7 @@ async function requestWithResponse(
     }>
   },
   service: string,
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PATCH' | 'MERGE' | 'DELETE',
   options: FetchOptions<'json'> & { entitySet?: string },
 ): Promise<{ body: unknown, etag?: string }> {
   const { entitySet, headers, ...requestOptions } = options

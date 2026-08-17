@@ -405,6 +405,19 @@ export interface ODataConcurrencyEntitySet<T = any> extends ODataVersionedEntity
   ) => Promise<ODataMutationResponse<T>>
 }
 
+/** Entity-set client with explicit SAP Gateway OData V2 MERGE updates. */
+export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<T> {
+  readonly supportsMerge: true
+  /** Performs an explicit SAP Gateway OData V2 MERGE update. */
+  merge: (key: ODataKey, body: Partial<T>, options?: ODataRequestOptions) => Promise<T>
+  /** Performs MERGE and preserves its optional representation and next ETag. */
+  mergeWithResponse: (
+    key: ODataKey,
+    body: Partial<T>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<T>>
+}
+
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
   /** PATCH payload for the related entity. */
@@ -494,13 +507,15 @@ type ODataServiceContract<
 }
 
 type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
-  = TEntitySet extends ODataConcurrencyEntitySet<any>
-    ? ODataConcurrencyEntitySet<TModel>
-    : TEntitySet extends ODataVersionedEntitySet<any>
-      ? ODataVersionedEntitySet<TModel>
-      : TEntitySet extends ODataPagedEntitySet<any>
-        ? ODataPagedEntitySet<TModel>
-        : ODataEntitySet<TModel>
+  = TEntitySet extends ODataMergeEntitySet<any>
+    ? ODataMergeEntitySet<TModel>
+    : TEntitySet extends ODataConcurrencyEntitySet<any>
+      ? ODataConcurrencyEntitySet<TModel>
+      : TEntitySet extends ODataVersionedEntitySet<any>
+        ? ODataVersionedEntitySet<TModel>
+        : TEntitySet extends ODataPagedEntitySet<any>
+          ? ODataPagedEntitySet<TModel>
+          : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -519,6 +534,10 @@ export type ODataVersionedService<E extends string = string, M extends Record<st
 /** OData service with explicit optimistic-concurrency mutation responses. */
 export type ODataConcurrencyService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataConcurrencyEntitySet<any>>
+
+/** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
+export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataMergeEntitySet<any>>
 
 /**
  * Global registry for OData services.

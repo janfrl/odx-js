@@ -57,6 +57,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
+    expect(entitySet.supportsMerge).toBe(true)
   })
 
   describe('key Formatting', () => {
@@ -268,6 +269,28 @@ describe('useOData Composable', () => {
         '/api/odx/MyService/Products(1)',
         'PATCH',
         { body: { Name: 'Updated' }, headers },
+      )
+    })
+
+    it('supports explicit SAP Gateway MERGE updates with and without response metadata', async () => {
+      const entitySet = useOData('MyService').entitySet('Products')
+      const headers = { 'If-Match': 'W/"entity-1"' }
+
+      await entitySet.merge(1, { Name: 'Merged' }, { headers })
+      const response = await entitySet.mergeWithResponse(1, { Name: 'Merged again' }, { headers })
+
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)',
+        'MERGE',
+        { body: { Name: 'Merged' }, headers },
+      )
+      expect(core.$odataMutationWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/MyService/Products(1)',
+        'MERGE',
+        { body: { Name: 'Merged again' }, headers },
       )
     })
 

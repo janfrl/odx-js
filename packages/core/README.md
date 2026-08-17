@@ -19,7 +19,8 @@ and falling back to OData V4 or V2 body annotations. `$odata` remains the
 body-only helper, and arbitrary response headers are not exposed.
 `$odataMutationWithResponse` is the mutation counterpart. Its `data` property
 is optional because a valid PATCH may return `204 No Content` while still
-providing the next ETag.
+providing the next ETag. Both low-level request helpers support explicit
+`MERGE` for SAP Gateway OData V2 updates; PATCH remains distinct.
 
 The `@me-tools/odx-core/server` entry also projects parsed
 `@me-tools/odx-metadata` documents into the established entity, navigation,
