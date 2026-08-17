@@ -19,6 +19,14 @@ const { data: categoryPage } = await northwindCategories.listPage({
 const { data: category } = await northwindCategories.get(1, {
   $select: ['CategoryID', 'CategoryName'],
 })
+const { data: relatedProducts } = await northwindCategories.listNavigation<{
+  ProductID: number
+  ProductName: string
+}>(
+  1,
+  ['Products'],
+  { $select: ['ProductID', 'ProductName'], $top: 1 },
+)
 </script>
 
 <template>
@@ -33,5 +41,8 @@ const { data: category } = await northwindCategories.get(1, {
   </div>
   <div id="northwind-category-detail">
     Northwind Category Detail: {{ category ? `${category.CategoryID} / ${category.CategoryName}` : 'missing' }}
+  </div>
+  <div id="northwind-related-product">
+    Northwind Related Product: {{ relatedProducts[0]?.ProductName ?? 'missing' }}
   </div>
 </template>

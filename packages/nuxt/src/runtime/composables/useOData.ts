@@ -133,6 +133,24 @@ export function useOData(service?: string): any {
         return toODataCollectionPage<TModel>(items)
       },
 
+      listNavigation: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        query?: ODataQuery<TResult>,
+        options?: unknown,
+      ): ODataAsyncDataPromise<TResult[]> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const requestOptions = createJsonReadOptions(options)
+        return useFetch(navigationUrl, {
+          ...requestOptions,
+          query: stringifyQuery(query || {}),
+          transform: (data: any) => flattenOData(data),
+        }) as unknown as ODataAsyncDataPromise<TResult[]>
+      },
+
       fetchNavigationList: (
         source: ODataNavigationSource,
         navigationPath: string | readonly string[],

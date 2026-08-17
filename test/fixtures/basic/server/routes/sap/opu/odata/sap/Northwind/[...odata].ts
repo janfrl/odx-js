@@ -25,6 +25,29 @@ export default defineEventHandler((event) => {
     }
   }
 
+  if (pathname === '/sap/opu/odata/sap/Northwind/Categories(1)/Products') {
+    if (
+      query.$select !== 'ProductID,ProductName'
+      || query.$top !== '1'
+      || Object.keys(query).length !== 2
+    ) {
+      throw createError({ statusCode: 400, statusMessage: 'Unexpected Northwind navigation query' })
+    }
+
+    return {
+      d: {
+        results: [{
+          __metadata: {
+            type: 'NorthwindModel.Product',
+            uri: 'http://localhost/sap/opu/odata/sap/Northwind/Products(1)',
+          },
+          ProductID: 1,
+          ProductName: 'Chai',
+        }],
+      },
+    }
+  }
+
   if (pathname !== '/sap/opu/odata/sap/Northwind/Categories') {
     throw createError({ statusCode: 404, statusMessage: 'Not Found' })
   }

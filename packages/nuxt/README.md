@@ -54,6 +54,16 @@ const relatedProducts = await useOData('Northwind')
   .fetchNavigationList(1, 'Category/RelatedProducts', { $top: 20 }, { signal })
 ```
 
+During page setup, use `listNavigation<TResult>()` for typed Nuxt AsyncData and
+SSR integration. The explicit result type models the related entity rather
+than incorrectly reusing the parent entity-set type:
+
+```ts
+const { data: relatedProducts } = await useOData('Northwind')
+  .entitySet('Categories')
+  .listNavigation<Product>(1, ['Products'], { $top: 20 })
+```
+
 Contained rows use the same API with a structured source:
 
 ```ts

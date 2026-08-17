@@ -201,6 +201,7 @@ Entity-set methods:
 | `listPage(query?, options?)` | `GET` | Nuxt `AsyncData<{ items: T[]; totalCount?: number }>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchPage(query?, options?)` | `GET` | `Promise<{ items: T[]; totalCount?: number }>` |
+| `listNavigation<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<TResult[]>` compatible promise |
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |

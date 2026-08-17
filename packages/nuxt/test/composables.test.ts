@@ -23,11 +23,11 @@ vi.mock('#imports', () => ({
 // Mock core library
 vi.mock('@me-tools/odx-core', async () => {
   const actual = await vi.importActual('@me-tools/odx-core')
-  const { toODataCollectionPage } = await import('../../core/src/odata-utils')
+  const { flattenOData, toODataCollectionPage } = await import('../../core/src/odata-utils')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
-    flattenOData: vi.fn(data => data),
+    flattenOData,
     stringifyQuery: vi.fn(q => q),
     toODataCollectionPage,
   }
@@ -315,6 +315,28 @@ describe('useOData Composable', () => {
           signal,
         },
       )
+    })
+
+    it('reads a typed navigation collection through AsyncData', () => {
+      const result = useOData('RoutedService' as any)
+        .entitySet('Categories')
+        .listNavigation<{ ProductID: number, ProductName: string }>(
+          1,
+          ['Products'],
+          { $select: ['ProductID', 'ProductName'], $top: 1 },
+        ) as any
+
+      expect(result.url).toBe('/api/odx/routed-api/Categories(1)/Products')
+      expect(result.options.query).toEqual({
+        $select: ['ProductID', 'ProductName'],
+        $top: 1,
+      })
+      expect(result.options.headers).toEqual({ accept: 'application/json' })
+      expect(result.options.transform({
+        d: {
+          results: [{ ProductID: 1, ProductName: 'Chai' }],
+        },
+      })).toEqual([{ ProductID: 1, ProductName: 'Chai' }])
     })
 
     it('accepts segmented navigation reads and rejects unsafe paths', async () => {

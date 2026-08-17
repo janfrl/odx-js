@@ -337,6 +337,17 @@ export interface ODataPagedEntitySet<T = any> extends ODataEntitySet<T> {
   listPage: (query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<ODataCollectionPage<T>>
   /** Imperative counterpart to `listPage`. */
   fetchPage: (query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<ODataCollectionPage<T>>
+  /**
+   * Reads a related collection through Nuxt AsyncData. The caller supplies the
+   * related result model because a navigation path can target another entity
+   * type than the root entity set.
+   */
+  listNavigation: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    query?: ODataQuery<TResult>,
+    options?: any,
+  ) => ODataAsyncDataPromise<TResult[]>
 }
 
 /** Describes a PATCH target below a parent entity navigation path. */

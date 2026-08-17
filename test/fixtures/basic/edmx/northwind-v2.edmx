@@ -8,9 +8,26 @@
         </Key>
         <Property Name="CategoryID" Type="Edm.Int32" Nullable="false" />
         <Property Name="CategoryName" Type="Edm.String" Nullable="false" MaxLength="15" />
+        <NavigationProperty Name="Products" Relationship="NorthwindModel.FK_Products_Categories" FromRole="Categories" ToRole="Products" />
       </EntityType>
+      <EntityType Name="Product">
+        <Key>
+          <PropertyRef Name="ProductID" />
+        </Key>
+        <Property Name="ProductID" Type="Edm.Int32" Nullable="false" />
+        <Property Name="ProductName" Type="Edm.String" Nullable="false" MaxLength="40" />
+      </EntityType>
+      <Association Name="FK_Products_Categories">
+        <End Role="Categories" Type="NorthwindModel.Category" Multiplicity="1" />
+        <End Role="Products" Type="NorthwindModel.Product" Multiplicity="*" />
+      </Association>
       <EntityContainer Name="NorthwindEntities">
         <EntitySet Name="Categories" EntityType="NorthwindModel.Category" />
+        <EntitySet Name="Products" EntityType="NorthwindModel.Product" />
+        <AssociationSet Name="FK_Products_Categories" Association="NorthwindModel.FK_Products_Categories">
+          <End Role="Categories" EntitySet="Categories" />
+          <End Role="Products" EntitySet="Products" />
+        </AssociationSet>
       </EntityContainer>
     </Schema>
   </edmx:DataServices>
