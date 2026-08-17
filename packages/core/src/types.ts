@@ -104,6 +104,11 @@ export interface ODataAsyncData<T> {
  */
 export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncData<T>>
 
+/** Opaque query component for one server-driven collection continuation. */
+export interface ODataContinuation {
+  readonly token: string
+}
+
 /**
  * Serializable collection result for list UIs that need the server-side count.
  * Unlike an extra property attached to an array, this shape survives Nuxt SSR
@@ -112,6 +117,8 @@ export type ODataAsyncDataPromise<T> = ODataAsyncData<T> & Promise<ODataAsyncDat
 export interface ODataCollectionPage<T> {
   items: T[]
   totalCount?: number
+  /** Safe server-driven continuation without a backend origin or path. */
+  continuation?: ODataContinuation
 }
 
 /**
@@ -369,6 +376,21 @@ export interface ODataPagedEntitySet<T = any> extends ODataEntitySet<T> {
   ) => ODataAsyncDataPromise<TResult[]>
 }
 
+/** Entity-set client with safe server-driven paging support. */
+export interface ODataContinuationEntitySet<T = any> extends ODataPagedEntitySet<T> {
+  readonly supportsContinuations: true
+  /** Reads the next page through Nuxt AsyncData on the current entity set. */
+  listNextPage: (
+    continuation: ODataContinuation,
+    options?: any,
+  ) => ODataAsyncDataPromise<ODataCollectionPage<T>>
+  /** Imperatively reads the next page on the current entity set. */
+  fetchNextPage: (
+    continuation: ODataContinuation,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<T>>
+}
+
 /**
  * Entity-set client with explicit access to optimistic-concurrency metadata.
  * Kept separate so existing structural `ODataPagedEntitySet` implementations
@@ -417,6 +439,10 @@ export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<
     options?: ODataRequestOptions,
   ) => Promise<ODataMutationResponse<T>>
 }
+
+/** Complete entity-set capability implemented by the generated ODX client. */
+export type ODataRuntimeEntitySet<T = any>
+  = ODataMergeEntitySet<T> & ODataContinuationEntitySet<T>
 
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
@@ -507,15 +533,19 @@ type ODataServiceContract<
 }
 
 type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
-  = TEntitySet extends ODataMergeEntitySet<any>
-    ? ODataMergeEntitySet<TModel>
-    : TEntitySet extends ODataConcurrencyEntitySet<any>
-      ? ODataConcurrencyEntitySet<TModel>
-      : TEntitySet extends ODataVersionedEntitySet<any>
-        ? ODataVersionedEntitySet<TModel>
-        : TEntitySet extends ODataPagedEntitySet<any>
-          ? ODataPagedEntitySet<TModel>
-          : ODataEntitySet<TModel>
+  = TEntitySet extends ODataRuntimeEntitySet<any>
+    ? ODataRuntimeEntitySet<TModel>
+    : TEntitySet extends ODataMergeEntitySet<any>
+      ? ODataMergeEntitySet<TModel>
+      : TEntitySet extends ODataContinuationEntitySet<any>
+        ? ODataContinuationEntitySet<TModel>
+        : TEntitySet extends ODataConcurrencyEntitySet<any>
+          ? ODataConcurrencyEntitySet<TModel>
+          : TEntitySet extends ODataVersionedEntitySet<any>
+            ? ODataVersionedEntitySet<TModel>
+            : TEntitySet extends ODataPagedEntitySet<any>
+              ? ODataPagedEntitySet<TModel>
+              : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -538,6 +568,10 @@ export type ODataConcurrencyService<E extends string = string, M extends Record<
 /** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
 export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataMergeEntitySet<any>>
+
+/** Complete service capability implemented by the generated ODX client. */
+export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>>
 
 /**
  * Global registry for OData services.

@@ -17,18 +17,21 @@ const runtimeConfig = vi.hoisted(() => ({
 // Mock Nuxt-specific imports
 vi.mock('#imports', () => ({
   useFetch: vi.fn((url, options) => ({ url, options })),
+  useRequestFetch: vi.fn(() => globalThis.$fetch),
   useRuntimeConfig: vi.fn(() => runtimeConfig),
 }))
 
 // Mock core library
 vi.mock('@me-tools/odx-core', async () => {
   const actual = await vi.importActual('@me-tools/odx-core')
-  const { flattenOData, toODataCollectionPage } = await import('../../core/src/odata-utils')
+  const { createODataContinuationPath, flattenOData, toODataCollectionPage } = await import('../../core/src/odata-utils')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
     $odataMutationWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"' })),
+    $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
+    createODataContinuationPath,
     flattenOData,
     stringifyQuery: vi.fn(q => q),
     toODataCollectionPage,
@@ -58,6 +61,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
     expect(entitySet.supportsMerge).toBe(true)
+    expect(entitySet.supportsContinuations).toBe(true)
   })
 
   describe('key Formatting', () => {
@@ -151,6 +155,34 @@ describe('useOData Composable', () => {
       }) as any
 
       expect(page.options.key).toBe('products-page')
+    })
+
+    it('anchors reactive continuation reads to the current proxied entity set', () => {
+      const page = useOData('MyService').entitySet('Products').listNextPage({
+        token: '%24skiptoken=opaque%2Btoken&%24top=1',
+      }) as any
+
+      expect(page.url).toBe('/api/odx/MyService/Products?%24skiptoken=opaque%2Btoken&%24top=1')
+      expect(page.options.query).toBeUndefined()
+      expect(page.options.key).toBe('odx-page:/api/odx/MyService/Products?%24skiptoken=opaque%2Btoken&%24top=1')
+      expect(page.options.transform({
+        d: {
+          results: [{ ID: 2 }],
+          __next: 'https://private.example/Products?%24skiptoken=next%2B2',
+        },
+      })).toEqual({
+        items: [{ ID: 2 }],
+        continuation: { token: '%24skiptoken=next%2B2' },
+      })
+    })
+
+    it('anchors direct continuation reads to the configured service entity set', () => {
+      const page = useOData('DirectService' as any).entitySet('Products').listNextPage({
+        token: '%24skiptoken=next-1',
+      }) as any
+
+      expect(page.url).toBe('https://external.com/odata/Products?%24skiptoken=next-1')
+      expect(page.url).not.toContain('private.sap.example')
     })
 
     it('preserves read headers while allowing an explicit accept override', () => {
@@ -315,9 +347,6 @@ describe('useOData Composable', () => {
     })
 
     it('preserves count information through fetchPage', async () => {
-      const items = [{ ID: 1 }] as Array<{ ID: number }> & { totalCount?: number }
-      items.totalCount = 49
-      vi.mocked(core.$odata).mockResolvedValueOnce(items)
       const signal = new AbortController().signal
 
       const page = await useOData('MyService').entitySet('Products').fetchPage({
@@ -328,15 +357,37 @@ describe('useOData Composable', () => {
       })
 
       expect(page).toEqual({ items: [{ ID: 1 }], totalCount: 49 })
-      expect(core.$odata).toHaveBeenCalledWith(
+      expect(core.$odataPage).toHaveBeenCalledWith(
         expect.any(Function),
         '/api/odx/MyService/Products',
-        'GET',
         {
           headers: { 'X-Correlation-ID': 'page-1' },
           query: { $inlinecount: 'allpages' },
           signal,
         },
+      )
+    })
+
+    it('imperatively follows an opaque continuation on the current entity set', async () => {
+      vi.mocked(core.$odataPage).mockResolvedValueOnce({
+        items: [{ ID: 2 }],
+        continuation: { token: '%24skiptoken=next-2' },
+      })
+      const signal = new AbortController().signal
+
+      const page = await useOData('MyService').entitySet('Products').fetchNextPage(
+        { token: '%24skiptoken=next-1' },
+        { signal },
+      )
+
+      expect(page).toEqual({
+        items: [{ ID: 2 }],
+        continuation: { token: '%24skiptoken=next-2' },
+      })
+      expect(core.$odataPage).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products?%24skiptoken=next-1',
+        { signal },
       )
     })
 

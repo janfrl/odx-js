@@ -1,6 +1,7 @@
 import type { ODataCollectionPage } from './types'
 
 const RE_ODATA_COUNT = /^(?:0|[1-9]\d*)$/
+const MAX_CONTINUATION_TOKEN_LENGTH = 8192
 
 /**
  * Recursive flattener for OData V2/V4 structures and removes metadata.
@@ -70,6 +71,7 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
  * unlike custom properties attached directly to arrays.
  */
 export function toODataCollectionPage<T>(data: unknown): ODataCollectionPage<T> {
+  const continuation = readODataContinuation(data)
   const sourceCount = Array.isArray(data) && Object.hasOwn(data, 'totalCount')
     ? (data as T[] & { totalCount?: unknown }).totalCount
     : undefined
@@ -82,9 +84,84 @@ export function toODataCollectionPage<T>(data: unknown): ODataCollectionPage<T> 
   const items = Array.from(flattened) as T[]
   const totalCount = normalizeODataCount(count)
   if (totalCount === undefined) {
-    return { items }
+    return { items, ...(continuation ? { continuation } : {}) }
   }
-  return { items, totalCount }
+  return { items, totalCount, ...(continuation ? { continuation } : {}) }
+}
+
+function readODataContinuation(data: unknown): { token: string } | undefined {
+  if (!data || typeof data !== 'object' || Array.isArray(data))
+    return undefined
+
+  const record = data as Record<string, unknown>
+  const envelope = isODataV2Envelope(record) ? record.d : record
+  if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope))
+    return undefined
+
+  const collection = envelope as Record<string, unknown>
+  const nextLink = Object.hasOwn(collection, '__next')
+    ? collection.__next
+    : collection['@odata.nextLink']
+  if (nextLink === undefined)
+    return undefined
+  if (typeof nextLink !== 'string')
+    throw new TypeError('Expected the OData continuation link to be a string.')
+
+  const queryStart = nextLink.indexOf('?')
+  if (queryStart < 0)
+    throw new TypeError('Expected the OData continuation link to contain a query.')
+  const fragmentStart = nextLink.indexOf('#', queryStart)
+  const token = nextLink.slice(queryStart + 1, fragmentStart < 0 ? undefined : fragmentStart)
+  return { token: validateODataContinuationToken(token) }
+}
+
+/** Anchors an opaque continuation to the caller-owned collection path. */
+export function createODataContinuationPath(
+  collectionPath: string,
+  continuation: { readonly token: string },
+): string {
+  if (
+    typeof collectionPath !== 'string'
+    || collectionPath.length === 0
+    || hasControlCharacter(collectionPath)
+    || collectionPath.includes('?')
+    || collectionPath.includes('#')
+  ) {
+    throw new TypeError('Expected a query-free OData collection path.')
+  }
+  return `${collectionPath}?${validateODataContinuationToken(continuation.token)}`
+}
+
+function validateODataContinuationToken(token: unknown): string {
+  if (
+    typeof token !== 'string'
+    || token.length === 0
+    || token.length > MAX_CONTINUATION_TOKEN_LENGTH
+    || hasControlCharacter(token)
+    || token.includes('#')
+  ) {
+    throw new TypeError('Expected a valid OData continuation token.')
+  }
+
+  const parameters = new URLSearchParams(token)
+  let parameterCount = 0
+  for (const key of parameters.keys()) {
+    parameterCount += 1
+    if (key.length === 0)
+      throw new TypeError('Expected a valid OData continuation token.')
+  }
+  if (parameterCount === 0)
+    throw new TypeError('Expected a valid OData continuation token.')
+  return token
+}
+
+function hasControlCharacter(value: string): boolean {
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index)
+    if (code <= 0x1F || code === 0x7F)
+      return true
+  }
+  return false
 }
 
 function readODataCollectionCount(data: Record<string, any>): unknown {

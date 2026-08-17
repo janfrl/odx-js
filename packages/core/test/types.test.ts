@@ -2,6 +2,7 @@ import type {
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
   ODataConcurrencyService,
+  ODataContinuationEntitySet,
   ODataEntityResponse,
   ODataEntitySet,
   ODataMergeEntitySet,
@@ -10,6 +11,8 @@ import type {
   ODataPagedService,
   ODataQuery,
   ODataRequestOptions,
+  ODataRuntimeEntitySet,
+  ODataRuntimeService,
   ODataService,
   ODataVersionedEntitySet,
   ODataVersionedService,
@@ -73,5 +76,16 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<Product>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeWithResponse']>>>()
       .toEqualTypeOf<{ data?: Product, etag?: string }>()
+  })
+
+  it('combines generated runtime capabilities without widening additive contracts', () => {
+    type ProductsService = ODataRuntimeService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataRuntimeEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataMergeEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNextPage']>>>()
+      .toEqualTypeOf<ODataCollectionPage<Product>>()
   })
 })

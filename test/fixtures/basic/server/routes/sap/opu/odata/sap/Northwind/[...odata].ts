@@ -79,6 +79,42 @@ export default defineEventHandler(async (event) => {
   }
 
   if (
+    query.$orderby === 'CategoryID'
+    && query.$select === 'CategoryID,CategoryName'
+    && query.$top === '1'
+    && query.$skiptoken === undefined
+    && Object.keys(query).length === 3
+  ) {
+    return {
+      d: {
+        results: [createCategory()],
+        __next: 'https://private.northwind.example/sap/opu/odata/sap/Northwind/Categories?%24orderby=CategoryID&%24select=CategoryID%2CCategoryName&%24top=1&%24skiptoken=CategoryID-1',
+      },
+    }
+  }
+
+  if (
+    query.$orderby === 'CategoryID'
+    && query.$select === 'CategoryID,CategoryName'
+    && query.$top === '1'
+    && query.$skiptoken === 'CategoryID-1'
+    && Object.keys(query).length === 4
+  ) {
+    return {
+      d: {
+        results: [{
+          __metadata: {
+            type: 'NorthwindModel.Category',
+            uri: 'http://localhost/sap/opu/odata/sap/Northwind/Categories(2)',
+          },
+          CategoryID: 2,
+          CategoryName: 'Condiments',
+        }],
+      },
+    }
+  }
+
+  if (
     query.$filter !== 'CategoryID eq 1'
     || (query.$inlinecount !== undefined && query.$inlinecount !== 'allpages')
     || query.$select !== 'CategoryID,CategoryName'

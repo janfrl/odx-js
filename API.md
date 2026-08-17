@@ -198,9 +198,11 @@ Entity-set methods:
 | Method | HTTP | Return |
 | --- | --- | --- |
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
-| `listPage(query?, options?)` | `GET` | Nuxt `AsyncData<{ items: T[]; totalCount?: number }>` compatible promise |
+| `listPage(query?, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<T>>` compatible promise |
+| `listNextPage(continuation, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<T>>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
-| `fetchPage(query?, options?)` | `GET` | `Promise<{ items: T[]; totalCount?: number }>` |
+| `fetchPage(query?, options?)` | `GET` | `Promise<ODataCollectionPage<T>>` |
+| `fetchNextPage(continuation, options?)` | `GET` | `Promise<ODataCollectionPage<T>>` |
 | `listNavigation<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<TResult[]>` compatible promise |
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
@@ -246,13 +248,24 @@ call. Supported values are primitive EDM types; unsupported or malformed values
 are rejected before transport.
 
 Use `listPage` or `fetchPage` when the consumer needs an OData V4
-`@odata.count` or V2 `__count`. Their explicit `{ items, totalCount }` result
+`@odata.count` or V2 `__count`. Their explicit
+`{ items, totalCount, continuation }` result
 survives Nuxt SSR serialization; custom properties attached to arrays do not.
 Request the matching protocol count option with `$count: true` for V4 or
 `$inlinecount: 'allpages'` for V2. Runtime entity sets expose
 `supportsCollectionPages === true`; the additive methods live on
 `ODataPagedEntitySet` and `ODataPagedService` so existing structural
 `ODataEntitySet` and `ODataService` implementations remain valid.
+
+If the backend includes a V2 `__next` or V4 `@odata.nextLink`, the optional
+`continuation` contains only its validated, exactly preserved query component.
+Pass that opaque value unchanged to `listNextPage` or `fetchNextPage` on the
+same entity set. ODX never follows the origin or resource path supplied by the
+backend; it anchors the token to the configured entity-set path. The methods
+and `supportsContinuations === true` marker live on the separate additive
+`ODataContinuationEntitySet` capability. This is a typed-client guarantee,
+not wire-response redaction: consumers of the raw proxy body can still observe
+the backend's original absolute next-link URL.
 
 Use `fetchOneWithResponse` when a later update or delete must carry the
 entity's optimistic-concurrency validator. It intentionally exposes only the

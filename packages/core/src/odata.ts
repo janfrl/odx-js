@@ -1,6 +1,6 @@
 import type { FetchOptions } from 'ofetch'
-import type { ODataEntityResponse, ODataMutationResponse } from './types'
-import { flattenOData, mergeHeaders } from './odata-utils'
+import type { ODataCollectionPage, ODataEntityResponse, ODataMutationResponse } from './types'
+import { flattenOData, mergeHeaders, toODataCollectionPage } from './odata-utils'
 
 export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
 
@@ -22,6 +22,25 @@ export async function $odata<T = unknown>(
     method,
   })
   return flattenOData(res) as T
+}
+
+/**
+ * Executes a collection read while preserving count and safe server-driven
+ * paging metadata in an SSR-serializable page object.
+ */
+export async function $odataPage<T = unknown>(
+  client: { <R>(path: string, options?: any): Promise<R> },
+  service: string,
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
+): Promise<ODataCollectionPage<T>> {
+  const { entitySet, headers, ...requestOptions } = options
+  const path = entitySet ? `${service}/${entitySet}` : service
+  const response = await client<unknown>(path, {
+    ...requestOptions,
+    headers: mergeHeaders({ accept: 'application/json' }, headers as HeadersInit | undefined),
+    method: 'GET',
+  })
+  return toODataCollectionPage<T>(response)
 }
 
 /**

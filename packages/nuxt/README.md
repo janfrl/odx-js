@@ -26,17 +26,32 @@ const { data: page } = await useOData('Northwind')
   .entitySet('Products')
   .listPage({ $inlinecount: 'allpages', $top: 20 })
 
-// page.value?.items and page.value?.totalCount
+// page.value?.items, page.value?.totalCount, and page.value?.continuation
 ```
 
 `fetchPage()` is the imperative equivalent. OData V4 services use
 `{ $count: true }` instead of `$inlinecount`.
+When the backend returns a V2 `__next` or V4 `@odata.nextLink`, continue on the
+same entity set without exposing or following the backend URL:
+
+```ts
+const first = await useOData('Northwind').entitySet('Products').fetchPage({ $top: 20 })
+const second = first.continuation
+  ? await useOData('Northwind').entitySet('Products').fetchNextPage(first.continuation)
+  : undefined
+```
+
+The continuation is an opaque, exactly preserved query component. ODX anchors
+it to the caller-owned entity-set path; applications must not parse, edit, or
+construct continuation tokens themselves. This protects the typed client
+boundary. A raw proxy response remains the backend wire representation and can
+still contain an absolute next-link URL.
 `entitySet.supportsCollectionPages === true` is the explicit runtime signal
 for this additive capability; the original `ODataEntitySet` structural
 contract remains unchanged.
-Generated Nuxt service declarations use the additive `ODataMergeService`
-type, which extends the response-aware `ODataVersionedService` and count-aware
-`ODataPagedService` capabilities;
+`supportsContinuations === true` identifies the separate continuation
+capability. Generated Nuxt service declarations use `ODataRuntimeService`,
+which combines the additive merge, response, count, and continuation contracts;
 the base `ODataService` contract remains valid for existing implementations.
 
 Use `fetchOne()` for imperative key reads outside Nuxt `AsyncData` setup:

@@ -1,9 +1,11 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataCollectionPage, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMergeEntitySet, ODataMergeService, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
-import { useFetch, useRuntimeConfig } from '#imports'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
   $odataMutationWithResponse,
+  $odataPage,
   $odataWithResponse,
+  createODataContinuationPath,
   createODataEntityPath,
   createODataNavigationSourcePath,
   flattenOData,
@@ -36,9 +38,11 @@ interface ODataFetchClient {
  * or standard method calls.
  */
 export function useOData(): ODataServiceRegistry
-export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataMergeService
+export function useOData<T extends RegisteredServiceNames>(service: T): T extends keyof ODataServiceRegistry ? ODataServiceRegistry[T] : ODataRuntimeService
 export function useOData(service?: string): any {
-  const client = globalThis.$fetch as unknown as ODataFetchClient
+  // Server-side imperative reads must retain the active Nitro request context
+  // so relative proxy paths resolve inside the current Nuxt application.
+  const client = (import.meta.server ? useRequestFetch() : globalThis.$fetch) as unknown as ODataFetchClient
 
   const createJsonReadOptions = (options?: unknown): Record<string, any> => {
     const requestOptions = (options ?? {}) as Record<string, any>
@@ -77,7 +81,7 @@ export function useOData(service?: string): any {
     return joinODataPath(basePath, resolveServiceRoute(serviceName))
   }
 
-  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataMergeEntitySet<TModel> => {
+  const createMethods = <TModel = unknown>(serviceName: string, entitySet?: string): ODataRuntimeEntitySet<TModel> => {
     const servicePath = resolveServicePath(serviceName)
     const fullPath = entitySet
       ? joinODataPath(
@@ -102,6 +106,7 @@ export function useOData(service?: string): any {
       supportsEntityResponses: true,
       supportsOptimisticConcurrency: true,
       supportsMerge: true,
+      supportsContinuations: true,
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         const requestOptions = createJsonReadOptions(options)
         return useFetch(fullPath, {
@@ -131,11 +136,29 @@ export function useOData(service?: string): any {
         query?: ODataQuery<TModel>,
         options?: ODataRequestOptions,
       ): Promise<ODataCollectionPage<TModel>> => {
-        const items = await $odata<TModel[]>(client, fullPath, 'GET', {
+        return $odataPage<TModel>(client, fullPath, {
           ...(options as any),
           query: stringifyQuery(query || {}),
         })
-        return toODataCollectionPage<TModel>(items)
+      },
+      listNextPage: (
+        continuation: ODataContinuation,
+        options?: unknown,
+      ): ODataAsyncDataPromise<ODataCollectionPage<TModel>> => {
+        const requestOptions = createJsonReadOptions(options)
+        const continuationPath = createODataContinuationPath(fullPath, continuation)
+        return useFetch(continuationPath, {
+          ...requestOptions,
+          key: requestOptions.key ?? `odx-page:${continuationPath}`,
+          transform: (data: any) => toODataCollectionPage<TModel>(data),
+        }) as unknown as ODataAsyncDataPromise<ODataCollectionPage<TModel>>
+      },
+      fetchNextPage: (
+        continuation: ODataContinuation,
+        options?: ODataRequestOptions,
+      ): Promise<ODataCollectionPage<TModel>> => {
+        const continuationPath = createODataContinuationPath(fullPath, continuation)
+        return $odataPage<TModel>(client, continuationPath, options as any)
       },
 
       listNavigation: <TResult = unknown>(
@@ -410,7 +433,7 @@ export function useOData(service?: string): any {
     return parseODataChangeSetResponse(response._data, contentType)
   }
 
-  const createServiceProxy = (serviceName: string): ODataMergeService => {
+  const createServiceProxy = (serviceName: string): ODataRuntimeService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
       changeSet: createChangeSet(serviceName),
     })

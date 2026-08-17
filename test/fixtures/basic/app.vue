@@ -16,6 +16,14 @@ const { data: categoryPage } = await northwindCategories.listPage({
   $select: ['CategoryID', 'CategoryName'],
   $top: 1,
 })
+const { data: categoryContinuationPage } = await northwindCategories.listPage({
+  $orderby: 'CategoryID',
+  $select: ['CategoryID', 'CategoryName'],
+  $top: 1,
+})
+const nextCategoryPage = categoryContinuationPage.value?.continuation
+  ? await northwindCategories.fetchNextPage(categoryContinuationPage.value.continuation)
+  : undefined
 const { data: category } = await northwindCategories.get(1, {
   $select: ['CategoryID', 'CategoryName'],
 })
@@ -38,6 +46,12 @@ const { data: relatedProducts } = await northwindCategories.listNavigation<{
   </div>
   <div id="northwind-uncounted-category-page">
     Northwind Page Category: {{ uncountedCategoryPage?.items[0]?.CategoryName ?? 'missing' }}
+  </div>
+  <div id="northwind-continuation-category">
+    Northwind Continuation Category: {{ nextCategoryPage?.items[0]?.CategoryName ?? 'missing' }}
+  </div>
+  <div id="northwind-continuation-safe">
+    Northwind Continuation Safe: {{ JSON.stringify(categoryContinuationPage).includes('private.northwind.example') ? 'false' : 'true' }}
   </div>
   <div id="northwind-category-detail">
     Northwind Category Detail: {{ category ? `${category.CategoryID} / ${category.CategoryName}` : 'missing' }}

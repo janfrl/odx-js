@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery, toODataCollectionPage } from '../src/odata-utils'
+import { createODataContinuationPath, flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery, toODataCollectionPage } from '../src/odata-utils'
 
 describe('oData Utils', () => {
   describe('sanitizeBaseURL', () => {
@@ -191,6 +191,24 @@ describe('oData Utils', () => {
       expect(JSON.parse(JSON.stringify(page))).toEqual(page)
     })
 
+    it('projects a V2 continuation into a safe reusable query', () => {
+      const page = toODataCollectionPage<{ ID: number }>({
+        d: {
+          results: [{ ID: 1 }],
+          __next: 'https://private.sap.example/sap/opu/odata/Demo/Products?%24skiptoken=opaque%2Btoken&%24top=1',
+        },
+      })
+
+      expect(page).toEqual({
+        items: [{ ID: 1 }],
+        continuation: {
+          token: '%24skiptoken=opaque%2Btoken&%24top=1',
+        },
+      })
+      expect(JSON.stringify(page)).not.toContain('private.sap.example')
+      expect(JSON.parse(JSON.stringify(page))).toEqual(page)
+    })
+
     it('normalizes an OData V4 count', () => {
       expect(toODataCollectionPage<{ ID: number }>({
         '@odata.count': 2,
@@ -199,6 +217,51 @@ describe('oData Utils', () => {
         items: [{ ID: 1 }, { ID: 2 }],
         totalCount: 2,
       })
+    })
+
+    it('projects a relative V4 next link without retaining its path', () => {
+      expect(toODataCollectionPage<{ ID: number }>({
+        '@odata.nextLink': '/odata/Products?%24skiptoken=v4-token#ignored',
+        'value': [{ ID: 1 }],
+      })).toEqual({
+        items: [{ ID: 1 }],
+        continuation: { token: '%24skiptoken=v4-token' },
+      })
+    })
+
+    it('anchors an opaque continuation to the caller-owned collection path', () => {
+      const page = toODataCollectionPage<{ ID: number }>({
+        d: {
+          results: [{ ID: 1 }],
+          __next: 'https://hostile.example/other/path?%24skiptoken=opaque%2Btoken&%24top=1',
+        },
+      })
+
+      expect(createODataContinuationPath('/api/odx/Catalog/Products', page.continuation!))
+        .toBe('/api/odx/Catalog/Products?%24skiptoken=opaque%2Btoken&%24top=1')
+    })
+
+    it('preserves duplicate continuation parameters exactly', () => {
+      const page = toODataCollectionPage<{ ID: number }>({
+        d: {
+          results: [],
+          __next: '/Products?cursor=one&cursor=two%2Bthree',
+        },
+      })
+
+      expect(page.continuation).toEqual({ token: 'cursor=one&cursor=two%2Bthree' })
+      expect(createODataContinuationPath('/Products', page.continuation!))
+        .toBe('/Products?cursor=one&cursor=two%2Bthree')
+    })
+
+    it.each([
+      '',
+      '/Products?existing=true',
+      '/Products#fragment',
+      '/Products\nOther',
+    ])('rejects a non-canonical continuation collection path %j', (path) => {
+      expect(() => createODataContinuationPath(path, { token: 'cursor=one' }))
+        .toThrow('collection path')
     })
 
     it('preserves a count from an already flattened imperative response', () => {
@@ -220,6 +283,21 @@ describe('oData Utils', () => {
 
     it('rejects non-collection responses', () => {
       expect(() => toODataCollectionPage({ d: { ID: 1 } })).toThrow('collection response')
+    })
+
+    it.each([
+      null,
+      42,
+      '',
+      'https://private.sap.example/Products',
+      'https://private.sap.example/Products?',
+      '?=unnamed',
+      `?%24skiptoken=${'x'.repeat(8192)}`,
+      '?%24skiptoken=line\nbreak',
+    ])('rejects the malformed continuation %j', (nextLink) => {
+      expect(() => toODataCollectionPage({
+        d: { results: [], __next: nextLink },
+      })).toThrow('continuation')
     })
 
     it.each([

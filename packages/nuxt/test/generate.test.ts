@@ -301,8 +301,8 @@ describe('type Generation Logic', () => {
 
       expect(result).toContain('import * as Svc1Models from "./Svc1/Svc1Model"')
       expect(result).toContain('import * as Svc2Models from "./Svc2/Svc2Model"')
-      expect(result).toContain('Svc1: ODataMergeService<"Products" | "Categories", { "Products": Svc1Models.Product, "Categories": Svc1Models.Category }>')
-      expect(result).toContain('Svc2: ODataMergeService<"Orders", { "Orders": Svc2Models.Order }>')
+      expect(result).toContain('Svc1: ODataRuntimeService<"Products" | "Categories", { "Products": Svc1Models.Product, "Categories": Svc1Models.Category }>')
+      expect(result).toContain('Svc2: ODataRuntimeService<"Orders", { "Orders": Svc2Models.Order }>')
     })
 
     it('handles services without model files', () => {
@@ -313,7 +313,7 @@ describe('type Generation Logic', () => {
 
       const result = generateRegistryDts(serviceEntities, serviceModelFiles)
 
-      expect(result).toContain('SvcEmpty: ODataMergeService<"Items", Record<string, any>>')
+      expect(result).toContain('SvcEmpty: ODataRuntimeService<"Items", Record<string, any>>')
     })
 
     it('handles services without entities', () => {
@@ -326,7 +326,7 @@ describe('type Generation Logic', () => {
 
       const result = generateRegistryDts(serviceEntities, serviceModelFiles)
 
-      expect(result).toContain('SvcNoEntities: ODataMergeService<string, {  }>')
+      expect(result).toContain('SvcNoEntities: ODataRuntimeService<string, {  }>')
     })
 
     it('generates valid declarations for non-identifier service names', () => {
@@ -342,9 +342,9 @@ describe('type Generation Logic', () => {
       const result = generateRegistryDts(serviceEntities, serviceModelFiles)
 
       expect(result).toContain('import * as Sales_OrderModels from "./Sales-Order/SalesOrderModel"')
-      expect(result).toContain('"Sales-Order": ODataMergeService<"Order Items", { "Order Items": Sales_OrderModels.SalesOrderItem }>')
+      expect(result).toContain('"Sales-Order": ODataRuntimeService<"Order Items", { "Order Items": Sales_OrderModels.SalesOrderItem }>')
       expect(result).not.toContain('import * as Sales-OrderModels')
-      expect(result).not.toContain('Sales-Order: ODataMergeService')
+      expect(result).not.toContain('Sales-Order: ODataRuntimeService')
     })
   })
 })

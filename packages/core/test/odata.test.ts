@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { $odata, $odataMutationWithResponse, $odataWithResponse } from '../src/odata'
+import { $odata, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
 
 describe('$odata fetcher', () => {
   it('constructs the correct URL for basic requests', async () => {
@@ -67,6 +67,32 @@ describe('$odata fetcher', () => {
         'x-correlation-id': 'request-1',
       },
       method: 'GET',
+    })
+  })
+})
+
+describe('$odataPage fetcher', () => {
+  it('preserves a safe continuation query without exposing the backend link', async () => {
+    const client = vi.fn().mockResolvedValue({
+      d: {
+        results: [{ ID: 1 }],
+        __next: 'https://private.sap.example/Products?%24skiptoken=next-1',
+      },
+    })
+
+    const page = await $odataPage<{ ID: number }>(client, 'S', {
+      entitySet: 'Products',
+      query: { $top: 1 },
+    })
+
+    expect(page).toEqual({
+      items: [{ ID: 1 }],
+      continuation: { token: '%24skiptoken=next-1' },
+    })
+    expect(client).toHaveBeenCalledWith('S/Products', {
+      headers: { accept: 'application/json' },
+      method: 'GET',
+      query: { $top: 1 },
     })
   })
 })

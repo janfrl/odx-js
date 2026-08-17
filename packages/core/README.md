@@ -21,6 +21,9 @@ body-only helper, and arbitrary response headers are not exposed.
 is optional because a valid PATCH may return `204 No Content` while still
 providing the next ETag. Both low-level request helpers support explicit
 `MERGE` for SAP Gateway OData V2 updates; PATCH remains distinct.
+`$odataPage` is the collection counterpart: it preserves counts and projects
+server-driven next links into a safe query-only continuation without exposing
+the backend origin or resource path.
 
 The `@me-tools/odx-core/server` entry also projects parsed
 `@me-tools/odx-metadata` documents into the established entity, navigation,

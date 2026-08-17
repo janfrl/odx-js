@@ -86,18 +86,43 @@ describe('nuxt ODX Module Integration', async () => {
   })
 
   it('renders a canonical Northwind V2 query through the generated composable and local proxy', async () => {
-    const html = await $fetch<string>('/')
+    const response = await fetch('/')
+    const html = await response.text()
+    expect(response.status, html).toBe(200)
 
     expect(html).toContain('Northwind Category: Beverages')
     expect(html).toContain('Northwind Category Count: 49')
     expect(html).toContain('Northwind Page Category: Beverages')
+    expect(html).toContain('Northwind Continuation Category: Condiments')
+    expect(html).toContain('Northwind Continuation Safe: true')
     expect(html).toContain('Northwind Category Detail: 1 / Beverages')
     expect(html).toContain('Northwind Related Product: Chai')
     expect(html).not.toContain('Northwind Category: missing')
     expect(html).not.toContain('Northwind Category Count: missing')
     expect(html).not.toContain('Northwind Page Category: missing')
+    expect(html).not.toContain('private.northwind.example')
     expect(html).not.toContain('Northwind Category Detail: missing')
     expect(html).not.toContain('Northwind Related Product: missing')
+  })
+
+  it('proxies deterministic Northwind V2 continuation pages without rewriting their query', async () => {
+    const first = await $fetch<any>('/api/odx/northwind/Categories', {
+      headers: { accept: 'application/json' },
+      query: {
+        $orderby: 'CategoryID',
+        $select: 'CategoryID,CategoryName',
+        $top: 1,
+      },
+    })
+    expect(first.d.results[0].CategoryName).toBe('Beverages')
+    expect(first.d.__next).toContain('private.northwind.example')
+
+    const second = await $fetch<any>('/api/odx/northwind/Categories?%24orderby=CategoryID&%24select=CategoryID%2CCategoryName&%24top=1&%24skiptoken=CategoryID-1', {
+      headers: { accept: 'application/json' },
+    })
+    expect(second).toMatchObject({
+      d: { results: [{ CategoryID: 2, CategoryName: 'Condiments' }] },
+    })
   })
 
   it('forwards a canonical Northwind entity ETag through the proxy', async () => {

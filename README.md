@@ -85,9 +85,12 @@ const { data, refresh } = await useOData('Northwind').entitySet('Products').list
 ```
 
 For count-aware tables, `listPage()` returns an SSR-safe
-`{ items, totalCount }` object and supports V4 `$count` as well as V2
-`$inlinecount` queries. `fetchPage()` provides the same result for imperative
-reads.
+`{ items, totalCount, continuation }` object and supports V4 `$count` as well
+as V2 `$inlinecount` queries. `fetchPage()` provides the same result for
+imperative reads. If a continuation is present, pass it unchanged to
+`listNextPage()` or `fetchNextPage()` on the same entity set. ODX retains the
+backend's exact query component but anchors it to the configured entity-set
+path instead of following an absolute next-link URL.
 
 ## 🛠️ Development
 The supported toolchain is Node.js 22 or 24 with pnpm 10 or 11. The repository
