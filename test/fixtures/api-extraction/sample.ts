@@ -20,7 +20,8 @@ export interface SampleInterface {
 /**
  * A sample type alias.
  */
-export interface SampleType {
+// eslint-disable-next-line ts/consistent-type-definitions -- fixture exercises API type-alias extraction
+export type SampleType = {
   /**
    * ID of the type.
    */
@@ -30,9 +31,10 @@ export interface SampleType {
 /**
  * A sample function.
  * @param param1 The first parameter.
- * @param _param2 An optional second parameter.
+ * @param param2 An optional second parameter.
  */
-export function sampleFunction(param1: string, _param2: number = 42): boolean {
+export function sampleFunction(param1: string, param2: number = 42): boolean {
+  void param2
   return !!param1
 }
 

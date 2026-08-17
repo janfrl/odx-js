@@ -58,4 +58,30 @@ describe('api extractor', () => {
     expect(p2.default).toBe('42')
     expect(p2.required).toBe(false)
   })
+
+  it('extracts exported class constructor contracts', () => {
+    const classFile = project.createSourceFile('api-class.ts', `
+      /** A public failure with structured context. */
+      export class PublicFailure extends Error {
+        constructor(code: string, details: readonly string[] = []) {
+          super(code)
+        }
+      }
+    `, { overwrite: true })
+    const result = extractor.extractClass(classFile.getClassOrThrow('PublicFailure'))
+
+    expect(result).toEqual({
+      title: 'PublicFailure',
+      description: 'A public failure with structured context.',
+      properties: [
+        expect.objectContaining({ name: 'code', type: 'string', required: true }),
+        expect.objectContaining({
+          name: 'details',
+          type: 'readonly string[]',
+          default: '[]',
+          required: false,
+        }),
+      ],
+    })
+  })
 })

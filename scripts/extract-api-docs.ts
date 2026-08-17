@@ -1,4 +1,4 @@
-import type { FunctionDeclaration, InterfaceDeclaration, TypeAliasDeclaration } from 'ts-morph'
+import type { ClassDeclaration, FunctionDeclaration, InterfaceDeclaration, TypeAliasDeclaration } from 'ts-morph'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
@@ -162,6 +162,24 @@ export function extractFunction(node: FunctionDeclaration): ApiItem | undefined 
   }
 }
 
+/** Extracts the public constructor contract from an exported class. */
+export function extractClass(node: ClassDeclaration): ApiItem | undefined {
+  const name = node.getName()
+  if (!name)
+    return undefined
+
+  const { description } = getDocs(node)
+  const constructor = node.getConstructors()[0]
+  const properties: ApiProperty[] = (constructor?.getParameters() ?? []).map(parameter => ({
+    name: parameter.getName(),
+    type: normalizeType(parameter.getType().getText(parameter)),
+    default: parameter.getInitializer()?.getText(),
+    required: !parameter.hasQuestionToken() && !parameter.getInitializer(),
+  }))
+
+  return { title: name, description, properties }
+}
+
 async function main() {
   consola.start('API Reference Extractor: Initializing...')
 
@@ -197,6 +215,9 @@ async function main() {
           }
           else if (Node.isFunctionDeclaration(declaration)) {
             item = extractFunction(declaration)
+          }
+          else if (Node.isClassDeclaration(declaration)) {
+            item = extractClass(declaration)
           }
 
           if (item) {
