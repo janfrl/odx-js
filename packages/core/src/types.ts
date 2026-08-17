@@ -389,6 +389,34 @@ export interface ODataContinuationEntitySet<T = any> extends ODataPagedEntitySet
     continuation: ODataContinuation,
     options?: ODataRequestOptions,
   ) => Promise<ODataCollectionPage<T>>
+  /** Reads a page from a related collection through Nuxt AsyncData. */
+  listNavigationPage: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    query?: ODataQuery<TResult>,
+    options?: any,
+  ) => ODataAsyncDataPromise<ODataCollectionPage<TResult>>
+  /** Imperative counterpart to `listNavigationPage`. */
+  fetchNavigationPage: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<TResult>>
+  /** Continues a related collection through Nuxt AsyncData. */
+  listNavigationNextPage: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    continuation: ODataContinuation,
+    options?: any,
+  ) => ODataAsyncDataPromise<ODataCollectionPage<TResult>>
+  /** Imperatively continues a related collection on the same navigation path. */
+  fetchNavigationNextPage: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    continuation: ODataContinuation,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<TResult>>
 }
 
 /**

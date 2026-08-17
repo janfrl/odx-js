@@ -35,6 +35,20 @@ const { data: relatedProducts } = await northwindCategories.listNavigation<{
   ['Products'],
   { $select: ['ProductID', 'ProductName'], $top: 1 },
 )
+const { data: relatedProductPage } = await northwindCategories.listNavigationPage<{
+  ProductID: number
+  ProductName: string
+}>(
+  1,
+  ['Products'],
+  { $orderby: 'ProductID', $select: ['ProductID', 'ProductName'], $top: 1 },
+)
+const nextRelatedProductPage = relatedProductPage.value?.continuation
+  ? await northwindCategories.fetchNavigationNextPage<{
+      ProductID: number
+      ProductName: string
+    }>(1, ['Products'], relatedProductPage.value.continuation)
+  : undefined
 </script>
 
 <template>
@@ -58,5 +72,8 @@ const { data: relatedProducts } = await northwindCategories.listNavigation<{
   </div>
   <div id="northwind-related-product">
     Northwind Related Product: {{ relatedProducts[0]?.ProductName ?? 'missing' }}
+  </div>
+  <div id="northwind-related-product-continuation">
+    Northwind Related Product Continuation: {{ nextRelatedProductPage?.items[0]?.ProductName ?? 'missing' }}
   </div>
 </template>

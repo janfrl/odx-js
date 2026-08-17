@@ -53,6 +53,10 @@ contract remains unchanged.
 capability. Generated Nuxt service declarations use `ODataRuntimeService`,
 which combines the additive merge, response, count, and continuation contracts;
 the base `ODataService` contract remains valid for existing implementations.
+The same capability covers related collections through
+`listNavigationPage()`, `fetchNavigationPage()`,
+`listNavigationNextPage()`, and `fetchNavigationNextPage()`. ODX anchors those
+tokens to the validated parent key and navigation path.
 
 Use `fetchOne()` for imperative key reads outside Nuxt `AsyncData` setup:
 

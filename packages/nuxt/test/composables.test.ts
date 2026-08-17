@@ -391,6 +391,66 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('reads and continues a related collection page on its navigation path', async () => {
+      const entitySet = useOData('MyService').entitySet('Categories')
+      const reactivePage = entitySet.listNavigationPage<{ ProductID: number }>(
+        1,
+        ['Products'],
+        { $top: 1 },
+      ) as any
+
+      expect(reactivePage.url).toBe('/api/odx/MyService/Categories(1)/Products')
+      expect(reactivePage.options.query).toEqual({ $top: 1 })
+      expect(reactivePage.options.transform({
+        d: {
+          results: [{ ProductID: 1 }],
+          __next: 'https://private.example/Categories(1)/Products?%24skiptoken=ProductID-1',
+        },
+      })).toEqual({
+        items: [{ ProductID: 1 }],
+        continuation: { token: '%24skiptoken=ProductID-1' },
+      })
+
+      const nextPage = entitySet.listNavigationNextPage<{ ProductID: number }>(
+        1,
+        ['Products'],
+        { token: '%24skiptoken=ProductID-1' },
+      ) as any
+      expect(nextPage.url)
+        .toBe('/api/odx/MyService/Categories(1)/Products?%24skiptoken=ProductID-1')
+    })
+
+    it('imperatively preserves navigation page typing and cancellation', async () => {
+      const signal = new AbortController().signal
+      const entitySet = useOData('MyService').entitySet('Categories')
+
+      await entitySet.fetchNavigationPage<{ ProductID: number }>(
+        1,
+        'Products',
+        { $top: 1 },
+        { signal },
+      )
+      await entitySet.fetchNavigationNextPage<{ ProductID: number }>(
+        1,
+        'Products',
+        { token: '%24skiptoken=ProductID-1' },
+        { signal },
+      )
+
+      expect(core.$odataPage).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/MyService/Categories(1)/Products',
+        { query: { $top: 1 }, signal },
+      )
+      expect(core.$odataPage).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/MyService/Categories(1)/Products?%24skiptoken=ProductID-1',
+        { signal },
+      )
+    })
+
     it('reads a single entity and forwards query and cancellation', async () => {
       const signal = new AbortController().signal
       const api = useOData('RoutedService' as any)

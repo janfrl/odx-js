@@ -204,7 +204,11 @@ Entity-set methods:
 | `fetchPage(query?, options?)` | `GET` | `Promise<ODataCollectionPage<T>>` |
 | `fetchNextPage(continuation, options?)` | `GET` | `Promise<ODataCollectionPage<T>>` |
 | `listNavigation<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<TResult[]>` compatible promise |
+| `listNavigationPage<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<TResult>>` compatible promise |
+| `listNavigationNextPage<TResult>(source, path, continuation, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<TResult>>` compatible promise |
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
+| `fetchNavigationPage<TResult>(source, path, query?, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
+| `fetchNavigationNextPage<TResult>(source, path, continuation, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
@@ -266,6 +270,11 @@ and `supportsContinuations === true` marker live on the separate additive
 `ODataContinuationEntitySet` capability. This is a typed-client guarantee,
 not wire-response redaction: consumers of the raw proxy body can still observe
 the backend's original absolute next-link URL.
+Related collections use the corresponding `listNavigationPage`,
+`fetchNavigationPage`, `listNavigationNextPage`, and
+`fetchNavigationNextPage` methods. Their continuation is anchored to the same
+validated parent source and navigation path, which keeps object-page line-item
+paging from trusting a path supplied by the backend.
 
 Use `fetchOneWithResponse` when a later update or delete must carry the
 entity's optimistic-concurrency validator. It intentionally exposes only the

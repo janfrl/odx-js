@@ -97,12 +97,14 @@ describe('nuxt ODX Module Integration', async () => {
     expect(html).toContain('Northwind Continuation Safe: true')
     expect(html).toContain('Northwind Category Detail: 1 / Beverages')
     expect(html).toContain('Northwind Related Product: Chai')
+    expect(html).toContain('Northwind Related Product Continuation: Chang')
     expect(html).not.toContain('Northwind Category: missing')
     expect(html).not.toContain('Northwind Category Count: missing')
     expect(html).not.toContain('Northwind Page Category: missing')
     expect(html).not.toContain('private.northwind.example')
     expect(html).not.toContain('Northwind Category Detail: missing')
     expect(html).not.toContain('Northwind Related Product: missing')
+    expect(html).not.toContain('Northwind Related Product Continuation: missing')
   })
 
   it('proxies deterministic Northwind V2 continuation pages without rewriting their query', async () => {

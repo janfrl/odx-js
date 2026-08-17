@@ -87,5 +87,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNextPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationPage']>>>()
+      .toEqualTypeOf<ODataCollectionPage<unknown>>()
   })
 })

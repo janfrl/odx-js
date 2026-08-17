@@ -160,6 +160,71 @@ export function useOData(service?: string): any {
         const continuationPath = createODataContinuationPath(fullPath, continuation)
         return $odataPage<TModel>(client, continuationPath, options as any)
       },
+      listNavigationPage: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        query?: ODataQuery<TResult>,
+        options?: unknown,
+      ): ODataAsyncDataPromise<ODataCollectionPage<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const requestOptions = createJsonReadOptions(options)
+        const requestQuery = stringifyQuery(query || {})
+        return useFetch(navigationUrl, {
+          ...requestOptions,
+          key: requestOptions.key ?? createPageReadKey(navigationUrl, requestQuery),
+          query: requestQuery,
+          transform: (data: any) => toODataCollectionPage<TResult>(data),
+        }) as unknown as ODataAsyncDataPromise<ODataCollectionPage<TResult>>
+      },
+      fetchNavigationPage: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        query?: ODataQuery<TResult>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataCollectionPage<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        return $odataPage<TResult>(client, navigationUrl, {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+        })
+      },
+      listNavigationNextPage: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        continuation: ODataContinuation,
+        options?: unknown,
+      ): ODataAsyncDataPromise<ODataCollectionPage<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const continuationPath = createODataContinuationPath(navigationUrl, continuation)
+        const requestOptions = createJsonReadOptions(options)
+        return useFetch(continuationPath, {
+          ...requestOptions,
+          key: requestOptions.key ?? `odx-page:${continuationPath}`,
+          transform: (data: any) => toODataCollectionPage<TResult>(data),
+        }) as unknown as ODataAsyncDataPromise<ODataCollectionPage<TResult>>
+      },
+      fetchNavigationNextPage: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        continuation: ODataContinuation,
+        options?: ODataRequestOptions,
+      ): Promise<ODataCollectionPage<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const continuationPath = createODataContinuationPath(navigationUrl, continuation)
+        return $odataPage<TResult>(client, continuationPath, options as any)
+      },
 
       listNavigation: <TResult = unknown>(
         source: ODataNavigationSource,

@@ -53,6 +53,35 @@ export default defineEventHandler(async (event) => {
 
   if (pathname === '/sap/opu/odata/sap/Northwind/Categories(1)/Products') {
     if (
+      query.$orderby === 'ProductID'
+      && query.$select === 'ProductID,ProductName'
+      && query.$top === '1'
+      && query.$skiptoken === undefined
+      && Object.keys(query).length === 3
+    ) {
+      return {
+        d: {
+          results: [createProduct(1, 'Chai')],
+          __next: 'https://private.northwind.example/sap/opu/odata/sap/Northwind/Categories(1)/Products?%24orderby=ProductID&%24select=ProductID%2CProductName&%24top=1&%24skiptoken=ProductID-1',
+        },
+      }
+    }
+
+    if (
+      query.$orderby === 'ProductID'
+      && query.$select === 'ProductID,ProductName'
+      && query.$top === '1'
+      && query.$skiptoken === 'ProductID-1'
+      && Object.keys(query).length === 4
+    ) {
+      return {
+        d: {
+          results: [createProduct(2, 'Chang')],
+        },
+      }
+    }
+
+    if (
       query.$select !== 'ProductID,ProductName'
       || query.$top !== '1'
       || Object.keys(query).length !== 2
@@ -62,14 +91,7 @@ export default defineEventHandler(async (event) => {
 
     return {
       d: {
-        results: [{
-          __metadata: {
-            type: 'NorthwindModel.Product',
-            uri: 'http://localhost/sap/opu/odata/sap/Northwind/Products(1)',
-          },
-          ProductID: 1,
-          ProductName: 'Chai',
-        }],
+        results: [createProduct(1, 'Chai')],
       },
     }
   }
@@ -140,5 +162,16 @@ function createCategory(): Record<string, unknown> {
     },
     CategoryID: 1,
     CategoryName: category.name,
+  }
+}
+
+function createProduct(productId: number, productName: string): Record<string, unknown> {
+  return {
+    __metadata: {
+      type: 'NorthwindModel.Product',
+      uri: `http://localhost/sap/opu/odata/sap/Northwind/Products(${productId})`,
+    },
+    ProductID: productId,
+    ProductName: productName,
   }
 }
