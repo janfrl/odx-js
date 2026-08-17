@@ -55,6 +55,47 @@ describe('proxy integration', () => {
           proxyMode: 'stream',
         },
         {
+          name: 'CsrfBufferService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          headers: {
+            Cookie: 'configured=value; SAP_SESSIONID=stale',
+          },
+          csrf: { mode: 'sap' },
+        },
+        {
+          name: 'TokenlessCsrfBufferService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          csrf: { mode: 'sap' },
+        },
+        {
+          name: 'TokenlessCsrfStreamService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'stream',
+          csrf: { mode: 'sap', fetchMethod: 'GET' },
+        },
+        {
+          name: 'InvalidCsrfService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'buffer',
+          csrf: { mode: 'disabled' } as any,
+        },
+        {
+          name: 'CsrfStreamService',
+          url: backendUrl,
+          strategy: 'proxied',
+          proxyMode: 'stream',
+          csrf: {
+            mode: 'sap',
+            fetchMethod: 'GET',
+          },
+        },
+        {
           name: 'DirectService',
           url: backendUrl,
           strategy: 'direct',
@@ -158,6 +199,7 @@ describe('proxy integration', () => {
     })
 
     expect(response.status).toBe(201)
+    expect(response.headers.get('location')).toBeNull()
     expect(response._data.d).toMatchObject({
       ID: 'created-1',
       Name: 'Created Product',
@@ -168,6 +210,29 @@ describe('proxy integration', () => {
     expect(log?.responseBody).toMatchObject({
       ID: 'created-1',
       Name: 'Created Product',
+    })
+  })
+
+  it('does not expose absolute backend locations from streamed responses', async () => {
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/StreamService/CreatedProducts`, {
+      method: 'POST',
+      body: { Name: 'Streamed Product' },
+    })
+
+    expect(response.status).toBe(201)
+    expect(response.headers.get('location')).toBeNull()
+  })
+
+  it('keeps legacy services without a CSRF policy compatible', async () => {
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/TestService/CreatedProducts`, {
+      method: 'POST',
+      body: { Name: 'Legacy Product' },
+    })
+
+    expect(response.status).toBe(201)
+    expect(response._data.d).toMatchObject({
+      ID: 'created-1',
+      Name: 'Legacy Product',
     })
   })
 
@@ -207,6 +272,111 @@ describe('proxy integration', () => {
     const [log] = await getODataLogs()
     expect(log?.status).toBe(204)
     expect(log?.responseBody).toBeUndefined()
+  })
+
+  it('prepares a request-scoped SAP session for opted-in buffered mutations', async () => {
+    clearODataLogs()
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/CsrfBufferService/CsrfProducts`, {
+      method: 'PATCH',
+      headers: {
+        'if-match': 'W/"1"',
+      },
+      body: {
+        Name: 'Buffered Desk',
+      },
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('etag')).toBe('W/"2"')
+    expect(response.headers.get('set-cookie')).toBeNull()
+    expect(response._data.d).toMatchObject({
+      Name: 'Buffered Desk',
+      csrfValidated: true,
+      sessionValidated: true,
+      preflightMethod: 'HEAD',
+      ifMatch: 'W/"1"',
+    })
+    const [log] = await getODataLogs()
+    expect(JSON.stringify(log)).not.toContain('csrf-head-token')
+    expect(JSON.stringify(log)).not.toContain('SAP_SESSIONID')
+    expect(JSON.stringify(log)).not.toContain('sap-usercontext')
+  })
+
+  it('prepares the same SAP mutation contract for streamed responses', async () => {
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/CsrfStreamService/CsrfProducts`, {
+      method: 'PATCH',
+      headers: {
+        'if-match': 'W/"1"',
+      },
+      body: {
+        Name: 'Streamed Chair',
+      },
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('etag')).toBe('W/"2"')
+    expect(response.headers.get('set-cookie')).toBeNull()
+    expect(response._data.d).toMatchObject({
+      Name: 'Streamed Chair',
+      csrfValidated: true,
+      sessionValidated: true,
+      preflightMethod: 'GET',
+      ifMatch: 'W/"1"',
+    })
+  })
+
+  it.each([
+    ['CsrfBufferService', 'HEAD'],
+    ['CsrfStreamService', 'GET'],
+  ])('prepares SAP CSRF headers for OData V2 MERGE mutations through %s', async (serviceName, preflightMethod) => {
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/${serviceName}/CsrfProducts`, {
+      method: 'MERGE',
+      headers: {
+        'content-type': 'application/json',
+        'if-match': 'W/\"1\"',
+      },
+      body: JSON.stringify({
+        Name: 'Merged Cabinet',
+      }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(response._data.d).toMatchObject({
+      Name: 'Merged Cabinet',
+      csrfValidated: true,
+      sessionValidated: true,
+      preflightMethod,
+    })
+  })
+
+  it.each([
+    'TokenlessCsrfBufferService',
+    'TokenlessCsrfStreamService',
+  ])('fails closed before a tokenless %s mutation reaches the backend', async (serviceName) => {
+    const error = await ofetch.raw(`${proxyUrl}/api/odx/${serviceName}/TokenlessCsrfProducts`, {
+      method: 'PATCH',
+      body: { Name: 'Must not reach backend' },
+      ignoreResponseError: true,
+    })
+
+    expect(error.status).toBe(502)
+    expect(JSON.stringify(error._data)).not.toContain(backendUrl)
+    expect(await ofetch(`${backendUrl}/TokenlessCsrfStats`)).toEqual({
+      tokenlessMutationCount: 0,
+    })
+  })
+
+  it('rejects an invalid server CSRF policy instead of silently disabling protection', async () => {
+    const error = await ofetch.raw(`${proxyUrl}/api/odx/InvalidCsrfService/TokenlessCsrfProducts`, {
+      method: 'PATCH',
+      body: { Name: 'Must not reach backend' },
+      ignoreResponseError: true,
+    })
+
+    expect(error.status).toBe(500)
+    expect(await ofetch(`${backendUrl}/TokenlessCsrfStats`)).toEqual({
+      tokenlessMutationCount: 0,
+    })
   })
 
   it('skips log-only flattening for buffered responses when DevTools are disabled', async () => {

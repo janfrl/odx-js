@@ -53,6 +53,40 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     return result
   }
 
+  const parseCsrfMode = (value: unknown): 'sap' | 'none' | undefined => {
+    if (value === undefined || value === null || value === '')
+      return undefined
+    if (value === 'sap' || value === 'none')
+      return value
+    throw new Error('[@me-tools/odx-nuxt] Invalid OData CSRF mode; expected "sap" or "none"')
+  }
+
+  const parseCsrfFetchMethod = (value: unknown): 'HEAD' | 'GET' | undefined => {
+    if (value === undefined || value === null || value === '')
+      return undefined
+    if (value === 'HEAD' || value === 'GET')
+      return value
+    throw new Error('[@me-tools/odx-nuxt] Invalid OData CSRF fetch method; expected "HEAD" or "GET"')
+  }
+
+  const resolveCsrfConfig = (
+    service: ODataServiceConfig,
+    override: Partial<ODataServiceConfig> = {},
+    envKey: string,
+  ): NonNullable<ODataServiceConfig['csrf']> => {
+    const fetchMethod = parseCsrfFetchMethod(process.env[`${ENV_PREFIX}${envKey}_CSRF_FETCH_METHOD`])
+      || parseCsrfFetchMethod(override.csrf?.fetchMethod)
+      || parseCsrfFetchMethod(service.csrf?.fetchMethod)
+
+    return {
+      mode: parseCsrfMode(process.env[`${ENV_PREFIX}${envKey}_CSRF_MODE`])
+        || parseCsrfMode(override.csrf?.mode)
+        || parseCsrfMode(service.csrf?.mode)
+        || 'none',
+      ...(fetchMethod ? { fetchMethod } : {}),
+    }
+  }
+
   // 1. Resolve Services (explicitly configured + discovered from env + BTP Overrides)
   const services: ODataServiceConfig[] = (options.services || []).map((s: ODataServiceConfig) => {
     const btpOverride = btpOverrides[s.name] || {}
@@ -76,6 +110,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
       icon: process.env[`${ENV_PREFIX}${envKey}_ICON`] || btpOverride.icon || s.icon,
       strategy: (process.env[`${ENV_PREFIX}${envKey}_STRATEGY`] as any) || btpOverride.strategy || s.strategy || 'proxied',
       proxyMode: (process.env[`${ENV_PREFIX}${envKey}_PROXY_MODE`] as any) || btpOverride.proxyMode || s.proxyMode,
+      csrf: resolveCsrfConfig(s, btpOverride, envKey),
       auth: {
         username: process.env[`${ENV_PREFIX}${envKey}_AUTH_USERNAME`] || btpOverride.auth?.username || s.auth?.username,
         password: process.env[`${ENV_PREFIX}${envKey}_AUTH_PASSWORD`] || btpOverride.auth?.password || s.auth?.password,
@@ -112,6 +147,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
         url,
         strategy: (process.env[`${ENV_PREFIX}${key}_STRATEGY`] as any) || 'proxied',
         destination: process.env[`${ENV_PREFIX}${key}_DESTINATION`],
+        csrf: resolveCsrfConfig({ name: key, url }, {}, key),
         auth: {
           username: process.env[`${ENV_PREFIX}${key}_AUTH_USERNAME`],
           password: process.env[`${ENV_PREFIX}${key}_AUTH_PASSWORD`],

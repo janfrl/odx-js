@@ -1,7 +1,8 @@
+import type { H3Event } from 'h3'
 import type { Hookable } from 'hookable'
 import type { ODataProxyHooks } from '../types'
-import { flattenOData } from '@me-tools/odx-core'
-import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, setResponseStatus } from 'h3'
+import { flattenOData, prepareSapCsrfHeaders } from '@me-tools/odx-core'
+import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, removeResponseHeader, setHeader, setResponseStatus } from 'h3'
 import { ofetch } from 'ofetch'
 import { prepareProxyHeaders } from '../utils/headers'
 import { OdxProxyTelemetry, resolveOdxProxyTargetKind } from '../utils/operational-telemetry'
@@ -10,11 +11,85 @@ import { DevToolsTracer } from '../utils/trace'
 import { parseODataRequest, resolveTargetUrl } from '../utils/url'
 
 const ENTITY_SET_IDENTIFIER = /^[\w.]+/
+const CSRF_PROTECTED_METHODS = new Set(['DELETE', 'MERGE', 'PATCH', 'POST', 'PUT'])
+const BUFFERED_RESPONSE_HEADERS = ['etag', 'odata-version', 'preference-applied', 'sap-message'] as const
 
 function omitManagedAuthorization(headers: Record<string, string>, authHeader?: string): void {
   if (authHeader && headers.authorization === authHeader) {
     delete headers.authorization
   }
+}
+
+function resolveCsrfPolicy(service: { csrf?: { mode?: unknown, fetchMethod?: unknown } } | undefined): {
+  enabled: boolean
+  fetchMethod?: 'GET' | 'HEAD'
+} {
+  const mode = service?.csrf?.mode
+  const fetchMethod = service?.csrf?.fetchMethod
+
+  if (mode !== undefined && mode !== 'none' && mode !== 'sap') {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Invalid OData CSRF mode in server configuration.',
+    })
+  }
+  if (fetchMethod !== undefined && fetchMethod !== 'GET' && fetchMethod !== 'HEAD') {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Invalid OData CSRF fetch method in server configuration.',
+    })
+  }
+
+  return {
+    enabled: mode === 'sap',
+    ...(fetchMethod ? { fetchMethod } : {}),
+  }
+}
+
+function forwardBufferedResponseHeaders(event: H3Event, headers: Headers): void {
+  for (const name of BUFFERED_RESPONSE_HEADERS) {
+    const value = headers.get(name)
+    if (value)
+      setHeader(event, name, value)
+  }
+
+  const location = headers.get('location')
+  if (location && !location.startsWith('//') && !URL.canParse(location))
+    setHeader(event, 'location', location)
+}
+
+function removePrivateLocationHeader(event: H3Event, headers: Headers): void {
+  const location = headers.get('location')
+  if (location && (location.startsWith('//') || URL.canParse(location)))
+    removeResponseHeader(event, 'location')
+}
+
+function removeBackendSessionHeaders(event: H3Event, headers: Headers): void {
+  removePrivateLocationHeader(event, headers)
+  if (headers.has('set-cookie'))
+    removeResponseHeader(event, 'set-cookie')
+}
+
+async function readProxyRequestBody(event: H3Event): Promise<unknown> {
+  if (event.method === 'GET' || event.method === 'HEAD')
+    return null
+  // H3's HTTPMethod type omits the OData V2 MERGE extension method.
+  if ((event.method as string) === 'MERGE') {
+    if (event.web?.request)
+      return event.web.request.text()
+
+    const decoder = new TextDecoder()
+    let body = ''
+    for await (const chunk of event.node.req) {
+      body += chunk instanceof Uint8Array
+        ? decoder.decode(chunk, { stream: true })
+        : typeof chunk === 'string'
+          ? chunk
+          : JSON.stringify(chunk)
+    }
+    return body + decoder.decode()
+  }
+  return readBody(event).catch(() => null)
 }
 
 /**
@@ -85,8 +160,8 @@ export default defineEventHandler(async (event): Promise<any> => {
 
     // 4. DevTools Logging Initialization
     let requestBody: any = null
-    if (tracer.enabled && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.method)) {
-      requestBody = await readBody(event).catch(() => null)
+    if (tracer.enabled && CSRF_PROTECTED_METHODS.has(event.method)) {
+      requestBody = await readProxyRequestBody(event)
     }
     await tracer.initLog(event, targetUrl, serviceName, request.segments[1] || '', requestBody, loggedHeaders)
 
@@ -121,6 +196,26 @@ export default defineEventHandler(async (event): Promise<any> => {
       await tracer.updateLogContext({ targetUrl, requestHeaders: loggedHeaders })
     }
 
+    const csrfPolicy = resolveCsrfPolicy(matched)
+    if (!isDirect && csrfPolicy.enabled && CSRF_PROTECTED_METHODS.has(event.method)) {
+      try {
+        const csrfHeaders = await prepareSapCsrfHeaders(targetUrl, {
+          method: event.method,
+          headers: finalHeaders,
+          fetchMethod: csrfPolicy.fetchMethod,
+        })
+        Object.assign(finalHeaders, csrfHeaders)
+        tracer.addTrace('CSRF', 'SAP mutation headers prepared', null, 'success')
+      }
+      catch {
+        tracer.addTrace('CSRF', 'SAP mutation preflight failed', null, 'error')
+        throw createError({
+          statusCode: 502,
+          statusMessage: 'SAP CSRF preflight failed.',
+        })
+      }
+    }
+
     // 6. Proxy Execution (Hybrid Mode)
 
     if (mode === 'buffer') {
@@ -133,7 +228,7 @@ export default defineEventHandler(async (event): Promise<any> => {
             'Content-Type': 'application/json',
             ...finalHeaders,
           },
-          body: event.method !== 'GET' ? (requestBody || await readBody(event).catch(() => null)) : null,
+          body: requestBody ?? await readProxyRequestBody(event),
           async onResponse({ response }) {
             responseStatus = response.status
             if (hooks?.callHook && !isDirect) {
@@ -141,6 +236,7 @@ export default defineEventHandler(async (event): Promise<any> => {
               await hooks.callHook('odx:proxy:response', hookCtx)
               await hooks.callHook(`odx:proxy:response:${serviceName}`, hookCtx)
             }
+            forwardBufferedResponseHeaders(event, response.headers)
           },
         })
 
@@ -169,9 +265,20 @@ export default defineEventHandler(async (event): Promise<any> => {
     tracer.registerStreamFinish(event, async (status) => {
       await telemetry?.complete(status)
     })
+    const streamFetchOptions = (event.method as string) === 'MERGE'
+      ? {
+          method: event.method,
+          body: requestBody ?? await readProxyRequestBody(event),
+        }
+      : undefined
+
     return proxyRequest(event, targetUrl, {
       headers: finalHeaders,
       cookieDomainRewrite: { '*': '' },
+      fetchOptions: streamFetchOptions,
+      onResponse(responseEvent, response) {
+        removeBackendSessionHeaders(responseEvent, response.headers)
+      },
     })
   }
   catch (err: any) {

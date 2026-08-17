@@ -1,4 +1,5 @@
 import type { ODataProxyConfig } from '@me-tools/odx-core'
+import process from 'node:process'
 import { describe, expect, it } from 'vitest'
 import { createPublicODataConfig, resolveModuleConfig } from '../src/config'
 
@@ -64,5 +65,73 @@ describe('public OData runtime configuration', () => {
     expect(resolveModuleConfig({ security: { sapXsuaa: true } }, nuxtOptions).security).toEqual({
       sapXsuaa: true,
     })
+  })
+
+  it('resolves private per-service SAP CSRF policy without exposing it publicly', () => {
+    const nuxtOptions = {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    }
+    const previousMode = process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_MODE
+    const previousMethod = process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_FETCH_METHOD
+    process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_MODE = 'sap'
+    process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_FETCH_METHOD = 'GET'
+
+    try {
+      const config = resolveModuleConfig({
+        services: [{
+          name: 'Private',
+          url: 'https://internal.example.test/sap',
+          csrf: { mode: 'none', fetchMethod: 'HEAD' },
+        }],
+      }, nuxtOptions)
+
+      expect(config.services[0]?.csrf).toEqual({
+        mode: 'sap',
+        fetchMethod: 'GET',
+      })
+      expect(createPublicODataConfig(config).services?.[0]).not.toHaveProperty('csrf')
+    }
+    finally {
+      if (previousMode === undefined)
+        delete process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_MODE
+      else
+        process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_MODE = previousMode
+      if (previousMethod === undefined)
+        delete process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_FETCH_METHOD
+      else
+        process.env.NUXT_ODATA_SERVICES_PRIVATE_CSRF_FETCH_METHOD = previousMethod
+    }
+  })
+
+  it('normalizes omitted CSRF policies to the private none default', () => {
+    const config = resolveModuleConfig({
+      services: [{
+        name: 'Generic',
+        url: 'https://services.example.test/odata',
+      }],
+    }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })
+
+    expect(config.services[0]?.csrf).toEqual({ mode: 'none' })
+    expect(createPublicODataConfig(config).services?.[0]).not.toHaveProperty('csrf')
+  })
+
+  it.each([
+    ['disabled', 'HEAD'],
+    ['sap', 'POST'],
+  ])('rejects invalid private CSRF configuration (%s, %s)', (mode, fetchMethod) => {
+    expect(() => resolveModuleConfig({
+      services: [{
+        name: 'Private',
+        url: 'https://internal.example.test/sap',
+        csrf: { mode, fetchMethod } as any,
+      }],
+    }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })).toThrow(/Invalid OData CSRF/)
   })
 })

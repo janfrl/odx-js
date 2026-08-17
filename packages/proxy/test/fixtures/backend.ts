@@ -1,4 +1,4 @@
-import type { App } from 'h3'
+import type { App, H3Event } from 'h3'
 import { createApp, createError, createRouter, defineEventHandler, getHeaders, readBody, setResponseStatus } from 'h3'
 
 const largeProducts = Array.from({ length: 500 }, (_, index) => {
@@ -26,6 +26,7 @@ const largeProducts = Array.from({ length: 500 }, (_, index) => {
 export function createBackend(): App {
   const app = createApp()
   const router = createRouter()
+  let tokenlessMutationCount = 0
 
   router.get('/Products', defineEventHandler(() => {
     return {
@@ -53,6 +54,7 @@ export function createBackend(): App {
     }
 
     setResponseStatus(event, 201, 'Created')
+    event.node.res.setHeader('location', 'https://private-backend.example.test/odata/CreatedProducts(1)')
 
     return {
       d: {
@@ -61,6 +63,77 @@ export function createBackend(): App {
       },
     }
   }))
+
+  const setCsrfSession = (event: H3Event, token: string): void => {
+    event.node.res.setHeader('x-csrf-token', token)
+    event.node.res.setHeader('set-cookie', [
+      'SAP_SESSIONID=fresh; Path=/; HttpOnly',
+      'sap-usercontext=sap-client=100; Expires=Wed, 21 Oct 2030 07:28:00 GMT; Path=/',
+    ])
+  }
+
+  router.head('/CsrfProducts', defineEventHandler((event) => {
+    if (event.node.req.headers['x-csrf-token'] === 'Fetch')
+      setCsrfSession(event, 'csrf-head-token')
+    return ''
+  }))
+
+  router.get('/CsrfProducts', defineEventHandler((event) => {
+    if (event.node.req.headers['x-csrf-token'] === 'Fetch')
+      setCsrfSession(event, 'csrf-get-token')
+    return { d: { results: [] } }
+  }))
+
+  const handleCsrfMutation = defineEventHandler(async (event) => {
+    const headers = getHeaders(event)
+    const token = headers['x-csrf-token']
+    const cookie = headers.cookie || ''
+    const validToken = token === 'csrf-head-token' || token === 'csrf-get-token'
+    const validSession = cookie.includes('SAP_SESSIONID=fresh')
+      && cookie.includes('sap-usercontext=sap-client=100')
+
+    if (!validToken || !validSession || headers['if-match'] !== 'W/"1"') {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Invalid SAP mutation session',
+      })
+    }
+
+    let body: any
+    if (event.method === 'MERGE') {
+      let rawBody = ''
+      for await (const chunk of event.node.req) {
+        rawBody += typeof chunk === 'string' || chunk instanceof Uint8Array
+          ? chunk.toString()
+          : JSON.stringify(chunk)
+      }
+      body = JSON.parse(rawBody)
+    }
+    else {
+      body = await readBody(event)
+    }
+    event.node.res.setHeader('etag', 'W/"2"')
+    event.node.res.setHeader('set-cookie', 'SAP_FINAL_SESSION=private; Path=/; HttpOnly')
+    return {
+      d: {
+        ...body,
+        csrfValidated: validToken,
+        sessionValidated: validSession,
+        preflightMethod: token === 'csrf-head-token' ? 'HEAD' : 'GET',
+        ifMatch: headers['if-match'],
+      },
+    }
+  })
+  router.patch('/CsrfProducts', handleCsrfMutation)
+  router.add('/CsrfProducts', handleCsrfMutation, 'merge' as any)
+
+  router.head('/TokenlessCsrfProducts', defineEventHandler(() => ''))
+  router.get('/TokenlessCsrfProducts', defineEventHandler(() => ({ d: { results: [] } })))
+  router.patch('/TokenlessCsrfProducts', defineEventHandler(() => {
+    tokenlessMutationCount += 1
+    return { d: { reached: true } }
+  }))
+  router.get('/TokenlessCsrfStats', defineEventHandler(() => ({ tokenlessMutationCount })))
 
   router.get('/FailingEntity', defineEventHandler(() => {
     throw createError({

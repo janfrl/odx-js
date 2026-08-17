@@ -45,6 +45,15 @@ export interface ODataServiceConfig {
   icon?: string
   strategy?: 'proxied' | 'direct'
   proxyMode?: 'stream' | 'buffer'
+  /**
+   * SAP CSRF policy for proxied mutations. Generic OData services default to
+   * `none`; set `mode: 'sap'` to enable request-scoped token preparation.
+   */
+  csrf?: {
+    mode?: 'sap' | 'none'
+    /** Request method used to obtain the token. @default 'HEAD' */
+    fetchMethod?: 'HEAD' | 'GET'
+  }
   destination?: string
   auth?: {
     username?: string
