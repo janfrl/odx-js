@@ -1,12 +1,34 @@
-import { createError, defineEventHandler, getHeaders, getQuery, getRequestURL } from 'h3'
+import { createError, defineEventHandler, getHeaders, getMethod, getQuery, getRequestURL } from 'h3'
 
 export default defineEventHandler((event) => {
-  if (getRequestURL(event).pathname !== '/sap/opu/odata/sap/Northwind/Categories') {
+  if (getMethod(event) !== 'GET') {
+    throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
+  }
+
+  const pathname = getRequestURL(event).pathname
+  const query = getQuery(event)
+  const headers = getHeaders(event)
+  if (headers.accept !== 'application/json') {
+    throw createError({ statusCode: 406, statusMessage: 'OData JSON response required' })
+  }
+
+  if (pathname === '/sap/opu/odata/sap/Northwind/Categories(1)') {
+    if (
+      query.$select !== 'CategoryID,CategoryName'
+      || Object.keys(query).length !== 1
+    ) {
+      throw createError({ statusCode: 400, statusMessage: 'Unexpected Northwind key query' })
+    }
+
+    return {
+      d: createCategory(),
+    }
+  }
+
+  if (pathname !== '/sap/opu/odata/sap/Northwind/Categories') {
     throw createError({ statusCode: 404, statusMessage: 'Not Found' })
   }
 
-  const query = getQuery(event)
-  const headers = getHeaders(event)
   if (
     query.$filter !== 'CategoryID eq 1'
     || (query.$inlinecount !== undefined && query.$inlinecount !== 'allpages')
@@ -15,21 +37,21 @@ export default defineEventHandler((event) => {
   ) {
     throw createError({ statusCode: 400, statusMessage: 'Unexpected Northwind query' })
   }
-  if (headers.accept !== 'application/json') {
-    throw createError({ statusCode: 406, statusMessage: 'OData JSON response required' })
-  }
-
   return {
     d: {
       ...(query.$inlinecount === 'allpages' ? { __count: '49' } : {}),
-      results: [{
-        __metadata: {
-          type: 'NorthwindModel.Category',
-          uri: 'http://localhost/sap/opu/odata/sap/Northwind/Categories(1)',
-        },
-        CategoryID: 1,
-        CategoryName: 'Beverages',
-      }],
+      results: [createCategory()],
     },
   }
 })
+
+function createCategory(): Record<string, unknown> {
+  return {
+    __metadata: {
+      type: 'NorthwindModel.Category',
+      uri: 'http://localhost/sap/opu/odata/sap/Northwind/Categories(1)',
+    },
+    CategoryID: 1,
+    CategoryName: 'Beverages',
+  }
+}

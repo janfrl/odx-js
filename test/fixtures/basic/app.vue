@@ -16,6 +16,9 @@ const { data: categoryPage } = await northwindCategories.listPage({
   $select: ['CategoryID', 'CategoryName'],
   $top: 1,
 })
+const { data: category } = await northwindCategories.get(1, {
+  $select: ['CategoryID', 'CategoryName'],
+})
 </script>
 
 <template>
@@ -27,5 +30,8 @@ const { data: categoryPage } = await northwindCategories.listPage({
   </div>
   <div id="northwind-uncounted-category-page">
     Northwind Page Category: {{ uncountedCategoryPage?.items[0]?.CategoryName ?? 'missing' }}
+  </div>
+  <div id="northwind-category-detail">
+    Northwind Category Detail: {{ category ? `${category.CategoryID} / ${category.CategoryName}` : 'missing' }}
   </div>
 </template>

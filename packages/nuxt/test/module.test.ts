@@ -91,9 +91,11 @@ describe('nuxt ODX Module Integration', async () => {
     expect(html).toContain('Northwind Category: Beverages')
     expect(html).toContain('Northwind Category Count: 49')
     expect(html).toContain('Northwind Page Category: Beverages')
+    expect(html).toContain('Northwind Category Detail: 1 / Beverages')
     expect(html).not.toContain('Northwind Category: missing')
     expect(html).not.toContain('Northwind Category Count: missing')
     expect(html).not.toContain('Northwind Page Category: missing')
+    expect(html).not.toContain('Northwind Category Detail: missing')
   })
 
   it('emits one correlated failure event without backend details', async () => {
