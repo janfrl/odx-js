@@ -32,5 +32,13 @@ metadata refreshes, CSRF preflights, buffered requests, and streamed requests. F
 - `packages/proxy/test/connectivity-proxy.integration.test.ts` runs an actual
   local HTTP CONNECT proxy and verifies the virtual target path,
   `Proxy-Authorization`, and `SAP-Connectivity-Authentication`.
+- `packages/proxy/test/btp-connectivity-interaction.integration.test.ts`
+  exercises the complete ODX handler boundary with an AppRouter-style user
+  token, Destination authentication, real CONNECT tunnelling, SAP CSRF/session
+  preparation, and both buffered and streamed mutations.
 - `packages/proxy/test/connectivity-proxy.test.ts` verifies dispatcher reuse
   is scoped to the proxy endpoint and hashed token identity.
+
+This local interaction contract does not claim a successful Cloud Foundry
+deployment, XSUAA login redirect, HTML5 Application Repository publication, or
+Work Zone launch. Those remain environment-owned deployment evidence.
