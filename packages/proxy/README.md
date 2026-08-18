@@ -13,6 +13,11 @@ Explorer schema responses are projected from the loss-aware
 association, navigation, version, and namespace summaries share that parsed
 source instead of maintaining endpoint-specific XML regular expressions.
 
+The exported Nitro module keeps its request plugins and their generated shared
+chunks inside the host bundle. This preserves Nitro's virtual runtime imports
+for both installed packages and workspace builds instead of loading the plugin
+files as standalone Node modules.
+
 ## SAP BTP On-Premise destinations
 
 Destinations with `ProxyType=OnPremise` are sent through the bound SAP BTP

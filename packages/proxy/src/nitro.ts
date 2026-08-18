@@ -29,9 +29,14 @@ export default defineNitroModule({
     // Target resolution is portable. SAP XSUAA validation is a separate,
     // Node-only adapter and must be explicitly selected by the host.
     nitro.options.plugins = nitro.options.plugins || []
-    nitro.options.plugins.push(resolve(sourceDirectory, `./plugins/btp-auth${runtimeExtension}`))
+    nitro.options.externals.inline = nitro.options.externals.inline || []
+    if (!nitro.options.externals.inline.includes(sourceDirectory))
+      nitro.options.externals.inline.push(sourceDirectory)
+    const btpAuthPlugin = resolve(sourceDirectory, `./plugins/btp-auth${runtimeExtension}`)
+    nitro.options.plugins.push(btpAuthPlugin)
     if (config.security?.sapXsuaa) {
-      nitro.options.plugins.push(resolve(sourceDirectory, `./plugins/auth-btp${runtimeExtension}`))
+      const sapAuthPlugin = resolve(sourceDirectory, `./plugins/auth-btp${runtimeExtension}`)
+      nitro.options.plugins.push(sapAuthPlugin)
     }
 
     // Also register the internal API handlers

@@ -6,6 +6,7 @@ function createNitroOptions(sapXsuaa = false): any {
     options: {
       handlers: [],
       plugins: [],
+      externals: { inline: [] },
       odata: {
         basePath: '/api/odx',
         buildDir: '.nuxt',
@@ -26,6 +27,8 @@ describe('nitro runtime adapters', () => {
 
     expect(nitro.options.plugins).toHaveLength(1)
     expect(nitro.options.plugins[0]).toMatch(/plugins[\\/]btp-auth\.ts$/)
+    expect(nitro.options.externals.inline).toHaveLength(1)
+    expect(nitro.options.externals.inline[0]).toMatch(/packages[\\/]proxy[\\/]src$/)
   })
 
   it('registers SAP XSUAA validation when the Node host opts in', () => {
@@ -35,5 +38,7 @@ describe('nitro runtime adapters', () => {
 
     expect(nitro.options.plugins).toHaveLength(2)
     expect(nitro.options.plugins[1]).toMatch(/plugins[\\/]auth-btp\.ts$/)
+    expect(nitro.options.externals.inline).toHaveLength(1)
+    expect(nitro.options.externals.inline[0]).toMatch(/packages[\\/]proxy[\\/]src$/)
   })
 })
