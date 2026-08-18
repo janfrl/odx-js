@@ -245,6 +245,40 @@ function expectManagedServiceResource(mtaYaml: string, resourceName: string, ser
 }
 
 describe('deployment config', () => {
+  it('keeps the npm lock contract synchronized with the AppRouter manifest', async () => {
+    const [manifestText, lockText] = await Promise.all([
+      readFile(resolve(repoRoot, 'packages/approuter/package.json'), 'utf8'),
+      readFile(resolve(repoRoot, 'packages/approuter/package-lock.json'), 'utf8'),
+    ])
+    const manifest = JSON.parse(manifestText) as { dependencies?: Record<string, string> }
+    const lock = JSON.parse(lockText) as {
+      packages?: Record<string, { dependencies?: Record<string, string>, version?: string }>
+    }
+    const declaredRange = manifest.dependencies?.['@sap/approuter']
+    const lockedRange = lock.packages?.['']?.dependencies?.['@sap/approuter']
+    const lockedVersion = lock.packages?.['node_modules/@sap/approuter']?.version
+
+    expect(declaredRange).toBe('^21.1.0')
+    expect(lockedRange).toBe(declaredRange)
+    expect(lockedVersion).toMatch(/^21\.(?:[1-9]|\d{2,})\.\d+$/)
+  })
+
+  it('keeps the standalone Cloud Foundry manifest route-complete and environment-neutral', async () => {
+    const [manifest, xsAppText] = await Promise.all([
+      readFile(resolve(repoRoot, 'packages/approuter/manifest.yml'), 'utf8'),
+      readFile(resolve(repoRoot, 'packages/approuter/xs-app.json'), 'utf8'),
+    ])
+    const xsApp = JSON.parse(xsAppText) as XsAppConfig
+    const routeDestinations = new Set(getRouteDestinations(xsApp).map(route => route.destination))
+
+    for (const destination of routeDestinations)
+      expect(manifest).toContain(`"name": "${destination}"`)
+    expect(manifest).toContain('"url": "((odx_proxy_url))"')
+    expect(manifest).toContain('"url": "((odx_explorer_url))"')
+    expect(manifest).toContain('- ((xsuaa_service_name))')
+    expect(manifest).not.toMatch(/cfapps|hana\.ondemand\.com|genericodataproxy/u)
+  })
+
   it('provides every AppRouter route destination from the odx-approuter MTA module', async () => {
     const [xsAppText, mtaYaml] = await Promise.all([
       readFile(resolve(repoRoot, 'packages/approuter/xs-app.json'), 'utf8'),

@@ -8,10 +8,15 @@ applications:
       destinations: >
         [
           {
-            "name": "genericodataproxy-destination",
-            "url": "https://odx-proxy.cfapps.eu10-004.hana.ondemand.com",
+            "name": "odx-proxy-backend",
+            "url": "((odx_proxy_url))",
+            "forwardAuthToken": true
+          },
+          {
+            "name": "odx-explorer-ui",
+            "url": "((odx_explorer_url))",
             "forwardAuthToken": true
           }
         ]
     services:
-      - genericodataproxy-xsuaa
+      - ((xsuaa_service_name))
