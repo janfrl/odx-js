@@ -201,10 +201,12 @@ export interface ODataFunctionInvocation {
 }
 
 export interface ODataActionInvocation<TParameters = Record<string, unknown>> {
-  /** Entity key for an entity-bound action. Omit for collection/service actions. */
-  key?: ODataKey
+  /** Root entity key or exact contained entity for an entity- or navigation-bound action. */
+  readonly key?: ODataNavigationSource
+  /** Optional navigation binding below the keyed entity. */
+  readonly navigationPath?: string | readonly string[]
   /** OData action parameters serialized as the POST body. */
-  parameters?: TParameters
+  readonly parameters?: TParameters
 }
 
 /**
@@ -335,7 +337,7 @@ export interface ODataEntitySet<T = any> {
    * Deletes an entity.
    */
   remove: (key: ODataKey, options?: ODataRequestOptions) => Promise<unknown>
-  /** Invokes an unbound, collection-bound, or entity-bound OData action. */
+  /** Invokes an unbound, collection-, entity-, or navigation-bound OData action. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
     invocation?: ODataActionInvocation<TParameters>,

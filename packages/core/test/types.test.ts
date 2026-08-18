@@ -1,4 +1,5 @@
 import type {
+  ODataActionInvocation,
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
   ODataConcurrencyService,
@@ -36,6 +37,21 @@ describe('portable imperative transport types', () => {
 
   it('declares analytical apply as a portable query option', () => {
     expectTypeOf<ODataQuery<Product>['$apply']>().toEqualTypeOf<string | undefined>()
+  })
+
+  it('addresses navigation-bound action targets without executable path strings', () => {
+    type Invocation = ODataActionInvocation<{ Percent: number }>
+
+    expectTypeOf<{
+      readonly kind: 'contained-entity'
+      readonly rootKey: number
+      readonly path: readonly [{
+        readonly navigationPath: readonly ['Items']
+        readonly key: number
+      }]
+    }>().toExtend<NonNullable<Invocation['key']>>()
+    expectTypeOf<Invocation['navigationPath']>()
+      .toEqualTypeOf<string | readonly string[] | undefined>()
   })
 
   it('adds count-aware pages without widening the base entity-set contract', () => {

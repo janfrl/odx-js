@@ -433,9 +433,20 @@ export function useOData(service?: string): any {
         options?: ODataRequestOptions,
       ): Promise<TResult> => {
         validateODataQualifiedName(action, 'OData action')
-        const bindingPath = invocation.key === undefined
+        if (invocation.navigationPath !== undefined && invocation.key === undefined) {
+          throw new TypeError(
+            'An OData navigation-bound action requires an entity key.',
+          )
+        }
+        const entityPath = invocation.key === undefined
           ? fullPath
-          : `${fullPath}(${formatODataKey(invocation.key)})`
+          : navigationSourcePath(invocation.key)
+        const bindingPath = invocation.navigationPath === undefined
+          ? entityPath
+          : joinODataPath(
+              entityPath,
+              formatODataNavigationPath(invocation.navigationPath),
+            )
         return $odata<TResult>(
           client,
           joinODataPath(bindingPath, action),

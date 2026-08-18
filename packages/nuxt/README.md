@@ -152,7 +152,9 @@ await useOData('Northwind')
 `changeSet()` accepts `create-navigation`, `update-navigation`, and
 `delete-navigation` mutations in addition to top-level updates, so related
 entity edits can be committed atomically. Invoke qualified actions at the
-service, collection, or entity binding path:
+service, collection, entity, or navigation binding path. Keyed contained
+entities use the same structured source as navigation reads and mutations, so
+callers never concatenate executable resource paths:
 
 ```ts
 await useOData('Northwind').entitySet('Products').update(
@@ -170,6 +172,18 @@ await useOData('Northwind').entitySet('Products').invoke(
 await useOData('Northwind').entitySet('Products').invoke(
   'Northwind.SetPriority',
   { key: 1, parameters: { Priority: 'Urgent' } },
+)
+
+await useOData('Northwind').entitySet('Products').invoke(
+  'Northwind.RepriceItem',
+  {
+    key: {
+      kind: 'contained-entity',
+      rootKey: 1,
+      path: [{ navigationPath: ['Items'], key: 42 }],
+    },
+    parameters: { Percent: 5 },
+  },
 )
 
 const defaults = await useOData('Northwind').entitySet('Products').invokeFunction(

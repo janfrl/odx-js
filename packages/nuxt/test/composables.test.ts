@@ -834,7 +834,7 @@ describe('useOData Composable', () => {
       )
     })
 
-    it('invokes service, collection, and entity-bound actions', async () => {
+    it('invokes service, collection, entity-, and navigation-bound actions', async () => {
       const api = useOData('MyService')
       const signal = new AbortController().signal
 
@@ -845,6 +845,14 @@ describe('useOData Composable', () => {
       await api.entitySet('Products').invoke('Demo.ArchiveProduct', {
         key: { ID: 1, Active: true },
         parameters: { Reason: 'obsolete' },
+      })
+      await api.entitySet('Products').invoke('Demo.RepriceItem', {
+        key: {
+          kind: 'contained-entity',
+          rootKey: 1,
+          path: [{ navigationPath: ['Items'], key: { ID: 42 } }],
+        },
+        parameters: { Percent: 5 },
       })
 
       expect(core.$odata).toHaveBeenNthCalledWith(
@@ -867,6 +875,13 @@ describe('useOData Composable', () => {
         '/api/odx/MyService/Products(ID=1,Active=true)/Demo.ArchiveProduct',
         'POST',
         { body: { Reason: 'obsolete' } },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        4,
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)/Items(ID=42)/Demo.RepriceItem',
+        'POST',
+        { body: { Percent: 5 } },
       )
     })
 
@@ -983,10 +998,19 @@ describe('useOData Composable', () => {
       })).toThrow('requires an entity key')
       expect(core.$odata).not.toHaveBeenCalled()
     })
-    it('rejects action names that could alter the request path', () => {
+    it('rejects unsafe or incomplete action bindings before transport', () => {
       const api = useOData('MyService')
+      const products = api.entitySet('Products')
 
       expect(() => api.invoke('../Demo.Reset')).toThrow('qualified name')
+      expect(() => api.invoke('Demo.Archive', { key: 1 })).toThrow('requires an entity set')
+      expect(() => products.invoke('Demo.Reprice', {
+        navigationPath: ['Items'],
+      })).toThrow('requires an entity key')
+      expect(() => products.invoke('Demo.Reprice', {
+        key: 1,
+        navigationPath: ['Items', '../Secret'],
+      })).toThrow('navigation path')
       expect(core.$odata).not.toHaveBeenCalled()
     })
   })
