@@ -889,6 +889,25 @@ describe('useOData Composable', () => {
       expect(JSON.stringify(options?.body)).toBe('{"Priority":"Urgent"}')
     })
 
+    it('posts flags enumeration parameters as canonical JSON strings', async () => {
+      const api = useOData('MyService')
+      const parameters = Object.freeze({ Access: 'Read,Write' })
+
+      await api.entitySet('Products').invoke('Demo.SetAccess', {
+        key: 1,
+        parameters,
+      })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)/Demo.SetAccess',
+        'POST',
+        { body: parameters },
+      )
+      const options = vi.mocked(core.$odata).mock.calls[0]?.[3]
+      expect(JSON.stringify(options?.body)).toBe('{"Access":"Read,Write"}')
+    })
+
     it('posts structured action parameters as exact nested JSON objects', async () => {
       const api = useOData('MyService')
       const contact = Object.freeze({

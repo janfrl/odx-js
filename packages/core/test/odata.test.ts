@@ -48,6 +48,21 @@ describe('$odata fetcher', () => {
       .toBe('{"Priority":"Urgent"}')
   })
 
+  it('preserves canonical flags enumeration strings in JSON action bodies', async () => {
+    const client = vi.fn().mockResolvedValue({})
+    const body = Object.freeze({ Access: 'Read,Write' })
+
+    await $odata(client, 'S/Demo.SetAccess', 'POST', { body })
+
+    expect(client).toHaveBeenCalledWith('S/Demo.SetAccess', {
+      body,
+      headers: { accept: 'application/json' },
+      method: 'POST',
+    })
+    expect(JSON.stringify(client.mock.calls[0]?.[1]?.body))
+      .toBe('{"Access":"Read,Write"}')
+  })
+
   it('preserves structured OData action parameters as nested JSON objects', async () => {
     const client = vi.fn().mockResolvedValue({})
     const contact = Object.freeze({
