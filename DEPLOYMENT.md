@@ -281,6 +281,26 @@ or writes generated TypeScript files in the deployed Nitro runtime. Generated
 SDK files remain development/build/CI artifacts and require a new deployment to
 change application types.
 
+## Standalone AppRouter Push
+
+The MTA remains the complete deployment contract. When the proxy and Explorer
+are already deployed independently, `packages/approuter/manifest.yml` can push
+only the AppRouter without embedding a region, tenant, or service-instance
+name:
+
+```bash
+cf push -f packages/approuter/manifest.yml \
+  --var odx_proxy_url=https://<proxy-route> \
+  --var odx_explorer_url=https://<explorer-route> \
+  --var xsuaa_service_name=<xsuaa-service-instance>
+```
+
+Cloud Foundry resolves the `((variable))` placeholders before staging. Both
+route destinations use the same names as `xs-app.json` and forward the XSUAA
+token to their owning backend. Keep deployment-specific values in CLI `--var`
+arguments or an uncommitted `--vars-file`; do not restore a checked-in regional
+host.
+
 ## Operational Checks
 
 Before deployment-sensitive changes, run the relevant checks:
