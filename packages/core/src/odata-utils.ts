@@ -56,13 +56,27 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
     if (key === '__metadata' || key === '__deferred' || key === 'results')
       continue
 
-    flattened[key] = flattenOData(data[key], depth + 1, maxDepth)
+    const value = flattenOData(data[key], depth + 1, maxDepth)
+    // OData minimal-metadata responses advertise an available bound operation
+    // with an empty object. Preserve that object so consumers can distinguish
+    // it from the explicit null advertisement used for an unavailable
+    // operation. Ordinary empty objects retain the historical null projection.
+    flattened[key] = key.startsWith('#') && value === null && isEmptyObject(data[key])
+      ? {}
+      : value
     hasProperties = true
   }
 
   // If we have no properties left after stripping (but we HAD an object), return null
   // This helps represents stripped metadata objects as null.
   return hasProperties ? flattened : null
+}
+
+function isEmptyObject(value: unknown): value is Record<string, never> {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
+    && Object.keys(value).length === 0
 }
 
 /**

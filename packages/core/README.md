@@ -25,6 +25,13 @@ providing the next ETag. Both low-level request helpers support explicit
 server-driven next links into a safe query-only continuation without exposing
 the backend origin or resource path.
 
+OData JSON operation advertisements survive response flattening as instance
+control information. In particular, an available minimal-metadata
+`"#Namespace.Action": {}` remains an empty object and is not collapsed into
+the explicit `null` used by OData 4.01 to advertise non-availability. ODX does
+not execute an advertised `target`; higher layers retain ownership of validated
+operation identity and binding paths.
+
 The `@me-tools/odx-core/server` entry also projects parsed
 `@me-tools/odx-metadata` documents into the established entity, navigation,
 association, and version contracts. This is the migration boundary away from

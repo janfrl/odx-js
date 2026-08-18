@@ -107,6 +107,32 @@ describe('oData Utils', () => {
       expect(flattened.totalCount).toBe(2)
     })
 
+    it('preserves available and unavailable bound-operation advertisements', () => {
+      const flattened = flattenOData({
+        value: [{
+          'ID': 1,
+          '#Demo.Approve': {},
+          '#Demo.Reject': null,
+          '#Demo.Reassign': {
+            title: 'Reassign',
+            target: 'Products(1)/Demo.Reassign',
+          },
+          'OrdinaryEmptyObject': {},
+        }],
+      })
+
+      expect(flattened).toEqual([{
+        'ID': 1,
+        '#Demo.Approve': {},
+        '#Demo.Reject': null,
+        '#Demo.Reassign': {
+          title: 'Reassign',
+          target: 'Products(1)/Demo.Reassign',
+        },
+        'OrdinaryEmptyObject': null,
+      }])
+    })
+
     it('preserves scalar entity properties named value', () => {
       const flattened = flattenOData({
         ID: 1,
