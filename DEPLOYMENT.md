@@ -143,6 +143,16 @@ Purpose:
 - `odx-destination`: Destination service for managed backend destinations.
 - `odx-connectivity`: Connectivity service for on-premise destinations.
 
+For a destination whose `ProxyType` is `OnPremise`, `odx-proxy` requires the
+Connectivity binding to provide `onpremise_proxy_host` and
+`onpremise_proxy_http_port`. The deprecated `onpremise_proxy_port` is accepted
+only as a compatibility fallback. ODX does not guess a region-specific proxy
+host or default port: incomplete or invalid binding data stops destination
+resolution. Runtime metadata refreshes and requests, including SAP CSRF
+preflights, are then tunneled through that authenticated HTTP proxy.
+`PrincipalPropagation` destinations additionally
+receive `SAP-Connectivity-Authentication` when an inbound user token exists.
+
 Persistent production Explorer logs require an additional bound SQL database
 for `odx-proxy`. The repository does not mandate a specific BTP SQL provider;
 operators should bind the chosen managed SQL service, expose its connection URL

@@ -130,6 +130,14 @@ prefix. The relative fallback remains available only when `NODE_ENV` is
 explicitly `development` or `test`; unset and custom deployment environments
 fail closed.
 
+On-premise destinations also fail closed when the Connectivity binding or its
+declared HTTP proxy endpoint is missing or invalid. Connectivity access tokens
+are used only as the proxy authorization credential and are never forwarded as
+ordinary backend headers. User tokens become
+`SAP-Connectivity-Authentication` only for destinations explicitly declaring
+`Authentication=PrincipalPropagation`; ordinary destinations do not receive
+that header.
+
 Restricted hop-by-hop headers include:
 
 - `host`

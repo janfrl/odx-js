@@ -13,6 +13,23 @@ Explorer schema responses are projected from the loss-aware
 association, navigation, version, and namespace summaries share that parsed
 source instead of maintaining endpoint-specific XML regular expressions.
 
+## SAP BTP On-Premise destinations
+
+Destinations with `ProxyType=OnPremise` are sent through the bound SAP BTP
+Connectivity HTTP proxy. ODX obtains a Connectivity service token, configures
+an authenticated proxy dispatcher, and uses that same route for runtime
+metadata refreshes, CSRF preflights, and buffered or streamed OData requests. A destination cannot
+fall through to a direct request when the Connectivity binding is missing or
+its proxy host/port is invalid.
+
+ODX reads `onpremise_proxy_host` and `onpremise_proxy_http_port` from the
+binding. The deprecated `onpremise_proxy_port` remains a compatibility
+fallback, but no region-specific host or port is synthesized. For a
+`PrincipalPropagation` destination with an inbound user token, ODX adds
+`SAP-Connectivity-Authentication` inside the tunnel; all other destination
+authentication continues to use the credentials returned by Destination
+service.
+
 ## SAP CSRF mutations
 
 SAP services can opt into request-scoped CSRF preparation with
