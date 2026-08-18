@@ -32,6 +32,21 @@ describe('$odata fetcher', () => {
       query,
     }))
   })
+
+  it('preserves OData enumeration member names in JSON action bodies', async () => {
+    const client = vi.fn().mockResolvedValue({})
+    const body = Object.freeze({ Priority: 'Urgent' })
+
+    await $odata(client, 'S/Demo.SetPriority', 'POST', { body })
+
+    expect(client).toHaveBeenCalledWith('S/Demo.SetPriority', {
+      body,
+      headers: { accept: 'application/json' },
+      method: 'POST',
+    })
+    expect(JSON.stringify(client.mock.calls[0]?.[1]?.body))
+      .toBe('{"Priority":"Urgent"}')
+  })
   it('forwards request options such as cancellation signals', async () => {
     const client = vi.fn().mockResolvedValue({ value: [] })
     const signal = new AbortController().signal

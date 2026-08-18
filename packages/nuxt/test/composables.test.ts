@@ -870,6 +870,25 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('posts enumeration parameters as exact JSON member-name strings', async () => {
+      const api = useOData('MyService')
+      const parameters = Object.freeze({ Priority: 'Urgent' })
+
+      await api.entitySet('Products').invoke('Demo.SetPriority', {
+        key: 1,
+        parameters,
+      })
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products(1)/Demo.SetPriority',
+        'POST',
+        { body: parameters },
+      )
+      const options = vi.mocked(core.$odata).mock.calls[0]?.[3]
+      expect(JSON.stringify(options?.body)).toBe('{"Priority":"Urgent"}')
+    })
+
     it('invokes service, collection, and navigation-bound functions with GET', async () => {
       const api = useOData('MyService')
       const signal = new AbortController().signal

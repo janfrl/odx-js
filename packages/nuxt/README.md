@@ -167,12 +167,22 @@ await useOData('Northwind').entitySet('Products').invoke(
   { signal },
 )
 
+await useOData('Northwind').entitySet('Products').invoke(
+  'Northwind.SetPriority',
+  { key: 1, parameters: { Priority: 'Urgent' } },
+)
+
 const defaults = await useOData('Northwind').entitySet('Products').invokeFunction(
   'Northwind.GetProductDefaults',
   { parameters: { Locale: { type: 'Edm.String', value: 'en-US' } } },
   { signal },
 )
 ```
+
+OData enumeration parameters use their declared member-name representation in
+the JSON action body (`"Urgent"` above). ODX preserves that string exactly and
+does not replace it with the member's underlying integer value; metadata-aware
+callers remain responsible for validating the member against the EnumType.
 
 ## Verification
 

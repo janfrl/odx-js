@@ -245,7 +245,10 @@ non-contained relationship through `$ref`. All navigation mutations
 require a non-empty path of identifier segments, keeping keys, navigation
 structure, and payload separate until the ODX client boundary. `invoke` requires a qualified action name. Omit
 the invocation key for unbound or collection-bound actions and provide it for an entity-bound
-action; `parameters` become the POST body. `invokeFunction` uses the same binding
+action; `parameters` become the POST body. Enumeration values use their declared
+member-name string in that JSON body and are never rewritten to their underlying
+integer by ODX. Metadata-aware callers validate membership before invoking the
+transport. `invokeFunction` uses the same binding
 shape for qualified OData V4 functions, but sends `GET` and serializes each
 parameter from an explicit `{ type, value }` descriptor into the inline function
 call. Supported values are primitive EDM types; unsupported or malformed values
