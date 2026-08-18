@@ -1,29 +1,3 @@
 @import "@shikijs/twoslash/style-rich.css";
 
 /* Docus and Nuxt UI provide the docs styling. */
-
-/* Keep the filename and its action in one structural header row. Nuxt UI's
-   default absolute inset is appropriate for headerless snippets, but it ties
-   named snippets to a fixed top offset instead of the header's actual height. */
-.odx-code-block:has(> .odx-code-block__header) {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.odx-code-block:has(> .odx-code-block__header) > .odx-code-block__header {
-  grid-area: 1 / 1 / 2 / -1;
-  padding-inline-end: 3.5rem;
-}
-
-.odx-code-block:has(> .odx-code-block__header) > .odx-code-block__copy {
-  position: static;
-  z-index: 1;
-  grid-area: 1 / 2;
-  align-self: center;
-  justify-self: end;
-  margin-inline-end: 0.75rem;
-}
-
-.odx-code-block:has(> .odx-code-block__header) > .odx-code-block__body {
-  grid-area: 2 / 1 / 3 / -1;
-}
