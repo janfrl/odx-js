@@ -10,6 +10,12 @@ export interface ResolvedProxyTarget {
   isRelative: boolean
   strategy?: 'proxied' | 'direct'
   proxyMode?: 'stream' | 'buffer'
+  connectivity?: {
+    host: string
+    port: number
+    token: string
+    userToken?: string
+  }
 }
 
 /**
@@ -81,6 +87,7 @@ export async function resolveProxyTarget(
         isRelative: false,
         strategy: matched.strategy,
         proxyMode,
+        connectivity: destination.connectivity,
       }
     }
     catch (err) {

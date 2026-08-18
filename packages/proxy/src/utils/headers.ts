@@ -24,6 +24,7 @@ const RESTRICTED_INCOMING_HEADERS = new Set([
   'x-real-ip',
   'forwarded',
   'set-cookie',
+  'sap-connectivity-authentication',
 ])
 
 export interface PrepareProxyHeaderOptions {

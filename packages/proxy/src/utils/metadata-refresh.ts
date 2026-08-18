@@ -8,6 +8,7 @@ import https from 'node:https'
 import process from 'node:process'
 import { getHeaders, getRequestURL } from 'h3'
 import { dirname, join, resolve } from 'pathe'
+import { resolveConnectivityRequest } from './connectivity-proxy'
 import { prepareProxyHeaders } from './headers'
 import { resolveProxyTarget } from './target'
 
@@ -197,7 +198,23 @@ function resolveConfiguredAuthHeader(service: ODataServiceConfig, config: ODataP
   }
 }
 
-async function fetchMetadata(url: string, headers: Record<string, string>, rejectUnauthorized: boolean): Promise<string> {
+async function fetchMetadata(
+  url: string,
+  headers: Record<string, string>,
+  rejectUnauthorized: boolean,
+  connectivityRequest: ReturnType<typeof resolveConnectivityRequest>,
+): Promise<string> {
+  if (connectivityRequest.fetch) {
+    const response = await connectivityRequest.fetch(url, {
+      dispatcher: connectivityRequest.dispatcher,
+      headers,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    } as RequestInit)
+    if (!response.ok)
+      throw new Error(`Status: ${response.status} ${response.statusText}`.trim())
+    return response.text()
+  }
+
   return new Promise((resolve, reject) => {
     const parsed = new URL(url)
     const client = parsed.protocol === 'https:' ? https : http
@@ -326,7 +343,11 @@ export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: O
   }
 }
 
-async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<{ url: string, headers: Record<string, string> }> {
+async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<{
+  url: string
+  headers: Record<string, string>
+  connectivityRequest: ReturnType<typeof resolveConnectivityRequest>
+}> {
   const route = service.route || service.name
   const target = await resolveProxyTarget(event, config, route, { allowBtpDestinationFallback: false })
   if (!target) {
@@ -347,9 +368,11 @@ async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, 
     authHeader,
     { forwardAuthorization: config.forwardAuthHeader !== false },
   )
+  const connectivityRequest = resolveConnectivityRequest(target.connectivity)
+  Object.assign(headers, connectivityRequest.headers)
   headers.accept = METADATA_ACCEPT_HEADER
 
-  return { url: metadataUrl, headers }
+  return { url: metadataUrl, headers, connectivityRequest }
 }
 
 export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<RuntimeMetadataRefreshResult> {
@@ -367,7 +390,7 @@ export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyC
 
   try {
     const request = await resolveMetadataRequest(event, config, service)
-    const xml = await fetchMetadata(request.url, request.headers, config.rejectUnauthorized !== false)
+    const xml = await fetchMetadata(request.url, request.headers, config.rejectUnauthorized !== false, request.connectivityRequest)
     assertValidMetadata(xml, request.url)
     writeMetadataCache(tempFile, persistentCacheFile, xml)
     const result = createMetadataResult(service, tempFile, xml, 'remote', false, null)

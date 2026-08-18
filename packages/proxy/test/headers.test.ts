@@ -10,6 +10,7 @@ describe('proxy header preparation', () => {
       'x-forwarded-prefix': '/tenant',
       'x-real-ip': '192.0.2.1',
       'via': '1.1 reverse-proxy',
+      'sap-connectivity-authentication': 'Bearer attacker-controlled',
       'connection': 'x-remove-me',
       'x-forwarded-for': '192.0.2.1',
       'x-remove-me': 'hop-by-hop-value',

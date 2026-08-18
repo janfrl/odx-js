@@ -11,6 +11,7 @@ import { ofetch } from 'ofetch'
 export interface BtpDestination {
   name: string
   url: string
+  authentication?: string
   user?: string
   password?: string
   authTokens?: Array<{ value: string }>
@@ -35,6 +36,8 @@ interface ResolveBtpDestinationOptions {
 }
 
 const DESTINATION_CACHE_TTL_MS = 60_000
+const DIGITS_ONLY = /^\d+$/
+const INVALID_CONNECTIVITY_HOST_CHARACTERS = /[\s/\\]/
 const destinationCache = new Map<string, DestinationCacheEntry>()
 
 export function isLocalBtpFallbackAllowed(): boolean {
@@ -94,6 +97,27 @@ function isAbsoluteHttpUrl(value: string): boolean {
   catch {
     return false
   }
+}
+
+function resolveConnectivityProxy(credentials: any): { host: string, port: number } {
+  const host = typeof credentials?.onpremise_proxy_host === 'string'
+    ? credentials.onpremise_proxy_host.trim()
+    : ''
+  const rawPort = credentials?.onpremise_proxy_http_port ?? credentials?.onpremise_proxy_port
+  const port = typeof rawPort === 'number'
+    ? rawPort
+    : typeof rawPort === 'string' && DIGITS_ONLY.test(rawPort.trim())
+      ? Number.parseInt(rawPort, 10)
+      : Number.NaN
+
+  if (!host || INVALID_CONNECTIVITY_HOST_CHARACTERS.test(host)) {
+    throw new Error('invalid Connectivity binding: onpremise_proxy_host is missing or invalid')
+  }
+  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+    throw new Error('invalid Connectivity binding: onpremise_proxy_http_port is missing or invalid')
+  }
+
+  return { host, port }
 }
 
 /**
@@ -221,18 +245,25 @@ export async function resolveBtpDestination(
       password: config.Password,
       authTokens: authTokens?.map((t: any) => ({ value: t.value })),
       proxyType: config.ProxyType,
+      authentication: config.Authentication,
     }
 
     // 3. Handle OnPremise Connectivity
-    if (config.ProxyType === 'OnPremise' && connectivityService) {
+    if (config.ProxyType === 'OnPremise') {
+      if (!connectivityService?.credentials) {
+        throw new Error('Connectivity service binding is required for an OnPremise destination')
+      }
+
       const connCreds = connectivityService.credentials
+      const proxy = resolveConnectivityProxy(connCreds)
       const connToken = await fetchXsuaaToken(connCreds)
 
       resolvedDestination.connectivity = {
-        host: connCreds.onpremise_proxy_host || 'connectivityproxy.internal.cf.eu10.hana.ondemand.com',
-        port: Number.parseInt(connCreds.onpremise_proxy_port || '20003'),
+        ...proxy,
         token: connToken,
-        userToken: userToken?.replace('Bearer ', ''),
+        ...(config.Authentication === 'PrincipalPropagation' && userToken
+          ? { userToken: userToken.replace('Bearer ', '') }
+          : {}),
       }
     }
 

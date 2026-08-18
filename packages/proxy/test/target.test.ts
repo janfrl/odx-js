@@ -77,4 +77,30 @@ describe('proxy target resolution', () => {
       allowResolutionFailureFallback: true,
     })
   })
+
+  it('preserves Connectivity routing credentials from an OnPremise destination', async () => {
+    process.env.NODE_ENV = 'production'
+    vi.mocked(resolveBtpDestination).mockResolvedValue({
+      name: 'S4_BACKEND',
+      url: 'http://virtual-onpremise.internal:8000',
+      proxyType: 'OnPremise',
+      connectivity: {
+        host: 'connectivity-proxy.internal',
+        port: 20003,
+        token: 'connectivity-token',
+        userToken: 'user-token',
+      },
+    })
+
+    await expect(resolveProxyTarget(event, config, 'BusinessPartner')).resolves.toMatchObject({
+      url: 'http://virtual-onpremise.internal:8000',
+      isRelative: false,
+      connectivity: {
+        host: 'connectivity-proxy.internal',
+        port: 20003,
+        token: 'connectivity-token',
+        userToken: 'user-token',
+      },
+    })
+  })
 })

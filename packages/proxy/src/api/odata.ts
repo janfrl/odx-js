@@ -4,6 +4,7 @@ import type { ODataProxyHooks } from '../types'
 import { flattenOData, prepareSapCsrfHeaders } from '@me-tools/odx-core'
 import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, removeResponseHeader, setHeader, setResponseStatus } from 'h3'
 import { ofetch } from 'ofetch'
+import { resolveConnectivityRequest } from '../utils/connectivity-proxy'
 import { prepareProxyHeaders } from '../utils/headers'
 import { OdxProxyTelemetry, resolveOdxProxyTargetKind } from '../utils/operational-telemetry'
 import { odataGuard } from '../utils/rules'
@@ -14,10 +15,11 @@ const ENTITY_SET_IDENTIFIER = /^[\w.]+/
 const CSRF_PROTECTED_METHODS = new Set(['DELETE', 'MERGE', 'PATCH', 'POST', 'PUT'])
 const BUFFERED_RESPONSE_HEADERS = ['etag', 'odata-version', 'preference-applied', 'sap-message'] as const
 
-function omitManagedAuthorization(headers: Record<string, string>, authHeader?: string): void {
+function omitManagedCredentials(headers: Record<string, string>, authHeader?: string): void {
   if (authHeader && headers.authorization === authHeader) {
     delete headers.authorization
   }
+  delete headers['sap-connectivity-authentication']
 }
 
 function resolveCsrfPolicy(service: { csrf?: { mode?: unknown, fetchMethod?: unknown } } | undefined): {
@@ -155,8 +157,10 @@ export default defineEventHandler(async (event): Promise<any> => {
       targetConfig.authHeader,
       { forwardAuthorization: config.forwardAuthHeader !== false },
     )
+    const connectivityRequest = resolveConnectivityRequest(targetConfig.connectivity)
+    Object.assign(finalHeaders, connectivityRequest.headers)
     const loggedHeaders = { ...finalHeaders }
-    omitManagedAuthorization(loggedHeaders, targetConfig.authHeader)
+    omitManagedCredentials(loggedHeaders, targetConfig.authHeader)
 
     // 4. DevTools Logging Initialization
     let requestBody: any = null
@@ -191,7 +195,7 @@ export default defineEventHandler(async (event): Promise<any> => {
       // Sync changes back from Guard/Hooks
       Object.assign(finalHeaders, fetchOptions.headers || {})
       Object.assign(loggedHeaders, finalHeaders)
-      omitManagedAuthorization(loggedHeaders, targetConfig.authHeader)
+      omitManagedCredentials(loggedHeaders, targetConfig.authHeader)
       targetUrl = hookCtx.url || targetUrl
       await tracer.updateLogContext({ targetUrl, requestHeaders: loggedHeaders })
     }
@@ -203,6 +207,7 @@ export default defineEventHandler(async (event): Promise<any> => {
           method: event.method,
           headers: finalHeaders,
           fetchMethod: csrfPolicy.fetchMethod,
+          dispatcher: connectivityRequest.dispatcher,
         })
         Object.assign(finalHeaders, csrfHeaders)
         tracer.addTrace('CSRF', 'SAP mutation headers prepared', null, 'success')
@@ -229,6 +234,7 @@ export default defineEventHandler(async (event): Promise<any> => {
             ...finalHeaders,
           },
           body: requestBody ?? await readProxyRequestBody(event),
+          dispatcher: connectivityRequest.dispatcher,
           async onResponse({ response }) {
             responseStatus = response.status
             if (hooks?.callHook && !isDirect) {
@@ -275,7 +281,11 @@ export default defineEventHandler(async (event): Promise<any> => {
     return proxyRequest(event, targetUrl, {
       headers: finalHeaders,
       cookieDomainRewrite: { '*': '' },
-      fetchOptions: streamFetchOptions,
+      fetch: connectivityRequest.fetch,
+      fetchOptions: {
+        ...streamFetchOptions,
+        dispatcher: connectivityRequest.dispatcher,
+      } as RequestInit,
       onResponse(responseEvent, response) {
         removeBackendSessionHeaders(responseEvent, response.headers)
       },

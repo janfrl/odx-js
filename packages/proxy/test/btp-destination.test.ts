@@ -118,7 +118,7 @@ describe('btp Destination Resolution', () => {
       xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
       connectivity: [{ credentials: {
         onpremise_proxy_host: 'proxy.host',
-        onpremise_proxy_port: '1234',
+        onpremise_proxy_http_port: '1234',
         url: 'https://conn-uaa.api',
         clientid: 'conn-id',
         clientsecret: 'conn-sec',
@@ -506,11 +506,36 @@ describe('btp Destination Resolution', () => {
     expect(ofetch).toHaveBeenCalledTimes(4)
   })
 
-  it('uses connectivity proxy defaults when OnPremise binding omits proxy host and port', async () => {
+  it('fails closed when an OnPremise destination has no Connectivity binding', async () => {
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: 'https://dest.api' } }],
+      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
+    })
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'http://onpremise-without-connectivity:8000',
+          ProxyType: 'OnPremise',
+        },
+      })
+
+    await expect(resolveBtpDestination('OnPremMissingConnectivityService', undefined, {
+      allowResolutionFailureFallback: false,
+    })).rejects.toThrow('Connectivity service binding is required')
+  })
+
+  it.each([
+    [{ onpremise_proxy_http_port: '20003' }, 'onpremise_proxy_host is missing or invalid'],
+    [{ onpremise_proxy_host: 'proxy.host' }, 'onpremise_proxy_http_port is missing or invalid'],
+    [{ onpremise_proxy_host: 'proxy.host', onpremise_proxy_http_port: '70000' }, 'onpremise_proxy_http_port is missing or invalid'],
+  ])('fails closed for incomplete Connectivity proxy credentials', async (proxyCredentials, expectedError) => {
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: 'https://dest.api' } }],
       xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
       connectivity: [{ credentials: {
+        ...proxyCredentials,
         url: 'https://conn-uaa.api',
         clientid: 'conn-id',
         clientsecret: 'conn-sec',
@@ -521,16 +546,44 @@ describe('btp Destination Resolution', () => {
       .mockResolvedValueOnce({ access_token: 'dest-token' })
       .mockResolvedValueOnce({
         destinationConfiguration: {
-          URL: 'http://onpremise-defaults:8000',
+          URL: 'http://onpremise-invalid-binding:8000',
           ProxyType: 'OnPremise',
+        },
+      })
+
+    await expect(resolveBtpDestination(`OnPremInvalid-${expectedError}`, undefined, {
+      allowResolutionFailureFallback: false,
+    })).rejects.toThrow(expectedError)
+  })
+
+  it('accepts the deprecated Connectivity proxy port as a compatibility fallback', async () => {
+    process.env.VCAP_SERVICES = JSON.stringify({
+      destination: [{ credentials: { uri: 'https://dest.api' } }],
+      xsuaa: [{ credentials: { url: 'https://uaa.api', clientid: 'id', clientsecret: 'sec' } }],
+      connectivity: [{ credentials: {
+        onpremise_proxy_host: 'legacy.proxy.host',
+        onpremise_proxy_port: '20003',
+        url: 'https://conn-uaa.api',
+        clientid: 'conn-id',
+        clientsecret: 'conn-sec',
+      } }],
+    })
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: {
+          URL: 'http://legacy-onpremise:8000',
+          ProxyType: 'OnPremise',
+          Authentication: 'PrincipalPropagation',
         },
       })
       .mockResolvedValueOnce({ access_token: 'conn-token' })
 
-    const result = await resolveBtpDestination('OnPremDefaultsService', 'Bearer user-jwt-456')
+    const result = await resolveBtpDestination('OnPremLegacyPortService', 'Bearer user-jwt-456')
 
     expect(result.connectivity).toEqual({
-      host: 'connectivityproxy.internal.cf.eu10.hana.ondemand.com',
+      host: 'legacy.proxy.host',
       port: 20003,
       token: 'conn-token',
       userToken: 'user-jwt-456',
