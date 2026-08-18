@@ -465,6 +465,21 @@ export function useOData(service?: string): any {
     options: ODataRequestOptions = {},
   ): Promise<readonly ODataChangeSetResponse[]> => {
     const requests = mutations.map((mutation) => {
+      if (mutation.kind === 'action') {
+        const bindingPath = mutation.scope === 'service'
+          ? undefined
+          : mutation.scope === 'collection'
+            ? mutation.entitySet
+            : createODataNavigationSourcePath(mutation.entitySet, mutation.key)
+        return {
+          method: 'POST' as const,
+          path: bindingPath === undefined
+            ? mutation.action
+            : joinODataPath(bindingPath, mutation.action),
+          headers: mutation.headers,
+          body: mutation.parameters ?? {},
+        }
+      }
       const entityPath = mutation.kind === 'update'
         ? createODataEntityPath(mutation.entitySet, mutation.key)
         : createODataNavigationSourcePath(mutation.entitySet, mutation.key)

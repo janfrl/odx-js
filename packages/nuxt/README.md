@@ -149,9 +149,10 @@ await useOData('Northwind')
   })
 ```
 
-`changeSet()` accepts `create-navigation`, `update-navigation`, and
-`delete-navigation` mutations in addition to top-level updates, so related
-entity edits can be committed atomically. Invoke qualified actions at the
+`changeSet()` accepts service-, collection-, and entity-bound `action` members,
+`create-navigation`, `update-navigation`, and `delete-navigation` mutations in
+addition to top-level updates, so related operations can be committed atomically.
+Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so
 callers never concatenate executable resource paths:

@@ -318,9 +318,10 @@ Service-level methods:
 | `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 
-`changeSet` accepts typed root `update` plus `create-navigation`,
-`update-navigation`, and `delete-navigation` mutations and serializes them into
-one atomic OData V4 changeset. Each mutation keeps its own key, payload where
+`changeSet` accepts typed service-, collection-, and entity-bound `action`
+members, root `update`, `create-navigation`, `update-navigation`, and
+`delete-navigation` mutations and serializes them into one atomic OData V4
+changeset. Each mutation keeps its own key, payload where
 applicable, and optional headers such as `If-Match`; request options such as
 `signal` and correlation headers apply to the outer batch request. The method
 rejects if any changeset member fails, so callers must not infer success from

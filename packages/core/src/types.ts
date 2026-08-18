@@ -522,9 +522,37 @@ export interface ODataAtomicNavigationDelete {
   readonly headers?: Readonly<Record<string, string>>
 }
 
+/** Invokes an OData action as one member of an atomic changeset. */
+export type ODataAtomicAction
+  = | {
+    readonly kind: 'action'
+    readonly scope: 'service'
+    readonly action: string
+    readonly parameters?: Readonly<Record<string, unknown>>
+    readonly headers?: Readonly<Record<string, string>>
+  }
+  | {
+    readonly kind: 'action'
+    readonly scope: 'collection'
+    readonly entitySet: string
+    readonly action: string
+    readonly parameters?: Readonly<Record<string, unknown>>
+    readonly headers?: Readonly<Record<string, string>>
+  }
+  | {
+    readonly kind: 'action'
+    readonly scope: 'entity'
+    readonly entitySet: string
+    readonly key: ODataNavigationSource
+    readonly action: string
+    readonly parameters?: Readonly<Record<string, unknown>>
+    readonly headers?: Readonly<Record<string, string>>
+  }
+
 /** A mutation supported by the typed service-level atomic changeset API. */
 export type ODataAtomicMutation
-  = | ODataAtomicUpdate
+  = | ODataAtomicAction
+    | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
     | ODataAtomicNavigationDelete
     | ODataAtomicNavigationUpdate

@@ -1094,6 +1094,52 @@ describe('useOData Composable', () => {
       expect(options.body).toContain('If-Match: W/"supplier-2"')
     })
 
+    it('serializes service, collection, and entity actions in one atomic changeset', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          'Content-Transfer-Encoding: binary',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+
+      await api.changeSet([{
+        kind: 'action',
+        scope: 'service',
+        action: 'Demo.Container/Recalculate',
+      }, {
+        kind: 'action',
+        scope: 'collection',
+        entitySet: 'Products',
+        action: 'Demo.RepriceAll',
+        parameters: { Percent: 5 },
+      }, {
+        kind: 'action',
+        scope: 'entity',
+        entitySet: 'Products',
+        key: 1,
+        action: 'Demo.ArchiveProduct',
+        parameters: { Reason: 'Obsolete' },
+        headers: { 'If-Match': 'W/"product-1"' },
+      }])
+
+      const options = raw.mock.calls[0]?.[1] as any
+      expect(options.body).toContain('POST Demo.Container/Recalculate HTTP/1.1')
+      expect(options.body).toContain('POST Products/Demo.RepriceAll HTTP/1.1')
+      expect(options.body).toContain('POST Products(1)/Demo.ArchiveProduct HTTP/1.1')
+      expect(options.body).toContain('{"Percent":5}')
+      expect(options.body).toContain('{"Reason":"Obsolete"}')
+      expect(options.body).toContain('If-Match: W/"product-1"')
+    })
+
     it('serializes navigation creates and deletes in one atomic changeset', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({
