@@ -184,6 +184,10 @@ the JSON action body (`"Urgent"` above). ODX preserves that string exactly and
 does not replace it with the member's underlying integer value; metadata-aware
 callers remain responsible for validating the member against the EnumType.
 
+Structured action parameters remain nested JSON objects with exact property
+names and explicit `null` values. ODX does not flatten or stringify them;
+metadata-aware callers remain responsible for validating the complex contract.
+
 ## Verification
 
 From the repository root:
