@@ -202,7 +202,7 @@ async function fetchMetadata(
   url: string,
   headers: Record<string, string>,
   rejectUnauthorized: boolean,
-  connectivityRequest: ReturnType<typeof resolveConnectivityRequest>,
+  connectivityRequest: Awaited<ReturnType<typeof resolveConnectivityRequest>>,
 ): Promise<string> {
   if (connectivityRequest.fetch) {
     const response = await connectivityRequest.fetch(url, {
@@ -346,7 +346,7 @@ export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: O
 async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<{
   url: string
   headers: Record<string, string>
-  connectivityRequest: ReturnType<typeof resolveConnectivityRequest>
+  connectivityRequest: Awaited<ReturnType<typeof resolveConnectivityRequest>>
 }> {
   const route = service.route || service.name
   const target = await resolveProxyTarget(event, config, route, { allowBtpDestinationFallback: false })
@@ -368,7 +368,7 @@ async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, 
     authHeader,
     { forwardAuthorization: config.forwardAuthHeader !== false },
   )
-  const connectivityRequest = resolveConnectivityRequest(target.connectivity)
+  const connectivityRequest = await resolveConnectivityRequest(target.connectivity)
   Object.assign(headers, connectivityRequest.headers)
   headers.accept = METADATA_ACCEPT_HEADER
 

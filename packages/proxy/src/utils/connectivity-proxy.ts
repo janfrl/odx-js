@@ -1,7 +1,6 @@
-import type { Dispatcher } from 'undici'
+import type { Dispatcher, ProxyAgent } from 'undici'
 import type { ResolvedProxyTarget } from './target'
 import { createHash } from 'node:crypto'
-import { ProxyAgent, fetch as undiciFetch } from 'undici'
 
 type Connectivity = NonNullable<ResolvedProxyTarget['connectivity']>
 
@@ -18,13 +17,15 @@ function createCacheKey(connectivity: Connectivity): string {
   return `${connectivity.host}:${connectivity.port}:${tokenHash}`
 }
 
-export function resolveConnectivityRequest(connectivity: Connectivity | undefined): {
+export async function resolveConnectivityRequest(connectivity: Connectivity | undefined): Promise<{
   dispatcher?: Dispatcher
   headers?: Record<string, string>
   fetch?: typeof globalThis.fetch
-} {
+}> {
   if (!connectivity)
     return {}
+
+  const { ProxyAgent, fetch: undiciFetch } = await import('undici')
 
   const cacheKey = createCacheKey(connectivity)
   let cached = dispatcherCache.get(cacheKey)

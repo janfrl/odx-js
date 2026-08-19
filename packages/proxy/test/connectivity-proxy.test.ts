@@ -19,8 +19,8 @@ describe('connectivity proxy request', () => {
     vi.useRealTimers()
   })
 
-  it('creates an authenticated HTTP proxy dispatcher and principal propagation header', () => {
-    const request = resolveConnectivityRequest({
+  it('creates an authenticated HTTP proxy dispatcher and principal propagation header', async () => {
+    const request = await resolveConnectivityRequest({
       host: 'connectivity-proxy.internal',
       port: 20003,
       token: 'connectivity-token',
@@ -38,18 +38,18 @@ describe('connectivity proxy request', () => {
     })
   })
 
-  it('reuses a dispatcher only for the same endpoint and token', () => {
-    const first = resolveConnectivityRequest({
+  it('reuses a dispatcher only for the same endpoint and token', async () => {
+    const first = await resolveConnectivityRequest({
       host: 'proxy-cache.internal',
       port: 20003,
       token: 'first-token',
     })
-    const second = resolveConnectivityRequest({
+    const second = await resolveConnectivityRequest({
       host: 'proxy-cache.internal',
       port: 20003,
       token: 'first-token',
     })
-    const rotated = resolveConnectivityRequest({
+    const rotated = await resolveConnectivityRequest({
       host: 'proxy-cache.internal',
       port: 20003,
       token: 'rotated-token',
@@ -59,7 +59,7 @@ describe('connectivity proxy request', () => {
     expect(rotated.dispatcher).not.toBe(first.dispatcher)
   })
 
-  it('does not add Connectivity credentials to ordinary requests', () => {
-    expect(resolveConnectivityRequest(undefined)).toEqual({})
+  it('does not add Connectivity credentials to ordinary requests', async () => {
+    await expect(resolveConnectivityRequest(undefined)).resolves.toEqual({})
   })
 })

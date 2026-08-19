@@ -157,7 +157,7 @@ export default defineEventHandler(async (event): Promise<any> => {
       targetConfig.authHeader,
       { forwardAuthorization: config.forwardAuthHeader !== false },
     )
-    const connectivityRequest = resolveConnectivityRequest(targetConfig.connectivity)
+    const connectivityRequest = await resolveConnectivityRequest(targetConfig.connectivity)
     Object.assign(finalHeaders, connectivityRequest.headers)
     const loggedHeaders = { ...finalHeaders }
     omitManagedCredentials(loggedHeaders, targetConfig.authHeader)

@@ -44,7 +44,7 @@ describe('connectivity proxy transport', () => {
       proxy.listen(0, '127.0.0.1', resolve)
     })
     const address = proxy.address() as AddressInfo
-    const connectivity = resolveConnectivityRequest({
+    const connectivity = await resolveConnectivityRequest({
       host: address.address,
       port: address.port,
       token: 'connectivity-token',

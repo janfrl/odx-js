@@ -15,6 +15,12 @@ metadata refreshes, CSRF preflights, buffered requests, and streamed requests. F
 `PrincipalPropagation` destination, an available user token is carried as
 `SAP-Connectivity-Authentication` within the tunneled request.
 
+The Node-specific `undici` transport is loaded only after a request resolves
+actual Connectivity credentials. Ordinary direct and Workerd-compatible proxy
+requests therefore do not evaluate the Node HTTP client graph, while the
+authenticated On-Premise path retains the same dispatcher cache and tunnel
+semantics.
+
 ## Primary references
 
 - SAP Help, [Consuming the Connectivity Service](https://help.sap.com/docs/connectivity/sap-btp-connectivity-cf/consuming-connectivity-service): Cloud Foundry applications consume the service through the HTTP proxy credentials and authenticate the proxy with a bearer token.
@@ -37,7 +43,8 @@ metadata refreshes, CSRF preflights, buffered requests, and streamed requests. F
   token, Destination authentication, real CONNECT tunnelling, SAP CSRF/session
   preparation, and both buffered and streamed mutations.
 - `packages/proxy/test/connectivity-proxy.test.ts` verifies dispatcher reuse
-  is scoped to the proxy endpoint and hashed token identity.
+  is scoped to the proxy endpoint and hashed token identity, and that the
+  ordinary no-Connectivity path resolves without loading transport state.
 
 This local interaction contract does not claim a successful Cloud Foundry
 deployment, XSUAA login redirect, HTML5 Application Repository publication, or
