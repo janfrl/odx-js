@@ -111,8 +111,8 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
   `mergeHeaders`, and `sanitizeBaseURL`.
 - Validated, service-relative OData key, entity, navigation, action, and typed V4 function path
   construction, while service-root resolution and transport remain adapters.
-- Multipart changeset serialization and response parsing for atomic OData V4
-  writes.
+- Multipart serialization and response parsing for atomic OData V4 writes and
+  ordered independent changesets whose partial outcomes remain explicit.
 - EDMX parsing utilities from the `./server` export.
 - CSRF-aware request support through `fetchWithCsrf`.
 - The `OdxLogStore` traffic-log boundary, default in-memory store, redaction
@@ -150,9 +150,9 @@ The Nuxt module is the host integration layer. Its setup flow is:
 7. Generate OData model and registry types during `prepare:types`.
 8. Register the ODX Explorer as a Nuxt DevTools custom tab in development.
 
-The runtime composable maps typed service-level root and navigation updates to
-framework-neutral changesets and owns service URL resolution plus `$batch`
-transport.
+The runtime composable maps typed service-level actions, root updates, and
+navigation mutations to framework-neutral atomic or independent changesets and
+owns service URL resolution plus `$batch` transport.
 
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
 OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in

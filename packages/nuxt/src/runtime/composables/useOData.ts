@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataChangeSetMethod, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -14,7 +14,9 @@ import {
   formatODataNavigationPath,
   joinODataPath,
   mergeHeaders,
+  parseODataBatchChangeSetsResponse,
   parseODataChangeSetResponse,
+  serializeODataBatchChangeSets,
   serializeODataChangeSet,
   stringifyQuery,
   toODataCollectionPage,
@@ -460,50 +462,54 @@ export function useOData(service?: string): any {
     }
   }
 
-  const createChangeSet = (serviceName: string) => async (
-    mutations: readonly ODataAtomicMutation[],
-    options: ODataRequestOptions = {},
-  ): Promise<readonly ODataChangeSetResponse[]> => {
-    const requests = mutations.map((mutation) => {
-      if (mutation.kind === 'action') {
-        const bindingPath = mutation.scope === 'service'
-          ? undefined
-          : mutation.scope === 'collection'
-            ? mutation.entitySet
-            : createODataNavigationSourcePath(mutation.entitySet, mutation.key)
-        return {
-          method: 'POST' as const,
-          path: bindingPath === undefined
-            ? mutation.action
-            : joinODataPath(bindingPath, mutation.action),
-          headers: mutation.headers,
-          body: mutation.parameters ?? {},
-        }
-      }
-      const entityPath = mutation.kind === 'update'
-        ? createODataEntityPath(mutation.entitySet, mutation.key)
-        : createODataNavigationSourcePath(mutation.entitySet, mutation.key)
-      const path = mutation.kind === 'update'
-        ? entityPath
-        : (() => {
-            const navigationPath = joinODataPath(entityPath, formatODataNavigationPath(mutation.navigationPath))
-            return 'targetKey' in mutation && mutation.targetKey !== undefined
-              ? `${navigationPath}(${formatODataKey(mutation.targetKey)})`
-              : navigationPath
-          })()
-      const method: ODataChangeSetMethod = mutation.kind === 'create-navigation'
-        ? 'POST'
-        : mutation.kind === 'delete-navigation'
-          ? 'DELETE'
-          : 'PATCH'
-      return {
-        method,
-        path,
+  const atomicMutationRequest = (
+    mutation: ODataAtomicMutation,
+  ): ODataChangeSetRequest => {
+    if (mutation.kind === 'action') {
+      const bindingPath = mutation.scope === 'service'
+        ? undefined
+        : mutation.scope === 'collection'
+          ? mutation.entitySet
+          : createODataNavigationSourcePath(mutation.entitySet, mutation.key)
+      return Object.freeze({
+        method: 'POST' as const,
+        path: bindingPath === undefined
+          ? mutation.action
+          : joinODataPath(bindingPath, mutation.action),
         headers: mutation.headers,
-        ...('body' in mutation ? { body: mutation.body } : {}),
-      }
+        body: mutation.parameters ?? {},
+      })
+    }
+    const entityPath = mutation.kind === 'update'
+      ? createODataEntityPath(mutation.entitySet, mutation.key)
+      : createODataNavigationSourcePath(mutation.entitySet, mutation.key)
+    const path = mutation.kind === 'update'
+      ? entityPath
+      : (() => {
+          const navigationPath = joinODataPath(entityPath, formatODataNavigationPath(mutation.navigationPath))
+          return 'targetKey' in mutation && mutation.targetKey !== undefined
+            ? `${navigationPath}(${formatODataKey(mutation.targetKey)})`
+            : navigationPath
+        })()
+    const method: ODataChangeSetMethod = mutation.kind === 'create-navigation'
+      ? 'POST'
+      : mutation.kind === 'delete-navigation'
+        ? 'DELETE'
+        : 'PATCH'
+    return Object.freeze({
+      method,
+      path,
+      headers: mutation.headers,
+      ...('body' in mutation ? { body: mutation.body } : {}),
     })
-    const payload = serializeODataChangeSet(requests)
+  }
+
+  const postChangeSetBatch = async <T>(
+    serviceName: string,
+    payload: { readonly body: string, readonly contentType: string },
+    options: ODataRequestOptions,
+    parse: (body: string, contentType: string) => T,
+  ): Promise<T> => {
     const response = await client.raw<string>(
       joinODataPath(resolveServicePath(serviceName), '$batch'),
       {
@@ -521,12 +527,48 @@ export function useOData(service?: string): any {
     if (typeof response._data !== 'string') {
       throw new TypeError('The OData batch response body must be text.')
     }
-    return parseODataChangeSetResponse(response._data, contentType)
+    return parse(response._data, contentType)
+  }
+
+  const createChangeSet = (serviceName: string) => async (
+    mutations: readonly ODataAtomicMutation[],
+    options: ODataRequestOptions = {},
+  ): Promise<readonly ODataChangeSetResponse[]> => {
+    const payload = serializeODataChangeSet(mutations.map(atomicMutationRequest))
+    return postChangeSetBatch(
+      serviceName,
+      payload,
+      options,
+      parseODataChangeSetResponse,
+    )
+  }
+
+  const createBatchChangeSets = (serviceName: string) => async (
+    changeSets: readonly (readonly ODataAtomicMutation[])[],
+    options: ODataRequestOptions = {},
+  ): Promise<readonly ODataBatchChangeSetResult[]> => {
+    const payload = serializeODataBatchChangeSets(changeSets.map(changeSet =>
+      changeSet.map(atomicMutationRequest),
+    ))
+    const results = await postChangeSetBatch(
+      serviceName,
+      payload,
+      options,
+      parseODataBatchChangeSetsResponse,
+    )
+    if (results.length !== changeSets.length) {
+      throw new TypeError(
+        'The OData batch response count does not match the requested changesets.',
+      )
+    }
+    return results
   }
 
   const createServiceProxy = (serviceName: string): ODataRuntimeService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
       supportsAtomicActionChangesets: true as const,
+      supportsBatchChangeSets: true as const,
+      batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),
     })
     return new Proxy(rootMethods as any, {

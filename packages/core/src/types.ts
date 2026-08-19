@@ -569,6 +569,8 @@ type ODataServiceContract<
 > = {
   /** Advertises typed OData action members inside atomic changesets. */
   readonly supportsAtomicActionChangesets?: true
+  /** Advertises multiple independent changesets inside one OData batch. */
+  readonly supportsBatchChangeSets?: true
   /**
    * Accesses a specific entity set of the service.
    */
@@ -585,6 +587,14 @@ type ODataServiceContract<
     mutations: readonly ODataAtomicMutation[],
     options?: ODataRequestOptions,
   ) => Promise<readonly import('./odata-changeset').ODataChangeSetResponse[]>
+  /**
+   * Executes independent mutation groups in one batch without collapsing
+   * successful groups when another changeset fails.
+   */
+  batchChangeSets?: (
+    changeSets: readonly (readonly ODataAtomicMutation[])[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly import('./odata-changeset').ODataBatchChangeSetResult[]>
 } & {
   /**
    * Direct access to entity sets via properties.

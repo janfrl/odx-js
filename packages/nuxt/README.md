@@ -155,6 +155,9 @@ addition to top-level updates, so related operations can be committed atomically
 The service advertises this additive contract through
 `supportsAtomicActionChangesets === true`, allowing integrations to stay
 fail-closed with older ODX runtimes.
+`batchChangeSets()` sends ordered mutation groups as separate changesets inside
+one batch and returns a `succeeded` result per group, preserving partial success.
+Use `supportsBatchChangeSets === true` before depending on this newer contract.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so

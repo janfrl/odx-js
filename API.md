@@ -38,6 +38,12 @@ service-relative path, JSON body, headers, and unique Content-ID. Unsafe
 absolute paths, control characters, empty sets, and invalid or duplicate MIME
 boundaries fail before transport.
 
+`serializeODataBatchChangeSets(changeSets, options?)` emits multiple independent
+changesets in one batch with unique boundaries and Content-IDs. Its paired
+`parseODataBatchChangeSetsResponse(body, contentType)` preserves one immutable
+result per changeset, including non-2xx outcomes, so one rejected group does not
+erase successful sibling groups.
+
 `parseODataChangeSetResponse(body, contentType)` validates nested multipart or
 single-error batch responses and returns immutable per-operation status,
 headers, and parsed body values. Any non-2xx member throws
@@ -316,6 +322,7 @@ Service-level methods:
 | Method | HTTP | Return |
 | --- | --- | --- |
 | `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
+| `batchChangeSets(changeSets, options?)` | `POST .../$batch` | `Promise<readonly ODataBatchChangeSetResult[]>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
@@ -328,9 +335,17 @@ rejects if any changeset member fails, so callers must not infer success from
 the outer batch status alone. Entity-set and navigation names are validated as
 identifier segments before transport.
 
+`batchChangeSets` accepts an ordered array of mutation groups and sends every
+group as a separate changeset in one outer request. Transport and malformed
+multipart failures reject the call; valid non-2xx changeset results are returned
+with `succeeded: false` beside successful groups. A response-count mismatch
+fails closed before callers can associate an outcome with the wrong input.
+
 Generated Nuxt services expose `supportsAtomicActionChangesets === true`.
 Consumers that conditionally use action members can check this capability and
 remain compatible with older runtimes whose changesets only support mutations.
+They also expose `supportsBatchChangeSets === true` for the independent grouped
+contract.
 
 Keys may be strings, numbers, booleans, or composite key objects.
 

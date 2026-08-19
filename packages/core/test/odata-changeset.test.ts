@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   ODataChangeSetError,
+  parseODataBatchChangeSetsResponse,
   parseODataChangeSetResponse,
+  serializeODataBatchChangeSets,
   serializeODataChangeSet,
 } from '../src/index.js'
 
@@ -61,6 +63,56 @@ describe('oData changesets', () => {
     }], {
       ...boundaries,
       batchBoundary: 'bad boundary',
+    })).toThrow(ODataChangeSetError)
+  })
+
+  it('serializes independent changesets with unique content identities', () => {
+    const payload = serializeODataBatchChangeSets([[{
+      method: 'POST',
+      path: 'Products(1)/Demo.ArchiveProduct',
+      body: { Reason: 'Obsolete' },
+    }], [{
+      method: 'POST',
+      path: 'Products(3)/Demo.ArchiveProduct',
+      body: { Reason: 'Obsolete' },
+    }]], {
+      batchBoundary: 'batch_isolated',
+      changeSetBoundaries: ['changeset_first', 'changeset_second'],
+    })
+
+    expect(payload.changeSetBoundaries)
+      .toEqual(['changeset_first', 'changeset_second'])
+    expect(payload.body).toContain(
+      'boundary=changeset_first\r\n\r\n--changeset_first',
+    )
+    expect(payload.body).toContain(
+      'Content-ID: 1\r\n\r\nPOST Products(1)/Demo.ArchiveProduct HTTP/1.1',
+    )
+    expect(payload.body).toContain(
+      'boundary=changeset_second\r\n\r\n--changeset_second',
+    )
+    expect(payload.body).toContain(
+      'Content-ID: 2\r\n\r\nPOST Products(3)/Demo.ArchiveProduct HTTP/1.1',
+    )
+    expect(payload.body).toMatch(/--changeset_second--\r\n--batch_isolated--\r\n$/u)
+    expect(Object.isFrozen(payload.changeSetBoundaries)).toBe(true)
+  })
+
+  it('rejects empty groups and ambiguous independent boundaries', () => {
+    expect(() => serializeODataBatchChangeSets([])).toThrow(ODataChangeSetError)
+    expect(() => serializeODataBatchChangeSets([[]])).toThrow(ODataChangeSetError)
+    expect(() => serializeODataBatchChangeSets([[{
+      method: 'POST',
+      path: 'Products(1)/Demo.ArchiveProduct',
+    }]], {
+      changeSetBoundaries: [],
+    })).toThrow(ODataChangeSetError)
+    expect(() => serializeODataBatchChangeSets([[{
+      method: 'POST',
+      path: 'Products(1)/Demo.ArchiveProduct',
+    }]], {
+      batchBoundary: 'same',
+      changeSetBoundaries: ['same'],
     })).toThrow(ODataChangeSetError)
   })
 
@@ -137,5 +189,47 @@ describe('oData changesets', () => {
         }],
       })
     }
+  })
+
+  it('preserves independent successes and failures by changeset', () => {
+    const body = [
+      '--batch_response',
+      'Content-Type: multipart/mixed; boundary=changeset_success',
+      '',
+      '--changeset_success',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '--changeset_success--',
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 412 Precondition Failed',
+      'Content-Type: application/json',
+      '',
+      '{"error":{"code":"ETAG_MISMATCH"}}',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+
+    const results = parseODataBatchChangeSetsResponse(
+      body,
+      'multipart/mixed; boundary=batch_response',
+    )
+
+    expect(results).toEqual([{
+      succeeded: true,
+      responses: [{ status: 204, headers: {} }],
+    }, {
+      succeeded: false,
+      responses: [{
+        status: 412,
+        headers: { 'content-type': 'application/json' },
+        body: { error: { code: 'ETAG_MISMATCH' } },
+      }],
+    }])
+    expect(Object.isFrozen(results)).toBe(true)
+    expect(Object.isFrozen(results[0]?.responses)).toBe(true)
   })
 })

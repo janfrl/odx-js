@@ -25,6 +25,10 @@ vi.mock('#imports', () => ({
 vi.mock('@me-tools/odx-core', async () => {
   const actual = await vi.importActual('@me-tools/odx-core')
   const { createODataContinuationPath, flattenOData, toODataCollectionPage } = await import('../../core/src/odata-utils')
+  const {
+    parseODataBatchChangeSetsResponse,
+    serializeODataBatchChangeSets,
+  } = await import('../../core/src/odata-changeset')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
@@ -33,6 +37,8 @@ vi.mock('@me-tools/odx-core', async () => {
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
     createODataContinuationPath,
     flattenOData,
+    parseODataBatchChangeSetsResponse,
+    serializeODataBatchChangeSets,
     stringifyQuery: vi.fn(q => q),
     toODataCollectionPage,
   }
@@ -1139,6 +1145,97 @@ describe('useOData Composable', () => {
       expect(options.body).toContain('{"Percent":5}')
       expect(options.body).toContain('{"Reason":"Obsolete"}')
       expect(options.body).toContain('If-Match: W/"product-1"')
+    })
+
+    it('keeps independent action changeset outcomes in one batch', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: multipart/mixed; boundary=changeset_success',
+          '',
+          '--changeset_success',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '--changeset_success--',
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 412 Precondition Failed',
+          'Content-Type: application/json',
+          '',
+          '{"error":{"code":"ETAG_MISMATCH"}}',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+      expect(api.supportsBatchChangeSets).toBe(true)
+
+      const results = await api.batchChangeSets!([[{
+        kind: 'action',
+        scope: 'entity',
+        entitySet: 'Products',
+        key: 1,
+        action: 'Demo.ArchiveProduct',
+        headers: { 'If-Match': 'W/"product-1"' },
+      }], [{
+        kind: 'action',
+        scope: 'entity',
+        entitySet: 'Products',
+        key: 2,
+        action: 'Demo.ArchiveProduct',
+        headers: { 'If-Match': 'W/"product-2"' },
+      }]])
+
+      expect(results).toEqual([{
+        succeeded: true,
+        responses: [{ status: 204, headers: {} }],
+      }, {
+        succeeded: false,
+        responses: [{
+          status: 412,
+          headers: { 'content-type': 'application/json' },
+          body: { error: { code: 'ETAG_MISMATCH' } },
+        }],
+      }])
+      const body = raw.mock.calls[0]?.[1].body as string
+      expect(body.match(/Content-Type: multipart\/mixed; boundary=changeset_/gu))
+        .toHaveLength(2)
+      expect(body).toContain('POST Products(1)/Demo.ArchiveProduct HTTP/1.1')
+      expect(body).toContain('POST Products(2)/Demo.ArchiveProduct HTTP/1.1')
+    })
+
+    it('rejects an independent batch response count mismatch', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+
+      await expect(api.batchChangeSets!([[{
+        kind: 'update',
+        entitySet: 'Products',
+        key: 1,
+        body: { Active: true },
+      }], [{
+        kind: 'update',
+        entitySet: 'Products',
+        key: 2,
+        body: { Active: true },
+      }]])).rejects.toThrow('count does not match')
     })
 
     it('serializes navigation creates and deletes in one atomic changeset', async () => {

@@ -14,15 +14,32 @@ export interface ODataChangeSetPayload {
   readonly changeSetBoundary: string
 }
 
+export interface ODataBatchChangeSetsPayload {
+  readonly body: string
+  readonly contentType: string
+  readonly batchBoundary: string
+  readonly changeSetBoundaries: readonly string[]
+}
+
 export interface ODataChangeSetResponse {
   readonly status: number
   readonly headers: Readonly<Record<string, string>>
   readonly body?: unknown
 }
 
+export interface ODataBatchChangeSetResult {
+  readonly succeeded: boolean
+  readonly responses: readonly ODataChangeSetResponse[]
+}
+
 export interface SerializeODataChangeSetOptions {
   readonly batchBoundary?: string
   readonly changeSetBoundary?: string
+}
+
+export interface SerializeODataBatchChangeSetsOptions {
+  readonly batchBoundary?: string
+  readonly changeSetBoundaries?: readonly string[]
 }
 
 const RE_BOUNDARY = /^[\w'()+,./:=?-]{1,70}$/u
@@ -156,6 +173,76 @@ export function serializeODataChangeSet(
   })
 }
 
+/** Serializes independent changesets into one OData batch request. */
+export function serializeODataBatchChangeSets(
+  changeSets: readonly (readonly ODataChangeSetRequest[])[],
+  options: SerializeODataBatchChangeSetsOptions = {},
+): ODataBatchChangeSetsPayload {
+  if (changeSets.length === 0) {
+    throw new ODataChangeSetError(
+      'core.batch-changesets.empty',
+      'An OData changeset batch requires at least one changeset.',
+    )
+  }
+  if (changeSets.some(changeSet => changeSet.length === 0)) {
+    throw new ODataChangeSetError(
+      'core.batch-changesets.empty-changeset',
+      'Every changeset in an OData batch requires at least one operation.',
+    )
+  }
+  changeSets.flat().forEach(validateRequest)
+  const batchBoundary = validBoundary(
+    options.batchBoundary ?? randomBoundary('batch'),
+    'Batch boundary',
+  )
+  if (options.changeSetBoundaries !== undefined
+    && options.changeSetBoundaries.length !== changeSets.length) {
+    throw new ODataChangeSetError(
+      'core.batch-changesets.boundary-count',
+      'The changeset boundary count must match the changeset count.',
+    )
+  }
+  const changeSetBoundaries = Object.freeze(changeSets.map((_, index) =>
+    validBoundary(
+      options.changeSetBoundaries?.[index] ?? randomBoundary('changeset'),
+      `Changeset ${index + 1} boundary`,
+    ),
+  ))
+  if (new Set([batchBoundary, ...changeSetBoundaries]).size
+    !== changeSetBoundaries.length + 1) {
+    throw new ODataChangeSetError(
+      'core.batch-changesets.duplicate-boundary',
+      'Batch and changeset boundaries must be unique.',
+    )
+  }
+
+  let contentId = 0
+  const body = [
+    ...changeSets.flatMap((changeSet, groupIndex) => {
+      const boundary = changeSetBoundaries[groupIndex]!
+      return [
+        `--${batchBoundary}`,
+        `Content-Type: multipart/mixed; boundary=${boundary}`,
+        '',
+        ...changeSet.map(request => operationPart(
+          request,
+          boundary,
+          ++contentId,
+        )),
+        `--${boundary}--`,
+      ]
+    }),
+    `--${batchBoundary}--`,
+    '',
+  ].join('\r\n')
+  return Object.freeze({
+    body,
+    contentType: `multipart/mixed; boundary=${batchBoundary}`,
+    batchBoundary,
+    changeSetBoundaries,
+  })
+}
+
 function boundaryFromContentType(contentType: string): string {
   const match = RE_CONTENT_TYPE_BOUNDARY.exec(contentType)
   const value = match?.[1] ?? match?.[2]
@@ -223,9 +310,26 @@ export function parseODataChangeSetResponse(
   body: string,
   contentType: string,
 ): readonly ODataChangeSetResponse[] {
+  const results = parseODataBatchChangeSetsResponse(body, contentType)
+  const responses = Object.freeze(results.flatMap(result => result.responses))
+  if (results.some(result => !result.succeeded)) {
+    throw new ODataChangeSetError(
+      'core.changeset.failed',
+      'The atomic OData changeset failed.',
+      responses,
+    )
+  }
+  return responses
+}
+
+/** Parses every independent changeset result without collapsing partial failures. */
+export function parseODataBatchChangeSetsResponse(
+  body: string,
+  contentType: string,
+): readonly ODataBatchChangeSetResult[] {
   const batchBoundary = boundaryFromContentType(contentType)
   const batchParts = splitParts(body, batchBoundary)
-  const responses: ODataChangeSetResponse[] = []
+  const results: ODataBatchChangeSetResult[] = []
   for (const batchPart of batchParts) {
     const headerSeparator = RE_HEADER_SEPARATOR.exec(batchPart)
     if (headerSeparator === null)
@@ -233,6 +337,7 @@ export function parseODataChangeSetResponse(
     const mimeHeaders = parseHeaders(batchPart.slice(0, headerSeparator.index))
     const content = batchPart.slice(headerSeparator.index + headerSeparator[0].length)
     const nestedType = mimeHeaders['content-type'] ?? ''
+    const responses: ODataChangeSetResponse[] = []
     if (RE_MULTIPART_MIXED.test(nestedType)) {
       const changeSetBoundary = boundaryFromContentType(nestedType)
       for (const part of splitParts(content, changeSetBoundary))
@@ -241,19 +346,20 @@ export function parseODataChangeSetResponse(
     else if (RE_APPLICATION_HTTP.test(nestedType)) {
       responses.push(parseHttpPart(content))
     }
+    if (responses.length > 0) {
+      results.push(Object.freeze({
+        succeeded: responses.every(response =>
+          response.status >= 200 && response.status < 300,
+        ),
+        responses: Object.freeze(responses),
+      }))
+    }
   }
-  if (responses.length === 0) {
+  if (results.length === 0) {
     throw new ODataChangeSetError(
       'core.changeset.empty-response',
       'The OData batch response does not contain changeset results.',
     )
   }
-  if (responses.some(response => response.status < 200 || response.status >= 300)) {
-    throw new ODataChangeSetError(
-      'core.changeset.failed',
-      'The atomic OData changeset failed.',
-      responses,
-    )
-  }
-  return Object.freeze(responses)
+  return Object.freeze(results)
 }

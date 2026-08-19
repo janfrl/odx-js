@@ -33,6 +33,10 @@ describe('portable imperative transport types', () => {
       .toExtend<ODataRequestOptions>()
     expectTypeOf<NonNullable<Parameters<ODataService['changeSet']>[1]>>()
       .toExtend<ODataRequestOptions>()
+    expectTypeOf<NonNullable<ODataRuntimeService['batchChangeSets']>>()
+      .toBeFunction()
+    expectTypeOf<ODataRuntimeService['supportsBatchChangeSets']>()
+      .toEqualTypeOf<true | undefined>()
   })
 
   it('declares analytical apply as a portable query option', () => {
