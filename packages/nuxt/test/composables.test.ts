@@ -1047,6 +1047,7 @@ describe('useOData Composable', () => {
         headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
       })
       const api = useOData('RoutedService' as any)
+      expect(api.supportsAtomicActionChangesets).toBe(true)
 
       const responses = await api.changeSet([
         {

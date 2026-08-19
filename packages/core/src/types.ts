@@ -567,6 +567,8 @@ type ODataServiceContract<
   M extends Record<string, any>,
   TEntitySet extends ODataEntitySet<any>,
 > = {
+  /** Advertises typed OData action members inside atomic changesets. */
+  readonly supportsAtomicActionChangesets?: true
   /**
    * Accesses a specific entity set of the service.
    */

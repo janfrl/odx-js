@@ -526,6 +526,7 @@ export function useOData(service?: string): any {
 
   const createServiceProxy = (serviceName: string): ODataRuntimeService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
+      supportsAtomicActionChangesets: true as const,
       changeSet: createChangeSet(serviceName),
     })
     return new Proxy(rootMethods as any, {

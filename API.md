@@ -328,6 +328,10 @@ rejects if any changeset member fails, so callers must not infer success from
 the outer batch status alone. Entity-set and navigation names are validated as
 identifier segments before transport.
 
+Generated Nuxt services expose `supportsAtomicActionChangesets === true`.
+Consumers that conditionally use action members can check this capability and
+remain compatible with older runtimes whose changesets only support mutations.
+
 Keys may be strings, numbers, booleans, or composite key objects.
 
 `ODataQuery` uses `$count` for OData V4 count intent and `$inlinecount` for

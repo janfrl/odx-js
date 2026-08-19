@@ -152,6 +152,9 @@ await useOData('Northwind')
 `changeSet()` accepts service-, collection-, and entity-bound `action` members,
 `create-navigation`, `update-navigation`, and `delete-navigation` mutations in
 addition to top-level updates, so related operations can be committed atomically.
+The service advertises this additive contract through
+`supportsAtomicActionChangesets === true`, allowing integrations to stay
+fail-closed with older ODX runtimes.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so
