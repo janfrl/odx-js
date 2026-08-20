@@ -390,6 +390,60 @@ describe('useOData Composable', () => {
       )).resolves.toEqual({})
     })
 
+    it('creates a contained media entity through a structured parent source', async () => {
+      const bytes = Uint8Array.from([37, 80, 68, 70])
+      const signal = new AbortController().signal
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({
+        _data: { AttachmentID: 8, FileName: 'manual.pdf' },
+        headers: new Headers({ etag: 'W/"attachment-8"' }),
+      })
+
+      const response = await useOData('MyService').entitySet('Products').createNavigationMedia<{
+        AttachmentID: number
+        FileName: string
+      }>(
+        {
+          kind: 'contained-entity',
+          rootKey: { ID: 1, IsActiveEntity: false },
+          path: [{ navigationPath: ['Items'], key: 4 }],
+        },
+        ['Attachments'],
+        bytes,
+        {
+          contentType: 'application/pdf',
+          headers: {
+            'content-type': 'text/plain',
+            'prefer': 'return=minimal',
+            'slug': 'ignored.txt',
+            'x-correlation-id': 'contained-media-8',
+          },
+          signal,
+          slug: ' manual.pdf ',
+        },
+      )
+
+      expect(response).toEqual({
+        data: { AttachmentID: 8, FileName: 'manual.pdf' },
+        etag: 'W/"attachment-8"',
+      })
+      expect(fetchMock.raw).toHaveBeenCalledWith(
+        '/api/odx/MyService/Products(ID=1,IsActiveEntity=false)/Items(4)/Attachments',
+        {
+          body: bytes,
+          headers: {
+            'content-type': 'application/pdf',
+            'prefer': 'return=representation',
+            'slug': 'manual.pdf',
+            'x-correlation-id': 'contained-media-8',
+          },
+          method: 'POST',
+          responseType: 'json',
+          signal,
+        },
+      )
+    })
+
     it('replaces media streams with an exact content type and conditional ETag', async () => {
       const bytes = Uint8Array.from([1, 2, 3])
       const fetchMock = globalThis.$fetch as any
@@ -465,6 +519,14 @@ describe('useOData Composable', () => {
       }))
         .rejects
         .toThrow('valid slug')
+      await expect(entitySet.createNavigationMedia(
+        1,
+        [],
+        new ArrayBuffer(0),
+        { contentType: 'application/pdf' },
+      ))
+        .rejects
+        .toThrow('requires one or more valid identifier segments')
       await expect(entitySet.updateMedia(1, new ArrayBuffer(0), {
         contentType: 'application/pdf\r\nx-injected: true',
       }))

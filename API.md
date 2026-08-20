@@ -219,6 +219,8 @@ Entity-set methods:
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
 | `fetchMedia(key, options?)` | `GET .../$value` | `Promise<ODataMediaResponse>` |
+| `createMedia(body, options)` | `POST` | `Promise<ODataMediaCreateResponse<T>>` |
+| `createNavigationMedia<TResult>(source, navigationPath, body, options)` | `POST` | `Promise<ODataMediaCreateResponse<TResult>>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
@@ -336,6 +338,15 @@ require an explicit valid `contentType`, and preserve caller headers such as
 `If-Match` while keeping that content type authoritative. These methods are
 imperative and intentionally do not place binary data into Nuxt SSR payloads.
 They do not infer stream properties from CSDL or define attachment UI.
+
+`createMedia` posts an initial default stream to the entity collection.
+`createNavigationMedia(source, navigationPath, body, options)` posts the same
+validated binary contract to an explicit collection-valued navigation below a
+root or contained parent, requests the created representation, and retains its
+response ETag. Both create methods keep validated `Content-Type`,
+`Prefer: return=representation`, and optional `Slug` authoritative over caller
+headers. ODX validates address segments but leaves navigation cardinality and
+media-entity semantics to the metadata-aware caller.
 
 Service-level methods:
 

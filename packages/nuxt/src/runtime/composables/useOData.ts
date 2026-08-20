@@ -352,6 +352,39 @@ export function useOData(service?: string): any {
         }
       },
 
+      createNavigationMedia: async <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        body: ArrayBuffer | Uint8Array,
+        options: ODataMediaCreateOptions,
+      ): Promise<ODataMediaCreateResponse<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const { contentType, slug, ...requestOptions } = options
+        const normalizedSlug = mediaSlug(slug)
+        const response = await client.raw<TResult>(navigationUrl, {
+          ...(requestOptions as any),
+          body: mediaBody(body),
+          headers: mergeHeaders(
+            requestOptions.headers,
+            {
+              'content-type': mediaType(contentType),
+              'prefer': 'return=representation',
+              ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
+            },
+          ),
+          method: 'POST',
+          responseType: 'json',
+        })
+        const etag = response.headers.get('etag') ?? undefined
+        return {
+          ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TResult }),
+          ...(etag === undefined ? {} : { etag }),
+        }
+      },
+
       fetchMedia: async (
         key: ODataNavigationSource,
         options?: ODataMediaRequestOptions,

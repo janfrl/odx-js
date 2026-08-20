@@ -542,6 +542,16 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
     body: ArrayBuffer | Uint8Array,
     options: ODataMediaCreateOptions,
   ) => Promise<ODataMediaCreateResponse<T>>
+  /**
+   * Creates a contained media entity through a collection-valued navigation
+   * by posting its initial default stream.
+   */
+  createNavigationMedia: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    body: ArrayBuffer | Uint8Array,
+    options: ODataMediaCreateOptions,
+  ) => Promise<ODataMediaCreateResponse<TResult>>
   /** Reads a media entity or named `Edm.Stream` property through `$value`. */
   fetchMedia: (
     key: ODataNavigationSource,

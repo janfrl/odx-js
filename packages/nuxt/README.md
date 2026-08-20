@@ -110,6 +110,16 @@ const created = await files.createMedia(pdfBytes, {
   slug: 'manual.pdf',
 })
 
+const contained = await files.createNavigationMedia(
+  { ID: 42, IsActiveEntity: false },
+  ['Attachments'],
+  pdfBytes,
+  {
+    contentType: 'application/pdf',
+    slug: 'manual.pdf',
+  },
+)
+
 await files.updateMedia(42, preview.data, {
   contentType: preview.contentType ?? 'application/octet-stream',
   headers: current.etag ? { 'If-Match': current.etag } : undefined,
@@ -142,6 +152,12 @@ created representation, and returns it with the response ETag when supplied by
 the service. Its optional `slug` becomes the OData `Slug` header after rejecting
 empty values and header injection. Caller headers cannot override the validated
 `Content-Type`, `Prefer`, or `Slug` values.
+
+`createNavigationMedia` applies the same binary, header, representation, and
+ETag contract to a validated collection-valued navigation below a root or
+contained parent. The caller supplies a structured parent source plus explicit
+navigation segments; ODX does not infer containment or collection cardinality
+from CSDL.
 
 ODX does not infer stream properties from metadata or provide attachment UI.
 Browser applications should use the Nuxt proxy so authenticated requests and
