@@ -49,7 +49,7 @@ function jsonObjectProperty(object: CsdlJsonObject, name: string): CsdlJsonObjec
   return value as CsdlJsonObject
 }
 
-describe('CSDL document contract', () => {
+describe('cSDL document contract', () => {
   it('recognizes complete parsed XML and JSON documents', () => {
     expect(isCsdlDocument(requireDocument(parseCsdlXml(fixture('v4.01.xml'))))).toBe(true)
     expect(isCsdlDocument(requireDocument(parseCsdlJson(fixture('v4.01.json.txt'))))).toBe(true)

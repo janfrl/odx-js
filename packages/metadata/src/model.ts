@@ -131,9 +131,12 @@ function isJsonRoot(value: unknown): boolean {
       || node.kind === 'null') {
       if (typeof node.rawValue !== 'string')
         return false
-      const expectedType = node.kind === 'null' ? 'object' : node.kind
-      if (typeof node.value !== expectedType || (node.kind === 'null' && node.value !== null))
+      if ((node.kind === 'string' && typeof node.value !== 'string')
+        || (node.kind === 'number' && typeof node.value !== 'number')
+        || (node.kind === 'boolean' && typeof node.value !== 'boolean')
+        || (node.kind === 'null' && node.value !== null)) {
         return false
+      }
     }
     else {
       return false
