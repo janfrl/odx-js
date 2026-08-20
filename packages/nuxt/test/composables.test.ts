@@ -29,7 +29,11 @@ vi.mock('@me-tools/odx-core', async () => {
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
   } = await import('../../core/src/odata-changeset')
-  const { createODataEntityReference, createODataMediaPath } = await import('../../core/src/odata-path')
+  const {
+    createODataEntityReference,
+    createODataMediaPath,
+    createODataNavigationRootReference,
+  } = await import('../../core/src/odata-path')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
@@ -39,6 +43,7 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataContinuationPath,
     createODataEntityReference,
     createODataMediaPath,
+    createODataNavigationRootReference,
     flattenOData,
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
@@ -66,6 +71,13 @@ describe('useOData Composable', () => {
     const entitySet = useOData('MyService').entitySet('Products')
 
     expect(entitySet.supportsContainedNavigationSources).toBe(true)
+    expect(entitySet.supportsNavigationRootReferences).toBe(true)
+    expect(entitySet.createNavigationRootReference?.(
+      { ID: 'A/B', IsActiveEntity: false },
+      ['Items'],
+    )).toBe(
+      '$root/Products(ID=\'A%2FB\',IsActiveEntity=false)/Items',
+    )
     expect(entitySet.supportsNavigationReferences).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)

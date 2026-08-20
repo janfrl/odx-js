@@ -3,6 +3,7 @@ import {
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
+  createODataNavigationRootReference,
   createODataNavigationSourcePath,
   formatODataFunctionCall,
   formatODataFunctionParameter,
@@ -115,6 +116,20 @@ describe('portable OData resource paths', () => {
     })).toBe(
       'Products(ID=1,IsActiveEntity=false)/Category/Items(ItemID=\'A%2FB\')/Schedules(3)',
     )
+  })
+  it('creates exact navigation collection root references', () => {
+    expect(createODataNavigationRootReference(
+      'Products',
+      { ID: 'A/B', IsActiveEntity: false },
+      ['Items', 'Children'],
+    )).toBe(
+      '$root/Products(ID=\'A%2FB\',IsActiveEntity=false)/Items/Children',
+    )
+    expect(() => createODataNavigationRootReference(
+      'Products',
+      1,
+      ['../Items'],
+    )).toThrow('valid identifier')
   })
 
   it('rejects empty and unsafe contained navigation sources', () => {

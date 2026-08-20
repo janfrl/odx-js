@@ -57,6 +57,10 @@ The same capability covers related collections through
 `listNavigationPage()`, `fetchNavigationPage()`,
 `listNavigationNextPage()`, and `fetchNavigationNextPage()`. ODX anchors those
 tokens to the validated parent key and navigation path.
+`supportsNavigationRootReferences === true` separately advertises
+`createNavigationRootReference(source, path)`. It returns the validated
+service-relative `$root/...` identity of that exact related collection for
+query expressions; it performs no request and never exposes a service origin.
 
 Use `fetchOne()` for imperative key reads outside Nuxt `AsyncData` setup:
 

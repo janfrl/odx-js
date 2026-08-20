@@ -229,3 +229,21 @@ export function createODataNavigationSourcePath(
     `${formatODataNavigationPath(segment.navigationPath)}(${formatODataKey(segment.key)})`,
   ), createODataEntityPath(entitySet, source.rootKey))
 }
+
+/**
+ * Creates the exact `$root` reference for a collection-valued navigation.
+ *
+ * Aggregation transformations can use this service-root-relative identity
+ * without asking higher layers to serialize entity keys or containment paths.
+ */
+export function createODataNavigationRootReference(
+  entitySet: string,
+  source: ODataNavigationSource,
+  navigationPath: string | readonly string[],
+): string {
+  return joinODataPath(
+    '$root',
+    createODataNavigationSourcePath(entitySet, source),
+    formatODataNavigationPath(navigationPath),
+  )
+}

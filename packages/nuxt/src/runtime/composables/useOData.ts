@@ -9,6 +9,7 @@ import {
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
+  createODataNavigationRootReference,
   createODataNavigationSourcePath,
   flattenOData,
   formatODataFunctionCall,
@@ -140,12 +141,28 @@ export function useOData(service?: string): any {
     return {
       supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
+      supportsNavigationRootReferences: true,
       supportsNavigationReferences: true,
       supportsEntityResponses: true,
       supportsOptimisticConcurrency: true,
       supportsMerge: true,
       supportsMediaStreams: true,
       supportsContinuations: true,
+      createNavigationRootReference: (
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+      ): string => {
+        if (entitySet === undefined) {
+          throw new TypeError(
+            'An OData navigation root reference requires an entity set.',
+          )
+        }
+        return createODataNavigationRootReference(
+          entitySet,
+          source,
+          navigationPath,
+        )
+      },
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         const requestOptions = createJsonReadOptions(options)
         return useFetch(fullPath, {

@@ -304,6 +304,16 @@ export interface ODataEntitySet<T = any> {
    * older ODX releases accepted only an entity key in the same position.
    */
   readonly supportsContainedNavigationSources?: true
+  /** Indicates that this client can produce validated `$root` navigation references. */
+  readonly supportsNavigationRootReferences?: true
+  /**
+   * Produces a query-expression reference for the exact related collection.
+   * This performs no request and never includes the service base URL.
+   */
+  readonly createNavigationRootReference?: (
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+  ) => string
   /**
    * Fetches a list of entities.
    */

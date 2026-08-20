@@ -29,8 +29,11 @@ conformance limits and non-goals.
 
 `@me-tools/odx-core` exposes framework-neutral OData request utilities.
 `formatODataKey`, `createODataEntityPath`, `createODataEntityReference`,
-`formatODataNavigationPath`, and `joinODataPath` provide validated,
-transport-neutral OData resource-path and relationship-reference construction.
+`createODataNavigationRootReference`, `formatODataNavigationPath`, and
+`joinODataPath` provide validated, transport-neutral OData resource-path and
+relationship-reference construction. The navigation-root helper identifies an
+exact related collection below a structured entity or containment source
+without duplicating key serialization in higher layers.
 `validateODataIdentifier` and `validateODataQualifiedName` reject
 path-altering entity, key-field, navigation, and action names before transport.
 `serializeODataChangeSet(requests, options?)` creates one OData V4 multipart
@@ -216,6 +219,7 @@ Entity-set methods:
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchNavigationPage<TResult>(source, path, query?, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
 | `fetchNavigationNextPage<TResult>(source, path, continuation, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
+| `createNavigationRootReference(source, path)` | none | Validated service-relative `$root/...` collection reference |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
 | `fetchMedia(key, options?)` | `GET .../$value` | `Promise<ODataMediaResponse>` |
