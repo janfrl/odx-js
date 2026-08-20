@@ -17,6 +17,7 @@ import type {
   ODataRuntimeEntitySet,
   ODataRuntimeService,
   ODataService,
+  ODataServiceConfig,
   ODataVersionedEntitySet,
   ODataVersionedService,
 } from '../src'
@@ -28,6 +29,13 @@ interface Product {
 }
 
 describe('portable imperative transport types', () => {
+  it('allows server-owned BTP destination resolution without a backend URL', () => {
+    expectTypeOf<{
+      name: 'BusinessPartner'
+      destination: 'S4_BUSINESS_PARTNER'
+    }>().toExtend<ODataServiceConfig>()
+  })
+
   it('exposes cancellation and headers without a framework transport type', () => {
     expectTypeOf<NonNullable<Parameters<ODataEntitySet<Product>['fetchList']>[1]>>()
       .toExtend<ODataRequestOptions>()

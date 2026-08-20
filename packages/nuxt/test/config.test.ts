@@ -67,6 +67,26 @@ describe('public OData runtime configuration', () => {
     })
   })
 
+  it('retains destination-only services without inventing a backend URL', () => {
+    const config = resolveModuleConfig({
+      services: [{
+        name: 'BusinessPartner',
+        destination: 'S4_BUSINESS_PARTNER',
+      }],
+    }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })
+
+    expect(config.services[0]).toMatchObject({
+      name: 'BusinessPartner',
+      destination: 'S4_BUSINESS_PARTNER',
+      strategy: 'proxied',
+    })
+    expect(config.services[0]?.url).toBeUndefined()
+    expect(createPublicODataConfig(config).services?.[0]).not.toHaveProperty('url')
+  })
+
   it('resolves private per-service SAP CSRF policy without exposing it publicly', () => {
     const nuxtOptions = {
       buildDir: '.nuxt',

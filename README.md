@@ -75,6 +75,26 @@ export default defineNuxtConfig({
 })
 ```
 
+For a server-hosted SAP BTP application, the destination can own target
+resolution without exposing or duplicating its backend URL:
+
+```typescript
+export default defineNuxtConfig({
+  modules: ['@me-tools/odx-nuxt'],
+  odata: {
+    services: [{
+      name: 'BusinessPartner',
+      destination: 'S4_BUSINESS_PARTNER',
+      route: 'business-partner',
+    }],
+  },
+})
+```
+
+The proxy resolves that destination on the server. Nuxt type generation skips
+remote download for destination-only services; provide generated or fixture
+metadata through the application layer when compile-time models are required.
+
 3. Use typed composables in your components:
 
 ```vue

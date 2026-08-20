@@ -40,7 +40,12 @@ export interface ODataRule {
 
 export interface ODataServiceConfig {
   name: string
-  url: string
+  /**
+   * Backend URL or local metadata path. May be omitted when `destination`
+   * owns runtime target resolution or when the host injects the URL through
+   * environment configuration.
+   */
+  url?: string
   route?: string
   icon?: string
   strategy?: 'proxied' | 'direct'
@@ -54,6 +59,7 @@ export interface ODataServiceConfig {
     /** Request method used to obtain the token. @default 'HEAD' */
     fetchMethod?: 'HEAD' | 'GET'
   }
+  /** SAP BTP Destination name resolved by the server-side proxy. */
   destination?: string
   auth?: {
     username?: string
