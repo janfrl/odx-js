@@ -29,6 +29,7 @@ vi.mock('@me-tools/odx-core', async () => {
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
   } = await import('../../core/src/odata-changeset')
+  const { createODataEntityReference } = await import('../../core/src/odata-path')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
@@ -36,6 +37,7 @@ vi.mock('@me-tools/odx-core', async () => {
     $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
     createODataContinuationPath,
+    createODataEntityReference,
     flattenOData,
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
@@ -63,6 +65,7 @@ describe('useOData Composable', () => {
     const entitySet = useOData('MyService').entitySet('Products')
 
     expect(entitySet.supportsContainedNavigationSources).toBe(true)
+    expect(entitySet.supportsNavigationReferences).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
@@ -891,6 +894,41 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('links and unlinks existing entities through safe OData references', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+      const headers = { 'If-Match': 'W/"product-1"' }
+
+      await entitySet.linkNavigation(
+        { ID: 1, Locale: 'en' },
+        ['Categories'],
+        'Categories',
+        { ID: 'A/B' },
+        { headers },
+      )
+      await entitySet.unlinkNavigation(
+        { ID: 1, Locale: 'en' },
+        ['Categories'],
+        { ID: 'A/B' },
+      )
+
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Categories/$ref',
+        'POST',
+        {
+          body: { '@odata.id': 'Categories(ID=\'A%2FB\')' },
+          headers,
+        },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Categories(ID=\'A%2FB\')/$ref',
+        'DELETE',
+      )
+    })
+
     it('posts enumeration parameters as exact JSON member-name strings', async () => {
       const api = useOData('MyService')
       const parameters = Object.freeze({ Priority: 'Urgent' })
@@ -1284,6 +1322,44 @@ describe('useOData Composable', () => {
       const deletePart = body.slice(body.indexOf('DELETE Products(1)/Items'))
       expect(deletePart).not.toContain('Content-Type: application/json')
       expect(deletePart).not.toContain('{}')
+    })
+
+    it('serializes relationship links without deleting target entities', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+
+      await useOData('RoutedService' as any).changeSet([{
+        kind: 'link-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Categories'],
+        targetEntitySet: 'Categories',
+        targetKey: { ID: 'A/B' },
+      }, {
+        kind: 'unlink-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Categories'],
+        targetKey: { ID: 'Old' },
+        headers: { 'If-Match': 'W/"product-1"' },
+      }])
+
+      const body = raw.mock.calls[0]?.[1].body as string
+      expect(body).toContain('POST Products(1)/Categories/$ref HTTP/1.1')
+      expect(body).toContain('{"@odata.id":"Categories(ID=\'A%2FB\')"}')
+      expect(body).toContain('DELETE Products(1)/Categories(ID=\'Old\')/$ref HTTP/1.1')
+      expect(body).toContain('If-Match: W/"product-1"')
     })
 
     it('serializes contained navigation sources in atomic changesets', async () => {

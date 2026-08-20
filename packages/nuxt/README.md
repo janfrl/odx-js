@@ -149,9 +149,25 @@ await useOData('Northwind')
   })
 ```
 
+Use the separate relationship methods when the target entity already exists.
+They preserve entity-set names and keys as structured values until ODX creates
+the service-relative reference. `unlinkNavigation` removes only the relationship:
+
+```ts
+const categories = useOData('Northwind').entitySet('Products')
+await categories.linkNavigation(1, ['Categories'], 'Categories', 7)
+await categories.unlinkNavigation(1, ['Categories'], 7)
+```
+
+Runtime entity sets advertise this contract with
+`supportsNavigationReferences === true`. Metadata-aware integrations should
+require both that marker and a proven non-contained navigation before exposing
+relationship editing.
+
 `changeSet()` accepts service-, collection-, and entity-bound `action` members,
-`create-navigation`, `update-navigation`, and `delete-navigation` mutations in
-addition to top-level updates, so related operations can be committed atomically.
+`create-navigation`, `update-navigation`, `delete-navigation`,
+`link-navigation`, and `unlink-navigation` mutations in addition to top-level
+updates, so related operations can be committed atomically.
 The service advertises this additive contract through
 `supportsAtomicActionChangesets === true`, allowing integrations to stay
 fail-closed with older ODX runtimes.

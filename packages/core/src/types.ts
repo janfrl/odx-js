@@ -351,6 +351,26 @@ export interface ODataEntitySet<T = any> {
   ) => Promise<TResult>
 }
 
+/** Entity-set client that mutates non-contained relationships through OData `$ref`. */
+export interface ODataNavigationReferenceEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsNavigationReferences: true
+  /** Adds an existing entity to a non-contained navigation through OData `$ref`. */
+  linkNavigation: (
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<unknown>
+  /** Removes an existing entity link without deleting the target entity. */
+  unlinkNavigation: (
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<unknown>
+}
+
 /**
  * Entity-set client with explicit, SSR-safe collection page reads. This
  * extends the original entity-set contract without making existing structural
@@ -472,7 +492,9 @@ export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<
 
 /** Complete entity-set capability implemented by the generated ODX client. */
 export type ODataRuntimeEntitySet<T = any>
-  = ODataMergeEntitySet<T> & ODataContinuationEntitySet<T>
+  = ODataMergeEntitySet<T>
+    & ODataContinuationEntitySet<T>
+    & ODataNavigationReferenceEntitySet<T>
 
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
@@ -522,6 +544,27 @@ export interface ODataAtomicNavigationDelete {
   readonly headers?: Readonly<Record<string, string>>
 }
 
+/** Adds an existing entity relationship as one member of an atomic changeset. */
+export interface ODataAtomicNavigationLink {
+  readonly kind: 'link-navigation'
+  readonly entitySet: string
+  readonly key: ODataNavigationSource
+  readonly navigationPath: readonly string[]
+  readonly targetEntitySet: string
+  readonly targetKey: ODataKey
+  readonly headers?: Readonly<Record<string, string>>
+}
+
+/** Removes an entity relationship without deleting either entity. */
+export interface ODataAtomicNavigationUnlink {
+  readonly kind: 'unlink-navigation'
+  readonly entitySet: string
+  readonly key: ODataNavigationSource
+  readonly navigationPath: readonly string[]
+  readonly targetKey: ODataKey
+  readonly headers?: Readonly<Record<string, string>>
+}
+
 /** Invokes an OData action as one member of an atomic changeset. */
 export type ODataAtomicAction
   = | {
@@ -555,6 +598,8 @@ export type ODataAtomicMutation
     | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
     | ODataAtomicNavigationDelete
+    | ODataAtomicNavigationLink
+    | ODataAtomicNavigationUnlink
     | ODataAtomicNavigationUpdate
 
 /**
@@ -613,9 +658,11 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
           ? ODataConcurrencyEntitySet<TModel>
           : TEntitySet extends ODataVersionedEntitySet<any>
             ? ODataVersionedEntitySet<TModel>
-            : TEntitySet extends ODataPagedEntitySet<any>
-              ? ODataPagedEntitySet<TModel>
-              : ODataEntitySet<TModel>
+            : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+              ? ODataNavigationReferenceEntitySet<TModel>
+              : TEntitySet extends ODataPagedEntitySet<any>
+                ? ODataPagedEntitySet<TModel>
+                : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -638,6 +685,10 @@ export type ODataConcurrencyService<E extends string = string, M extends Record<
 /** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
 export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataMergeEntitySet<any>>
+
+/** OData service that can link and unlink existing related entities. */
+export type ODataNavigationReferenceService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataNavigationReferenceEntitySet<any>>
 
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>

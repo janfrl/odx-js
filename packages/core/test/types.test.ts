@@ -8,6 +8,8 @@ import type {
   ODataEntitySet,
   ODataMergeEntitySet,
   ODataMergeService,
+  ODataNavigationReferenceEntitySet,
+  ODataNavigationReferenceService,
   ODataPagedEntitySet,
   ODataPagedService,
   ODataQuery,
@@ -96,6 +98,18 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<Product>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeWithResponse']>>>()
       .toEqualTypeOf<{ data?: Product, etag?: string }>()
+  })
+
+  it('adds relationship references without widening the base entity-set contract', () => {
+    type ProductsService = ODataNavigationReferenceService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataNavigationReferenceEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet['supportsNavigationReferences']>()
+      .toEqualTypeOf<true>()
+    expectTypeOf<ODataEntitySet<Product>>()
+      .not
+      .toHaveProperty('linkNavigation')
   })
 
   it('combines generated runtime capabilities without widening additive contracts', () => {

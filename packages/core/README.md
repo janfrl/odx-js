@@ -9,9 +9,12 @@ cannot read SAP `Set-Cookie` responses or emit the matching `Cookie` header.
 Browser applications should send mutations through `@me-tools/odx-proxy`.
 
 Portable path helpers include `formatODataKey`, `createODataEntityPath`,
+`createODataEntityReference`,
 `formatODataNavigationPath`, `formatODataFunctionCall`, `joinODataPath`, and identifier validators. They
 construct service-relative protocol paths without depending on Nuxt, Node.js,
-or a transport client.
+or a transport client. Entity references intentionally retain a validated
+service-relative `@odata.id`; consumers never supply an origin or executable
+path string.
 
 For optimistic concurrency, `$odataWithResponse` is the additive low-level
 entity read. It returns `{ data, etag? }`, preferring the HTTP `ETag` header

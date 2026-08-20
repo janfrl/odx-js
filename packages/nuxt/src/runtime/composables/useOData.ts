@@ -7,6 +7,7 @@ import {
   $odataWithResponse,
   createODataContinuationPath,
   createODataEntityPath,
+  createODataEntityReference,
   createODataNavigationSourcePath,
   flattenOData,
   formatODataFunctionCall,
@@ -105,6 +106,7 @@ export function useOData(service?: string): any {
     return {
       supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
+      supportsNavigationReferences: true,
       supportsEntityResponses: true,
       supportsOptimisticConcurrency: true,
       supportsMerge: true,
@@ -350,6 +352,41 @@ export function useOData(service?: string): any {
           ? $odata<unknown>(client, targetUrl, 'DELETE')
           : $odata<unknown>(client, targetUrl, 'DELETE', options)
       },
+      linkNavigation: (
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetEntitySet: string,
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<unknown> => {
+        const referenceUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+          '$ref',
+        )
+        return $odata<unknown>(client, referenceUrl, 'POST', {
+          ...(options as any),
+          body: createODataEntityReference(targetEntitySet, targetKey),
+        })
+      },
+      unlinkNavigation: (
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<unknown> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const referenceUrl = joinODataPath(
+          `${navigationUrl}(${formatODataKey(targetKey)})`,
+          '$ref',
+        )
+        return options === undefined
+          ? $odata<unknown>(client, referenceUrl, 'DELETE')
+          : $odata<unknown>(client, referenceUrl, 'DELETE', options)
+      },
       update: (key: ODataKey, body: Partial<TModel>, options?: ODataRequestOptions): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'PATCH', {
@@ -487,20 +524,31 @@ export function useOData(service?: string): any {
       ? entityPath
       : (() => {
           const navigationPath = joinODataPath(entityPath, formatODataNavigationPath(mutation.navigationPath))
+          if (mutation.kind === 'link-navigation')
+            return joinODataPath(navigationPath, '$ref')
+          if (mutation.kind === 'unlink-navigation') {
+            return joinODataPath(
+              `${navigationPath}(${formatODataKey(mutation.targetKey)})`,
+              '$ref',
+            )
+          }
           return 'targetKey' in mutation && mutation.targetKey !== undefined
             ? `${navigationPath}(${formatODataKey(mutation.targetKey)})`
             : navigationPath
         })()
     const method: ODataChangeSetMethod = mutation.kind === 'create-navigation'
+      || mutation.kind === 'link-navigation'
       ? 'POST'
-      : mutation.kind === 'delete-navigation'
+      : mutation.kind === 'delete-navigation' || mutation.kind === 'unlink-navigation'
         ? 'DELETE'
         : 'PATCH'
     return Object.freeze({
       method,
       path,
       headers: mutation.headers,
-      ...('body' in mutation ? { body: mutation.body } : {}),
+      ...(mutation.kind === 'link-navigation'
+        ? { body: createODataEntityReference(mutation.targetEntitySet, mutation.targetKey) }
+        : 'body' in mutation ? { body: mutation.body } : {}),
     })
   }
 

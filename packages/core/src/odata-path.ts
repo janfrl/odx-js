@@ -177,6 +177,14 @@ export function createODataEntityPath(entitySet: string, key: ODataKey): string 
   return `${validateODataIdentifier(entitySet, 'OData entity set')}(${formatODataKey(key)})`
 }
 
+/** Creates a safe service-relative entity reference for an OData `$ref` body. */
+export function createODataEntityReference(
+  entitySet: string,
+  key: ODataKey,
+): Readonly<{ '@odata.id': string }> {
+  return Object.freeze({ '@odata.id': createODataEntityPath(entitySet, key) })
+}
+
 function isContainedEntitySource(
   source: ODataNavigationSource,
 ): source is ODataContainedEntitySource {

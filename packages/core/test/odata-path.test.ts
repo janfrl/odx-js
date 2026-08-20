@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   createODataEntityPath,
+  createODataEntityReference,
   createODataNavigationSourcePath,
   formatODataFunctionCall,
   formatODataFunctionParameter,
@@ -75,6 +76,12 @@ describe('portable OData resource paths', () => {
     expect(createODataEntityPath('Products', { ID: '1', IsActiveEntity: false }))
       .toBe('Products(ID=\'1\',IsActiveEntity=false)')
     expect(() => createODataEntityPath('../Products', 1)).toThrow('valid identifier')
+  })
+  it('creates service-relative entity references without accepting paths', () => {
+    expect(createODataEntityReference('Categories', { ID: 'A/B' }))
+      .toEqual({ '@odata.id': 'Categories(ID=\'A%2FB\')' })
+    expect(() => createODataEntityReference('../Categories', 1))
+      .toThrow('valid identifier')
   })
   it('creates exact contained navigation source paths', () => {
     expect(createODataNavigationSourcePath('Products', {

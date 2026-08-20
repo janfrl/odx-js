@@ -28,9 +28,10 @@ conformance limits and non-goals.
 ## Core Package
 
 `@me-tools/odx-core` exposes framework-neutral OData request utilities.
-`formatODataKey`, `createODataEntityPath`, `formatODataNavigationPath`, and
-`joinODataPath` provide validated, transport-neutral OData resource-path
-construction. `validateODataIdentifier` and `validateODataQualifiedName` reject
+`formatODataKey`, `createODataEntityPath`, `createODataEntityReference`,
+`formatODataNavigationPath`, and `joinODataPath` provide validated,
+transport-neutral OData resource-path and relationship-reference construction.
+`validateODataIdentifier` and `validateODataQualifiedName` reject
 path-altering entity, key-field, navigation, and action names before transport.
 `serializeODataChangeSet(requests, options?)` creates one OData V4 multipart
 batch containing an atomic changeset. Each non-GET operation retains its
@@ -222,6 +223,8 @@ Entity-set methods:
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
 | `updateNavigation(source, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
+| `linkNavigation(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$ref` | `Promise<unknown>` |
+| `unlinkNavigation(source, navigationPath, targetKey, options?)` | `DELETE .../$ref` | `Promise<unknown>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
 | `merge(key, body, options?)` | `MERGE` | `Promise<T>` |
@@ -247,7 +250,11 @@ its `update` argument contains the `body` and an optional `targetKey`. Omit the
 target key for a single-valued navigation and provide it for an entity in a
 collection-valued navigation. `removeNavigation` deletes one contained collection
 member using its exact parent path and related-entity key; it does not unlink a
-non-contained relationship through `$ref`. All navigation mutations
+non-contained relationship through `$ref`. `linkNavigation` adds an existing
+target through a validated service-relative `@odata.id`; `unlinkNavigation`
+removes that relationship without deleting the target. Runtime entity sets
+advertise the latter contract with `supportsNavigationReferences === true`.
+All navigation mutations
 require a non-empty path of identifier segments, keeping keys, navigation
 structure, and payload separate until the ODX client boundary. `invoke` requires a qualified action name. Omit
 the invocation key for unbound or collection-bound actions and provide it for an entity-bound
@@ -327,7 +334,8 @@ Service-level methods:
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
 members, root `update`, `create-navigation`, `update-navigation`, and
-`delete-navigation` mutations and serializes them into one atomic OData V4
+`delete-navigation`, `link-navigation`, and `unlink-navigation` mutations and
+serializes them into one atomic OData V4
 changeset. Each mutation keeps its own key, payload where
 applicable, and optional headers such as `If-Match`; request options such as
 `signal` and correlation headers apply to the outer batch request. The method
