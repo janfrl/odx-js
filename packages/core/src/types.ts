@@ -146,6 +146,31 @@ export interface ODataMutationResponse<T> {
   etag?: string
 }
 
+/** Binary OData entity or named-stream payload with safe response metadata. */
+export interface ODataMediaResponse {
+  data: ArrayBuffer
+  contentDisposition?: string
+  contentType?: string
+  etag?: string
+}
+
+/** Options for an imperative OData media read. */
+export interface ODataMediaRequestOptions extends ODataRequestOptions {
+  /** Named `Edm.Stream` property; omit for a media entity's default stream. */
+  readonly streamProperty?: string
+}
+
+/** Options for an imperative OData media replacement. */
+export interface ODataMediaUpdateOptions extends ODataMediaRequestOptions {
+  /** Exact request media type, for example `application/pdf`. */
+  readonly contentType: string
+}
+
+/** Result metadata from a media replacement that may return no body. */
+export interface ODataMediaMutationResponse {
+  etag?: string
+}
+
 /**
  * Possible types for OData entity keys.
  * Supports single keys (string/number) and composite keys (object).
@@ -496,10 +521,27 @@ export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<
   ) => Promise<ODataMutationResponse<T>>
 }
 
+/** Entity-set client with imperative OData media-stream reads and replacements. */
+export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsMediaStreams: true
+  /** Reads a media entity or named `Edm.Stream` property through `$value`. */
+  fetchMedia: (
+    key: ODataKey,
+    options?: ODataMediaRequestOptions,
+  ) => Promise<ODataMediaResponse>
+  /** Replaces a media entity or named `Edm.Stream` property through `$value`. */
+  updateMedia: (
+    key: ODataKey,
+    body: ArrayBuffer | Uint8Array,
+    options: ODataMediaUpdateOptions,
+  ) => Promise<ODataMediaMutationResponse>
+}
+
 /** Complete entity-set capability implemented by the generated ODX client. */
 export type ODataRuntimeEntitySet<T = any>
   = ODataMergeEntitySet<T>
     & ODataContinuationEntitySet<T>
+    & ODataMediaEntitySet<T>
     & ODataNavigationReferenceEntitySet<T>
 
 /** Describes a PATCH target below a parent entity navigation path. */

@@ -177,6 +177,21 @@ export function createODataEntityPath(entitySet: string, key: ODataKey): string 
   return `${validateODataIdentifier(entitySet, 'OData entity set')}(${formatODataKey(key)})`
 }
 
+/** Creates a validated entity or named-stream `$value` resource path. */
+export function createODataMediaPath(
+  entitySet: string,
+  key: ODataKey,
+  streamProperty?: string,
+): string {
+  return joinODataPath(
+    createODataEntityPath(entitySet, key),
+    ...(streamProperty === undefined
+      ? []
+      : [validateODataIdentifier(streamProperty, 'OData stream property')]),
+    '$value',
+  )
+}
+
 /** Creates a safe service-relative entity reference for an OData `$ref` body. */
 export function createODataEntityReference(
   entitySet: string,

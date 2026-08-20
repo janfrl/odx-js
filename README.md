@@ -45,6 +45,7 @@ reusable npm package.
 - **Type-Safe SDK:** Automated TypeScript model generation from EDMX schemas using `odata2ts`.
 - **Nuxt DevTools:** Integrated Traffic Monitor, Schema Explorer, and Entity Data browser.
 - **Server Proxy:** Automated handling of authentication, CSRF tokens, and mock data.
+- **Binary Media:** Safe default and named OData stream reads and replacements through `$value`.
 - **Enterprise Optimized:** Specifically built for the nuances of OData V2 and V4.
 - **Flexible Mocking:** Serve local mock data based on JSON files or EDMX definitions.
 - **API Reference Automation:** Automatically extracted documentation from source code via `ts-morph`.

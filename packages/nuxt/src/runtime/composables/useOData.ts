@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -8,6 +8,7 @@ import {
   createODataContinuationPath,
   createODataEntityPath,
   createODataEntityReference,
+  createODataMediaPath,
   createODataNavigationSourcePath,
   flattenOData,
   formatODataFunctionCall,
@@ -34,6 +35,9 @@ interface ODataFetchClient {
     headers: { get: (name: string) => string | null }
   }>
 }
+
+const RE_HEADER_NEWLINE = /[\r\n]/u
+const RE_MEDIA_TYPE = /^[^\s/;]+\/[^\s/;]+(?:\s*;[^\r\n]+)?$/u
 
 /**
  * Composable for interacting with OData services.
@@ -103,6 +107,22 @@ export function useOData(service?: string): any {
         createODataNavigationSourcePath(entitySet, source),
       )
     }
+    const mediaPath = (key: ODataKey, streamProperty?: string): string => {
+      if (entitySet === undefined)
+        throw new TypeError('An OData media operation requires an entity set.')
+      return joinODataPath(servicePath, createODataMediaPath(entitySet, key, streamProperty))
+    }
+    const mediaType = (value: string): string => {
+      const normalized = value.trim()
+      if (
+        normalized.length === 0
+        || RE_HEADER_NEWLINE.test(normalized)
+        || !RE_MEDIA_TYPE.test(normalized)
+      ) {
+        throw new TypeError('An OData media update requires a valid content type.')
+      }
+      return normalized
+    }
     return {
       supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
@@ -110,6 +130,7 @@ export function useOData(service?: string): any {
       supportsEntityResponses: true,
       supportsOptimisticConcurrency: true,
       supportsMerge: true,
+      supportsMediaStreams: true,
       supportsContinuations: true,
       list: (query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel[]> => {
         const requestOptions = createJsonReadOptions(options)
@@ -286,6 +307,55 @@ export function useOData(service?: string): any {
           ...(options as any),
           query: stringifyQuery(query || {}),
         })
+      },
+
+      fetchMedia: async (
+        key: ODataKey,
+        options?: ODataMediaRequestOptions,
+      ): Promise<ODataMediaResponse> => {
+        const { streamProperty, ...requestOptions } = options ?? {}
+        const response = await client.raw<ArrayBuffer>(mediaPath(key, streamProperty), {
+          ...(requestOptions as any),
+          headers: mergeHeaders(
+            { accept: 'application/octet-stream' },
+            requestOptions.headers,
+          ),
+          method: 'GET',
+          responseType: 'arrayBuffer',
+        })
+        if (!(response._data instanceof ArrayBuffer))
+          throw new TypeError('ODX returned an invalid media response body.')
+        const contentDisposition = response.headers.get('content-disposition') ?? undefined
+        const contentType = response.headers.get('content-type') ?? undefined
+        const etag = response.headers.get('etag') ?? undefined
+        return {
+          data: response._data,
+          ...(contentDisposition === undefined ? {} : { contentDisposition }),
+          ...(contentType === undefined ? {} : { contentType }),
+          ...(etag === undefined ? {} : { etag }),
+        }
+      },
+
+      updateMedia: async (
+        key: ODataKey,
+        body: ArrayBuffer | Uint8Array,
+        options: ODataMediaUpdateOptions,
+      ): Promise<ODataMediaMutationResponse> => {
+        const { contentType, streamProperty, ...requestOptions } = options
+        if (!(body instanceof ArrayBuffer) && !(body instanceof Uint8Array))
+          throw new TypeError('An OData media update requires an ArrayBuffer or Uint8Array body.')
+        const response = await client.raw<unknown>(mediaPath(key, streamProperty), {
+          ...(requestOptions as any),
+          body,
+          headers: mergeHeaders(
+            requestOptions.headers,
+            { 'content-type': mediaType(contentType) },
+          ),
+          method: 'PUT',
+          responseType: 'arrayBuffer',
+        })
+        const etag = response.headers.get('etag') ?? undefined
+        return etag === undefined ? {} : { etag }
       },
 
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {

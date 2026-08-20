@@ -110,8 +110,8 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
 - OData helpers such as `$odata`, `flattenOData`, `stringifyQuery`,
   `mergeHeaders`, and `sanitizeBaseURL`.
 - Validated, service-relative OData key, entity, navigation, action, and typed V4 function path
-  construction plus relationship references, while service-root resolution and
-  transport remain adapters.
+  construction plus relationship references and default or named media-stream
+  `$value` paths, while service-root resolution and transport remain adapters.
 - Multipart serialization and response parsing for atomic OData V4 writes and
   ordered independent changesets whose partial outcomes remain explicit.
 - EDMX parsing utilities from the `./server` export.

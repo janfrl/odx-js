@@ -218,6 +218,7 @@ Entity-set methods:
 | `fetchNavigationNextPage<TResult>(source, path, continuation, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
+| `fetchMedia(key, options?)` | `GET .../$value` | `Promise<ODataMediaResponse>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
@@ -229,6 +230,7 @@ Entity-set methods:
 | `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
 | `merge(key, body, options?)` | `MERGE` | `Promise<T>` |
 | `mergeWithResponse(key, body, options?)` | `MERGE` | `Promise<{ data?: T; etag?: string }>` |
+| `updateMedia(key, body, options)` | `PUT .../$value` | `Promise<{ etag?: string }>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
@@ -323,6 +325,17 @@ operations remain visible and independently testable. These methods belong to
 the separate additive `ODataMergeEntitySet` / `ODataMergeService` capability,
 advertised by `supportsMerge === true`; existing concurrency contracts are not
 widened.
+
+`fetchMedia` and `updateMedia` expose the additive `ODataMediaEntitySet`
+contract, advertised by `supportsMediaStreams === true`. Omitting
+`options.streamProperty` addresses a media entity's default stream; supplying
+a validated identifier addresses a named `Edm.Stream` property. Reads return
+an `ArrayBuffer` plus optional `contentType`, `contentDisposition`, and `etag`
+metadata. Replacements accept only `ArrayBuffer` or `Uint8Array`, use `PUT`,
+require an explicit valid `contentType`, and preserve caller headers such as
+`If-Match` while keeping that content type authoritative. These methods are
+imperative and intentionally do not place binary data into Nuxt SSR payloads.
+They do not infer stream properties from CSDL or define attachment UI.
 
 Service-level methods:
 

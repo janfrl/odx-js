@@ -29,7 +29,7 @@ vi.mock('@me-tools/odx-core', async () => {
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
   } = await import('../../core/src/odata-changeset')
-  const { createODataEntityReference } = await import('../../core/src/odata-path')
+  const { createODataEntityReference, createODataMediaPath } = await import('../../core/src/odata-path')
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
@@ -38,6 +38,7 @@ vi.mock('@me-tools/odx-core', async () => {
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
     createODataContinuationPath,
     createODataEntityReference,
+    createODataMediaPath,
     flattenOData,
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
@@ -70,6 +71,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
     expect(entitySet.supportsMerge).toBe(true)
+    expect(entitySet.supportsMediaStreams).toBe(true)
     expect(entitySet.supportsContinuations).toBe(true)
   })
 
@@ -274,6 +276,102 @@ describe('useOData Composable', () => {
   })
 
   describe('imperative reads', () => {
+    it('reads default and named media streams with response metadata', async () => {
+      const bytes = Uint8Array.from([37, 80, 68, 70]).buffer
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({
+        _data: bytes,
+        headers: new Headers({
+          'content-disposition': 'attachment; filename="manual.pdf"',
+          'content-type': 'application/pdf',
+          'etag': 'W/"media-1"',
+        }),
+      })
+
+      const response = await useOData('MyService').entitySet('Documents').fetchMedia(
+        { ID: 'A/B' },
+        {
+          headers: { 'X-Correlation-ID': 'media-read-1' },
+          streamProperty: 'Preview',
+        },
+      )
+
+      expect(response).toEqual({
+        data: bytes,
+        contentDisposition: 'attachment; filename="manual.pdf"',
+        contentType: 'application/pdf',
+        etag: 'W/"media-1"',
+      })
+      expect(fetchMock.raw).toHaveBeenCalledWith(
+        '/api/odx/MyService/Documents(ID=\'A%2FB\')/Preview/$value',
+        {
+          headers: {
+            'accept': 'application/octet-stream',
+            'x-correlation-id': 'media-read-1',
+          },
+          method: 'GET',
+          responseType: 'arrayBuffer',
+        },
+      )
+    })
+
+    it('replaces media streams with an exact content type and conditional ETag', async () => {
+      const bytes = Uint8Array.from([1, 2, 3])
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({
+        headers: new Headers({ etag: 'W/"media-2"' }),
+      })
+
+      const response = await useOData('MyService').entitySet('Documents').updateMedia(
+        1,
+        bytes,
+        {
+          contentType: 'application/octet-stream',
+          headers: {
+            'Content-Type': 'text/plain',
+            'If-Match': 'W/"media-1"',
+          },
+        },
+      )
+
+      expect(response).toEqual({ etag: 'W/"media-2"' })
+      expect(fetchMock.raw).toHaveBeenCalledWith(
+        '/api/odx/MyService/Documents(1)/$value',
+        {
+          body: bytes,
+          headers: {
+            'content-type': 'application/octet-stream',
+            'if-match': 'W/"media-1"',
+          },
+          method: 'PUT',
+          responseType: 'arrayBuffer',
+        },
+      )
+    })
+
+    it('rejects unsafe media properties, invalid bodies, and header injection', async () => {
+      const entitySet = useOData('MyService').entitySet('Documents')
+
+      await expect(entitySet.fetchMedia(1, { streamProperty: '../Preview' }))
+        .rejects
+        .toThrow('valid identifier')
+      await expect(entitySet.updateMedia(1, 'not-bytes' as any, {
+        contentType: 'application/pdf',
+      }))
+        .rejects
+        .toThrow('ArrayBuffer or Uint8Array')
+      await expect(entitySet.updateMedia(1, new ArrayBuffer(0), {
+        contentType: 'application/pdf\r\nx-injected: true',
+      }))
+        .rejects
+        .toThrow('valid content type')
+      await expect(entitySet.updateMedia(1, new ArrayBuffer(0), {
+        contentType: 'pdf',
+      }))
+        .rejects
+        .toThrow('valid content type')
+    })
+
     it('preserves an entity ETag through an explicit response read', async () => {
       const signal = new AbortController().signal
 

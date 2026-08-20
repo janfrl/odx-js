@@ -97,6 +97,33 @@ For SAP Gateway OData V2 services that require the legacy update verb, use
 `update()` behavior; ODX never changes the verb implicitly. Runtime entity sets
 advertise this separate capability with `supportsMerge === true`.
 
+Read or replace a media entity's default stream, or a named `Edm.Stream`
+property, without constructing a `$value` URL:
+
+```ts
+const files = useOData('Documents').entitySet('Files')
+const current = await files.fetchMedia(42)
+const preview = await files.fetchMedia(42, { streamProperty: 'Preview' })
+
+await files.updateMedia(42, preview.data, {
+  contentType: preview.contentType ?? 'application/octet-stream',
+  headers: current.etag ? { 'If-Match': current.etag } : undefined,
+})
+```
+
+These methods are imperative because binary payloads should not enter Nuxt's
+JSON SSR payload. `fetchMedia` returns an `ArrayBuffer` and optional
+`contentType`, `contentDisposition`, and `etag` response metadata.
+`updateMedia` uses `PUT`, requires an explicit valid media type, and returns a
+replacement ETag when present. Named stream properties remain validated
+identifier segments. Runtime entity sets advertise this additive contract
+with `supportsMediaStreams === true`.
+
+ODX does not infer stream properties from metadata or provide attachment UI.
+Browser applications should use the Nuxt proxy so authenticated requests and
+SAP CSRF handling stay server-side; higher layers own file selection,
+progress, preview, and renderer semantics.
+
 Read a related collection without constructing an OData resource path in the
 consumer:
 
