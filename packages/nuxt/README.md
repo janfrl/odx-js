@@ -114,6 +114,16 @@ await files.updateMedia(42, preview.data, {
   contentType: preview.contentType ?? 'application/octet-stream',
   headers: current.etag ? { 'If-Match': current.etag } : undefined,
 })
+
+const attachment = {
+  kind: 'contained-entity' as const,
+  rootKey: { ID: 42, IsActiveEntity: false },
+  path: [{ navigationPath: ['Attachments'], key: 7 }],
+}
+await files.updateMedia(attachment, replacementBytes, {
+  contentType: 'application/pdf',
+  streamProperty: 'Content',
+})
 ```
 
 These methods are imperative because binary payloads should not enter Nuxt's
@@ -121,8 +131,11 @@ JSON SSR payload. `fetchMedia` returns an `ArrayBuffer` and optional
 `contentType`, `contentDisposition`, and `etag` response metadata.
 `updateMedia` uses `PUT`, requires an explicit valid media type, and returns a
 replacement ETag when present. Named stream properties remain validated
-identifier segments. Runtime entity sets advertise this additive contract
-with `supportsMediaStreams === true`.
+identifier segments. Root keys and structured contained-entity sources share
+the same path-safe media contract; callers never concatenate containment or
+`$value` paths. Runtime entity sets advertise this additive contract with
+`supportsMediaStreams === true`; contained callers additionally require
+`supportsContainedNavigationSources === true`.
 
 `createMedia` uses `POST` on the validated entity collection, requests the
 created representation, and returns it with the response ETag when supplied by

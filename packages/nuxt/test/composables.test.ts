@@ -315,6 +315,26 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('reads a contained named media stream from a structured source', async () => {
+      const bytes = Uint8Array.from([1, 2]).buffer
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({
+        _data: bytes,
+        headers: new Headers({ 'content-type': 'application/octet-stream' }),
+      })
+
+      await useOData('MyService').entitySet('Products').fetchMedia({
+        kind: 'contained-entity',
+        rootKey: { ID: 1, IsActiveEntity: false },
+        path: [{ navigationPath: ['Attachments'], key: { AttachmentID: 'A/B' } }],
+      }, { streamProperty: 'Content' })
+
+      expect(fetchMock.raw).toHaveBeenCalledWith(
+        '/api/odx/MyService/Products(ID=1,IsActiveEntity=false)/Attachments(AttachmentID=\'A%2FB\')/Content/$value',
+        expect.objectContaining({ method: 'GET', responseType: 'arrayBuffer' }),
+      )
+    })
+
     it('creates a media entity with binary content, slug, representation, and ETag', async () => {
       const bytes = Uint8Array.from([37, 80, 68, 70])
       const fetchMock = globalThis.$fetch as any
@@ -401,6 +421,25 @@ describe('useOData Composable', () => {
           method: 'PUT',
           responseType: 'arrayBuffer',
         },
+      )
+    })
+
+    it('replaces a contained named media stream from a structured source', async () => {
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({ headers: new Headers() })
+
+      await useOData('MyService').entitySet('Products').updateMedia({
+        kind: 'contained-entity',
+        rootKey: 1,
+        path: [{ navigationPath: ['Attachments'], key: 2 }],
+      }, Uint8Array.from([1, 2]), {
+        contentType: 'application/octet-stream',
+        streamProperty: 'Content',
+      })
+
+      expect(fetchMock.raw).toHaveBeenCalledWith(
+        '/api/odx/MyService/Products(1)/Attachments(2)/Content/$value',
+        expect.objectContaining({ method: 'PUT', responseType: 'arrayBuffer' }),
       )
     })
 
@@ -1604,6 +1643,43 @@ describe('useOData Composable', () => {
 
       const body = raw.mock.calls[0]?.[1].body as string
       expect(body).toContain('POST Products(1)/Items(2)/Tags HTTP/1.1')
+    })
+
+    it('serializes contained media updates in atomic changesets', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+
+      await useOData('RoutedService' as any).changeSet([{
+        kind: 'update-media',
+        entitySet: 'Products',
+        key: {
+          kind: 'contained-entity',
+          rootKey: 1,
+          path: [{ navigationPath: ['Attachments'], key: 2 }],
+        },
+        body: Uint8Array.from([1, 2]),
+        contentType: 'application/octet-stream',
+        streamProperty: 'Content',
+      }])
+
+      const body = raw.mock.calls[0]?.[1].body as Uint8Array
+      const text = new TextDecoder().decode(body)
+      expect(text).toContain(
+        'PUT Products(1)/Attachments(2)/Content/$value HTTP/1.1',
+      )
+      expect(text).toContain('Content-Type: application/octet-stream')
     })
 
     it('uses the configured direct service root for batch requests', async () => {

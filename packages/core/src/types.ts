@@ -544,12 +544,12 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
   ) => Promise<ODataMediaCreateResponse<T>>
   /** Reads a media entity or named `Edm.Stream` property through `$value`. */
   fetchMedia: (
-    key: ODataKey,
+    key: ODataNavigationSource,
     options?: ODataMediaRequestOptions,
   ) => Promise<ODataMediaResponse>
   /** Replaces a media entity or named `Edm.Stream` property through `$value`. */
   updateMedia: (
-    key: ODataKey,
+    key: ODataNavigationSource,
     body: ArrayBuffer | Uint8Array,
     options: ODataMediaUpdateOptions,
   ) => Promise<ODataMediaMutationResponse>
@@ -614,7 +614,7 @@ export interface ODataAtomicNavigationDelete {
 export interface ODataAtomicMediaUpdate {
   readonly kind: 'update-media'
   readonly entitySet: string
-  readonly key: ODataKey
+  readonly key: ODataNavigationSource
   readonly body: ArrayBuffer | Uint8Array
   readonly contentType: string
   /** Named `Edm.Stream` property; omit for a media entity's default stream. */

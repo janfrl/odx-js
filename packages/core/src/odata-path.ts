@@ -180,11 +180,11 @@ export function createODataEntityPath(entitySet: string, key: ODataKey): string 
 /** Creates a validated entity or named-stream `$value` resource path. */
 export function createODataMediaPath(
   entitySet: string,
-  key: ODataKey,
+  key: ODataNavigationSource,
   streamProperty?: string,
 ): string {
   return joinODataPath(
-    createODataEntityPath(entitySet, key),
+    createODataNavigationSourcePath(entitySet, key),
     ...(streamProperty === undefined
       ? []
       : [validateODataIdentifier(streamProperty, 'OData stream property')]),

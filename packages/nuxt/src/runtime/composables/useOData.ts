@@ -124,7 +124,7 @@ export function useOData(service?: string): any {
         createODataNavigationSourcePath(entitySet, source),
       )
     }
-    const mediaPath = (key: ODataKey, streamProperty?: string): string => {
+    const mediaPath = (key: ODataNavigationSource, streamProperty?: string): string => {
       if (entitySet === undefined)
         throw new TypeError('An OData media operation requires an entity set.')
       return joinODataPath(servicePath, createODataMediaPath(entitySet, key, streamProperty))
@@ -353,7 +353,7 @@ export function useOData(service?: string): any {
       },
 
       fetchMedia: async (
-        key: ODataKey,
+        key: ODataNavigationSource,
         options?: ODataMediaRequestOptions,
       ): Promise<ODataMediaResponse> => {
         const { streamProperty, ...requestOptions } = options ?? {}
@@ -380,7 +380,7 @@ export function useOData(service?: string): any {
       },
 
       updateMedia: async (
-        key: ODataKey,
+        key: ODataNavigationSource,
         body: ArrayBuffer | Uint8Array,
         options: ODataMediaUpdateOptions,
       ): Promise<ODataMediaMutationResponse> => {

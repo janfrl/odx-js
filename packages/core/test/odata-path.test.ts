@@ -86,6 +86,18 @@ describe('portable OData resource paths', () => {
     expect(() => createODataMediaPath('Documents', 1, '../Preview'))
       .toThrow('valid identifier')
   })
+  it('creates exact contained media-stream paths from structured sources', () => {
+    expect(createODataMediaPath('Products', {
+      kind: 'contained-entity',
+      rootKey: { ID: 1, IsActiveEntity: false },
+      path: [
+        { navigationPath: ['Items'], key: { ItemID: 'A/B' } },
+        { navigationPath: ['Attachments'], key: 3 },
+      ],
+    }, 'Content')).toBe(
+      'Products(ID=1,IsActiveEntity=false)/Items(ItemID=\'A%2FB\')/Attachments(3)/Content/$value',
+    )
+  })
   it('creates service-relative entity references without accepting paths', () => {
     expect(createODataEntityReference('Categories', { ID: 'A/B' }))
       .toEqual({ '@odata.id': 'Categories(ID=\'A%2FB\')' })
