@@ -11,6 +11,7 @@ export {
   getJsonProperty,
   getXmlAttribute,
   getXmlChildren,
+  isCsdlDocument,
   resolveCsdlNullable,
   walkCsdlNodes,
 } from './model'

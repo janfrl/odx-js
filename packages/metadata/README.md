@@ -21,6 +21,7 @@ pnpm add @me-tools/odx-metadata
 ```ts
 import {
   createCsdlArtifact,
+  isCsdlDocument,
   parseCsdl,
   walkCsdlNodes,
 } from '@me-tools/odx-metadata'
@@ -39,6 +40,10 @@ const artifact = await createCsdlArtifact(result.document, source)
 
 console.log(nodes.length, artifact.documentHash, artifact.sourceHash)
 ```
+
+Use `isCsdlDocument(value)` at package, cache, or process boundaries before
+passing an unknown value to a typed consumer. The guard checks the complete
+versioned document shape and node graph without interpreting vocabularies.
 
 Use `parseCsdlXml` or `parseCsdlJson` when the representation is already known. Passing parsed JSON objects is supported, but JSON text is preferred when exact numeric lexemes, duplicate keys, and token locations matter.
 

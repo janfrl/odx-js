@@ -15,6 +15,7 @@ import {
   getXmlAttribute,
   getXmlChildren,
   hashCsdlSource,
+  isCsdlDocument,
   parseCsdl,
   parseCsdlJson,
   parseCsdlXml,
@@ -47,6 +48,25 @@ function jsonObjectProperty(object: CsdlJsonObject, name: string): CsdlJsonObjec
   expect(value?.kind).toBe('object')
   return value as CsdlJsonObject
 }
+
+describe('CSDL document contract', () => {
+  it('recognizes complete parsed XML and JSON documents', () => {
+    expect(isCsdlDocument(requireDocument(parseCsdlXml(fixture('v4.01.xml'))))).toBe(true)
+    expect(isCsdlDocument(requireDocument(parseCsdlJson(fixture('v4.01.json.txt'))))).toBe(true)
+  })
+
+  it('rejects incomplete, malformed, and cyclic document graphs', () => {
+    const document = requireDocument(parseCsdlXml(fixture('v4.01.xml')))
+    expect(isCsdlDocument({ ...document, idAlgorithm: 'unversioned' })).toBe(false)
+    expect(isCsdlDocument({
+      ...document,
+      root: { ...document.root, children: [...document.root.children, { kind: 'mystery' }] },
+    })).toBe(false)
+    const cyclic = { ...document, root: { ...document.root, children: [...document.root.children] } }
+    cyclic.root.children.push(cyclic.root)
+    expect(isCsdlDocument(cyclic)).toBe(false)
+  })
+})
 
 describe('xML CSDL ingestion', () => {
   it('preserves V4.01 namespaces, extensions, order, locations, and overloads', () => {
