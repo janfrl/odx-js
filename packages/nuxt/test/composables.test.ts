@@ -1290,6 +1290,7 @@ describe('useOData Composable', () => {
       expect(url).toBe('/api/odx/routed-api/$batch')
       expect(options).toMatchObject({
         method: 'POST',
+        responseType: 'text',
         signal,
         headers: {
           'accept': 'multipart/mixed',

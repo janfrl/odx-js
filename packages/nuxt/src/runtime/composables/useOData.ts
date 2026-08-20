@@ -697,6 +697,7 @@ export function useOData(service?: string): any {
           'OData-Version': '4.0',
         }),
         body: payload.body,
+        responseType: 'text',
       },
     )
     const contentType = response.headers.get('content-type') ?? ''
