@@ -4,18 +4,19 @@ export interface ODataChangeSetRequest {
   readonly method: ODataChangeSetMethod
   readonly path: string
   readonly headers?: Readonly<Record<string, string>>
+  /** JSON value, or raw bytes with an explicit Content-Type header. */
   readonly body?: unknown
 }
 
 export interface ODataChangeSetPayload {
-  readonly body: string
+  readonly body: string | Uint8Array
   readonly contentType: string
   readonly batchBoundary: string
   readonly changeSetBoundary: string
 }
 
 export interface ODataBatchChangeSetsPayload {
-  readonly body: string
+  readonly body: string | Uint8Array
   readonly contentType: string
   readonly batchBoundary: string
   readonly changeSetBoundaries: readonly string[]
@@ -103,19 +104,112 @@ function validateRequest(request: ODataChangeSetRequest): void {
       )
     }
   }
+  const binaryContentType = isBinaryBody(request.body)
+    ? findHeader(request.headers, 'content-type')
+    : undefined
+  if (isBinaryBody(request.body)
+    && (binaryContentType === undefined || binaryContentType.trim().length === 0)) {
+    throw new ODataChangeSetError(
+      'core.changeset.missing-binary-content-type',
+      'A binary changeset operation requires an explicit Content-Type header.',
+    )
+  }
+}
+
+function isBinaryBody(value: unknown): value is ArrayBuffer | Uint8Array {
+  return value instanceof ArrayBuffer || value instanceof Uint8Array
+}
+
+function findHeader(
+  headers: Readonly<Record<string, string>> | undefined,
+  name: string,
+): string | undefined {
+  const normalizedName = name.toLowerCase()
+  return Object.entries(headers ?? {}).find(([header]) =>
+    header.toLowerCase() === normalizedName)?.[1]
+}
+
+const textEncoder = new TextEncoder()
+
+function byteBody(value: ArrayBuffer | Uint8Array): Uint8Array {
+  return value instanceof Uint8Array
+    ? value
+    : new Uint8Array(value)
+}
+
+function joinBytes(parts: readonly (string | Uint8Array)[], separator = ''): Uint8Array {
+  const separatorBytes = textEncoder.encode(separator)
+  const encoded = parts.map(part => typeof part === 'string' ? textEncoder.encode(part) : part)
+  const size = encoded.reduce((total, part) => total + part.byteLength, 0)
+    + Math.max(0, encoded.length - 1) * separatorBytes.byteLength
+  const result = new Uint8Array(size)
+  let offset = 0
+  encoded.forEach((part, index) => {
+    if (index > 0) {
+      result.set(separatorBytes, offset)
+      offset += separatorBytes.byteLength
+    }
+    result.set(part, offset)
+    offset += part.byteLength
+  })
+  return result
+}
+
+function includesBytes(value: Uint8Array, candidate: Uint8Array): boolean {
+  if (candidate.length === 0)
+    return true
+  const lastOffset = value.length - candidate.length
+  for (let offset = 0; offset <= lastOffset; offset++) {
+    if (value[offset] !== candidate[0])
+      continue
+    let matches = true
+    for (let index = 1; index < candidate.length; index++) {
+      if (value[offset + index] !== candidate[index]) {
+        matches = false
+        break
+      }
+    }
+    if (matches)
+      return true
+  }
+  return false
+}
+
+function validateBinaryBoundary(
+  request: ODataChangeSetRequest,
+  boundary: string,
+): void {
+  if (!isBinaryBody(request.body))
+    return
+  const body = byteBody(request.body)
+  const marker = textEncoder.encode(`--${boundary}`)
+  if (includesBytes(body.subarray(0, marker.length), marker)
+    || includesBytes(body, textEncoder.encode(`\r\n--${boundary}`))) {
+    throw new ODataChangeSetError(
+      'core.changeset.binary-boundary-collision',
+      'A binary changeset body must not contain a MIME boundary at the start of a line.',
+    )
+  }
+}
+
+function serializeBody(parts: readonly (string | Uint8Array)[]): string | Uint8Array {
+  return parts.every(part => typeof part === 'string')
+    ? (parts as readonly string[]).join('\r\n')
+    : joinBytes(parts, '\r\n')
 }
 
 function operationPart(
   request: ODataChangeSetRequest,
   boundary: string,
   contentId: number,
-): string {
+): string | Uint8Array {
+  const binary = isBinaryBody(request.body)
   const headers = {
     Accept: 'application/json',
-    ...(request.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    ...(request.body === undefined || binary ? {} : { 'Content-Type': 'application/json' }),
     ...request.headers,
   }
-  return [
+  const prefix = [
     `--${boundary}`,
     'Content-Type: application/http',
     'Content-Transfer-Encoding: binary',
@@ -124,8 +218,15 @@ function operationPart(
     `${request.method} ${request.path} HTTP/1.1`,
     ...Object.entries(headers).map(([name, value]) => `${name}: ${value}`),
     '',
-    ...(request.body === undefined ? [] : [JSON.stringify(request.body)]),
+    '',
   ].join('\r\n')
+  if (binary) {
+    validateBinaryBoundary(request, boundary)
+    return joinBytes([prefix, byteBody(request.body)])
+  }
+  return request.body === undefined
+    ? prefix.slice(0, -2)
+    : `${prefix}${JSON.stringify(request.body)}`
 }
 
 export function serializeODataChangeSet(
@@ -153,10 +254,11 @@ export function serializeODataChangeSet(
       'Batch and changeset boundaries must differ.',
     )
   }
+  requests.forEach(request => validateBinaryBoundary(request, batchBoundary))
   const operationParts = requests.map((request, index) =>
     operationPart(request, changeSetBoundary, index + 1),
   )
-  const body = [
+  const body = serializeBody([
     `--${batchBoundary}`,
     `Content-Type: multipart/mixed; boundary=${changeSetBoundary}`,
     '',
@@ -164,7 +266,7 @@ export function serializeODataChangeSet(
     `--${changeSetBoundary}--`,
     `--${batchBoundary}--`,
     '',
-  ].join('\r\n')
+  ])
   return Object.freeze({
     body,
     contentType: `multipart/mixed; boundary=${batchBoundary}`,
@@ -215,9 +317,10 @@ export function serializeODataBatchChangeSets(
       'Batch and changeset boundaries must be unique.',
     )
   }
+  changeSets.flat().forEach(request => validateBinaryBoundary(request, batchBoundary))
 
   let contentId = 0
-  const body = [
+  const body = serializeBody([
     ...changeSets.flatMap((changeSet, groupIndex) => {
       const boundary = changeSetBoundaries[groupIndex]!
       return [
@@ -234,7 +337,7 @@ export function serializeODataBatchChangeSets(
     }),
     `--${batchBoundary}--`,
     '',
-  ].join('\r\n')
+  ])
   return Object.freeze({
     body,
     contentType: `multipart/mixed; boundary=${batchBoundary}`,

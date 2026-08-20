@@ -1256,6 +1256,7 @@ describe('useOData Composable', () => {
       })
       const api = useOData('RoutedService' as any)
       expect(api.supportsAtomicActionChangesets).toBe(true)
+      expect(api.supportsAtomicMediaChangesets).toBe(true)
 
       const responses = await api.changeSet([
         {
@@ -1301,6 +1302,52 @@ describe('useOData Composable', () => {
       expect(options.body).toContain('PATCH Products(1)/Supplier(2) HTTP/1.1')
       expect(options.body).toContain('If-Match: W/"product-1"')
       expect(options.body).toContain('If-Match: W/"supplier-2"')
+    })
+
+    it('preserves a named stream and sibling metadata in one atomic changeset', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          'Content-Transfer-Encoding: binary',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const media = Uint8Array.from([0, 255, 13, 10, 45, 45, 127])
+      const api = useOData('RoutedService' as any)
+
+      await api.changeSet([{
+        kind: 'update',
+        entitySet: 'Documents',
+        key: 1,
+        body: { FileName: 'manual.pdf', MediaType: 'application/pdf' },
+        headers: { 'If-Match': 'W/"document-1"' },
+      }, {
+        kind: 'update-media',
+        entitySet: 'Documents',
+        key: 1,
+        streamProperty: 'Content',
+        contentType: 'application/pdf',
+        body: media,
+      }])
+
+      const options = raw.mock.calls[0]?.[1] as any
+      expect(options.body).toBeInstanceOf(Uint8Array)
+      const body = options.body as Uint8Array
+      const text = new TextDecoder().decode(body)
+      expect(text).toContain('PATCH Documents(1) HTTP/1.1')
+      expect(text).toContain('If-Match: W/"document-1"')
+      expect(text).toContain('PUT Documents(1)/Content/$value HTTP/1.1')
+      expect(text).toContain('Content-Type: application/pdf')
+      expect(Array.from(body).some((_, offset) =>
+        media.every((byte, index) => body[offset + index] === byte),
+      )).toBe(true)
     })
 
     it('serializes service, collection, and entity actions in one atomic changeset', async () => {

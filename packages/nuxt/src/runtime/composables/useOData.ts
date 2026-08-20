@@ -51,6 +51,23 @@ export function useOData(service?: string): any {
   // so relative proxy paths resolve inside the current Nuxt application.
   const client = (import.meta.server ? useRequestFetch() : globalThis.$fetch) as unknown as ODataFetchClient
 
+  const mediaType = (value: string): string => {
+    const normalized = value.trim()
+    if (
+      normalized.length === 0
+      || RE_HEADER_NEWLINE.test(normalized)
+      || !RE_MEDIA_TYPE.test(normalized)
+    ) {
+      throw new TypeError('An OData media update requires a valid content type.')
+    }
+    return normalized
+  }
+  const mediaBody = (body: ArrayBuffer | Uint8Array): ArrayBuffer | Uint8Array => {
+    if (!(body instanceof ArrayBuffer) && !(body instanceof Uint8Array))
+      throw new TypeError('An OData media mutation requires an ArrayBuffer or Uint8Array body.')
+    return body
+  }
+
   const createJsonReadOptions = (options?: unknown): Record<string, any> => {
     const requestOptions = (options ?? {}) as Record<string, any>
     const headers = requestOptions.headers
@@ -111,22 +128,6 @@ export function useOData(service?: string): any {
       if (entitySet === undefined)
         throw new TypeError('An OData media operation requires an entity set.')
       return joinODataPath(servicePath, createODataMediaPath(entitySet, key, streamProperty))
-    }
-    const mediaType = (value: string): string => {
-      const normalized = value.trim()
-      if (
-        normalized.length === 0
-        || RE_HEADER_NEWLINE.test(normalized)
-        || !RE_MEDIA_TYPE.test(normalized)
-      ) {
-        throw new TypeError('An OData media update requires a valid content type.')
-      }
-      return normalized
-    }
-    const mediaBody = (body: ArrayBuffer | Uint8Array): ArrayBuffer | Uint8Array => {
-      if (!(body instanceof ArrayBuffer) && !(body instanceof Uint8Array))
-        throw new TypeError('An OData media mutation requires an ArrayBuffer or Uint8Array body.')
-      return body
     }
     const mediaSlug = (value: string | undefined): string | undefined => {
       if (value === undefined)
@@ -612,6 +613,23 @@ export function useOData(service?: string): any {
   const atomicMutationRequest = (
     mutation: ODataAtomicMutation,
   ): ODataChangeSetRequest => {
+    if (mutation.kind === 'update-media') {
+      const headers = Object.fromEntries([
+        ...Object.entries(mutation.headers ?? {}).filter(([name]) =>
+          name.toLowerCase() !== 'content-type'),
+        ['Content-Type', mediaType(mutation.contentType)],
+      ])
+      return Object.freeze({
+        method: 'PUT' as const,
+        path: createODataMediaPath(
+          mutation.entitySet,
+          mutation.key,
+          mutation.streamProperty,
+        ),
+        headers: Object.freeze(headers),
+        body: mediaBody(mutation.body),
+      })
+    }
     if (mutation.kind === 'action') {
       const bindingPath = mutation.scope === 'service'
         ? undefined
@@ -664,7 +682,7 @@ export function useOData(service?: string): any {
 
   const postChangeSetBatch = async <T>(
     serviceName: string,
-    payload: { readonly body: string, readonly contentType: string },
+    payload: { readonly body: string | Uint8Array, readonly contentType: string },
     options: ODataRequestOptions,
     parse: (body: string, contentType: string) => T,
   ): Promise<T> => {
@@ -725,6 +743,7 @@ export function useOData(service?: string): any {
   const createServiceProxy = (serviceName: string): ODataRuntimeService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
       supportsAtomicActionChangesets: true as const,
+      supportsAtomicMediaChangesets: true as const,
       supportsBatchChangeSets: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),

@@ -22,8 +22,11 @@ Reads return an `ArrayBuffer` plus optional `Content-Type`,
 `Content-Disposition`, and `ETag`; replacements accept binary data and an
 explicit media type. Media-entity creation posts the initial default stream to
 the collection with an exact media type and optional validated `Slug`, requests
-a representation, and retains its response ETag. `createODataMediaPath` keeps entity keys and named stream
-properties validated before adding the terminal `$value` segment.
+a representation, and retains its response ETag. `createODataMediaPath` keeps
+entity keys and named stream properties validated before adding the terminal
+`$value` segment. Atomic
+changesets additionally accept byte-preserving `update-media` members so a
+service can commit stream content and linked scalar metadata together.
 
 For optimistic concurrency, `$odataWithResponse` is the additive low-level
 entity read. It returns `{ data, etag? }`, preferring the HTTP `ETag` header

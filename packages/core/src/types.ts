@@ -610,6 +610,18 @@ export interface ODataAtomicNavigationDelete {
   readonly headers?: Readonly<Record<string, string>>
 }
 
+/** Replaces an entity stream as one member of an atomic OData changeset. */
+export interface ODataAtomicMediaUpdate {
+  readonly kind: 'update-media'
+  readonly entitySet: string
+  readonly key: ODataKey
+  readonly body: ArrayBuffer | Uint8Array
+  readonly contentType: string
+  /** Named `Edm.Stream` property; omit for a media entity's default stream. */
+  readonly streamProperty?: string
+  readonly headers?: Readonly<Record<string, string>>
+}
+
 /** Adds an existing entity relationship as one member of an atomic changeset. */
 export interface ODataAtomicNavigationLink {
   readonly kind: 'link-navigation'
@@ -661,6 +673,7 @@ export type ODataAtomicAction
 /** A mutation supported by the typed service-level atomic changeset API. */
 export type ODataAtomicMutation
   = | ODataAtomicAction
+    | ODataAtomicMediaUpdate
     | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
     | ODataAtomicNavigationDelete
@@ -680,6 +693,8 @@ type ODataServiceContract<
 > = {
   /** Advertises typed OData action members inside atomic changesets. */
   readonly supportsAtomicActionChangesets?: true
+  /** Advertises binary media-stream members inside atomic changesets. */
+  readonly supportsAtomicMediaChangesets?: true
   /** Advertises multiple independent changesets inside one OData batch. */
   readonly supportsBatchChangeSets?: true
   /**

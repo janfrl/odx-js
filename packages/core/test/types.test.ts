@@ -1,5 +1,6 @@
 import type {
   ODataActionInvocation,
+  ODataAtomicMutation,
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
   ODataConcurrencyService,
@@ -47,6 +48,16 @@ describe('portable imperative transport types', () => {
       .toBeFunction()
     expectTypeOf<ODataRuntimeService['supportsBatchChangeSets']>()
       .toEqualTypeOf<true | undefined>()
+    expectTypeOf<ODataRuntimeService['supportsAtomicMediaChangesets']>()
+      .toEqualTypeOf<true | undefined>()
+    expectTypeOf<{
+      kind: 'update-media'
+      entitySet: 'Documents'
+      key: number
+      streamProperty: 'Content'
+      contentType: 'application/pdf'
+      body: Uint8Array
+    }>().toExtend<ODataAtomicMutation>()
   })
 
   it('declares analytical apply as a portable query option', () => {

@@ -346,7 +346,8 @@ Service-level methods:
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
-members, root `update`, `create-navigation`, `update-navigation`, and
+members, root `update`, binary `update-media`, `create-navigation`,
+`update-navigation`, and
 `delete-navigation`, `link-navigation`, and `unlink-navigation` mutations and
 serializes them into one atomic OData V4
 changeset. Each mutation keeps its own key, payload where
@@ -355,6 +356,15 @@ applicable, and optional headers such as `If-Match`; request options such as
 rejects if any changeset member fails, so callers must not infer success from
 the outer batch status alone. Entity-set and navigation names are validated as
 identifier segments before transport.
+
+`update-media` accepts only `ArrayBuffer` or `Uint8Array`, requires an exact
+valid `contentType`, and derives the default or named `$value` target from an
+entity set, typed key, and optional stream-property identifier. ODX preserves
+the bytes in the multipart body and rejects missing media types or MIME-boundary
+collisions. Pairing this member with a normal root `update` lets services commit
+stream bytes and linked file-name or media-type fields atomically. Generated
+Nuxt services advertise the additive contract with
+`supportsAtomicMediaChangesets === true`.
 
 `batchChangeSets` accepts an ordered array of mutation groups and sends every
 group as a separate changeset in one outer request. Transport and malformed
@@ -365,7 +375,8 @@ fails closed before callers can associate an outcome with the wrong input.
 Generated Nuxt services expose `supportsAtomicActionChangesets === true`.
 Consumers that conditionally use action members can check this capability and
 remain compatible with older runtimes whose changesets only support mutations.
-They also expose `supportsBatchChangeSets === true` for the independent grouped
+They also expose `supportsAtomicMediaChangesets === true` for binary stream
+members and `supportsBatchChangeSets === true` for the independent grouped
 contract.
 
 Keys may be strings, numbers, booleans, or composite key objects.

@@ -44,6 +44,31 @@ describe('oData changesets', () => {
     expect(payload.body).toMatch(/--changeset_test--\r\n--batch_test--\r\n$/u)
   })
 
+  it('preserves binary members inside an atomic multipart changeset', () => {
+    const media = Uint8Array.from([0, 255, 13, 10, 45, 45, 127])
+    const payload = serializeODataChangeSet([{
+      method: 'PATCH',
+      path: 'Documents(1)',
+      body: { FileName: 'manual.pdf', MediaType: 'application/pdf' },
+    }, {
+      method: 'PUT',
+      path: 'Documents(1)/Content/$value',
+      headers: { 'Content-Type': 'application/pdf' },
+      body: media,
+    }], boundaries)
+
+    expect(payload.body).toBeInstanceOf(Uint8Array)
+    const body = payload.body as Uint8Array
+    const text = new TextDecoder().decode(body)
+    expect(text).toContain('PATCH Documents(1) HTTP/1.1')
+    expect(text).toContain('PUT Documents(1)/Content/$value HTTP/1.1')
+    expect(text).toContain('Content-Type: application/pdf')
+    expect(text).toContain('--changeset_test--\r\n--batch_test--\r\n')
+    expect(Array.from(body).some((_, offset) =>
+      media.every((byte, index) => body[offset + index] === byte),
+    )).toBe(true)
+  })
+
   it('rejects unsafe relative paths, headers, and boundaries', () => {
     expect(() => serializeODataChangeSet([{
       method: 'PATCH',
@@ -64,6 +89,17 @@ describe('oData changesets', () => {
       ...boundaries,
       batchBoundary: 'bad boundary',
     })).toThrow(ODataChangeSetError)
+    expect(() => serializeODataChangeSet([{
+      method: 'PUT',
+      path: 'Products(1)/Preview/$value',
+      body: Uint8Array.from([1]),
+    }], boundaries)).toThrow('Content-Type')
+    expect(() => serializeODataChangeSet([{
+      method: 'PUT',
+      path: 'Products(1)/Preview/$value',
+      headers: { 'Content-Type': 'image/png' },
+      body: new TextEncoder().encode('--changeset_test--'),
+    }], boundaries)).toThrow('MIME boundary')
   })
 
   it('serializes independent changesets with unique content identities', () => {

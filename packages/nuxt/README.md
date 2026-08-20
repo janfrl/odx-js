@@ -205,10 +205,16 @@ relationship editing.
 `changeSet()` accepts service-, collection-, and entity-bound `action` members,
 `create-navigation`, `update-navigation`, `delete-navigation`,
 `link-navigation`, and `unlink-navigation` mutations in addition to top-level
-updates, so related operations can be committed atomically.
-The service advertises this additive contract through
+updates. A binary `update-media` member derives an entity or named-stream
+`$value` target from structured inputs, so it can be paired with a root update
+for atomic stream, file-name, and media-type changes without concatenating a
+resource path. The service advertises this additive binary contract through
+`supportsAtomicMediaChangesets === true`.
+
+The action-member extension is advertised separately through
 `supportsAtomicActionChangesets === true`, allowing integrations to stay
 fail-closed with older ODX runtimes.
+
 `batchChangeSets()` sends ordered mutation groups as separate changesets inside
 one batch and returns a `succeeded` result per group, preserving partial success.
 Use `supportsBatchChangeSets === true` before depending on this newer contract.
