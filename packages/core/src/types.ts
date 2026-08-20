@@ -166,9 +166,22 @@ export interface ODataMediaUpdateOptions extends ODataMediaRequestOptions {
   readonly contentType: string
 }
 
+/** Options for creating a media entity from its initial default stream. */
+export interface ODataMediaCreateOptions extends ODataRequestOptions {
+  /** Exact request media type, for example `application/pdf`. */
+  readonly contentType: string
+  /** Optional OData `Slug` hint, commonly used as the original file name. */
+  readonly slug?: string
+}
+
 /** Result metadata from a media replacement that may return no body. */
 export interface ODataMediaMutationResponse {
   etag?: string
+}
+
+/** Created media entity representation and optimistic-concurrency validator. */
+export interface ODataMediaCreateResponse<T> extends ODataMediaMutationResponse {
+  data?: T
 }
 
 /**
@@ -524,6 +537,11 @@ export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<
 /** Entity-set client with imperative OData media-stream reads and replacements. */
 export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
   readonly supportsMediaStreams: true
+  /** Creates a media entity by posting its initial default stream. */
+  createMedia: (
+    body: ArrayBuffer | Uint8Array,
+    options: ODataMediaCreateOptions,
+  ) => Promise<ODataMediaCreateResponse<T>>
   /** Reads a media entity or named `Edm.Stream` property through `$value`. */
   fetchMedia: (
     key: ODataKey,

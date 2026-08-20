@@ -315,6 +315,61 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('creates a media entity with binary content, slug, representation, and ETag', async () => {
+      const bytes = Uint8Array.from([37, 80, 68, 70])
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({
+        _data: { ID: 42, Name: 'manual.pdf' },
+        headers: new Headers({ etag: 'W/"media-created"' }),
+      })
+
+      const response = await useOData('MyService').entitySet('Documents').createMedia(
+        bytes,
+        {
+          contentType: 'application/pdf',
+          headers: {
+            'content-type': 'text/plain',
+            'prefer': 'return=minimal',
+            'slug': 'ignored.txt',
+            'x-correlation-id': 'media-create-1',
+          },
+          slug: ' manual.pdf ',
+        },
+      )
+
+      expect(response).toEqual({
+        data: { ID: 42, Name: 'manual.pdf' },
+        etag: 'W/"media-created"',
+      })
+      expect(fetchMock.raw).toHaveBeenCalledWith(
+        '/api/odx/MyService/Documents',
+        {
+          body: bytes,
+          headers: {
+            'content-type': 'application/pdf',
+            'prefer': 'return=representation',
+            'slug': 'manual.pdf',
+            'x-correlation-id': 'media-create-1',
+          },
+          method: 'POST',
+          responseType: 'json',
+        },
+      )
+    })
+
+    it('accepts a media create without a response representation', async () => {
+      const fetchMock = globalThis.$fetch as any
+      fetchMock.raw.mockResolvedValue({
+        _data: undefined,
+        headers: new Headers(),
+      })
+
+      await expect(useOData('MyService').entitySet('Documents').createMedia(
+        new ArrayBuffer(0),
+        { contentType: 'application/octet-stream' },
+      )).resolves.toEqual({})
+    })
+
     it('replaces media streams with an exact content type and conditional ETag', async () => {
       const bytes = Uint8Array.from([1, 2, 3])
       const fetchMock = globalThis.$fetch as any
@@ -360,6 +415,17 @@ describe('useOData Composable', () => {
       }))
         .rejects
         .toThrow('ArrayBuffer or Uint8Array')
+      await expect(entitySet.createMedia('not-bytes' as any, {
+        contentType: 'application/pdf',
+      }))
+        .rejects
+        .toThrow('ArrayBuffer or Uint8Array')
+      await expect(entitySet.createMedia(new ArrayBuffer(0), {
+        contentType: 'application/pdf',
+        slug: 'manual.pdf\r\nx-injected: true',
+      }))
+        .rejects
+        .toThrow('valid slug')
       await expect(entitySet.updateMedia(1, new ArrayBuffer(0), {
         contentType: 'application/pdf\r\nx-injected: true',
       }))

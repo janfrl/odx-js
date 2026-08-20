@@ -105,6 +105,11 @@ const files = useOData('Documents').entitySet('Files')
 const current = await files.fetchMedia(42)
 const preview = await files.fetchMedia(42, { streamProperty: 'Preview' })
 
+const created = await files.createMedia(pdfBytes, {
+  contentType: 'application/pdf',
+  slug: 'manual.pdf',
+})
+
 await files.updateMedia(42, preview.data, {
   contentType: preview.contentType ?? 'application/octet-stream',
   headers: current.etag ? { 'If-Match': current.etag } : undefined,
@@ -118,6 +123,12 @@ JSON SSR payload. `fetchMedia` returns an `ArrayBuffer` and optional
 replacement ETag when present. Named stream properties remain validated
 identifier segments. Runtime entity sets advertise this additive contract
 with `supportsMediaStreams === true`.
+
+`createMedia` uses `POST` on the validated entity collection, requests the
+created representation, and returns it with the response ETag when supplied by
+the service. Its optional `slug` becomes the OData `Slug` header after rejecting
+empty values and header injection. Caller headers cannot override the validated
+`Content-Type`, `Prefer`, or `Slug` values.
 
 ODX does not infer stream properties from metadata or provide attachment UI.
 Browser applications should use the Nuxt proxy so authenticated requests and

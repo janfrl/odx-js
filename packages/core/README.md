@@ -20,7 +20,9 @@ The additive media contracts model default media-entity streams and named
 `Edm.Stream` properties without introducing browser or renderer concepts.
 Reads return an `ArrayBuffer` plus optional `Content-Type`,
 `Content-Disposition`, and `ETag`; replacements accept binary data and an
-explicit media type. `createODataMediaPath` keeps entity keys and named stream
+explicit media type. Media-entity creation posts the initial default stream to
+the collection with an exact media type and optional validated `Slug`, requests
+a representation, and retains its response ETag. `createODataMediaPath` keeps entity keys and named stream
 properties validated before adding the terminal `$value` segment.
 
 For optimistic concurrency, `$odataWithResponse` is the additive low-level

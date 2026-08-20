@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -121,6 +121,19 @@ export function useOData(service?: string): any {
       ) {
         throw new TypeError('An OData media update requires a valid content type.')
       }
+      return normalized
+    }
+    const mediaBody = (body: ArrayBuffer | Uint8Array): ArrayBuffer | Uint8Array => {
+      if (!(body instanceof ArrayBuffer) && !(body instanceof Uint8Array))
+        throw new TypeError('An OData media mutation requires an ArrayBuffer or Uint8Array body.')
+      return body
+    }
+    const mediaSlug = (value: string | undefined): string | undefined => {
+      if (value === undefined)
+        return undefined
+      const normalized = value.trim()
+      if (normalized.length === 0 || RE_HEADER_NEWLINE.test(normalized))
+        throw new TypeError('An OData media create requires a valid slug.')
       return normalized
     }
     return {
@@ -309,6 +322,35 @@ export function useOData(service?: string): any {
         })
       },
 
+      createMedia: async (
+        body: ArrayBuffer | Uint8Array,
+        options: ODataMediaCreateOptions,
+      ): Promise<ODataMediaCreateResponse<TModel>> => {
+        if (entitySet === undefined)
+          throw new TypeError('An OData media create requires an entity set.')
+        const { contentType, slug, ...requestOptions } = options
+        const normalizedSlug = mediaSlug(slug)
+        const response = await client.raw<TModel>(fullPath, {
+          ...(requestOptions as any),
+          body: mediaBody(body),
+          headers: mergeHeaders(
+            requestOptions.headers,
+            {
+              'content-type': mediaType(contentType),
+              'prefer': 'return=representation',
+              ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
+            },
+          ),
+          method: 'POST',
+          responseType: 'json',
+        })
+        const etag = response.headers.get('etag') ?? undefined
+        return {
+          ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TModel }),
+          ...(etag === undefined ? {} : { etag }),
+        }
+      },
+
       fetchMedia: async (
         key: ODataKey,
         options?: ODataMediaRequestOptions,
@@ -342,11 +384,9 @@ export function useOData(service?: string): any {
         options: ODataMediaUpdateOptions,
       ): Promise<ODataMediaMutationResponse> => {
         const { contentType, streamProperty, ...requestOptions } = options
-        if (!(body instanceof ArrayBuffer) && !(body instanceof Uint8Array))
-          throw new TypeError('An OData media update requires an ArrayBuffer or Uint8Array body.')
         const response = await client.raw<unknown>(mediaPath(key, streamProperty), {
           ...(requestOptions as any),
-          body,
+          body: mediaBody(body),
           headers: mergeHeaders(
             requestOptions.headers,
             { 'content-type': mediaType(contentType) },
