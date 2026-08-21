@@ -373,7 +373,11 @@ describe('proxy integration', () => {
     })
 
     expect(response.status).toBe(200)
-    expect(new Uint8Array(response._data)).toEqual(Uint8Array.from([4, 5, 6]))
+    const data = response._data
+    expect(data).toBeDefined()
+    if (data === undefined)
+      throw new TypeError('Binary mutation response data is required.')
+    expect(new Uint8Array(data)).toEqual(Uint8Array.from([4, 5, 6]))
     expect(response.headers.get('etag')).toBe('W/"media-2"')
     expect(response.headers.get('sap-message')).toBe(JSON.stringify({
       code: 'MEDIA/UPDATED',
