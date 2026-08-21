@@ -96,6 +96,21 @@ read capability signal. `supportsOptimisticConcurrency === true` identifies
 the separate conditional-mutation response capability, without widening the
 existing structural service contracts.
 
+For creates that request a minimal response, retain the advertised entity
+identity and validator explicitly:
+
+```ts
+const created = await useOData('Northwind').entitySet('Products').createWithResponse(
+  { Name: 'Created' },
+  { headers: { Prefer: 'return=minimal' } },
+)
+
+// created.data may be absent; entityId, location, and etag are optional.
+```
+
+Runtime entity sets expose `supportsCreateResponses === true`. The existing
+`create()` method remains the body-only convenience path.
+
 For SAP Gateway OData V2 services that require the legacy update verb, use
 `merge()` or `mergeWithResponse()` explicitly. PATCH remains the default
 `update()` behavior; ODX never changes the verb implicitly. Runtime entity sets

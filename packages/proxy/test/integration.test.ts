@@ -207,6 +207,7 @@ describe('proxy integration', () => {
 
     expect(response.status).toBe(201)
     expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('odata-entityid')).toBeNull()
     expect(response._data.d).toMatchObject({
       ID: 'created-1',
       Name: 'Created Product',
@@ -228,7 +229,22 @@ describe('proxy integration', () => {
 
     expect(response.status).toBe(201)
     expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('odata-entityid')).toBeNull()
   })
+
+  it.each(['TestService', 'StreamService'])(
+    'preserves relative created-entity identity through %s',
+    async (serviceName) => {
+      const response = await ofetch.raw(`${proxyUrl}/api/odx/${serviceName}/CreatedProducts`, {
+        method: 'POST',
+        body: { Name: 'Relative Product', RelativeIdentity: true },
+      })
+
+      expect(response.status).toBe(201)
+      expect(response.headers.get('location')).toBe('CreatedProducts(1)')
+      expect(response.headers.get('odata-entityid')).toBe('CreatedProducts(1)')
+    },
+  )
 
   it('keeps legacy services without a CSRF policy compatible', async () => {
     const response = await ofetch.raw(`${proxyUrl}/api/odx/TestService/CreatedProducts`, {
@@ -275,6 +291,9 @@ describe('proxy integration', () => {
 
     expect(response.status).toBe(204)
     expect(response._data).toBeUndefined()
+    expect(response.headers.get('etag')).toBe('W/"created-2"')
+    expect(response.headers.get('location')).toBe('CreatedProducts(2)')
+    expect(response.headers.get('odata-entityid')).toBe('CreatedProducts(2)')
 
     const [log] = await getODataLogs()
     expect(log?.status).toBe(204)

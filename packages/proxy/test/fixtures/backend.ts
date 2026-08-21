@@ -50,11 +50,18 @@ export function createBackend(): App {
     const body = await readBody(event)
     if (body?.NoContent) {
       setResponseStatus(event, 204, 'No Content')
+      event.node.res.setHeader('etag', 'W/"created-2"')
+      event.node.res.setHeader('location', 'CreatedProducts(2)')
+      event.node.res.setHeader('odata-entityid', 'CreatedProducts(2)')
       return ''
     }
 
     setResponseStatus(event, 201, 'Created')
-    event.node.res.setHeader('location', 'https://private-backend.example.test/odata/CreatedProducts(1)')
+    const entityLocation = body?.RelativeIdentity
+      ? 'CreatedProducts(1)'
+      : 'https://private-backend.example.test/odata/CreatedProducts(1)'
+    event.node.res.setHeader('location', entityLocation)
+    event.node.res.setHeader('odata-entityid', entityLocation)
 
     return {
       d: {

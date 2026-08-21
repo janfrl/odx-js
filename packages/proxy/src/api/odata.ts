@@ -14,6 +14,7 @@ import { parseODataRequest, resolveTargetUrl } from '../utils/url'
 const ENTITY_SET_IDENTIFIER = /^[\w.]+/
 const CSRF_PROTECTED_METHODS = new Set(['DELETE', 'MERGE', 'PATCH', 'POST', 'PUT'])
 const BUFFERED_RESPONSE_HEADERS = ['etag', 'odata-version', 'preference-applied', 'sap-message'] as const
+const ENTITY_LOCATION_HEADERS = ['location', 'odata-entityid'] as const
 
 function omitManagedCredentials(headers: Record<string, string>, authHeader?: string): void {
   if (authHeader && headers.authorization === authHeader) {
@@ -55,19 +56,23 @@ function forwardBufferedResponseHeaders(event: H3Event, headers: Headers): void 
       setHeader(event, name, value)
   }
 
-  const location = headers.get('location')
-  if (location && !location.startsWith('//') && !URL.canParse(location))
-    setHeader(event, 'location', location)
+  for (const name of ENTITY_LOCATION_HEADERS) {
+    const value = headers.get(name)
+    if (value && !value.startsWith('//') && !URL.canParse(value))
+      setHeader(event, name, value)
+  }
 }
 
-function removePrivateLocationHeader(event: H3Event, headers: Headers): void {
-  const location = headers.get('location')
-  if (location && (location.startsWith('//') || URL.canParse(location)))
-    removeResponseHeader(event, 'location')
+function removePrivateEntityLocationHeaders(event: H3Event, headers: Headers): void {
+  for (const name of ENTITY_LOCATION_HEADERS) {
+    const value = headers.get(name)
+    if (value && (value.startsWith('//') || URL.canParse(value)))
+      removeResponseHeader(event, name)
+  }
 }
 
 function removeBackendSessionHeaders(event: H3Event, headers: Headers): void {
-  removePrivateLocationHeader(event, headers)
+  removePrivateEntityLocationHeaders(event, headers)
   if (headers.has('set-cookie'))
     removeResponseHeader(event, 'set-cookie')
 }

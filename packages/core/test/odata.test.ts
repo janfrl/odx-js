@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { $odata, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
+import { $odata, $odataCreateWithResponse, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
 
 describe('$odata fetcher', () => {
   it('constructs the correct URL for basic requests', async () => {
@@ -267,5 +267,57 @@ describe('$odataWithResponse fetcher', () => {
     const response = await $odataWithResponse(createClient({ d: { ID: 1 } }), 'S/Products(1)')
 
     expect(response).toEqual({ data: { ID: 1 } })
+  })
+})
+
+describe('$odataCreateWithResponse fetcher', () => {
+  it('preserves a created representation and its advertised identity', async () => {
+    const headers = new Headers({
+      'etag': 'W/"product-1"',
+      'location': 'Products(1)',
+      'odata-entityid': 'Products(1)',
+    })
+    const client = {
+      raw: vi.fn().mockResolvedValue({
+        _data: { d: { ID: 1, Name: 'Desk' } },
+        headers,
+      }),
+    }
+
+    await expect($odataCreateWithResponse<{ ID: number, Name: string }>(
+      client,
+      'S/Products',
+      { body: { Name: 'Desk' } },
+    )).resolves.toEqual({
+      data: { ID: 1, Name: 'Desk' },
+      entityId: 'Products(1)',
+      etag: 'W/"product-1"',
+      location: 'Products(1)',
+    })
+    expect(client.raw).toHaveBeenCalledWith('S/Products', {
+      body: { Name: 'Desk' },
+      headers: { accept: 'application/json' },
+      method: 'POST',
+    })
+  })
+
+  it('supports a bodyless minimal create response', async () => {
+    const client = {
+      raw: vi.fn().mockResolvedValue({
+        _data: undefined,
+        headers: new Headers({
+          'etag': 'W/"product-2"',
+          'odata-entityid': 'Products(2)',
+        }),
+      }),
+    }
+
+    await expect($odataCreateWithResponse(client, 'S/Products', {
+      body: { Name: 'Chair' },
+      headers: { Prefer: 'return=minimal' },
+    })).resolves.toEqual({
+      entityId: 'Products(2)',
+      etag: 'W/"product-2"',
+    })
   })
 })

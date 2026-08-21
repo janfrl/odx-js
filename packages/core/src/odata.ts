@@ -1,5 +1,5 @@
 import type { FetchOptions } from 'ofetch'
-import type { ODataCollectionPage, ODataEntityResponse, ODataMutationResponse } from './types'
+import type { ODataCollectionPage, ODataCreateResponse, ODataEntityResponse, ODataMutationResponse } from './types'
 import { flattenOData, mergeHeaders, toODataCollectionPage } from './odata-utils'
 
 export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
@@ -88,6 +88,29 @@ export async function $odataMutationWithResponse<T = unknown>(
   }
 }
 
+/**
+ * Executes an entity create while preserving response metadata needed to
+ * address a bodyless `Prefer: return=minimal` result.
+ */
+export async function $odataCreateWithResponse<T = unknown>(
+  client: {
+    raw: <R>(path: string, options?: any) => Promise<{
+      _data?: R
+      headers: { get: (name: string) => string | null }
+    }>
+  },
+  service: string,
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
+): Promise<ODataCreateResponse<T>> {
+  const response = await requestWithResponse(client, service, 'POST', options)
+  return {
+    ...(response.body === undefined ? {} : { data: flattenOData(response.body) as T }),
+    ...(response.etag ? { etag: response.etag } : {}),
+    ...(response.entityId ? { entityId: response.entityId } : {}),
+    ...(response.location ? { location: response.location } : {}),
+  }
+}
+
 async function requestWithResponse(
   client: {
     raw: <R>(path: string, options?: any) => Promise<{
@@ -98,7 +121,7 @@ async function requestWithResponse(
   service: string,
   method: 'GET' | 'POST' | 'PATCH' | 'MERGE' | 'DELETE',
   options: FetchOptions<'json'> & { entitySet?: string },
-): Promise<{ body: unknown, etag?: string }> {
+): Promise<{ body: unknown, entityId?: string, etag?: string, location?: string }> {
   const { entitySet, headers, ...requestOptions } = options
   const path = entitySet ? `${service}/${entitySet}` : service
   const response = await client.raw<unknown>(path, {
@@ -109,11 +132,22 @@ async function requestWithResponse(
   const body = response._data
   const headerEtag = normalizeEtag(response.headers.get('etag'))
   const etag = headerEtag ?? extractBodyEtag(body)
+  const entityId = normalizeHeaderValue(response.headers.get('odata-entityid'))
+  const location = normalizeHeaderValue(response.headers.get('location'))
 
-  return { body, ...(etag ? { etag } : {}) }
+  return {
+    body,
+    ...(entityId ? { entityId } : {}),
+    ...(etag ? { etag } : {}),
+    ...(location ? { location } : {}),
+  }
 }
 
 function normalizeEtag(value: unknown): string | undefined {
+  return normalizeHeaderValue(value)
+}
+
+function normalizeHeaderValue(value: unknown): string | undefined {
   if (typeof value !== 'string')
     return undefined
   const normalized = value.trim()

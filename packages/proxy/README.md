@@ -43,7 +43,9 @@ applies them to the matching
 buffered or streamed backend request. Missing tokens fail closed. `If-Match`
 is preserved and responses forward allowlisted OData metadata headers such as
 `etag` and `sap-message`. Absolute backend `location` values are not
-forwarded because they may disclose private destination hosts.
+forwarded because they may disclose private destination hosts. The same rule
+applies to `OData-EntityId`; relative created-entity identities remain visible
+for `Prefer: return=minimal` clients.
 
 The generic OData default is `csrf: { mode: 'none' }`. Use
 `csrf: { mode: 'sap', fetchMethod: 'GET' }` when the SAP service does not

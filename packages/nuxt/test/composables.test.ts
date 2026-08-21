@@ -37,6 +37,7 @@ vi.mock('@me-tools/odx-core', async () => {
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
+    $odataCreateWithResponse: vi.fn(() => Promise.resolve({ entityId: 'Products(1)', etag: 'W/"entity-1"' })),
     $odataMutationWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"' })),
     $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
@@ -82,6 +83,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
+    expect(entitySet.supportsCreateResponses).toBe(true)
     expect(entitySet.supportsMerge).toBe(true)
     expect(entitySet.supportsMediaStreams).toBe(true)
     expect(entitySet.supportsContinuations).toBe(true)
@@ -1168,6 +1170,22 @@ describe('useOData Composable', () => {
         '/api/odx/MyService/Products(1)/Items(ID=42)/Demo.RepriceItem',
         'POST',
         { body: { Percent: 5 } },
+      )
+    })
+
+    it('preserves metadata from a bodyless minimal create', async () => {
+      const headers = { Prefer: 'return=minimal' }
+
+      const response = await useOData('MyService').entitySet('Products').createWithResponse(
+        { Name: 'Created' },
+        { headers },
+      )
+
+      expect(response).toEqual({ entityId: 'Products(1)', etag: 'W/"entity-1"' })
+      expect(core.$odataCreateWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/MyService/Products',
+        { body: { Name: 'Created' }, headers },
       )
     })
 

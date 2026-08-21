@@ -146,6 +146,17 @@ export interface ODataMutationResponse<T> {
   etag?: string
 }
 
+/**
+ * Created entity response with the optional identity advertised by the
+ * service. A representation is optional when `Prefer: return=minimal` is used.
+ */
+export interface ODataCreateResponse<T> extends ODataMutationResponse<T> {
+  /** OData `OData-EntityId` response header, when supplied by the service. */
+  entityId?: string
+  /** HTTP `Location` response header, when supplied by the service. */
+  location?: string
+}
+
 /** Binary OData entity or named-stream payload with safe response metadata. */
 export interface ODataMediaResponse {
   data: ArrayBuffer
@@ -544,6 +555,19 @@ export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<
   ) => Promise<ODataMutationResponse<T>>
 }
 
+/** Entity-set client with explicit create response metadata. */
+export interface ODataCreateEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsCreateResponses: true
+  /**
+   * Creates an entity while preserving its optional representation, ETag, and
+   * service-advertised identity. This supports `Prefer: return=minimal`.
+   */
+  createWithResponse: (
+    body: Partial<T>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCreateResponse<T>>
+}
+
 /** Entity-set client with imperative OData media-stream reads and replacements. */
 export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
   readonly supportsMediaStreams: true
@@ -579,6 +603,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 export type ODataRuntimeEntitySet<T = any>
   = ODataMergeEntitySet<T>
     & ODataContinuationEntitySet<T>
+    & ODataCreateEntitySet<T>
     & ODataMediaEntitySet<T>
     & ODataNavigationReferenceEntitySet<T>
 
@@ -753,17 +778,19 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
     ? ODataRuntimeEntitySet<TModel>
     : TEntitySet extends ODataMergeEntitySet<any>
       ? ODataMergeEntitySet<TModel>
-      : TEntitySet extends ODataContinuationEntitySet<any>
-        ? ODataContinuationEntitySet<TModel>
-        : TEntitySet extends ODataConcurrencyEntitySet<any>
-          ? ODataConcurrencyEntitySet<TModel>
-          : TEntitySet extends ODataVersionedEntitySet<any>
-            ? ODataVersionedEntitySet<TModel>
-            : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-              ? ODataNavigationReferenceEntitySet<TModel>
-              : TEntitySet extends ODataPagedEntitySet<any>
-                ? ODataPagedEntitySet<TModel>
-                : ODataEntitySet<TModel>
+      : TEntitySet extends ODataCreateEntitySet<any>
+        ? ODataCreateEntitySet<TModel>
+        : TEntitySet extends ODataContinuationEntitySet<any>
+          ? ODataContinuationEntitySet<TModel>
+          : TEntitySet extends ODataConcurrencyEntitySet<any>
+            ? ODataConcurrencyEntitySet<TModel>
+            : TEntitySet extends ODataVersionedEntitySet<any>
+              ? ODataVersionedEntitySet<TModel>
+              : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                ? ODataNavigationReferenceEntitySet<TModel>
+                : TEntitySet extends ODataPagedEntitySet<any>
+                  ? ODataPagedEntitySet<TModel>
+                  : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -782,6 +809,10 @@ export type ODataVersionedService<E extends string = string, M extends Record<st
 /** OData service with explicit optimistic-concurrency mutation responses. */
 export type ODataConcurrencyService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataConcurrencyEntitySet<any>>
+
+/** OData service whose entity sets expose explicit create response metadata. */
+export type ODataCreateService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataCreateEntitySet<any>>
 
 /** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
 export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>

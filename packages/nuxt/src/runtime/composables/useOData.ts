@@ -1,7 +1,8 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
+  $odataCreateWithResponse,
   $odataMutationWithResponse,
   $odataPage,
   $odataWithResponse,
@@ -145,6 +146,7 @@ export function useOData(service?: string): any {
       supportsNavigationReferences: true,
       supportsEntityResponses: true,
       supportsOptimisticConcurrency: true,
+      supportsCreateResponses: true,
       supportsMerge: true,
       supportsMediaStreams: true,
       supportsContinuations: true,
@@ -461,6 +463,15 @@ export function useOData(service?: string): any {
 
       create: (body: Partial<TModel>, options?: ODataRequestOptions): Promise<TModel> =>
         $odata<TModel>(client, fullPath, 'POST', {
+          ...(options as any),
+          body,
+        }),
+
+      createWithResponse: (
+        body: Partial<TModel>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataCreateResponse<TModel>> =>
+        $odataCreateWithResponse<TModel>(client, fullPath, {
           ...(options as any),
           body,
         }),

@@ -227,6 +227,7 @@ Entity-set methods:
 | `createNavigationMedia<TResult>(source, navigationPath, body, options)` | `POST` | `Promise<ODataMediaCreateResponse<TResult>>` |
 | `get(key, query?, options?)` | `GET` | Nuxt `AsyncData<T>` compatible promise |
 | `create(body, options?)` | `POST` | `Promise<T>` |
+| `createWithResponse(body, options?)` | `POST` | `Promise<ODataCreateResponse<T>>` |
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
 | `updateNavigation(source, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
@@ -323,6 +324,17 @@ the flattened entity representation. A valid `204 No Content` response has no
 by `supportsOptimisticConcurrency === true`, so existing structural versioned
 read clients remain source-compatible. The existing `update` method remains
 body-only.
+
+Use `createWithResponse` when the create request may use
+`Prefer: return=minimal`, or when the consumer needs the created entity's ETag
+or advertised identity. Its additive `ODataCreateResponse<T>` contains an
+optional flattened `data` representation plus optional `etag`, `entityId`
+(`OData-EntityId`), and `location` fields. A valid bodyless response therefore
+does not fabricate entity data. Runtime clients advertise this capability with
+`supportsCreateResponses === true`; the original body-only `create` contract
+is unchanged. The ODX proxy forwards relative created-entity locations but
+removes absolute and protocol-relative backend locations in buffered and
+streaming modes so private destination hosts cannot leak to browser clients.
 
 SAP Gateway OData V2 services that require `MERGE` can use the explicit
 `merge` and `mergeWithResponse` counterparts. ODX does not silently replace
