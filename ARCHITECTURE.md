@@ -157,8 +157,10 @@ links to framework-neutral atomic or independent changesets and owns service
 URL resolution plus `$batch` transport.
 Ordinary service-, collection-, entity-, and navigation-bound actions expose a
 capability-negotiated response-aware path alongside the body-only API so
-optional representations, ETags, and allowlisted SAP mutation feedback can
-cross the same structural Nuxt Fiori transport boundary.
+optional representations, ETags, service-advertised locations, and allowlisted
+SAP mutation feedback can cross the same structural Nuxt Fiori transport
+boundary. ODX preserves an action location but leaves follow-up orchestration
+and completion semantics to the consuming application layer.
 Root and structured navigation DELETEs follow the same additive pattern through
 `supportsDeleteResponses`, `removeWithResponse`, and
 `removeNavigationWithResponse`; existing body-only removal ports stay valid.

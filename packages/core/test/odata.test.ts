@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { $odata, $odataCreateWithResponse, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
+import { $odata, $odataActionWithResponse, $odataCreateWithResponse, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
 
 describe('$odata fetcher', () => {
   it('constructs the correct URL for basic requests', async () => {
@@ -346,6 +346,43 @@ describe('$odataCreateWithResponse fetcher', () => {
     })).resolves.toEqual({
       entityId: 'Products(2)',
       etag: 'W/"product-2"',
+    })
+  })
+})
+
+describe('$odataActionWithResponse fetcher', () => {
+  it('preserves a service-advertised location from a bodyless action response', async () => {
+    const sapMessage = JSON.stringify({ message: 'Accepted', severity: 'success' })
+    const client = {
+      raw: vi.fn().mockResolvedValue({
+        _data: undefined,
+        headers: new Headers({
+          'etag': 'W/"operation-1"',
+          'location': 'Operations(42)',
+          'sap-message': sapMessage,
+        }),
+      }),
+    }
+
+    await expect($odataActionWithResponse(
+      client,
+      'S/Demo.RebuildIndex',
+      {
+        body: { Scope: 'Products' },
+        headers: { Prefer: 'respond-async' },
+      },
+    )).resolves.toEqual({
+      etag: 'W/"operation-1"',
+      location: 'Operations(42)',
+      sapMessage,
+    })
+    expect(client.raw).toHaveBeenCalledWith('S/Demo.RebuildIndex', {
+      body: { Scope: 'Products' },
+      headers: {
+        accept: 'application/json',
+        prefer: 'respond-async',
+      },
+      method: 'POST',
     })
   })
 })

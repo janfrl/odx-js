@@ -38,6 +38,7 @@ vi.mock('@me-tools/odx-core', async () => {
   return {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
+    $odataActionWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"', location: 'Operations(42)' })),
     $odataCreateWithResponse: vi.fn(() => Promise.resolve({ entityId: 'Products(1)', etag: 'W/"entity-1"' })),
     $odataMutationWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"' })),
     $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),
@@ -1304,19 +1305,17 @@ describe('useOData Composable', () => {
         },
       )
 
-      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
-      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"', location: 'Operations(42)' })
+      expect(core.$odataActionWithResponse).toHaveBeenNthCalledWith(
         1,
         expect.objectContaining({ raw: expect.any(Function) }),
         '/api/odx/MyService/Demo.ResetCatalog',
-        'POST',
         { body: { KeepAudit: true }, headers },
       )
-      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+      expect(core.$odataActionWithResponse).toHaveBeenNthCalledWith(
         2,
         expect.objectContaining({ raw: expect.any(Function) }),
         '/api/odx/MyService/Products(ID=1,Active=true)/Demo.ArchiveProduct',
-        'POST',
         { body: { Reason: 'obsolete' } },
       )
     })

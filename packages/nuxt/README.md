@@ -111,7 +111,9 @@ SAP Gateway `sap-message` header as `sapMessage`; semantic consumers remain
 responsible for parsing its JSON message shape.
 
 Use `invokeWithResponse` on the service or an entity set when an action's
-optional representation, response ETag, or SAP feedback is significant.
+optional representation, response ETag, SAP feedback, or advertised `Location`
+is significant. A location can survive a bodyless response; the application
+owns any follow-up request and must not treat its presence as proof of completion.
 Unbound, collection-, entity-, and navigation-bound addressing stays identical
 to `invoke`; the existing body-only method remains source-compatible.
 

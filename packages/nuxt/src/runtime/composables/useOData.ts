@@ -2,6 +2,7 @@ import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise,
 import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
+  $odataActionWithResponse,
   $odataCreateWithResponse,
   $odataMutationWithResponse,
   $odataPage,
@@ -845,10 +846,9 @@ export function useOData(service?: string): any {
               entityPath,
               formatODataNavigationPath(invocation.navigationPath),
             )
-        return $odataMutationWithResponse<TResult>(
+        return $odataActionWithResponse<TResult>(
           client,
           joinODataPath(bindingPath, action),
-          'POST',
           {
             ...(options as any),
             body: invocation.parameters ?? {},

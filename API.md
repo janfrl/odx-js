@@ -244,6 +244,7 @@ Entity-set methods:
 | `updateMedia(key, body, options)` | `PUT .../$value` | `Promise<{ etag?: string; sapMessage?: string }>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
+| `invokeWithResponse(action, invocation?, options?)` | `POST` | `Promise<ODataActionResponse<TResult>>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 
 Use `list` during Nuxt setup when SSR-aware `AsyncData` is desired. Use
@@ -283,7 +284,10 @@ the invocation key for unbound or collection-bound actions and provide it for an
 action; `parameters` become the POST body. Enumeration values use their declared
 member-name string in that JSON body and are never rewritten to their underlying
 integer by ODX. Metadata-aware callers validate membership before invoking the
-transport. `invokeFunction` uses the same binding
+transport. Use `invokeWithResponse` when the action's optional representation,
+ETag, SAP feedback, or service-advertised `Location` is significant. ODX returns
+that location as transport metadata but does not infer completion, poll it, or
+navigate to it. `invokeFunction` uses the same binding
 shape for qualified OData V4 functions, but sends `GET` and serializes each
 parameter from an explicit `{ type, value }` descriptor into the inline function
 call. Supported values are primitive EDM types; unsupported or malformed values

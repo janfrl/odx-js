@@ -160,7 +160,10 @@ export interface ODataCreateResponse<T> extends ODataMutationResponse<T> {
 }
 
 /** OData action result with optional response metadata and SAP feedback. */
-export type ODataActionResponse<T> = ODataMutationResponse<T>
+export interface ODataActionResponse<T> extends ODataMutationResponse<T> {
+  /** HTTP `Location` response header, when supplied by the service. */
+  location?: string
+}
 
 /** OData delete result with an optional representation and SAP feedback. */
 export type ODataDeleteResponse<T = unknown> = ODataMutationResponse<T>
@@ -640,7 +643,7 @@ export interface ODataActionResponseEntitySet<T = any> extends ODataEntitySet<T>
   readonly supportsActionResponses: true
   /**
    * Invokes an OData action while preserving its optional representation,
-   * response ETag, and legacy SAP Gateway message header.
+   * response ETag, advertised location, and legacy SAP Gateway message header.
    */
   invokeWithResponse: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,

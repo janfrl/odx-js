@@ -1,5 +1,5 @@
 import type { FetchOptions } from 'ofetch'
-import type { ODataCollectionPage, ODataCreateResponse, ODataEntityResponse, ODataMutationResponse } from './types'
+import type { ODataActionResponse, ODataCollectionPage, ODataCreateResponse, ODataEntityResponse, ODataMutationResponse } from './types'
 import { flattenOData, mergeHeaders, toODataCollectionPage } from './odata-utils'
 
 export { flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery } from './odata-utils'
@@ -85,6 +85,30 @@ export async function $odataMutationWithResponse<T = unknown>(
   return {
     ...(response.body === undefined ? {} : { data: flattenOData(response.body) as T }),
     ...(response.etag ? { etag: response.etag } : {}),
+    ...(response.sapMessage ? { sapMessage: response.sapMessage } : {}),
+  }
+}
+
+/**
+ * Executes an OData action while preserving a service-advertised response
+ * location in addition to the ordinary mutation metadata. The location is
+ * transport information only; callers own any follow-up request or polling.
+ */
+export async function $odataActionWithResponse<T = unknown>(
+  client: {
+    raw: <R>(path: string, options?: any) => Promise<{
+      _data?: R
+      headers: { get: (name: string) => string | null }
+    }>
+  },
+  service: string,
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
+): Promise<ODataActionResponse<T>> {
+  const response = await requestWithResponse(client, service, 'POST', options)
+  return {
+    ...(response.body === undefined ? {} : { data: flattenOData(response.body) as T }),
+    ...(response.etag ? { etag: response.etag } : {}),
+    ...(response.location ? { location: response.location } : {}),
     ...(response.sapMessage ? { sapMessage: response.sapMessage } : {}),
   }
 }

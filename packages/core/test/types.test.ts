@@ -175,6 +175,8 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<ODataActionResponse<unknown>>()
     expectTypeOf<Awaited<ReturnType<ProductsService['invokeWithResponse']>>>()
       .toEqualTypeOf<ODataActionResponse<unknown>>()
+    expectTypeOf<ODataActionResponse<unknown>['location']>()
+      .toEqualTypeOf<string | undefined>()
     expectTypeOf<ODataEntitySet<Product>>()
       .not
       .toHaveProperty('invokeWithResponse')
