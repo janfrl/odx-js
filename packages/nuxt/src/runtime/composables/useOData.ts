@@ -1,5 +1,5 @@
-import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
-import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
   $odataCreateWithResponse,
@@ -27,6 +27,7 @@ import {
   validateODataIdentifier,
   validateODataQualifiedName,
 } from '@me-tools/odx-core'
+import { createFetch } from 'ofetch'
 import { computed, isReactive, isRef, toValue } from 'vue'
 import { useODataBasePath } from './useODataBasePath'
 
@@ -51,7 +52,39 @@ export function useOData<T extends RegisteredServiceNames>(service: T): T extend
 export function useOData(service?: string): any {
   // Server-side imperative reads must retain the active Nitro request context
   // so relative proxy paths resolve inside the current Nuxt application.
-  const client = (import.meta.server ? useRequestFetch() : globalThis.$fetch) as unknown as ODataFetchClient
+  const requestFetchComposable = useRequestFetch as unknown as () => ODataFetchClient
+  const requestFetch = import.meta.server
+    ? requestFetchComposable()
+    : globalThis.$fetch as unknown as ODataFetchClient
+  // Nitro's context-aware event $fetch intentionally exposes only the parsed
+  // body API. Rebuild it on event.fetch when response metadata is required so
+  // ofetch's raw API and the active request context remain available together.
+  type ContextFetch = (request: RequestInfo | URL, init?: RequestInit) => Promise<Response>
+  const requestEvent = useRequestEvent as unknown as () => { fetch?: ContextFetch } | undefined
+  const eventFetch = import.meta.server ? requestEvent()?.fetch : undefined
+  const fetchHeaders = (headers: HeadersInit): Record<string, string> => {
+    const normalized: Record<string, string> = {}
+    new Headers(headers).forEach((value, name) => {
+      normalized[name] = value
+    })
+    return normalized
+  }
+  const rawFetch: typeof fetch = eventFetch
+    ? ((request, init) => eventFetch(request, {
+        ...init,
+        // h3 merges event headers with a plain record. ofetch supplies a
+        // Headers instance, whose fields would otherwise be lost on spread.
+        headers: init?.headers
+          ? fetchHeaders(init.headers)
+          : undefined,
+      })) as typeof fetch
+    : globalThis.fetch
+  const client = import.meta.server && typeof requestFetch.raw !== 'function'
+    ? (createFetch({
+        fetch: rawFetch,
+        Headers,
+      }) as unknown as ODataFetchClient)
+    : requestFetch
 
   const mediaType = (value: string): string => {
     const normalized = value.trim()
@@ -145,6 +178,7 @@ export function useOData(service?: string): any {
       supportsNavigationRootReferences: true,
       supportsNavigationReferences: true,
       supportsEntityResponses: true,
+      supportsNavigationEntityResponses: true,
       supportsOptimisticConcurrency: true,
       supportsCreateResponses: true,
       supportsActionResponses: true,
@@ -341,6 +375,23 @@ export function useOData(service?: string): any {
         return $odataWithResponse<TModel>(client, itemPath, 'GET', {
           ...(options as any),
           query: stringifyQuery(query || {}),
+        })
+      },
+
+      fetchNavigationOneWithResponse: <TResult = unknown>(
+        request: ODataNavigationEntityRead<TResult>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataEntityResponse<TResult>> => {
+        const navigationPath = joinODataPath(
+          navigationSourcePath(request.source),
+          formatODataNavigationPath(request.navigationPath),
+        )
+        const itemPath = request.targetKey === undefined
+          ? navigationPath
+          : `${navigationPath}(${formatODataKey(request.targetKey)})`
+        return $odataWithResponse<TResult>(client, itemPath, 'GET', {
+          ...(options as any),
+          query: stringifyQuery(request.query || {}),
         })
       },
 

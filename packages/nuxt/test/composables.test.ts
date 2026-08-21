@@ -17,6 +17,7 @@ const runtimeConfig = vi.hoisted(() => ({
 // Mock Nuxt-specific imports
 vi.mock('#imports', () => ({
   useFetch: vi.fn((url, options) => ({ url, options })),
+  useRequestEvent: vi.fn(() => undefined),
   useRequestFetch: vi.fn(() => globalThis.$fetch),
   useRuntimeConfig: vi.fn(() => runtimeConfig),
 }))
@@ -82,6 +83,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsNavigationReferences).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
+    expect(entitySet.supportsNavigationEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
     expect(entitySet.supportsCreateResponses).toBe(true)
     expect(entitySet.supportsActionResponses).toBe(true)
@@ -905,6 +907,41 @@ describe('useOData Composable', () => {
           body: { Product: 'Desk', Amount: '125.50' },
           headers,
         },
+      )
+    })
+
+    it('preserves ETags from single-valued and keyed collection navigation reads', async () => {
+      const signal = new AbortController().signal
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+
+      await entitySet.fetchNavigationOneWithResponse<{ ID: number, Name: string }>({
+        source: 1,
+        navigationPath: ['Supplier'],
+        query: { $select: ['ID', 'Name'] },
+      }, { signal })
+      await entitySet.fetchNavigationOneWithResponse<{ Day: string }>({
+        source: {
+          kind: 'contained-entity',
+          rootKey: { ID: 1, IsActiveEntity: false },
+          path: [{ navigationPath: ['Items'], key: { ItemID: 'A/B' } }],
+        },
+        navigationPath: ['Schedules'],
+        targetKey: { Day: 'Mon' },
+      })
+
+      expect(core.$odataWithResponse).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/routed-api/Products(1)/Supplier',
+        'GET',
+        { query: { $select: ['ID', 'Name'] }, signal },
+      )
+      expect(core.$odataWithResponse).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/routed-api/Products(ID=1,IsActiveEntity=false)/Items(ItemID=\'A%2FB\')/Schedules(Day=\'Mon\')',
+        'GET',
+        { query: {} },
       )
     })
 

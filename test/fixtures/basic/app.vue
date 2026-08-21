@@ -35,6 +35,15 @@ const { data: relatedProducts } = await northwindCategories.listNavigation<{
   ['Products'],
   { $select: ['ProductID', 'ProductName'], $top: 1 },
 )
+const relatedProductResponse = await northwindCategories.fetchNavigationOneWithResponse<{
+  ProductID: number
+  ProductName: string
+}>({
+  source: 1,
+  navigationPath: ['Products'],
+  targetKey: 1,
+  query: { $select: ['ProductID', 'ProductName'] },
+})
 const { data: relatedProductPage } = await northwindCategories.listNavigationPage<{
   ProductID: number
   ProductName: string
@@ -72,6 +81,9 @@ const nextRelatedProductPage = relatedProductPage.value?.continuation
   </div>
   <div id="northwind-related-product">
     Northwind Related Product: {{ relatedProducts[0]?.ProductName ?? 'missing' }}
+  </div>
+  <div id="northwind-related-product-response">
+    Northwind Related Product Response: {{ relatedProductResponse.data.ProductName }} / {{ relatedProductResponse.etag ?? 'missing' }}
   </div>
   <div id="northwind-related-product-continuation">
     Northwind Related Product Continuation: {{ nextRelatedProductPage?.items[0]?.ProductName ?? 'missing' }}

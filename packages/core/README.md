@@ -42,6 +42,10 @@ providing the next ETag. Both low-level request helpers support explicit
 `$odataPage` is the collection counterpart: it preserves counts and projects
 server-driven next links into a safe query-only continuation without exposing
 the backend origin or resource path.
+The additive `ODataVersionedNavigationEntitySet` contract applies the same
+response-aware read semantics to a single-valued navigation or one keyed member
+of a related collection. Structured parent sources keep nested containment and
+keys separate from executable path strings.
 
 OData JSON operation advertisements survive response flattening as instance
 control information. In particular, an available minimal-metadata

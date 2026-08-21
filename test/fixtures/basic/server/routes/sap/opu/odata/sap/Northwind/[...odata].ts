@@ -51,6 +51,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 405, statusMessage: 'Method Not Allowed' })
   }
 
+  if (pathname === '/sap/opu/odata/sap/Northwind/Categories(1)/Products(1)') {
+    if (
+      query.$select !== 'ProductID,ProductName'
+      || Object.keys(query).length !== 1
+    ) {
+      throw createError({ statusCode: 400, statusMessage: 'Unexpected Northwind navigation entity query' })
+    }
+
+    setHeader(event, 'ETag', 'W/"northwind-product-1"')
+    return { d: createProduct(1, 'Chai') }
+  }
+
   if (pathname === '/sap/opu/odata/sap/Northwind/Categories(1)/Products') {
     if (
       query.$orderby === 'ProductID'

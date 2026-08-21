@@ -95,6 +95,14 @@ absent. Existing `get()` and `fetchOne()` remain body-only.
 read capability signal. `supportsOptimisticConcurrency === true` identifies
 the separate conditional-mutation response capability, without widening the
 existing structural service contracts.
+For a related entity, `fetchNavigationOneWithResponse({ source,
+navigationPath, targetKey?, query? }, options?)` preserves the same flattened
+entity and ETag contract. Omit `targetKey` for a single-valued navigation or
+provide it for one member of a related collection. Runtime clients advertise
+this additive API with `supportsNavigationEntityResponses === true`.
+On SSR, response-aware methods retain Nitro's active request context while
+using the raw response path, so relative proxy calls preserve both request
+scoping and response validators.
 The same capability exposes `updateNavigationWithResponse` for a keyed
 collection child or a single-valued related entity, preserving its optional
 representation and next ETag.

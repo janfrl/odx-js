@@ -19,6 +19,7 @@ import type {
   ODataMergeEntitySet,
   ODataMergeService,
   ODataMutationResponse,
+  ODataNavigationEntityRead,
   ODataNavigationReferenceEntitySet,
   ODataNavigationReferenceService,
   ODataPagedEntitySet,
@@ -30,6 +31,8 @@ import type {
   ODataService,
   ODataServiceConfig,
   ODataVersionedEntitySet,
+  ODataVersionedNavigationEntitySet,
+  ODataVersionedNavigationService,
   ODataVersionedService,
 } from '../src'
 import { describe, expectTypeOf, it } from 'vitest'
@@ -131,6 +134,20 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<ODataMutationResponse<Product>>()
   })
 
+  it('preserves typed response metadata for exact related entities', () => {
+    type ProductsService = ODataVersionedNavigationService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+    type RelatedRead = ODataNavigationEntityRead<{ ID: number, Name: string }>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedNavigationEntitySet<Product>>()
+    expectTypeOf<RelatedRead['targetKey']>().toEqualTypeOf<import('../src').ODataKey | undefined>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationOneWithResponse']>>>()
+      .toEqualTypeOf<ODataEntityResponse<unknown>>()
+    expectTypeOf<ODataVersionedEntitySet<Product>>()
+      .not
+      .toHaveProperty('fetchNavigationOneWithResponse')
+  })
+
   it('adds create responses without widening the base entity-set contract', () => {
     type ProductsService = ODataCreateService<'Products', { Products: Product }>
     type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
@@ -195,6 +212,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataActionResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataDeleteResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedNavigationEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNextPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationPage']>>>()

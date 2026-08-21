@@ -532,6 +532,25 @@ export interface ODataVersionedEntitySet<T = any> extends ODataPagedEntitySet<T>
   ) => Promise<ODataEntityResponse<T>>
 }
 
+/** Exact related-entity read below a root or contained entity. */
+export interface ODataNavigationEntityRead<TResult = unknown> {
+  readonly source: ODataNavigationSource
+  readonly navigationPath: string | readonly string[]
+  /** Key of one collection member; omit for a single-valued navigation. */
+  readonly targetKey?: ODataKey
+  readonly query?: ODataQuery<TResult>
+}
+
+/** Entity-set client that preserves response metadata from related entities. */
+export interface ODataVersionedNavigationEntitySet<T = any> extends ODataVersionedEntitySet<T> {
+  readonly supportsNavigationEntityResponses: true
+  /** Reads one related entity and preserves its ETag for a conditional mutation. */
+  fetchNavigationOneWithResponse: <TResult = unknown>(
+    request: ODataNavigationEntityRead<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataEntityResponse<TResult>>
+}
+
 /**
  * Entity-set client with an explicit optimistic-concurrency mutation path.
  * Kept separate so structural implementations of `ODataVersionedEntitySet`
@@ -655,6 +674,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 /** Complete entity-set capability implemented by the generated ODX client. */
 export type ODataRuntimeEntitySet<T = any>
   = ODataMergeEntitySet<T>
+    & ODataVersionedNavigationEntitySet<T>
     & ODataActionResponseEntitySet<T>
     & ODataDeleteResponseEntitySet<T>
     & ODataContinuationEntitySet<T>
@@ -847,13 +867,15 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
               ? ODataContinuationEntitySet<TModel>
               : TEntitySet extends ODataConcurrencyEntitySet<any>
                 ? ODataConcurrencyEntitySet<TModel>
-                : TEntitySet extends ODataVersionedEntitySet<any>
-                  ? ODataVersionedEntitySet<TModel>
-                  : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                    ? ODataNavigationReferenceEntitySet<TModel>
-                    : TEntitySet extends ODataPagedEntitySet<any>
-                      ? ODataPagedEntitySet<TModel>
-                      : ODataEntitySet<TModel>
+                : TEntitySet extends ODataVersionedNavigationEntitySet<any>
+                  ? ODataVersionedNavigationEntitySet<TModel>
+                  : TEntitySet extends ODataVersionedEntitySet<any>
+                    ? ODataVersionedEntitySet<TModel>
+                    : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                      ? ODataNavigationReferenceEntitySet<TModel>
+                      : TEntitySet extends ODataPagedEntitySet<any>
+                        ? ODataPagedEntitySet<TModel>
+                        : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -868,6 +890,10 @@ export type ODataPagedService<E extends string = string, M extends Record<string
 /** OData service whose entity sets expose explicit entity response metadata. */
 export type ODataVersionedService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataVersionedEntitySet<any>>
+
+/** OData service whose entity sets preserve related-entity response metadata. */
+export type ODataVersionedNavigationService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataVersionedNavigationEntitySet<any>>
 
 /** OData service with explicit optimistic-concurrency mutation responses. */
 export type ODataConcurrencyService<E extends string = string, M extends Record<string, any> = any>
