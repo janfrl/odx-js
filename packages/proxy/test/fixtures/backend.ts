@@ -46,6 +46,17 @@ export function createBackend(): App {
     }
   }))
 
+  router.put('/Media/$value', defineEventHandler((event) => {
+    event.node.res.setHeader('content-type', 'application/octet-stream')
+    event.node.res.setHeader('etag', 'W/"media-2"')
+    event.node.res.setHeader('sap-message', JSON.stringify({
+      code: 'MEDIA/UPDATED',
+      message: 'Media updated with follow-up work.',
+      severity: 'warning',
+    }))
+    return Uint8Array.from([4, 5, 6])
+  }))
+
   router.post('/CreatedProducts', defineEventHandler(async (event) => {
     const body = await readBody(event)
     if (body?.NoContent) {
@@ -126,6 +137,11 @@ export function createBackend(): App {
       body = await readBody(event)
     }
     event.node.res.setHeader('etag', 'W/"2"')
+    event.node.res.setHeader('sap-message', JSON.stringify({
+      code: 'MEDIA/UPDATED',
+      message: 'Media updated with follow-up work.',
+      severity: 'warning',
+    }))
     event.node.res.setHeader('set-cookie', 'SAP_FINAL_SESSION=private; Path=/; HttpOnly')
     return {
       d: {

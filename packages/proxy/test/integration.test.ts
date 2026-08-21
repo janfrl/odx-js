@@ -314,6 +314,11 @@ describe('proxy integration', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('etag')).toBe('W/"2"')
+    expect(response.headers.get('sap-message')).toBe(JSON.stringify({
+      code: 'MEDIA/UPDATED',
+      message: 'Media updated with follow-up work.',
+      severity: 'warning',
+    }))
     expect(response.headers.get('set-cookie')).toBeNull()
     expect(response._data.d).toMatchObject({
       Name: 'Buffered Desk',
@@ -341,6 +346,11 @@ describe('proxy integration', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('etag')).toBe('W/"2"')
+    expect(response.headers.get('sap-message')).toBe(JSON.stringify({
+      code: 'MEDIA/UPDATED',
+      message: 'Media updated with follow-up work.',
+      severity: 'warning',
+    }))
     expect(response.headers.get('set-cookie')).toBeNull()
     expect(response._data.d).toMatchObject({
       Name: 'Streamed Chair',
@@ -349,6 +359,27 @@ describe('proxy integration', () => {
       preflightMethod: 'GET',
       ifMatch: 'W/"1"',
     })
+  })
+
+  it.each([
+    'TestService',
+    'StreamService',
+  ])('preserves binary mutation feedback through %s', async (serviceName) => {
+    const response = await ofetch.raw(`${proxyUrl}/api/odx/${serviceName}/Media/$value`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/octet-stream' },
+      body: Uint8Array.from([1, 2, 3]),
+      responseType: 'arrayBuffer',
+    })
+
+    expect(response.status).toBe(200)
+    expect(new Uint8Array(response._data)).toEqual(Uint8Array.from([4, 5, 6]))
+    expect(response.headers.get('etag')).toBe('W/"media-2"')
+    expect(response.headers.get('sap-message')).toBe(JSON.stringify({
+      code: 'MEDIA/UPDATED',
+      message: 'Media updated with follow-up work.',
+      severity: 'warning',
+    }))
   })
 
   it.each([
