@@ -231,6 +231,7 @@ Entity-set methods:
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
 | `createNavigationWithResponse(source, navigationPath, body, options?)` | `POST` | `Promise<ODataCreateResponse<TResult>>` |
 | `updateNavigation(source, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
+| `updateNavigationWithResponse(source, navigationPath, update, options?)` | `PATCH` | `Promise<ODataMutationResponse<TResult>>` |
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
 | `linkNavigation(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$ref` | `Promise<unknown>` |
 | `unlinkNavigation(source, navigationPath, targetKey, options?)` | `DELETE .../$ref` | `Promise<unknown>` |
@@ -260,7 +261,9 @@ same validated path while retaining optional data, ETag, and created-entity
 identity for a minimal response. `updateNavigation` patches a related entity;
 its `update` argument contains the `body` and an optional `targetKey`. Omit the
 target key for a single-valued navigation and provide it for an entity in a
-collection-valued navigation. `removeNavigation` deletes one contained collection
+collection-valued navigation. `updateNavigationWithResponse` retains the
+optional representation and next ETag from the same validated PATCH target.
+`removeNavigation` deletes one contained collection
 member using its exact parent path and related-entity key; it does not unlink a
 non-contained relationship through `$ref`. `linkNavigation` adds an existing
 target through a validated service-relative `@odata.id`; `unlinkNavigation`

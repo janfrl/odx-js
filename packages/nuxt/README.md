@@ -95,6 +95,9 @@ absent. Existing `get()` and `fetchOne()` remain body-only.
 read capability signal. `supportsOptimisticConcurrency === true` identifies
 the separate conditional-mutation response capability, without widening the
 existing structural service contracts.
+The same capability exposes `updateNavigationWithResponse` for a keyed
+collection child or a single-valued related entity, preserving its optional
+representation and next ETag.
 
 For creates that request a minimal response, retain the advertised entity
 identity and validator explicitly:

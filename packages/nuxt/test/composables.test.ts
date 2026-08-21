@@ -1021,10 +1021,35 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('preserves the next ETag from a conditional navigation update', async () => {
+      const api = useOData('RoutedService' as any)
+      const headers = { 'If-Match': 'W/"item-1"' }
+
+      const response = await api.entitySet('Products').updateNavigationWithResponse(
+        1,
+        ['Items'],
+        { targetKey: 2, body: { Quantity: 3 } },
+        { headers },
+      )
+
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odataMutationWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/routed-api/Products(1)/Items(2)',
+        'PATCH',
+        { body: { Quantity: 3 }, headers },
+      )
+    })
+
     it('rejects unsafe update navigation paths before transport', () => {
       const entitySet = useOData('MyService').entitySet('Products')
 
       expect(() => entitySet.updateNavigation(
+        1,
+        [],
+        { body: { Name: 'Updated' } },
+      )).toThrow(TypeError)
+      expect(() => entitySet.updateNavigationWithResponse(
         1,
         [],
         { body: { Name: 'Updated' } },

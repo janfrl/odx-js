@@ -524,6 +524,24 @@ export function useOData(service?: string): any {
           body: update.body,
         })
       },
+      updateNavigationWithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        update: ODataNavigationUpdate,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const targetUrl = update.targetKey === undefined
+          ? navigationUrl
+          : `${navigationUrl}(${formatODataKey(update.targetKey)})`
+        return $odataMutationWithResponse<TResult>(client, targetUrl, 'PATCH', {
+          ...(options as any),
+          body: update.body,
+        })
+      },
       removeNavigation: (
         source: ODataNavigationSource,
         navigationPath: readonly string[],

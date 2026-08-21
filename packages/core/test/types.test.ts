@@ -109,6 +109,8 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataConcurrencyEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateWithResponse']>>>()
       .toEqualTypeOf<{ data?: Product, etag?: string }>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateNavigationWithResponse']>>>()
+      .toEqualTypeOf<{ data?: unknown, etag?: string }>()
   })
 
   it('adds explicit MERGE without widening the concurrency contract', () => {

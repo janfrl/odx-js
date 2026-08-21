@@ -540,6 +540,13 @@ export interface ODataConcurrencyEntitySet<T = any> extends ODataVersionedEntity
     body: Partial<T>,
     options?: ODataRequestOptions,
   ) => Promise<ODataMutationResponse<T>>
+  /** Updates a related entity while preserving its optional next ETag. */
+  updateNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
 }
 
 /** Entity-set client with explicit SAP Gateway OData V2 MERGE updates. */
