@@ -324,7 +324,9 @@ consumer must retain the validator returned for the updated representation.
 Pass the previously read ETag through `options.headers['If-Match']`; a stale
 validator remains an ordinary backend `412 Precondition Failed`, while a
 successful response yields its next ETag and, when the service returns one,
-the flattened entity representation. A valid `204 No Content` response has no
+the flattened entity representation. A `sap-message` success or warning header
+is retained as `sapMessage` for the semantic integration to parse. A valid
+`204 No Content` response has no
 `data` property. The method lives on the separate additive
 `ODataConcurrencyEntitySet` / `ODataConcurrencyService` capability, advertised
 by `supportsOptimisticConcurrency === true`, so existing structural versioned
@@ -335,7 +337,7 @@ Use `createWithResponse` when the create request may use
 `Prefer: return=minimal`, or when the consumer needs the created entity's ETag
 or advertised identity. Its additive `ODataCreateResponse<T>` contains an
 optional flattened `data` representation plus optional `etag`, `entityId`
-(`OData-EntityId`), and `location` fields. A valid bodyless response therefore
+(`OData-EntityId`), `location`, and `sapMessage` fields. A valid bodyless response therefore
 does not fabricate entity data. Runtime clients advertise this capability with
 `supportsCreateResponses === true`; the original body-only `create` contract
 is unchanged. The ODX proxy forwards relative created-entity locations but

@@ -98,6 +98,9 @@ existing structural service contracts.
 The same capability exposes `updateNavigationWithResponse` for a keyed
 collection child or a single-valued related entity, preserving its optional
 representation and next ETag.
+Response-aware create, PATCH, and MERGE methods also retain the legacy
+SAP Gateway `sap-message` header as `sapMessage`; semantic consumers remain
+responsible for parsing its JSON message shape.
 
 For creates that request a minimal response, retain the advertised entity
 identity and validator explicitly:

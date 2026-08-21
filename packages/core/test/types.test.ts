@@ -12,6 +12,7 @@ import type {
   ODataEntitySet,
   ODataMergeEntitySet,
   ODataMergeService,
+  ODataMutationResponse,
   ODataNavigationReferenceEntitySet,
   ODataNavigationReferenceService,
   ODataPagedEntitySet,
@@ -108,9 +109,9 @@ describe('portable imperative transport types', () => {
 
     expectTypeOf<ProductsEntitySet>().toExtend<ODataConcurrencyEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateWithResponse']>>>()
-      .toEqualTypeOf<{ data?: Product, etag?: string }>()
+      .toEqualTypeOf<ODataMutationResponse<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateNavigationWithResponse']>>>()
-      .toEqualTypeOf<{ data?: unknown, etag?: string }>()
+      .toEqualTypeOf<ODataMutationResponse<unknown>>()
   })
 
   it('adds explicit MERGE without widening the concurrency contract', () => {
@@ -121,7 +122,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['merge']>>>()
       .toEqualTypeOf<Product>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeWithResponse']>>>()
-      .toEqualTypeOf<{ data?: Product, etag?: string }>()
+      .toEqualTypeOf<ODataMutationResponse<Product>>()
   })
 
   it('adds create responses without widening the base entity-set contract', () => {

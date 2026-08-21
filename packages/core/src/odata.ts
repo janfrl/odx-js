@@ -85,6 +85,7 @@ export async function $odataMutationWithResponse<T = unknown>(
   return {
     ...(response.body === undefined ? {} : { data: flattenOData(response.body) as T }),
     ...(response.etag ? { etag: response.etag } : {}),
+    ...(response.sapMessage ? { sapMessage: response.sapMessage } : {}),
   }
 }
 
@@ -108,6 +109,7 @@ export async function $odataCreateWithResponse<T = unknown>(
     ...(response.etag ? { etag: response.etag } : {}),
     ...(response.entityId ? { entityId: response.entityId } : {}),
     ...(response.location ? { location: response.location } : {}),
+    ...(response.sapMessage ? { sapMessage: response.sapMessage } : {}),
   }
 }
 
@@ -121,7 +123,7 @@ async function requestWithResponse(
   service: string,
   method: 'GET' | 'POST' | 'PATCH' | 'MERGE' | 'DELETE',
   options: FetchOptions<'json'> & { entitySet?: string },
-): Promise<{ body: unknown, entityId?: string, etag?: string, location?: string }> {
+): Promise<{ body: unknown, entityId?: string, etag?: string, location?: string, sapMessage?: string }> {
   const { entitySet, headers, ...requestOptions } = options
   const path = entitySet ? `${service}/${entitySet}` : service
   const response = await client.raw<unknown>(path, {
@@ -134,12 +136,14 @@ async function requestWithResponse(
   const etag = headerEtag ?? extractBodyEtag(body)
   const entityId = normalizeHeaderValue(response.headers.get('odata-entityid'))
   const location = normalizeHeaderValue(response.headers.get('location'))
+  const sapMessage = normalizeHeaderValue(response.headers.get('sap-message'))
 
   return {
     body,
     ...(entityId ? { entityId } : {}),
     ...(etag ? { etag } : {}),
     ...(location ? { location } : {}),
+    ...(sapMessage ? { sapMessage } : {}),
   }
 }
 

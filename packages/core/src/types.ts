@@ -144,6 +144,8 @@ export interface ODataEntityResponse<T> {
 export interface ODataMutationResponse<T> {
   data?: T
   etag?: string
+  /** Legacy SAP Gateway success or warning message JSON. */
+  sapMessage?: string
 }
 
 /**

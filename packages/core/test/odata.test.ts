@@ -150,10 +150,18 @@ describe('$odataPage fetcher', () => {
 })
 
 describe('$odataWithResponse fetcher', () => {
-  const createClient = (body: unknown, etag: string | null = null) => ({
+  const createClient = (
+    body: unknown,
+    etag: string | null = null,
+    sapMessage: string | null = null,
+  ) => ({
     raw: vi.fn().mockResolvedValue({
       _data: body,
-      headers: { get: vi.fn().mockReturnValue(etag) },
+      headers: {
+        get: vi.fn((name: string) => name === 'etag'
+          ? etag
+          : name === 'sap-message' ? sapMessage : null),
+      },
     }),
   })
 
@@ -210,6 +218,24 @@ describe('$odataWithResponse fetcher', () => {
     )
 
     expect(response).toEqual({ etag: 'W/"entity-2"' })
+  })
+
+  it('preserves a SAP Gateway mutation message header', async () => {
+    const sapMessage = JSON.stringify({
+      code: 'PRODUCT/001',
+      message: 'Product saved with a warning.',
+      severity: 'warning',
+    })
+    const response = await $odataMutationWithResponse(
+      createClient(undefined, 'W/"entity-2"', sapMessage),
+      'S/Products(1)',
+      'PATCH',
+    )
+
+    expect(response).toEqual({
+      etag: 'W/"entity-2"',
+      sapMessage,
+    })
   })
 
   it('preserves conditional MERGE options and the next entity ETag', async () => {
@@ -276,6 +302,7 @@ describe('$odataCreateWithResponse fetcher', () => {
       'etag': 'W/"product-1"',
       'location': 'Products(1)',
       'odata-entityid': 'Products(1)',
+      'sap-message': JSON.stringify({ message: 'Created', severity: 'success' }),
     })
     const client = {
       raw: vi.fn().mockResolvedValue({
@@ -293,6 +320,7 @@ describe('$odataCreateWithResponse fetcher', () => {
       entityId: 'Products(1)',
       etag: 'W/"product-1"',
       location: 'Products(1)',
+      sapMessage: JSON.stringify({ message: 'Created', severity: 'success' }),
     })
     expect(client.raw).toHaveBeenCalledWith('S/Products', {
       body: { Name: 'Desk' },
