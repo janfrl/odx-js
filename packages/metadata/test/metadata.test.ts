@@ -57,12 +57,17 @@ describe('cSDL document contract', () => {
 
   it('rejects incomplete, malformed, and cyclic document graphs', () => {
     const document = requireDocument(parseCsdlXml(fixture('v4.01.xml')))
+    expect(document.root.kind).toBe('element')
+    if (document.root.kind !== 'element')
+      throw new TypeError('Expected the XML parser to return an element root.')
+    const root = document.root
+
     expect(isCsdlDocument({ ...document, idAlgorithm: 'unversioned' })).toBe(false)
     expect(isCsdlDocument({
       ...document,
-      root: { ...document.root, children: [...document.root.children, { kind: 'mystery' }] },
+      root: { ...root, children: [...root.children, { kind: 'mystery' }] },
     })).toBe(false)
-    const cyclic = { ...document, root: { ...document.root, children: [...document.root.children] } }
+    const cyclic = { ...document, root: { ...root, children: [...root.children] } }
     cyclic.root.children.push(cyclic.root)
     expect(isCsdlDocument(cyclic)).toBe(false)
   })

@@ -14,7 +14,9 @@ describe('proxy target resolution', () => {
   const originalEnv = process.env
   const config: ODataProxyConfig = {
     basePath: '/api/odx',
+    buildDir: '.nuxt',
     mode: 'sdk',
+    rootDir: '.',
     services: [{
       name: 'BusinessPartner',
       url: '',

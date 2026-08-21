@@ -113,7 +113,7 @@ export function createBackend(): App {
     }
 
     let body: any
-    if (event.method === 'MERGE') {
+    if ((event.method as string) === 'MERGE') {
       let rawBody = ''
       for await (const chunk of event.node.req) {
         rawBody += typeof chunk === 'string' || chunk instanceof Uint8Array
