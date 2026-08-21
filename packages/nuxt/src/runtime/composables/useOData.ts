@@ -419,9 +419,11 @@ export function useOData(service?: string): any {
           responseType: 'json',
         })
         const etag = response.headers.get('etag') ?? undefined
+        const sapMessage = response.headers.get('sap-message')?.trim() || undefined
         return {
           ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TModel }),
           ...(etag === undefined ? {} : { etag }),
+          ...(sapMessage === undefined ? {} : { sapMessage }),
         }
       },
 
@@ -452,9 +454,11 @@ export function useOData(service?: string): any {
           responseType: 'json',
         })
         const etag = response.headers.get('etag') ?? undefined
+        const sapMessage = response.headers.get('sap-message')?.trim() || undefined
         return {
           ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TResult }),
           ...(etag === undefined ? {} : { etag }),
+          ...(sapMessage === undefined ? {} : { sapMessage }),
         }
       },
 
@@ -502,7 +506,11 @@ export function useOData(service?: string): any {
           responseType: 'arrayBuffer',
         })
         const etag = response.headers.get('etag') ?? undefined
-        return etag === undefined ? {} : { etag }
+        const sapMessage = response.headers.get('sap-message')?.trim() || undefined
+        return {
+          ...(etag === undefined ? {} : { etag }),
+          ...(sapMessage === undefined ? {} : { sapMessage }),
+        }
       },
 
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {

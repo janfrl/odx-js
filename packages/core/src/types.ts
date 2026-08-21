@@ -196,6 +196,8 @@ export interface ODataMediaCreateOptions extends ODataRequestOptions {
 /** Result metadata from a media replacement that may return no body. */
 export interface ODataMediaMutationResponse {
   etag?: string
+  /** Legacy SAP Gateway success or warning message JSON. */
+  sapMessage?: string
 }
 
 /** Created media entity representation and optimistic-concurrency validator. */

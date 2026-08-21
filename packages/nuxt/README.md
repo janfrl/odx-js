@@ -185,7 +185,9 @@ These methods are imperative because binary payloads should not enter Nuxt's
 JSON SSR payload. `fetchMedia` returns an `ArrayBuffer` and optional
 `contentType`, `contentDisposition`, and `etag` response metadata.
 `updateMedia` uses `PUT`, requires an explicit valid media type, and returns a
-replacement ETag when present. Named stream properties remain validated
+replacement ETag plus allowlisted SAP Gateway feedback when present. Media
+creates preserve the same optional `sapMessage` field alongside their
+representation and ETag. Named stream properties remain validated
 identifier segments. Root keys and structured contained-entity sources share
 the same path-safe media contract; callers never concatenate containment or
 `$value` paths. Runtime entity sets advertise this additive contract with

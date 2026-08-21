@@ -359,7 +359,10 @@ describe('useOData Composable', () => {
       const fetchMock = globalThis.$fetch as any
       fetchMock.raw.mockResolvedValue({
         _data: { ID: 42, Name: 'manual.pdf' },
-        headers: new Headers({ etag: 'W/"media-created"' }),
+        headers: new Headers({
+          'etag': 'W/"media-created"',
+          'sap-message': '{"message":"Document created.","severity":"success"}',
+        }),
       })
 
       const response = await useOData('MyService').entitySet('Documents').createMedia(
@@ -379,6 +382,7 @@ describe('useOData Composable', () => {
       expect(response).toEqual({
         data: { ID: 42, Name: 'manual.pdf' },
         etag: 'W/"media-created"',
+        sapMessage: '{"message":"Document created.","severity":"success"}',
       })
       expect(fetchMock.raw).toHaveBeenCalledWith(
         '/api/odx/MyService/Documents',
@@ -415,7 +419,10 @@ describe('useOData Composable', () => {
       const fetchMock = globalThis.$fetch as any
       fetchMock.raw.mockResolvedValue({
         _data: { AttachmentID: 8, FileName: 'manual.pdf' },
-        headers: new Headers({ etag: 'W/"attachment-8"' }),
+        headers: new Headers({
+          'etag': 'W/"attachment-8"',
+          'sap-message': '{"message":"Attachment created.","severity":"success"}',
+        }),
       })
 
       const response = await useOData('MyService').entitySet('Products').createNavigationMedia<{
@@ -445,6 +452,7 @@ describe('useOData Composable', () => {
       expect(response).toEqual({
         data: { AttachmentID: 8, FileName: 'manual.pdf' },
         etag: 'W/"attachment-8"',
+        sapMessage: '{"message":"Attachment created.","severity":"success"}',
       })
       expect(fetchMock.raw).toHaveBeenCalledWith(
         '/api/odx/MyService/Products(ID=1,IsActiveEntity=false)/Items(4)/Attachments',
@@ -467,7 +475,10 @@ describe('useOData Composable', () => {
       const bytes = Uint8Array.from([1, 2, 3])
       const fetchMock = globalThis.$fetch as any
       fetchMock.raw.mockResolvedValue({
-        headers: new Headers({ etag: 'W/"media-2"' }),
+        headers: new Headers({
+          'etag': 'W/"media-2"',
+          'sap-message': '{"message":"Document replaced.","severity":"warning"}',
+        }),
       })
 
       const response = await useOData('MyService').entitySet('Documents').updateMedia(
@@ -482,7 +493,10 @@ describe('useOData Composable', () => {
         },
       )
 
-      expect(response).toEqual({ etag: 'W/"media-2"' })
+      expect(response).toEqual({
+        etag: 'W/"media-2"',
+        sapMessage: '{"message":"Document replaced.","severity":"warning"}',
+      })
       expect(fetchMock.raw).toHaveBeenCalledWith(
         '/api/odx/MyService/Documents(1)/$value',
         {

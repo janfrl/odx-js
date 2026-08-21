@@ -241,7 +241,7 @@ Entity-set methods:
 | `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
 | `merge(key, body, options?)` | `MERGE` | `Promise<T>` |
 | `mergeWithResponse(key, body, options?)` | `MERGE` | `Promise<{ data?: T; etag?: string }>` |
-| `updateMedia(key, body, options)` | `PUT .../$value` | `Promise<{ etag?: string }>` |
+| `updateMedia(key, body, options)` | `PUT .../$value` | `Promise<{ etag?: string; sapMessage?: string }>` |
 | `remove(key, options?)` | `DELETE` | `Promise<unknown>` |
 | `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
@@ -366,7 +366,9 @@ a validated identifier addresses a named `Edm.Stream` property. Reads return
 an `ArrayBuffer` plus optional `contentType`, `contentDisposition`, and `etag`
 metadata. Replacements accept only `ArrayBuffer` or `Uint8Array`, use `PUT`,
 require an explicit valid `contentType`, and preserve caller headers such as
-`If-Match` while keeping that content type authoritative. These methods are
+`If-Match` while keeping that content type authoritative. Media creates and
+replacements retain an allowlisted SAP Gateway `sap-message` header as
+`sapMessage` alongside their optional response ETag. These methods are
 imperative and intentionally do not place binary data into Nuxt SSR payloads.
 They do not infer stream properties from CSDL or define attachment UI.
 
@@ -374,7 +376,7 @@ They do not infer stream properties from CSDL or define attachment UI.
 `createNavigationMedia(source, navigationPath, body, options)` posts the same
 validated binary contract to an explicit collection-valued navigation below a
 root or contained parent, requests the created representation, and retains its
-response ETag. Both create methods keep validated `Content-Type`,
+response ETag and optional SAP feedback. Both create methods keep validated `Content-Type`,
 `Prefer: return=representation`, and optional `Slug` authoritative over caller
 headers. ODX validates address segments but leaves navigation cardinality and
 media-entity semantics to the metadata-aware caller.
