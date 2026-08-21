@@ -187,7 +187,9 @@ JSON SSR payload. `fetchMedia` returns an `ArrayBuffer` and optional
 `updateMedia` uses `PUT`, requires an explicit valid media type, and returns a
 replacement ETag plus allowlisted SAP Gateway feedback when present. Media
 creates preserve the same optional `sapMessage` field alongside their
-representation and ETag. Named stream properties remain validated
+representation and ETag, plus `entityId` and `location` when advertised by the
+service. These identity fields remain available even for a valid bodyless
+create. Named stream properties remain validated
 identifier segments. Root keys and structured contained-entity sources share
 the same path-safe media contract; callers never concatenate containment or
 `$value` paths. Runtime entity sets advertise this additive contract with

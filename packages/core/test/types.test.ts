@@ -16,6 +16,7 @@ import type {
   ODataDeleteResponseService,
   ODataEntityResponse,
   ODataEntitySet,
+  ODataMediaCreateResponse,
   ODataMediaMutationResponse,
   ODataMergeEntitySet,
   ODataMergeService,
@@ -238,6 +239,10 @@ describe('portable imperative transport types', () => {
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateMedia']>>>()
       .toEqualTypeOf<ODataMediaMutationResponse>()
     expectTypeOf<ODataMediaMutationResponse['sapMessage']>()
+      .toEqualTypeOf<string | undefined>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['createMedia']>>>()
+      .toEqualTypeOf<ODataMediaCreateResponse<Product>>()
+    expectTypeOf<ODataMediaCreateResponse<Product>['entityId']>()
       .toEqualTypeOf<string | undefined>()
   })
 })

@@ -376,7 +376,9 @@ They do not infer stream properties from CSDL or define attachment UI.
 `createNavigationMedia(source, navigationPath, body, options)` posts the same
 validated binary contract to an explicit collection-valued navigation below a
 root or contained parent, requests the created representation, and retains its
-response ETag and optional SAP feedback. Both create methods keep validated `Content-Type`,
+response ETag, service-advertised entity identity or location, and optional SAP
+feedback. A bodyless response therefore remains addressable without fabricating
+entity data. Both create methods keep validated `Content-Type`,
 `Prefer: return=representation`, and optional `Slug` authoritative over caller
 headers. ODX validates address segments but leaves navigation cardinality and
 media-entity semantics to the metadata-aware caller.

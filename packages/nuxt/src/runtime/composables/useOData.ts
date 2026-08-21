@@ -418,11 +418,15 @@ export function useOData(service?: string): any {
           method: 'POST',
           responseType: 'json',
         })
+        const entityId = response.headers.get('odata-entityid')?.trim() || undefined
         const etag = response.headers.get('etag') ?? undefined
+        const location = response.headers.get('location')?.trim() || undefined
         const sapMessage = response.headers.get('sap-message')?.trim() || undefined
         return {
           ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TModel }),
+          ...(entityId === undefined ? {} : { entityId }),
           ...(etag === undefined ? {} : { etag }),
+          ...(location === undefined ? {} : { location }),
           ...(sapMessage === undefined ? {} : { sapMessage }),
         }
       },
@@ -453,11 +457,15 @@ export function useOData(service?: string): any {
           method: 'POST',
           responseType: 'json',
         })
+        const entityId = response.headers.get('odata-entityid')?.trim() || undefined
         const etag = response.headers.get('etag') ?? undefined
+        const location = response.headers.get('location')?.trim() || undefined
         const sapMessage = response.headers.get('sap-message')?.trim() || undefined
         return {
           ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TResult }),
+          ...(entityId === undefined ? {} : { entityId }),
           ...(etag === undefined ? {} : { etag }),
+          ...(location === undefined ? {} : { location }),
           ...(sapMessage === undefined ? {} : { sapMessage }),
         }
       },

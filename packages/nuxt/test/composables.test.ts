@@ -361,6 +361,8 @@ describe('useOData Composable', () => {
         _data: { ID: 42, Name: 'manual.pdf' },
         headers: new Headers({
           'etag': 'W/"media-created"',
+          'location': 'Documents(42)',
+          'odata-entityid': 'Documents(42)',
           'sap-message': '{"message":"Document created.","severity":"success"}',
         }),
       })
@@ -381,7 +383,9 @@ describe('useOData Composable', () => {
 
       expect(response).toEqual({
         data: { ID: 42, Name: 'manual.pdf' },
+        entityId: 'Documents(42)',
         etag: 'W/"media-created"',
+        location: 'Documents(42)',
         sapMessage: '{"message":"Document created.","severity":"success"}',
       })
       expect(fetchMock.raw).toHaveBeenCalledWith(
@@ -404,13 +408,19 @@ describe('useOData Composable', () => {
       const fetchMock = globalThis.$fetch as any
       fetchMock.raw.mockResolvedValue({
         _data: undefined,
-        headers: new Headers(),
+        headers: new Headers({
+          'location': 'Documents(43)',
+          'odata-entityid': 'Documents(43)',
+        }),
       })
 
       await expect(useOData('MyService').entitySet('Documents').createMedia(
         new ArrayBuffer(0),
         { contentType: 'application/octet-stream' },
-      )).resolves.toEqual({})
+      )).resolves.toEqual({
+        entityId: 'Documents(43)',
+        location: 'Documents(43)',
+      })
     })
 
     it('creates a contained media entity through a structured parent source', async () => {
@@ -421,6 +431,8 @@ describe('useOData Composable', () => {
         _data: { AttachmentID: 8, FileName: 'manual.pdf' },
         headers: new Headers({
           'etag': 'W/"attachment-8"',
+          'location': 'Products(1)/Attachments(8)',
+          'odata-entityid': 'Products(1)/Attachments(8)',
           'sap-message': '{"message":"Attachment created.","severity":"success"}',
         }),
       })
@@ -451,7 +463,9 @@ describe('useOData Composable', () => {
 
       expect(response).toEqual({
         data: { AttachmentID: 8, FileName: 'manual.pdf' },
+        entityId: 'Products(1)/Attachments(8)',
         etag: 'W/"attachment-8"',
+        location: 'Products(1)/Attachments(8)',
         sapMessage: '{"message":"Attachment created.","severity":"success"}',
       })
       expect(fetchMock.raw).toHaveBeenCalledWith(

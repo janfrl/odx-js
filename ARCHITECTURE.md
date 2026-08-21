@@ -168,7 +168,9 @@ SAP feedback behind `supportsNavigationReferenceResponses`, while the original
 relationship API stays structurally compatible.
 Imperative media creates and replacements keep binary payloads outside SSR
 state while retaining the same allowlisted SAP mutation feedback as JSON
-mutations; higher semantic layers own parsing and presentation.
+mutations. Media creates also preserve service-advertised identity across
+bodyless responses; higher semantic layers own parsing, navigation, and
+presentation.
 
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
 OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in

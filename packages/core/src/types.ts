@@ -203,6 +203,10 @@ export interface ODataMediaMutationResponse {
 /** Created media entity representation and optimistic-concurrency validator. */
 export interface ODataMediaCreateResponse<T> extends ODataMediaMutationResponse {
   data?: T
+  /** OData `OData-EntityId` response header, when supplied by the service. */
+  entityId?: string
+  /** HTTP `Location` response header, when supplied by the service. */
+  location?: string
 }
 
 /**
