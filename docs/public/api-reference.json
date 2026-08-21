@@ -122,6 +122,17 @@
       }
     ]
   },
+  "isCsdlDocument": {
+    "title": "isCsdlDocument",
+    "description": "Checks the complete versioned, JSON-serializable CSDL document boundary.\nThis is intentionally vocabulary-neutral and performs no semantic validation.",
+    "properties": [
+      {
+        "name": "value",
+        "type": "unknown",
+        "required": true
+      }
+    ]
+  },
   "resolveCsdlNullable": {
     "title": "resolveCsdlNullable",
     "description": "Resolves the Nullable facet for nullable-capable CSDL elements.\n\nThe two encodings deliberately have different defaults: XML defaults omitted\nNullable to true, while JSON CSDL defaults it to false. The source field lets\nsemantic compilers distinguish an explicit choice from an encoding default.",
@@ -1291,9 +1302,130 @@
       },
       {
         "name": "method",
-        "type": "\"GET\" | \"POST\" | \"PATCH\" | \"DELETE\"",
+        "type": "\"GET\" | \"POST\" | \"PATCH\" | \"MERGE\" | \"DELETE\"",
         "default": "'GET'",
         "required": false
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "$odataPage": {
+    "title": "$odataPage",
+    "description": "Executes a collection read while preserving count and safe server-driven\npaging metadata in an SSR-serializable page object.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "<R>(path: string, options?: any) => Promise<R>",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "$odataWithResponse": {
+    "title": "$odataWithResponse",
+    "description": "Executes an entity read while retaining only the ETag transport metadata\nneeded for optimistic concurrency. The HTTP header is authoritative; body\nannotations are compatibility fallbacks for OData V4 and V2 services.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "{ raw: <R>(path: string, options?: any) => Promise<{ _data?: R; headers: { get: (name: string) => string | null; }; }>; }",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "method",
+        "type": "\"GET\"",
+        "default": "'GET'",
+        "required": false
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "$odataMutationWithResponse": {
+    "title": "$odataMutationWithResponse",
+    "description": "Executes an entity mutation while preserving its next ETag. The entity\nrepresentation is optional because an update may validly return 204.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "{ raw: <R>(path: string, options?: any) => Promise<{ _data?: R; headers: { get: (name: string) => string | null; }; }>; }",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "method",
+        "type": "\"POST\" | \"PATCH\" | \"MERGE\" | \"DELETE\"",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "$odataActionWithResponse": {
+    "title": "$odataActionWithResponse",
+    "description": "Executes an OData action while preserving a service-advertised response\nlocation in addition to the ordinary mutation metadata. The location is\ntransport information only; callers own any follow-up request or polling.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "{ raw: <R>(path: string, options?: any) => Promise<{ _data?: R; headers: { get: (name: string) => string | null; }; }>; }",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "$odataCreateWithResponse": {
+    "title": "$odataCreateWithResponse",
+    "description": "Executes an entity create while preserving response metadata needed to\naddress a bodyless `Prefer: return=minimal` result.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "{ raw: <R>(path: string, options?: any) => Promise<{ _data?: R; headers: { get: (name: string) => string | null; }; }>; }",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
       },
       {
         "name": "options",
@@ -1378,8 +1510,41 @@
       }
     ]
   },
+  "serializeODataBatchChangeSets": {
+    "title": "serializeODataBatchChangeSets",
+    "description": "Serializes independent changesets into one OData batch request.",
+    "properties": [
+      {
+        "name": "changeSets",
+        "type": "readonly (readonly ODataChangeSetRequest[])[]",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "SerializeODataBatchChangeSetsOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
   "parseODataChangeSetResponse": {
     "title": "parseODataChangeSetResponse",
+    "properties": [
+      {
+        "name": "body",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "parseODataBatchChangeSetsResponse": {
+    "title": "parseODataBatchChangeSetsResponse",
+    "description": "Parses every independent changeset result without collapsing partial failures.",
     "properties": [
       {
         "name": "body",
@@ -1414,6 +1579,7 @@
       {
         "name": "body",
         "type": "unknown",
+        "description": "JSON value, or raw bytes with an explicit Content-Type header.",
         "required": false
       }
     ]
@@ -1423,7 +1589,7 @@
     "properties": [
       {
         "name": "body",
-        "type": "string",
+        "type": "string | Uint8Array<ArrayBufferLike>",
         "required": true
       },
       {
@@ -1439,6 +1605,31 @@
       {
         "name": "changeSetBoundary",
         "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "ODataBatchChangeSetsPayload": {
+    "title": "ODataBatchChangeSetsPayload",
+    "properties": [
+      {
+        "name": "body",
+        "type": "string | Uint8Array<ArrayBufferLike>",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "batchBoundary",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "changeSetBoundaries",
+        "type": "readonly string[]",
         "required": true
       }
     ]
@@ -1463,6 +1654,21 @@
       }
     ]
   },
+  "ODataBatchChangeSetResult": {
+    "title": "ODataBatchChangeSetResult",
+    "properties": [
+      {
+        "name": "succeeded",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "responses",
+        "type": "readonly ODataChangeSetResponse[]",
+        "required": true
+      }
+    ]
+  },
   "SerializeODataChangeSetOptions": {
     "title": "SerializeODataChangeSetOptions",
     "properties": [
@@ -1474,6 +1680,21 @@
       {
         "name": "changeSetBoundary",
         "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "SerializeODataBatchChangeSetsOptions": {
+    "title": "SerializeODataBatchChangeSetsOptions",
+    "properties": [
+      {
+        "name": "batchBoundary",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "changeSetBoundaries",
+        "type": "readonly string[] | undefined",
         "required": false
       }
     ]
@@ -1590,7 +1811,7 @@
       },
       {
         "name": "dispatcher",
-        "type": "any",
+        "type": "Dispatcher | undefined",
         "required": false
       },
       {
@@ -1741,6 +1962,43 @@
       }
     ]
   },
+  "createODataMediaPath": {
+    "title": "createODataMediaPath",
+    "description": "Creates a validated entity or named-stream `$value` resource path.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "streamProperty",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "createODataEntityReference": {
+    "title": "createODataEntityReference",
+    "description": "Creates a safe service-relative entity reference for an OData `$ref` body.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      }
+    ]
+  },
   "createODataNavigationSourcePath": {
     "title": "createODataNavigationSourcePath",
     "description": "Creates the exact keyed source path for a navigation operation.",
@@ -1753,6 +2011,54 @@
       {
         "name": "source",
         "type": "ODataNavigationSource",
+        "required": true
+      }
+    ]
+  },
+  "createODataNavigationRootReference": {
+    "title": "createODataNavigationRootReference",
+    "description": "Creates the exact `$root` reference for a collection-valued navigation.\n\nAggregation transformations can use this service-root-relative identity\nwithout asking higher layers to serialize entity keys or containment paths.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "string | readonly string[]",
+        "required": true
+      }
+    ]
+  },
+  "toODataCollectionPage": {
+    "title": "toODataCollectionPage",
+    "description": "Flattens an OData collection into an explicit page object. The explicit\n`totalCount` field is serializable across Nuxt SSR payload boundaries,\nunlike custom properties attached directly to arrays.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "unknown",
+        "required": true
+      }
+    ]
+  },
+  "createODataContinuationPath": {
+    "title": "createODataContinuationPath",
+    "description": "Anchors an opaque continuation to the caller-owned collection path.",
+    "properties": [
+      {
+        "name": "collectionPath",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "continuation",
+        "type": "{ readonly token: string; }",
         "required": true
       }
     ]
@@ -1895,8 +2201,9 @@
       },
       {
         "name": "url",
-        "type": "string",
-        "required": true
+        "type": "string | undefined",
+        "description": "Backend URL or local metadata path. May be omitted when `destination`\nowns runtime target resolution or when the host injects the URL through\nenvironment configuration.",
+        "required": false
       },
       {
         "name": "route",
@@ -1927,6 +2234,7 @@
       {
         "name": "destination",
         "type": "string | undefined",
+        "description": "SAP BTP Destination name resolved by the server-side proxy.",
         "required": false
       },
       {
@@ -1995,6 +2303,215 @@
         "type": "() => void",
         "description": "Function to clear the data and error states.",
         "required": true
+      }
+    ]
+  },
+  "ODataContinuation": {
+    "title": "ODataContinuation",
+    "description": "Opaque query component for one server-driven collection continuation.",
+    "properties": [
+      {
+        "name": "token",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "ODataCollectionPage": {
+    "title": "ODataCollectionPage",
+    "description": "Serializable collection result for list UIs that need the server-side count.\nUnlike an extra property attached to an array, this shape survives Nuxt SSR\npayload serialization.",
+    "properties": [
+      {
+        "name": "items",
+        "type": "T[]",
+        "required": true
+      },
+      {
+        "name": "totalCount",
+        "type": "number | undefined",
+        "required": false
+      },
+      {
+        "name": "continuation",
+        "type": "ODataContinuation | undefined",
+        "description": "Safe server-driven continuation without a backend origin or path.",
+        "required": false
+      }
+    ]
+  },
+  "ODataEntityResponse": {
+    "title": "ODataEntityResponse",
+    "description": "An entity read together with its optimistic-concurrency validator.\nArbitrary transport headers and OData metadata intentionally remain hidden.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "T",
+        "required": true
+      },
+      {
+        "name": "etag",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataMutationResponse": {
+    "title": "ODataMutationResponse",
+    "description": "An entity mutation response with an optional representation. OData services\nmay legitimately answer PATCH with `204 No Content` while still returning\nthe next ETag header.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "T | undefined",
+        "required": false
+      },
+      {
+        "name": "etag",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "sapMessage",
+        "type": "string | undefined",
+        "description": "Legacy SAP Gateway success or warning message JSON.",
+        "required": false
+      }
+    ]
+  },
+  "ODataCreateResponse": {
+    "title": "ODataCreateResponse",
+    "description": "Created entity response with the optional identity advertised by the\nservice. A representation is optional when `Prefer: return=minimal` is used.",
+    "properties": [
+      {
+        "name": "entityId",
+        "type": "string | undefined",
+        "description": "OData `OData-EntityId` response header, when supplied by the service.",
+        "required": false
+      },
+      {
+        "name": "location",
+        "type": "string | undefined",
+        "description": "HTTP `Location` response header, when supplied by the service.",
+        "required": false
+      }
+    ]
+  },
+  "ODataActionResponse": {
+    "title": "ODataActionResponse",
+    "description": "OData action result with optional response metadata and SAP feedback.",
+    "properties": [
+      {
+        "name": "location",
+        "type": "string | undefined",
+        "description": "HTTP `Location` response header, when supplied by the service.",
+        "required": false
+      }
+    ]
+  },
+  "ODataMediaResponse": {
+    "title": "ODataMediaResponse",
+    "description": "Binary OData entity or named-stream payload with safe response metadata.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "ArrayBuffer",
+        "required": true
+      },
+      {
+        "name": "contentDisposition",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "contentType",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "etag",
+        "type": "string | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataMediaRequestOptions": {
+    "title": "ODataMediaRequestOptions",
+    "description": "Options for an imperative OData media read.",
+    "properties": [
+      {
+        "name": "streamProperty",
+        "type": "string | undefined",
+        "description": "Named `Edm.Stream` property; omit for a media entity's default stream.",
+        "required": false
+      }
+    ]
+  },
+  "ODataMediaUpdateOptions": {
+    "title": "ODataMediaUpdateOptions",
+    "description": "Options for an imperative OData media replacement.",
+    "properties": [
+      {
+        "name": "contentType",
+        "type": "string",
+        "description": "Exact request media type, for example `application/pdf`.",
+        "required": true
+      }
+    ]
+  },
+  "ODataMediaCreateOptions": {
+    "title": "ODataMediaCreateOptions",
+    "description": "Options for creating a media entity from its initial default stream.",
+    "properties": [
+      {
+        "name": "contentType",
+        "type": "string",
+        "description": "Exact request media type, for example `application/pdf`.",
+        "required": true
+      },
+      {
+        "name": "slug",
+        "type": "string | undefined",
+        "description": "Optional OData `Slug` hint, commonly used as the original file name.",
+        "required": false
+      }
+    ]
+  },
+  "ODataMediaMutationResponse": {
+    "title": "ODataMediaMutationResponse",
+    "description": "Result metadata from a media replacement that may return no body.",
+    "properties": [
+      {
+        "name": "etag",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "sapMessage",
+        "type": "string | undefined",
+        "description": "Legacy SAP Gateway success or warning message JSON.",
+        "required": false
+      }
+    ]
+  },
+  "ODataMediaCreateResponse": {
+    "title": "ODataMediaCreateResponse",
+    "description": "Created media entity representation and optimistic-concurrency validator.",
+    "properties": [
+      {
+        "name": "data",
+        "type": "T | undefined",
+        "required": false
+      },
+      {
+        "name": "entityId",
+        "type": "string | undefined",
+        "description": "OData `OData-EntityId` response header, when supplied by the service.",
+        "required": false
+      },
+      {
+        "name": "location",
+        "type": "string | undefined",
+        "description": "HTTP `Location` response header, when supplied by the service.",
+        "required": false
       }
     ]
   },
@@ -2095,8 +2612,14 @@
     "properties": [
       {
         "name": "key",
-        "type": "ODataKey | undefined",
-        "description": "Entity key for an entity-bound action. Omit for collection/service actions.",
+        "type": "ODataNavigationSource | undefined",
+        "description": "Root entity key or exact contained entity for an entity- or navigation-bound action.",
+        "required": false
+      },
+      {
+        "name": "navigationPath",
+        "type": "string | readonly string[] | undefined",
+        "description": "Optional navigation binding below the keyed entity.",
         "required": false
       },
       {
@@ -2187,6 +2710,18 @@
         "required": false
       },
       {
+        "name": "supportsNavigationRootReferences",
+        "type": "true | undefined",
+        "description": "Indicates that this client can produce validated `$root` navigation references.",
+        "required": false
+      },
+      {
+        "name": "createNavigationRootReference",
+        "type": "((source: ODataNavigationSource, navigationPath: string | readonly string[]) => string) | undefined",
+        "description": "Produces a query-expression reference for the exact related collection.\nThis performs no request and never includes the service base URL.",
+        "required": false
+      },
+      {
         "name": "list",
         "type": "(query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<T[]>",
         "description": "Fetches a list of entities.",
@@ -2255,13 +2790,340 @@
       {
         "name": "invoke",
         "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: ODataRequestOptions) => Promise<TResult>",
-        "description": "Invokes an unbound, collection-bound, or entity-bound OData action.",
+        "description": "Invokes an unbound, collection-, entity-, or navigation-bound OData action.",
         "required": true
       },
       {
         "name": "invokeFunction",
         "type": "<TResult = unknown>(functionName: string, invocation?: ODataFunctionInvocation, options?: ODataRequestOptions) => Promise<TResult>",
         "description": "Invokes an unbound, collection-, entity-, or navigation-bound OData function.",
+        "required": true
+      }
+    ]
+  },
+  "ODataNavigationReferenceEntitySet": {
+    "title": "ODataNavigationReferenceEntitySet",
+    "description": "Entity-set client that mutates non-contained relationships through OData `$ref`.",
+    "properties": [
+      {
+        "name": "supportsNavigationReferences",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "linkNavigation",
+        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetEntitySet: string, targetKey: ODataKey, options?: ODataRequestOptions) => Promise<unknown>",
+        "description": "Adds an existing entity to a non-contained navigation through OData `$ref`.",
+        "required": true
+      },
+      {
+        "name": "unlinkNavigation",
+        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: ODataRequestOptions) => Promise<unknown>",
+        "description": "Removes an existing entity link without deleting the target entity.",
+        "required": true
+      }
+    ]
+  },
+  "ODataNavigationReferenceResponseEntitySet": {
+    "title": "ODataNavigationReferenceResponseEntitySet",
+    "description": "Entity-set client that preserves response metadata from OData `$ref` writes.",
+    "properties": [
+      {
+        "name": "supportsNavigationReferenceResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "linkNavigationWithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], targetEntitySet: string, targetKey: ODataKey, options?: ODataRequestOptions) => Promise<ODataMutationResponse<TResult>>",
+        "description": "Adds an existing relationship while preserving optional backend feedback.",
+        "required": true
+      },
+      {
+        "name": "unlinkNavigationWithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: ODataRequestOptions) => Promise<ODataMutationResponse<TResult>>",
+        "description": "Removes an existing relationship while preserving optional backend feedback.",
+        "required": true
+      }
+    ]
+  },
+  "ODataPagedEntitySet": {
+    "title": "ODataPagedEntitySet",
+    "description": "Entity-set client with explicit, SSR-safe collection page reads. This\nextends the original entity-set contract without making existing structural\nimplementations of `ODataEntitySet` add new required methods.",
+    "properties": [
+      {
+        "name": "supportsCollectionPages",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "listPage",
+        "type": "(query?: ODataQuery<T>, options?: any) => ODataAsyncDataPromise<ODataCollectionPage<T>>",
+        "description": "Fetches entities and preserves an OData V2 `__count` or V4 `@odata.count`\nin an SSR-safe object shape.",
+        "required": true
+      },
+      {
+        "name": "fetchPage",
+        "type": "(query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<ODataCollectionPage<T>>",
+        "description": "Imperative counterpart to `listPage`.",
+        "required": true
+      },
+      {
+        "name": "listNavigation",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], query?: ODataQuery<TResult>, options?: any) => ODataAsyncDataPromise<TResult[]>",
+        "description": "Reads a related collection through Nuxt AsyncData. The caller supplies the\nrelated result model because a navigation path can target another entity\ntype than the root entity set.",
+        "required": true
+      }
+    ]
+  },
+  "ODataContinuationEntitySet": {
+    "title": "ODataContinuationEntitySet",
+    "description": "Entity-set client with safe server-driven paging support.",
+    "properties": [
+      {
+        "name": "supportsContinuations",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "listNextPage",
+        "type": "(continuation: ODataContinuation, options?: any) => ODataAsyncDataPromise<ODataCollectionPage<T>>",
+        "description": "Reads the next page through Nuxt AsyncData on the current entity set.",
+        "required": true
+      },
+      {
+        "name": "fetchNextPage",
+        "type": "(continuation: ODataContinuation, options?: ODataRequestOptions) => Promise<ODataCollectionPage<T>>",
+        "description": "Imperatively reads the next page on the current entity set.",
+        "required": true
+      },
+      {
+        "name": "listNavigationPage",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], query?: ODataQuery<TResult>, options?: any) => ODataAsyncDataPromise<ODataCollectionPage<TResult>>",
+        "description": "Reads a page from a related collection through Nuxt AsyncData.",
+        "required": true
+      },
+      {
+        "name": "fetchNavigationPage",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], query?: ODataQuery<TResult>, options?: ODataRequestOptions) => Promise<ODataCollectionPage<TResult>>",
+        "description": "Imperative counterpart to `listNavigationPage`.",
+        "required": true
+      },
+      {
+        "name": "listNavigationNextPage",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], continuation: ODataContinuation, options?: any) => ODataAsyncDataPromise<ODataCollectionPage<TResult>>",
+        "description": "Continues a related collection through Nuxt AsyncData.",
+        "required": true
+      },
+      {
+        "name": "fetchNavigationNextPage",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], continuation: ODataContinuation, options?: ODataRequestOptions) => Promise<ODataCollectionPage<TResult>>",
+        "description": "Imperatively continues a related collection on the same navigation path.",
+        "required": true
+      }
+    ]
+  },
+  "ODataVersionedEntitySet": {
+    "title": "ODataVersionedEntitySet",
+    "description": "Entity-set client with explicit access to optimistic-concurrency metadata.\nKept separate so existing structural `ODataPagedEntitySet` implementations\nremain source-compatible.",
+    "properties": [
+      {
+        "name": "supportsEntityResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "fetchOneWithResponse",
+        "type": "(key: ODataKey, query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<ODataEntityResponse<T>>",
+        "description": "Imperatively reads one entity and preserves its ETag for a subsequent\nconditional mutation. Existing `fetchOne` remains body-only.",
+        "required": true
+      }
+    ]
+  },
+  "ODataNavigationEntityRead": {
+    "title": "ODataNavigationEntityRead",
+    "description": "Exact related-entity read below a root or contained entity.",
+    "properties": [
+      {
+        "name": "source",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "string | readonly string[]",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey | undefined",
+        "description": "Key of one collection member; omit for a single-valued navigation.",
+        "required": false
+      },
+      {
+        "name": "query",
+        "type": "ODataQuery<TResult> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataVersionedNavigationEntitySet": {
+    "title": "ODataVersionedNavigationEntitySet",
+    "description": "Entity-set client that preserves response metadata from related entities.",
+    "properties": [
+      {
+        "name": "supportsNavigationEntityResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "fetchNavigationOneWithResponse",
+        "type": "<TResult = unknown>(request: ODataNavigationEntityRead<TResult>, options?: ODataRequestOptions) => Promise<ODataEntityResponse<TResult>>",
+        "description": "Reads one related entity and preserves its ETag for a conditional mutation.",
+        "required": true
+      }
+    ]
+  },
+  "ODataConcurrencyEntitySet": {
+    "title": "ODataConcurrencyEntitySet",
+    "description": "Entity-set client with an explicit optimistic-concurrency mutation path.\nKept separate so structural implementations of `ODataVersionedEntitySet`\nremain source-compatible.",
+    "properties": [
+      {
+        "name": "supportsOptimisticConcurrency",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "updateWithResponse",
+        "type": "(key: ODataKey, body: Partial<T>, options?: ODataRequestOptions) => Promise<ODataMutationResponse<T>>",
+        "description": "Conditionally updates one entity while preserving the response ETag.\nExisting `update` remains body-only and source-compatible.",
+        "required": true
+      },
+      {
+        "name": "updateNavigationWithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: ODataRequestOptions) => Promise<ODataMutationResponse<TResult>>",
+        "description": "Updates a related entity while preserving its optional next ETag.",
+        "required": true
+      }
+    ]
+  },
+  "ODataMergeEntitySet": {
+    "title": "ODataMergeEntitySet",
+    "description": "Entity-set client with explicit SAP Gateway OData V2 MERGE updates.",
+    "properties": [
+      {
+        "name": "supportsMerge",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "merge",
+        "type": "(key: ODataKey, body: Partial<T>, options?: ODataRequestOptions) => Promise<T>",
+        "description": "Performs an explicit SAP Gateway OData V2 MERGE update.",
+        "required": true
+      },
+      {
+        "name": "mergeWithResponse",
+        "type": "(key: ODataKey, body: Partial<T>, options?: ODataRequestOptions) => Promise<ODataMutationResponse<T>>",
+        "description": "Performs MERGE and preserves its optional representation and next ETag.",
+        "required": true
+      }
+    ]
+  },
+  "ODataCreateEntitySet": {
+    "title": "ODataCreateEntitySet",
+    "description": "Entity-set client with explicit create response metadata.",
+    "properties": [
+      {
+        "name": "supportsCreateResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "createWithResponse",
+        "type": "(body: Partial<T>, options?: ODataRequestOptions) => Promise<ODataCreateResponse<T>>",
+        "description": "Creates an entity while preserving its optional representation, ETag, and\nservice-advertised identity. This supports `Prefer: return=minimal`.",
+        "required": true
+      },
+      {
+        "name": "createNavigationWithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], body: Readonly<Record<string, unknown>>, options?: ODataRequestOptions) => Promise<ODataCreateResponse<TResult>>",
+        "description": "Creates a related entity while preserving a possibly bodyless response.",
+        "required": true
+      }
+    ]
+  },
+  "ODataActionResponseEntitySet": {
+    "title": "ODataActionResponseEntitySet",
+    "description": "Entity-set client that preserves response metadata from OData actions.",
+    "properties": [
+      {
+        "name": "supportsActionResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "invokeWithResponse",
+        "type": "<TResult = unknown, TParameters = Record<string, unknown>>(action: string, invocation?: ODataActionInvocation<TParameters>, options?: ODataRequestOptions) => Promise<ODataActionResponse<TResult>>",
+        "description": "Invokes an OData action while preserving its optional representation,\nresponse ETag, advertised location, and legacy SAP Gateway message header.",
+        "required": true
+      }
+    ]
+  },
+  "ODataDeleteResponseEntitySet": {
+    "title": "ODataDeleteResponseEntitySet",
+    "description": "Entity-set client that preserves response metadata from OData deletes.",
+    "properties": [
+      {
+        "name": "supportsDeleteResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "removeWithResponse",
+        "type": "(key: ODataKey, options?: ODataRequestOptions) => Promise<ODataDeleteResponse<T>>",
+        "description": "Deletes an entity while preserving optional response metadata.",
+        "required": true
+      },
+      {
+        "name": "removeNavigationWithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: ODataRequestOptions) => Promise<ODataDeleteResponse<TResult>>",
+        "description": "Deletes a related entity while preserving optional response metadata.",
+        "required": true
+      }
+    ]
+  },
+  "ODataMediaEntitySet": {
+    "title": "ODataMediaEntitySet",
+    "description": "Entity-set client with imperative OData media-stream reads and replacements.",
+    "properties": [
+      {
+        "name": "supportsMediaStreams",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "createMedia",
+        "type": "(body: ArrayBuffer | Uint8Array, options: ODataMediaCreateOptions) => Promise<ODataMediaCreateResponse<T>>",
+        "description": "Creates a media entity by posting its initial default stream.",
+        "required": true
+      },
+      {
+        "name": "createNavigationMedia",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], body: ArrayBuffer | Uint8Array, options: ODataMediaCreateOptions) => Promise<ODataMediaCreateResponse<TResult>>",
+        "description": "Creates a contained media entity through a collection-valued navigation\nby posting its initial default stream.",
+        "required": true
+      },
+      {
+        "name": "fetchMedia",
+        "type": "(key: ODataNavigationSource, options?: ODataMediaRequestOptions) => Promise<ODataMediaResponse>",
+        "description": "Reads a media entity or named `Edm.Stream` property through `$value`.",
+        "required": true
+      },
+      {
+        "name": "updateMedia",
+        "type": "(key: ODataNavigationSource, body: ArrayBuffer | Uint8Array, options: ODataMediaUpdateOptions) => Promise<ODataMediaMutationResponse>",
+        "description": "Replaces a media entity or named `Edm.Stream` property through `$value`.",
         "required": true
       }
     ]
@@ -2399,6 +3261,125 @@
       {
         "name": "kind",
         "type": "\"delete-navigation\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicMediaUpdate": {
+    "title": "ODataAtomicMediaUpdate",
+    "description": "Replaces an entity stream as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"update-media\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "ArrayBuffer | Uint8Array<ArrayBufferLike>",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "streamProperty",
+        "type": "string | undefined",
+        "description": "Named `Edm.Stream` property; omit for a media entity's default stream.",
+        "required": false
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicNavigationLink": {
+    "title": "ODataAtomicNavigationLink",
+    "description": "Adds an existing entity relationship as one member of an atomic changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"link-navigation\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "targetEntitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicNavigationUnlink": {
+    "title": "ODataAtomicNavigationUnlink",
+    "description": "Removes an entity relationship without deleting either entity.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"unlink-navigation\"",
         "required": true
       },
       {
