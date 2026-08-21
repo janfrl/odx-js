@@ -122,8 +122,9 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
   `$value` paths, while service-root resolution and transport remain adapters.
 - Explicit, capability-negotiated SAP Gateway V2 `MERGE` paths for root and
   related-entity updates; protocol selection remains owned by consumers.
-- Multipart serialization and response parsing for atomic OData V4 writes and
-  ordered independent changesets whose partial outcomes remain explicit.
+- Multipart serialization and response parsing for atomic OData V4 writes,
+  bounded SAP Gateway V2 root/navigation MERGE writes, and ordered independent
+  changesets whose partial outcomes remain explicit.
 - EDMX parsing utilities from the `./server` export.
 - CSRF-aware request support through `fetchWithCsrf`.
 - The `OdxLogStore` traffic-log boundary, default in-memory store, redaction

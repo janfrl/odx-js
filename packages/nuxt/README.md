@@ -315,6 +315,10 @@ fail-closed with older ODX runtimes.
 `batchChangeSets()` sends ordered mutation groups as separate changesets inside
 one batch and returns a `succeeded` result per group, preserving partial success.
 Use `supportsBatchChangeSets === true` before depending on this newer contract.
+For SAP Gateway V2, `v2ChangeSet()` atomically combines only root and navigation
+updates, serializes both as `MERGE`, and retains per-member `If-Match` headers.
+Require `supportsV2AtomicChangesets === true`; unsupported V2 mutation kinds are
+not converted to V4 `PATCH` or split into separate writes.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so

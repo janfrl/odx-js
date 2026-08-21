@@ -419,6 +419,7 @@ Service-level methods:
 | Method | HTTP | Return |
 | --- | --- | --- |
 | `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
+| `v2ChangeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
 | `batchChangeSets(changeSets, options?)` | `POST .../$batch` | `Promise<readonly ODataBatchChangeSetResult[]>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 | `invokeFunctionImport(name, invocation, options?)` | declared V2 `GET` or `POST` | `Promise<TResult>` |
@@ -434,6 +435,13 @@ applicable, and optional headers such as `If-Match`; request options such as
 rejects if any changeset member fails, so callers must not infer success from
 the outer batch status alone. Entity-set and navigation names are validated as
 identifier segments before transport.
+
+`v2ChangeSet` is the bounded SAP Gateway V2 counterpart. It accepts only root
+`update` and `update-navigation` members, serializes both as `MERGE`, retains
+each member's `If-Match`, and sends V2 `DataServiceVersion` headers instead of
+`OData-Version: 4.0`. Generated Nuxt services advertise it through
+`supportsV2AtomicChangesets === true`. Other mutation kinds remain unsupported
+by this V2 contract and are not silently translated or split into requests.
 
 `update-media` accepts only `ArrayBuffer` or `Uint8Array`, requires an exact
 valid `contentType`, and derives the default or named `$value` target from an
@@ -455,7 +463,8 @@ Consumers that conditionally use action members can check this capability and
 remain compatible with older runtimes whose changesets only support mutations.
 They also expose `supportsAtomicMediaChangesets === true` for binary stream
 members and `supportsBatchChangeSets === true` for the independent grouped
-contract.
+contract, plus `supportsV2AtomicChangesets === true` for the bounded V2
+root/navigation MERGE changeset.
 
 Keys may be strings, numbers, booleans, or composite key objects.
 

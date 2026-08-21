@@ -1,4 +1,4 @@
-export type ODataChangeSetMethod = 'DELETE' | 'PATCH' | 'POST' | 'PUT'
+export type ODataChangeSetMethod = 'DELETE' | 'MERGE' | 'PATCH' | 'POST' | 'PUT'
 
 export interface ODataChangeSetRequest {
   readonly method: ODataChangeSetMethod

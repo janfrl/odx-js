@@ -36,6 +36,7 @@ import type {
   ODataRuntimeService,
   ODataService,
   ODataServiceConfig,
+  ODataV2AtomicMutation,
   ODataV2FunctionImportService,
   ODataVersionedEntitySet,
   ODataVersionedNavigationEntitySet,
@@ -70,6 +71,10 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<true | undefined>()
     expectTypeOf<ODataRuntimeService['supportsAtomicMediaChangesets']>()
       .toEqualTypeOf<true | undefined>()
+    expectTypeOf<NonNullable<ODataRuntimeService['v2ChangeSet']>>()
+      .toBeFunction()
+    expectTypeOf<ODataRuntimeService['supportsV2AtomicChangesets']>()
+      .toEqualTypeOf<true | undefined>()
     expectTypeOf<{
       kind: 'update-media'
       entitySet: 'Documents'
@@ -78,6 +83,13 @@ describe('portable imperative transport types', () => {
       contentType: 'application/pdf'
       body: Uint8Array
     }>().toExtend<ODataAtomicMutation>()
+    expectTypeOf<{
+      kind: 'update-navigation'
+      entitySet: 'Products'
+      key: number
+      navigationPath: readonly ['Category']
+      body: { Name: string }
+    }>().toExtend<ODataV2AtomicMutation>()
   })
 
   it('keeps V2 FunctionImports as an additive service capability', () => {

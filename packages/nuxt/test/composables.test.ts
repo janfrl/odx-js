@@ -1675,6 +1675,88 @@ describe('useOData Composable', () => {
   })
 
   describe('atomic changesets', () => {
+    it('posts bounded V2 root and navigation MERGEs as one changeset', async () => {
+      const responseBody = [
+        '--batch_response',
+        'Content-Type: multipart/mixed; boundary=changeset_response',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response--',
+        '--batch_response--',
+        '',
+      ].join('\r\n')
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: responseBody,
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+
+      expect(api.supportsV2AtomicChangesets).toBe(true)
+      const responses = await api.v2ChangeSet!([{
+        kind: 'update',
+        entitySet: 'Products',
+        key: 1,
+        body: { Name: 'Updated product' },
+        headers: { 'If-Match': 'W/"product-1"' },
+      }, {
+        kind: 'update-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Category'],
+        body: { Name: 'Updated category' },
+        headers: { 'If-Match': 'W/"category-1"' },
+      }])
+
+      expect(responses).toEqual([
+        { status: 204, headers: {} },
+        { status: 204, headers: {} },
+      ])
+      const [url, options] = raw.mock.calls[0] as [string, any]
+      expect(url).toBe('/api/odx/routed-api/$batch')
+      expect(options).toMatchObject({
+        method: 'POST',
+        responseType: 'text',
+        headers: {
+          accept: 'multipart/mixed',
+          dataserviceversion: '2.0',
+          maxdataserviceversion: '2.0',
+        },
+      })
+      expect(options.headers).not.toHaveProperty('odata-version')
+      expect(options.headers['content-type']).toMatch(/^multipart\/mixed; boundary=batch_/u)
+      expect(options.body).toContain('MERGE Products(1) HTTP/1.1')
+      expect(options.body).toContain('MERGE Products(1)/Category HTTP/1.1')
+      expect(options.body).not.toContain('PATCH ')
+      expect(options.body).toContain('If-Match: W/"product-1"')
+      expect(options.body).toContain('If-Match: W/"category-1"')
+    })
+
+    it('rejects unsupported V2 changeset members before transport', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      const api = useOData('RoutedService' as any)
+
+      await expect(api.v2ChangeSet!([{
+        kind: 'delete',
+        entitySet: 'Products',
+        key: 1,
+      } as any])).rejects.toThrow('Unsupported OData V2 changeset mutation')
+      expect(raw).not.toHaveBeenCalled()
+    })
+
     it('posts root and navigation updates as one service-level batch', async () => {
       const signal = new AbortController().signal
       const responseBody = [

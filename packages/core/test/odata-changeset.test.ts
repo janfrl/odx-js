@@ -44,6 +44,22 @@ describe('oData changesets', () => {
     expect(payload.body).toMatch(/--changeset_test--\r\n--batch_test--\r\n$/u)
   })
 
+  it('serializes SAP Gateway V2 MERGE members without changing the multipart envelope', () => {
+    const payload = serializeODataChangeSet([{
+      method: 'MERGE',
+      path: 'Products(1)/Category',
+      headers: { 'If-Match': 'W/"category-1"' },
+      body: { Name: 'Updated category' },
+    }], boundaries)
+
+    expect(payload.contentType).toBe('multipart/mixed; boundary=batch_test')
+    expect(payload.body).toContain(
+      'Content-ID: 1\r\n\r\nMERGE Products(1)/Category HTTP/1.1',
+    )
+    expect(payload.body).toContain('If-Match: W/"category-1"')
+    expect(payload.body).toContain('{"Name":"Updated category"}')
+  })
+
   it('preserves binary members inside an atomic multipart changeset', () => {
     const media = Uint8Array.from([0, 255, 13, 10, 45, 45, 127])
     const payload = serializeODataChangeSet([{

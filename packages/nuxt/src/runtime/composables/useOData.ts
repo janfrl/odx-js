@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -966,22 +966,57 @@ export function useOData(service?: string): any {
     })
   }
 
+  const v2AtomicMutationRequest = (
+    mutation: ODataV2AtomicMutation,
+  ): ODataChangeSetRequest => {
+    let entityPath: string
+    if (mutation.kind === 'update') {
+      entityPath = createODataEntityPath(mutation.entitySet, mutation.key)
+    }
+    else if (mutation.kind === 'update-navigation') {
+      const navigationPath = joinODataPath(
+        createODataNavigationSourcePath(mutation.entitySet, mutation.key),
+        formatODataNavigationPath(mutation.navigationPath),
+      )
+      entityPath = mutation.targetKey === undefined
+        ? navigationPath
+        : `${navigationPath}(${formatODataKey(mutation.targetKey)})`
+    }
+    else {
+      throw new TypeError('Unsupported OData V2 changeset mutation.')
+    }
+    return Object.freeze({
+      method: 'MERGE' as const,
+      path: entityPath,
+      headers: mutation.headers,
+      body: mutation.body,
+    })
+  }
+
   const postChangeSetBatch = async <T>(
     serviceName: string,
     payload: { readonly body: string | Uint8Array, readonly contentType: string },
     options: ODataRequestOptions,
     parse: (body: string, contentType: string) => T,
+    version: 'v2' | 'v4' = 'v4',
   ): Promise<T> => {
     const response = await client.raw<string>(
       joinODataPath(resolveServicePath(serviceName), '$batch'),
       {
         ...options,
         method: 'POST',
-        headers: mergeHeaders(options.headers, {
-          'Accept': 'multipart/mixed',
-          'Content-Type': payload.contentType,
-          'OData-Version': '4.0',
-        }),
+        headers: mergeHeaders(options.headers, version === 'v2'
+          ? {
+              'Accept': 'multipart/mixed',
+              'Content-Type': payload.contentType,
+              'DataServiceVersion': '2.0',
+              'MaxDataServiceVersion': '2.0',
+            }
+          : {
+              'Accept': 'multipart/mixed',
+              'Content-Type': payload.contentType,
+              'OData-Version': '4.0',
+            }),
         body: payload.body,
         responseType: 'text',
       },
@@ -1003,6 +1038,20 @@ export function useOData(service?: string): any {
       payload,
       options,
       parseODataChangeSetResponse,
+    )
+  }
+
+  const createV2ChangeSet = (serviceName: string) => async (
+    mutations: readonly ODataV2AtomicMutation[],
+    options: ODataRequestOptions = {},
+  ): Promise<readonly ODataChangeSetResponse[]> => {
+    const payload = serializeODataChangeSet(mutations.map(v2AtomicMutationRequest))
+    return postChangeSetBatch(
+      serviceName,
+      payload,
+      options,
+      parseODataChangeSetResponse,
+      'v2',
     )
   }
 
@@ -1033,9 +1082,11 @@ export function useOData(service?: string): any {
       supportsAtomicMediaChangesets: true as const,
       supportsActionResponses: true as const,
       supportsBatchChangeSets: true as const,
+      supportsV2AtomicChangesets: true as const,
       supportsV2FunctionImports: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),
+      v2ChangeSet: createV2ChangeSet(serviceName),
       invokeFunctionImport: <TResult = unknown>(
         name: string,
         invocation: ODataV2FunctionImportInvocation,
