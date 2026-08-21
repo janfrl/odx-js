@@ -229,6 +229,7 @@ Entity-set methods:
 | `create(body, options?)` | `POST` | `Promise<T>` |
 | `createWithResponse(body, options?)` | `POST` | `Promise<ODataCreateResponse<T>>` |
 | `createNavigation(source, navigationPath, body, options?)` | `POST` | `Promise<TResult>` |
+| `createNavigationWithResponse(source, navigationPath, body, options?)` | `POST` | `Promise<ODataCreateResponse<TResult>>` |
 | `updateNavigation(source, navigationPath, update, options?)` | `PATCH` | `Promise<TResult>` |
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
 | `linkNavigation(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$ref` | `Promise<unknown>` |
@@ -254,7 +255,9 @@ ordered keyed containment segments. This represents paths such as
 
 Mutation options are forwarded to the same transport, including `signal` and
 headers such as `If-Match`. `createNavigation` posts to a collection-valued
-navigation of a typed parent key. `updateNavigation` patches a related entity;
+navigation of a typed parent key. `createNavigationWithResponse` targets the
+same validated path while retaining optional data, ETag, and created-entity
+identity for a minimal response. `updateNavigation` patches a related entity;
 its `update` argument contains the `body` and an optional `targetKey`. Omit the
 target key for a single-valued navigation and provide it for an entity in a
 collection-valued navigation. `removeNavigation` deletes one contained collection

@@ -566,6 +566,13 @@ export interface ODataCreateEntitySet<T = any> extends ODataEntitySet<T> {
     body: Partial<T>,
     options?: ODataRequestOptions,
   ) => Promise<ODataCreateResponse<T>>
+  /** Creates a related entity while preserving a possibly bodyless response. */
+  createNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    body: Readonly<Record<string, unknown>>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCreateResponse<TResult>>
 }
 
 /** Entity-set client with imperative OData media-stream reads and replacements. */

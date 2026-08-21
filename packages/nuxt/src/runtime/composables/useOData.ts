@@ -491,6 +491,21 @@ export function useOData(service?: string): any {
           body,
         })
       },
+      createNavigationWithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        body: Readonly<Record<string, unknown>>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataCreateResponse<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        return $odataCreateWithResponse<TResult>(client, navigationUrl, {
+          ...(options as any),
+          body,
+        })
+      },
       updateNavigation: <TResult = unknown>(
         source: ODataNavigationSource,
         navigationPath: readonly string[],

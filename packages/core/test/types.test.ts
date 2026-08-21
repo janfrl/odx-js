@@ -129,6 +129,8 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataCreateEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['createWithResponse']>>>()
       .toEqualTypeOf<ODataCreateResponse<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['createNavigationWithResponse']>>>()
+      .toEqualTypeOf<ODataCreateResponse<unknown>>()
     expectTypeOf<ODataEntitySet<Product>>()
       .not
       .toHaveProperty('createWithResponse')

@@ -884,6 +884,28 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('preserves a bodyless child create response on its navigation path', async () => {
+      const api = useOData('RoutedService' as any)
+      const headers = { Prefer: 'return=minimal' }
+
+      const response = await api.entitySet('Products').createNavigationWithResponse(
+        { ID: 1, Locale: 'en' },
+        ['Items'],
+        { Product: 'Desk', Amount: '125.50' },
+        { headers },
+      )
+
+      expect(response).toEqual({ entityId: 'Products(1)', etag: 'W/"entity-1"' })
+      expect(core.$odataCreateWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Items',
+        {
+          body: { Product: 'Desk', Amount: '125.50' },
+          headers,
+        },
+      )
+    })
+
     it('mutates navigation children below a contained entity', async () => {
       const entitySet = useOData('RoutedService' as any).entitySet('Products')
       const source = {
@@ -915,6 +937,7 @@ describe('useOData Composable', () => {
       const entitySet = useOData('MyService').entitySet('Products')
 
       expect(() => entitySet.createNavigation(1, [], {})).toThrow(TypeError)
+      expect(() => entitySet.createNavigationWithResponse(1, [], {})).toThrow(TypeError)
       expect(() => entitySet.createNavigation(
         1,
         ['Items?$filter=ID'],

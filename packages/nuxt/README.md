@@ -110,6 +110,8 @@ const created = await useOData('Northwind').entitySet('Products').createWithResp
 
 Runtime entity sets expose `supportsCreateResponses === true`. The existing
 `create()` method remains the body-only convenience path.
+`createNavigationWithResponse(source, path, body, options)` provides the same
+response contract for a related collection below a root or contained parent.
 
 For SAP Gateway OData V2 services that require the legacy update verb, use
 `merge()` or `mergeWithResponse()` explicitly. PATCH remains the default
