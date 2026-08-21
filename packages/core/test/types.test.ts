@@ -22,6 +22,8 @@ import type {
   ODataMergeService,
   ODataMutationResponse,
   ODataNavigationEntityRead,
+  ODataNavigationMergeEntitySet,
+  ODataNavigationMergeService,
   ODataNavigationReferenceEntitySet,
   ODataNavigationReferenceResponseEntitySet,
   ODataNavigationReferenceResponseService,
@@ -79,7 +81,9 @@ describe('portable imperative transport types', () => {
   })
 
   it('keeps V2 FunctionImports as an additive service capability', () => {
-    expectTypeOf<ODataService>().not.toHaveProperty('invokeFunctionImport')
+    expectTypeOf<ODataService<'Products', { Products: Product }>>()
+      .not
+      .toHaveProperty('invokeFunctionImport')
     expectTypeOf<ODataV2FunctionImportService['invokeFunctionImport']>()
       .toBeFunction()
     expectTypeOf<ODataRuntimeService['supportsV2FunctionImports']>()
@@ -145,6 +149,20 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<Product>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeWithResponse']>>>()
       .toEqualTypeOf<ODataMutationResponse<Product>>()
+  })
+
+  it('adds navigation MERGE without widening root MERGE clients', () => {
+    type ProductsService = ODataNavigationMergeService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataNavigationMergeEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeNavigation']>>>()
+      .toEqualTypeOf<unknown>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['mergeNavigationWithResponse']>>>()
+      .toEqualTypeOf<ODataMutationResponse<unknown>>()
+    expectTypeOf<ODataMergeEntitySet<Product>>()
+      .not
+      .toHaveProperty('mergeNavigation')
   })
 
   it('preserves typed response metadata for exact related entities', () => {

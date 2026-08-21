@@ -640,6 +640,25 @@ export interface ODataMergeEntitySet<T = any> extends ODataConcurrencyEntitySet<
   ) => Promise<ODataMutationResponse<T>>
 }
 
+/** Entity-set client with explicit SAP Gateway OData V2 navigation MERGE updates. */
+export interface ODataNavigationMergeEntitySet<T = any> extends ODataMergeEntitySet<T> {
+  readonly supportsNavigationMerge: true
+  /** Performs MERGE against a to-one navigation or one keyed related entity. */
+  mergeNavigation: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  /** Performs navigation MERGE and preserves its optional representation and next ETag. */
+  mergeNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+}
+
 /** Entity-set client with explicit create response metadata. */
 export interface ODataCreateEntitySet<T = any> extends ODataEntitySet<T> {
   readonly supportsCreateResponses: true
@@ -724,7 +743,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 
 /** Complete entity-set capability implemented by the generated ODX client. */
 export type ODataRuntimeEntitySet<T = any>
-  = ODataMergeEntitySet<T>
+  = ODataNavigationMergeEntitySet<T>
     & ODataVersionedNavigationEntitySet<T>
     & ODataActionResponseEntitySet<T>
     & ODataDeleteResponseEntitySet<T>
@@ -733,9 +752,9 @@ export type ODataRuntimeEntitySet<T = any>
     & ODataMediaEntitySet<T>
     & ODataNavigationReferenceResponseEntitySet<T>
 
-/** Describes a PATCH target below a parent entity navigation path. */
+/** Describes an update target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
-  /** PATCH payload for the related entity. */
+  /** Update payload for the related entity. */
   body: Readonly<Record<string, unknown>>
   /** Related entity key for a collection navigation; omit for a to-one navigation. */
   targetKey?: ODataKey
@@ -906,29 +925,31 @@ type ODataServiceContract<
 type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
   = TEntitySet extends ODataRuntimeEntitySet<any>
     ? ODataRuntimeEntitySet<TModel>
-    : TEntitySet extends ODataMergeEntitySet<any>
-      ? ODataMergeEntitySet<TModel>
-      : TEntitySet extends ODataDeleteResponseEntitySet<any>
-        ? ODataDeleteResponseEntitySet<TModel>
-        : TEntitySet extends ODataActionResponseEntitySet<any>
-          ? ODataActionResponseEntitySet<TModel>
-          : TEntitySet extends ODataCreateEntitySet<any>
-            ? ODataCreateEntitySet<TModel>
-            : TEntitySet extends ODataContinuationEntitySet<any>
-              ? ODataContinuationEntitySet<TModel>
-              : TEntitySet extends ODataConcurrencyEntitySet<any>
-                ? ODataConcurrencyEntitySet<TModel>
-                : TEntitySet extends ODataVersionedNavigationEntitySet<any>
-                  ? ODataVersionedNavigationEntitySet<TModel>
-                  : TEntitySet extends ODataVersionedEntitySet<any>
-                    ? ODataVersionedEntitySet<TModel>
-                    : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
-                      ? ODataNavigationReferenceResponseEntitySet<TModel>
-                      : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                        ? ODataNavigationReferenceEntitySet<TModel>
-                        : TEntitySet extends ODataPagedEntitySet<any>
-                          ? ODataPagedEntitySet<TModel>
-                          : ODataEntitySet<TModel>
+    : TEntitySet extends ODataNavigationMergeEntitySet<any>
+      ? ODataNavigationMergeEntitySet<TModel>
+      : TEntitySet extends ODataMergeEntitySet<any>
+        ? ODataMergeEntitySet<TModel>
+        : TEntitySet extends ODataDeleteResponseEntitySet<any>
+          ? ODataDeleteResponseEntitySet<TModel>
+          : TEntitySet extends ODataActionResponseEntitySet<any>
+            ? ODataActionResponseEntitySet<TModel>
+            : TEntitySet extends ODataCreateEntitySet<any>
+              ? ODataCreateEntitySet<TModel>
+              : TEntitySet extends ODataContinuationEntitySet<any>
+                ? ODataContinuationEntitySet<TModel>
+                : TEntitySet extends ODataConcurrencyEntitySet<any>
+                  ? ODataConcurrencyEntitySet<TModel>
+                  : TEntitySet extends ODataVersionedNavigationEntitySet<any>
+                    ? ODataVersionedNavigationEntitySet<TModel>
+                    : TEntitySet extends ODataVersionedEntitySet<any>
+                      ? ODataVersionedEntitySet<TModel>
+                      : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
+                        ? ODataNavigationReferenceResponseEntitySet<TModel>
+                        : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                          ? ODataNavigationReferenceEntitySet<TModel>
+                          : TEntitySet extends ODataPagedEntitySet<any>
+                            ? ODataPagedEntitySet<TModel>
+                            : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -974,6 +995,10 @@ export type ODataDeleteResponseService<E extends string = string, M extends Reco
 /** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
 export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataMergeEntitySet<any>>
+
+/** OData service whose entity sets expose explicit SAP Gateway navigation MERGE updates. */
+export type ODataNavigationMergeService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataNavigationMergeEntitySet<any>>
 
 /** OData service that can link and unlink existing related entities. */
 export type ODataNavigationReferenceService<E extends string = string, M extends Record<string, any> = any>

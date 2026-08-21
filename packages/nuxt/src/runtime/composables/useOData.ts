@@ -187,6 +187,7 @@ export function useOData(service?: string): any {
       supportsActionResponses: true,
       supportsDeleteResponses: true,
       supportsMerge: true,
+      supportsNavigationMerge: true,
       supportsMediaStreams: true,
       supportsContinuations: true,
       createNavigationRootReference: (
@@ -610,6 +611,42 @@ export function useOData(service?: string): any {
           ? navigationUrl
           : `${navigationUrl}(${formatODataKey(update.targetKey)})`
         return $odataMutationWithResponse<TResult>(client, targetUrl, 'PATCH', {
+          ...(options as any),
+          body: update.body,
+        })
+      },
+      mergeNavigation: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        update: ODataNavigationUpdate,
+        options?: ODataRequestOptions,
+      ): Promise<TResult> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const targetUrl = update.targetKey === undefined
+          ? navigationUrl
+          : `${navigationUrl}(${formatODataKey(update.targetKey)})`
+        return $odata<TResult>(client, targetUrl, 'MERGE', {
+          ...(options as any),
+          body: update.body,
+        })
+      },
+      mergeNavigationWithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        update: ODataNavigationUpdate,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const targetUrl = update.targetKey === undefined
+          ? navigationUrl
+          : `${navigationUrl}(${formatODataKey(update.targetKey)})`
+        return $odataMutationWithResponse<TResult>(client, targetUrl, 'MERGE', {
           ...(options as any),
           body: update.body,
         })

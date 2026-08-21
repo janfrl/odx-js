@@ -185,6 +185,43 @@ describe('oData Utils', () => {
       expect(flattened.Sub).toBeNull()
     })
 
+    it('retains only V2 entity ETags from root and expanded metadata', () => {
+      const flattened = flattenOData({
+        d: {
+          __metadata: { etag: ' W/"product-1" ', type: 'Demo.Product' },
+          ID: 1,
+          Category: {
+            __metadata: {
+              etag: 'W/"category-1"',
+              type: 'Demo.Category',
+              uri: 'https://private.example/Category(10)',
+            },
+            ID: 10,
+          },
+        },
+      })
+
+      expect(flattened).toEqual({
+        '@odata.etag': 'W/"product-1"',
+        'ID': 1,
+        'Category': {
+          '@odata.etag': 'W/"category-1"',
+          'ID': 10,
+        },
+      })
+    })
+
+    it('does not replace an explicit OData ETag with legacy metadata', () => {
+      expect(flattenOData({
+        '@odata.etag': 'W/"explicit"',
+        '__metadata': { etag: 'W/"legacy"' },
+        'ID': 1,
+      })).toEqual({
+        '@odata.etag': 'W/"explicit"',
+        'ID': 1,
+      })
+    })
+
     it('protects against deep recursion', () => {
       const deep: any = { a: {} }
       let curr = deep.a

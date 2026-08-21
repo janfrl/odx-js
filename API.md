@@ -379,6 +379,17 @@ widened. ODX Core serializes MERGE record bodies explicitly with JSON content
 type because Fetch-compatible clients do not universally classify MERGE as a
 JSON mutation method.
 
+Related V2 entities use the narrower additive
+`ODataNavigationMergeEntitySet` / `ODataNavigationMergeService` capability.
+When `supportsNavigationMerge === true`, `mergeNavigation` and
+`mergeNavigationWithResponse` address either one to-one navigation target or
+one keyed member of a related collection from a structured parent source. They
+retain caller-provided `If-Match` and the response-aware variant preserves the
+next ETag. V2 `__metadata.etag` values are normalized to `@odata.etag`,
+including on expanded related entities, while other V2 metadata stays stripped.
+Existing PATCH navigation methods remain unchanged; ODX never selects MERGE
+implicitly.
+
 `fetchMedia` and `updateMedia` expose the additive `ODataMediaEntitySet`
 contract, advertised by `supportsMediaStreams === true`. Omitting
 `options.streamProperty` addresses a media entity's default stream; supplying

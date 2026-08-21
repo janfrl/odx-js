@@ -145,6 +145,11 @@ For SAP Gateway OData V2 services that require the legacy update verb, use
 advertise this separate capability with `supportsMerge === true`. ODX Core
 serializes MERGE record bodies explicitly as JSON so the same payload reaches
 browser proxy, direct Node, and Fetch-compatible transports.
+For a related entity, negotiate `supportsNavigationMerge === true` and call
+`mergeNavigation()` or `mergeNavigationWithResponse()` with a structured
+parent source, navigation path, and optional target key. The response-aware
+variant retains the next ETag; neither method changes the existing PATCH
+navigation contract.
 
 Read or replace a media entity's default stream, or a named `Edm.Stream`
 property, without constructing a `$value` URL:

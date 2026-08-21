@@ -51,6 +51,12 @@ providing the next ETag. Both low-level request helpers support explicit
 Because Fetch-compatible clients do not consistently recognize MERGE as a JSON
 mutation method, ODX serializes record bodies explicitly and supplies
 `Content-Type: application/json` at this boundary.
+The additive `ODataNavigationMergeEntitySet` contract exposes the same explicit
+verb for a structured to-one navigation target or keyed related collection
+member without widening root-only MERGE clients.
+V2 `__metadata.etag` values are retained as `@odata.etag` on root and expanded
+entities so optimistic-concurrency callers can safely update related records;
+other V2 metadata remains stripped.
 `$odataPage` is the collection counterpart: it preserves counts and projects
 server-driven next links into a safe query-only continuation without exposing
 the backend origin or resource path.

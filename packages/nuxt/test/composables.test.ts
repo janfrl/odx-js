@@ -95,6 +95,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsActionResponses).toBe(true)
     expect(entitySet.supportsDeleteResponses).toBe(true)
     expect(entitySet.supportsMerge).toBe(true)
+    expect(entitySet.supportsNavigationMerge).toBe(true)
     expect(entitySet.supportsMediaStreams).toBe(true)
     expect(entitySet.supportsContinuations).toBe(true)
   })
@@ -1114,6 +1115,45 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('uses explicit MERGE for a single-valued OData V2 navigation target', async () => {
+      const api = useOData('RoutedService' as any)
+      const headers = { 'If-Match': 'W/"supplier-1"' }
+
+      await api.entitySet('Products').mergeNavigation(
+        { ID: 1, Locale: 'en' },
+        ['Supplier'],
+        { body: { Name: 'Modern Office GmbH' } },
+        { headers },
+      )
+
+      expect(core.$odata).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Supplier',
+        'MERGE',
+        { body: { Name: 'Modern Office GmbH' }, headers },
+      )
+    })
+
+    it('preserves the next ETag from a keyed OData V2 navigation MERGE', async () => {
+      const api = useOData('RoutedService' as any)
+      const headers = { 'If-Match': 'W/"item-1"' }
+
+      const response = await api.entitySet('Products').mergeNavigationWithResponse(
+        1,
+        ['Items'],
+        { targetKey: { ItemID: 'A/B', Locale: 'en' }, body: { Quantity: 3 } },
+        { headers },
+      )
+
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odataMutationWithResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/routed-api/Products(1)/Items(ItemID=\'A%2FB\',Locale=\'en\')',
+        'MERGE',
+        { body: { Quantity: 3 }, headers },
+      )
+    })
+
     it('rejects unsafe update navigation paths before transport', () => {
       const entitySet = useOData('MyService').entitySet('Products')
 
@@ -1128,6 +1168,16 @@ describe('useOData Composable', () => {
         { body: { Name: 'Updated' } },
       )).toThrow(TypeError)
       expect(() => entitySet.updateNavigation(
+        1,
+        ['Items(1)'],
+        { body: { Name: 'Updated' } },
+      )).toThrow(TypeError)
+      expect(() => entitySet.mergeNavigation(
+        1,
+        [],
+        { body: { Name: 'Updated' } },
+      )).toThrow(TypeError)
+      expect(() => entitySet.mergeNavigationWithResponse(
         1,
         ['Items(1)'],
         { body: { Name: 'Updated' } },

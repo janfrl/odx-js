@@ -52,6 +52,13 @@ export function flattenOData(data: any, depth = 0, maxDepth = 10): any {
   // 4. Handle Objects (stripping metadata)
   const flattened: any = {}
   let hasProperties = false
+  const v2Etag = typeof data.__metadata?.etag === 'string'
+    ? data.__metadata.etag.trim()
+    : ''
+  if (v2Etag.length > 0 && !Object.hasOwn(data, '@odata.etag')) {
+    flattened['@odata.etag'] = v2Etag
+    hasProperties = true
+  }
   for (const key in data) {
     if (key === '__metadata' || key === '__deferred' || key === 'results')
       continue
