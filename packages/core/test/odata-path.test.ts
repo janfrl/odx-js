@@ -9,6 +9,7 @@ import {
   formatODataFunctionParameter,
   formatODataKey,
   formatODataNavigationPath,
+  formatODataV2FunctionImportParameters,
   joinODataPath,
   validateODataIdentifier,
   validateODataQualifiedName,
@@ -41,6 +42,71 @@ describe('portable OData resource paths', () => {
       .toThrow('invalid value')
     expect(() => formatODataFunctionParameter({ type: 'Catalog.Complex', value: 'x' }))
       .toThrow('Unsupported')
+  })
+
+  it('formats typed OData V2 FunctionImport query parameters', () => {
+    expect(formatODataV2FunctionImportParameters({
+      ID: { type: 'Edm.Guid', value: '01234567-89ab-cdef-0123-456789abcdef' },
+      Reason: { type: 'Edm.String', value: 'A/B\'s desk' },
+      Count: { type: 'Edm.Int32', value: 2 },
+      Amount: { type: 'Edm.Decimal', value: '12.50' },
+      Ratio: { type: 'Edm.Double', value: 2.5 },
+      NotANumber: { type: 'Edm.Double', value: 'NaN' },
+      Infinite: { type: 'Edm.Single', value: 'INF' },
+      Long: { type: 'Edm.Int64', value: '9223372036854775807' },
+      Single: { type: 'Edm.Single', value: 1.5 },
+      Active: { type: 'Edm.Boolean', value: true },
+      At: { type: 'Edm.DateTime', value: '2026-08-21T12:00:00' },
+      OffsetAt: { type: 'Edm.DateTimeOffset', value: '2026-08-21T12:00:00+02:00' },
+      Elapsed: { type: 'Edm.Time', value: 'PT12H30M' },
+      Payload: { type: 'Edm.Binary', value: '01aF' },
+      Optional: { type: 'Edm.String', value: null },
+    })).toEqual({
+      ID: 'guid\'01234567-89ab-cdef-0123-456789abcdef\'',
+      Reason: '\'A/B\'\'s desk\'',
+      Count: '2',
+      Amount: '12.50M',
+      Ratio: '2.5D',
+      NotANumber: 'NaN',
+      Infinite: 'INF',
+      Long: '9223372036854775807L',
+      Single: '1.5F',
+      Active: 'true',
+      At: 'datetime\'2026-08-21T12:00:00\'',
+      OffsetAt: 'datetimeoffset\'2026-08-21T12:00:00+02:00\'',
+      Elapsed: 'time\'PT12H30M\'',
+      Payload: 'X\'01aF\'',
+    })
+  })
+
+  it('rejects unsafe or unsupported OData V2 FunctionImport parameters', () => {
+    expect(() => formatODataV2FunctionImportParameters({
+      '../ID': { type: 'Edm.Int32', value: 1 },
+    })).toThrow('valid identifier')
+    expect(() => formatODataV2FunctionImportParameters({
+      ID: { type: 'Edm.Guid', value: 'not-a-guid' },
+    })).toThrow('invalid value')
+    expect(() => formatODataV2FunctionImportParameters({
+      At: { type: 'Catalog.Complex', value: 'unsupported' },
+    })).toThrow('Unsupported OData V2 FunctionImport')
+    expect(() => formatODataV2FunctionImportParameters({
+      Amount: { type: 'Edm.Decimal', value: '1e2' },
+    })).toThrow('invalid value')
+    expect(() => formatODataV2FunctionImportParameters({
+      Count: { type: 'Edm.Int16', value: 32768 },
+    })).toThrow('invalid value')
+    expect(() => formatODataV2FunctionImportParameters({
+      At: { type: 'Edm.DateTime', value: '2026-02-30T12:00:00' },
+    })).toThrow('invalid value')
+    expect(() => formatODataV2FunctionImportParameters({
+      At: { type: 'Edm.DateTimeOffset', value: '2026-08-21T12:00:00+15:00' },
+    })).toThrow('invalid value')
+    expect(() => formatODataV2FunctionImportParameters({
+      Elapsed: { type: 'Edm.Time', value: 'PT24H' },
+    })).toThrow('invalid value')
+    expect(() => formatODataV2FunctionImportParameters({
+      Payload: { type: 'Edm.Binary', value: '' },
+    })).toThrow('invalid value')
   })
   it('formats primitive and composite keys without losing field order', () => {
     expect(formatODataKey(7)).toBe('7')

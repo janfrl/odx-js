@@ -350,6 +350,18 @@ const defaults = await useOData('Northwind').entitySet('Products').invokeFunctio
   { parameters: { Locale: { type: 'Edm.String', value: 'en-US' } } },
   { signal },
 )
+
+const approved = await useOData('Northwind').invokeFunctionImport(
+  'ApproveProduct',
+  {
+    method: 'POST',
+    parameters: {
+      ID: { type: 'Edm.Int32', value: 1 },
+      Reason: { type: 'Edm.String', value: 'reviewed' },
+    },
+  },
+  { signal },
+)
 ```
 
 OData enumeration parameters use their declared member-name representation in
@@ -360,6 +372,12 @@ callers remain responsible for validating the member against the EnumType.
 Structured action parameters remain nested JSON objects with exact property
 names and explicit `null` values. ODX does not flatten or stringify them;
 metadata-aware callers remain responsible for validating the complex contract.
+
+OData V2 FunctionImports are service-root operations rather than V4 bound
+actions. `invokeFunctionImport` therefore requires the metadata-declared HTTP
+method and serializes its typed primitive parameters as V2 URI query literals,
+including for `POST`; it never sends them as a JSON action body. Invalid names,
+types, and values fail before a request is made.
 
 ## Verification
 

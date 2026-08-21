@@ -9,15 +9,21 @@ import type {
 const RE_IDENTIFIER = /^[A-Za-z_]\w*$/u
 const RE_QUALIFIED_NAME = /^(?:[A-Za-z_]\w*\.)+[A-Za-z_]\w*$/u
 const RE_DATE = /^\d{4}-\d{2}-\d{2}$/u
+const RE_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,7}))?)?$/u
+const RE_DATE_TIME_OFFSET_V2 = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,7}))?)?(Z|([+-])(\d{2}):(\d{2}))$/u
 const RE_DATE_TIME_OFFSET = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/u
 const RE_DURATION = /^-?P(?=\d|T\d)(?:\d+D)?(?:T(?:\d+H)?(?:\d+M)?(?:\d+(?:\.\d+)?S)?)?$/u
 const RE_GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu
+const RE_HEX_BINARY = /^(?:[0-9a-f]{2})+$/iu
 const RE_LEADING_SLASHES = /^\/+/
 const RE_INTEGER_MARKER = /[.e]/iu
 const RE_NUMBER = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:e[+-]?\d+)?$/iu
 const RE_SINGLE_QUOTE = /'/g
 const RE_TIME_OF_DAY = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?$/u
 const RE_TRAILING_SLASHES = /\/+$/
+const RE_V2_DECIMAL = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/u
+const RE_V2_FLOAT = /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:e[+-]?\d+)?$/iu
+const RE_V2_TIME = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)(?:\.(\d{1,7}))?S)?$/u
 
 /** Validates and returns one OData identifier without path delimiters. */
 export function validateODataIdentifier(
@@ -69,6 +75,87 @@ function numericLiteral(
     throw new TypeError(`OData function parameter type "${type}" received an invalid value.`)
   }
   return value
+}
+
+function invalidParameterValue(type: string): never {
+  throw new TypeError(`OData function parameter type "${type}" received an invalid value.`)
+}
+
+function v2IntegerLiteral(
+  value: ODataFunctionParameterValue,
+  type: string,
+  minimum: bigint,
+  maximum: bigint,
+): string {
+  const literal = numericLiteral(value, type, true)
+  const parsed = BigInt(literal)
+  if (parsed < minimum || parsed > maximum)
+    invalidParameterValue(type)
+  return literal
+}
+
+function v2NumericLiteral(
+  value: ODataFunctionParameterValue,
+  type: string,
+  pattern: RegExp,
+): string {
+  const literal = typeof value === 'number'
+    ? Number.isFinite(value) ? String(value) : invalidParameterValue(type)
+    : requireStringLiteral(value, type)
+  if (!pattern.test(literal))
+    invalidParameterValue(type)
+  return literal
+}
+
+function isLeapYear(year: number): boolean {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+}
+
+function requireV2DateTime(
+  value: ODataFunctionParameterValue,
+  type: string,
+  offset: boolean,
+): string {
+  const literal = requireStringLiteral(value, type)
+  const match = (offset ? RE_DATE_TIME_OFFSET_V2 : RE_DATE_TIME).exec(literal)
+  if (match === null)
+    invalidParameterValue(type)
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const daysInMonth = month === 2
+    ? isLeapYear(year) ? 29 : 28
+    : [4, 6, 9, 11].includes(month) ? 30 : 31
+  if (year < 1753 || month < 1 || month > 12 || day < 1 || day > daysInMonth
+    || Number(hourText) > 23 || Number(minuteText) > 59
+    || (secondText !== undefined && Number(secondText) > 59)) {
+    invalidParameterValue(type)
+  }
+  if (offset) {
+    const offsetHours = Number(match[10])
+    const offsetMinutes = Number(match[11])
+    if (match[8] !== 'Z'
+      && (offsetHours > 14 || offsetMinutes > 59 || (offsetHours === 14 && offsetMinutes !== 0))) {
+      invalidParameterValue(type)
+    }
+  }
+  return literal
+}
+
+function requireV2Time(
+  value: ODataFunctionParameterValue,
+  type: string,
+): string {
+  const literal = requireStringLiteral(value, type)
+  const match = RE_V2_TIME.exec(literal)
+  if (match === null || match.slice(1).every(part => part === undefined)
+    || Number(match[1] ?? 0) > 23
+    || Number(match[2] ?? 0) > 59
+    || Number(match[3] ?? 0) > 59) {
+    invalidParameterValue(type)
+  }
+  return literal
 }
 
 /** Serializes one typed primitive for OData V4 function inline-parameter syntax. */
@@ -123,6 +210,80 @@ export function formatODataFunctionCall(
     )
     .join(',')
   return `${validateODataQualifiedName(qualifiedName, 'OData function')}(${serialized})`
+}
+
+/** Serializes typed primitive parameters for OData V2 service-operation URIs. */
+export function formatODataV2FunctionImportParameters(
+  parameters: Readonly<Record<string, ODataFunctionParameter>> = {},
+): Readonly<Record<string, string>> {
+  const result: Record<string, string> = {}
+  for (const [name, parameter] of Object.entries(parameters)) {
+    const parameterName = validateODataIdentifier(name, 'OData V2 FunctionImport parameter')
+    const { type, value } = parameter
+    if (value === null)
+      continue
+
+    let literal: string
+    switch (type) {
+      case 'Edm.String':
+        literal = `'${requireStringLiteral(value, type).replace(RE_SINGLE_QUOTE, '\'\'')}'`
+        break
+      case 'Edm.Boolean':
+        if (typeof value !== 'boolean')
+          throw new TypeError(`OData function parameter type "${type}" received an invalid value.`)
+        literal = String(value)
+        break
+      case 'Edm.Byte':
+        literal = v2IntegerLiteral(value, type, 0n, 255n)
+        break
+      case 'Edm.Int16':
+        literal = v2IntegerLiteral(value, type, -32768n, 32767n)
+        break
+      case 'Edm.Int32':
+        literal = v2IntegerLiteral(value, type, -2147483648n, 2147483647n)
+        break
+      case 'Edm.SByte':
+        literal = v2IntegerLiteral(value, type, -128n, 127n)
+        break
+      case 'Edm.Decimal':
+        literal = `${v2NumericLiteral(value, type, RE_V2_DECIMAL)}M`
+        break
+      case 'Edm.Double':
+        literal = typeof value === 'string' && ['NaN', 'INF', '-INF'].includes(value)
+          ? value
+          : `${v2NumericLiteral(value, type, RE_V2_FLOAT)}D`
+        break
+      case 'Edm.Int64':
+        literal = `${v2IntegerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)}L`
+        break
+      case 'Edm.Single':
+        literal = typeof value === 'string' && ['NaN', 'INF', '-INF'].includes(value)
+          ? value
+          : `${v2NumericLiteral(value, type, RE_V2_FLOAT)}F`
+        break
+      case 'Edm.Guid':
+        literal = `guid'${requireStringLiteral(value, type, RE_GUID)}'`
+        break
+      case 'Edm.DateTime':
+        literal = `datetime'${requireV2DateTime(value, type, false)}'`
+        break
+      case 'Edm.DateTimeOffset':
+        literal = `datetimeoffset'${requireV2DateTime(value, type, true)}'`
+        break
+      case 'Edm.Time':
+        literal = `time'${requireV2Time(value, type)}'`
+        break
+      case 'Edm.Binary':
+        literal = `X'${requireStringLiteral(value, type, RE_HEX_BINARY)}'`
+        break
+      default:
+        throw new TypeError(
+          `Unsupported OData V2 FunctionImport parameter type "${type}".`,
+        )
+    }
+    result[parameterName] = literal
+  }
+  return Object.freeze(result)
 }
 /** Serializes a primitive or composite OData entity key for a resource path. */
 export function formatODataKey(key: ODataKey): string {

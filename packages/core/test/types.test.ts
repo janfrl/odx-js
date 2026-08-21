@@ -34,6 +34,7 @@ import type {
   ODataRuntimeService,
   ODataService,
   ODataServiceConfig,
+  ODataV2FunctionImportService,
   ODataVersionedEntitySet,
   ODataVersionedNavigationEntitySet,
   ODataVersionedNavigationService,
@@ -75,6 +76,14 @@ describe('portable imperative transport types', () => {
       contentType: 'application/pdf'
       body: Uint8Array
     }>().toExtend<ODataAtomicMutation>()
+  })
+
+  it('keeps V2 FunctionImports as an additive service capability', () => {
+    expectTypeOf<ODataService>().not.toHaveProperty('invokeFunctionImport')
+    expectTypeOf<ODataV2FunctionImportService['invokeFunctionImport']>()
+      .toBeFunction()
+    expectTypeOf<ODataRuntimeService['supportsV2FunctionImports']>()
+      .toEqualTypeOf<true>()
   })
 
   it('declares analytical apply as a portable query option', () => {

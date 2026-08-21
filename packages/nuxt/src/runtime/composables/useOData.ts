@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -17,6 +17,7 @@ import {
   formatODataFunctionCall,
   formatODataKey,
   formatODataNavigationPath,
+  formatODataV2FunctionImportParameters,
   joinODataPath,
   mergeHeaders,
   parseODataBatchChangeSetsResponse,
@@ -995,8 +996,32 @@ export function useOData(service?: string): any {
       supportsAtomicMediaChangesets: true as const,
       supportsActionResponses: true as const,
       supportsBatchChangeSets: true as const,
+      supportsV2FunctionImports: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),
+      invokeFunctionImport: <TResult = unknown>(
+        name: string,
+        invocation: ODataV2FunctionImportInvocation,
+        options?: ODataRequestOptions,
+      ): Promise<TResult> => {
+        if (invocation.method !== 'GET' && invocation.method !== 'POST') {
+          throw new TypeError(
+            'An OData V2 FunctionImport requires an explicit GET or POST method.',
+          )
+        }
+        return $odata<TResult>(
+          client,
+          joinODataPath(
+            resolveServicePath(serviceName),
+            validateODataIdentifier(name, 'OData V2 FunctionImport'),
+          ),
+          invocation.method,
+          {
+            ...(options as any),
+            query: formatODataV2FunctionImportParameters(invocation.parameters),
+          },
+        )
+      },
     })
     return new Proxy(rootMethods as any, {
       get(target, prop) {

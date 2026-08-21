@@ -34,6 +34,7 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataEntityReference,
     createODataMediaPath,
     createODataNavigationRootReference,
+    formatODataV2FunctionImportParameters,
   } = await import('../../core/src/odata-path')
   return {
     ...actual as any,
@@ -47,6 +48,7 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataEntityReference,
     createODataMediaPath,
     createODataNavigationRootReference,
+    formatODataV2FunctionImportParameters,
     flattenOData,
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
@@ -71,8 +73,10 @@ describe('useOData Composable', () => {
   })
 
   it('advertises optional runtime capabilities explicitly', () => {
-    const entitySet = useOData('MyService').entitySet('Products')
+    const service = useOData('MyService')
+    const entitySet = service.entitySet('Products')
 
+    expect(service.supportsV2FunctionImports).toBe(true)
     expect(entitySet.supportsContainedNavigationSources).toBe(true)
     expect(entitySet.supportsNavigationRootReferences).toBe(true)
     expect(entitySet.createNavigationRootReference?.(
@@ -1564,6 +1568,58 @@ describe('useOData Composable', () => {
         key: 1,
         navigationPath: ['Items', '../Secret'],
       })).toThrow('navigation path')
+      expect(core.$odata).not.toHaveBeenCalled()
+    })
+
+    it('invokes OData V2 FunctionImports at the service root with URI parameters', async () => {
+      const api = useOData('MyService')
+      const signal = new AbortController().signal
+
+      await api.invokeFunctionImport('ApproveProduct', {
+        method: 'POST',
+        parameters: {
+          ID: { type: 'Edm.Int32', value: 1 },
+          Reason: { type: 'Edm.String', value: 'A/B\'s desk' },
+          Optional: { type: 'Edm.String', value: null },
+        },
+      }, { signal })
+      await api.invokeFunctionImport('GetSummary', { method: 'GET' })
+
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/MyService/ApproveProduct',
+        'POST',
+        {
+          signal,
+          query: {
+            ID: '1',
+            Reason: '\'A/B\'\'s desk\'',
+          },
+        },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/MyService/GetSummary',
+        'GET',
+        { query: {} },
+      )
+    })
+
+    it('rejects unsafe OData V2 FunctionImports before transport', () => {
+      const api = useOData('MyService')
+
+      expect(() => api.invokeFunctionImport('../ApproveProduct', { method: 'POST' }))
+        .toThrow('valid identifier')
+      expect(() => api.invokeFunctionImport('ApproveProduct', { method: 'DELETE' } as any))
+        .toThrow('explicit GET or POST')
+      expect(() => api.invokeFunctionImport('ApproveProduct', {
+        method: 'POST',
+        parameters: {
+          At: { type: 'Catalog.Complex', value: 'unsupported' },
+        },
+      })).toThrow('Unsupported OData V2 FunctionImport')
       expect(core.$odata).not.toHaveBeenCalled()
     })
   })

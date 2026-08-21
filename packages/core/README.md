@@ -11,13 +11,22 @@ Browser applications should send mutations through `@me-tools/odx-proxy`.
 Portable path helpers include `formatODataKey`, `createODataEntityPath`,
 `createODataEntityReference`, `createODataMediaPath`,
 `createODataNavigationRootReference`, `formatODataNavigationPath`,
-`formatODataFunctionCall`, `joinODataPath`, and identifier validators. They
+`formatODataFunctionCall`, `formatODataV2FunctionImportParameters`,
+`joinODataPath`, and identifier validators. They
 construct service-relative protocol paths without depending on Nuxt, Node.js,
 or a transport client. Entity references intentionally retain a validated
 service-relative `@odata.id`; consumers never supply an origin or executable
 path string. Navigation root references reuse the same validated entity-key,
 containment, and navigation serializers for expressions such as recursive
 hierarchy transformations.
+
+`formatODataV2FunctionImportParameters` keeps the older service-operation
+contract distinct from V4 functions and actions: primitive parameters become
+validated V2 query literals, nullable values are omitted, and POST parameters
+remain in the URI rather than being moved into a JSON body.
+The separate `ODataV2FunctionImportService` capability keeps the base
+`ODataService` structurally compatible with transports that do not implement
+V2 service operations.
 
 The additive media contracts model default media-entity streams and named
 `Edm.Stream` properties without introducing browser or renderer concepts.

@@ -293,6 +293,20 @@ parameter from an explicit `{ type, value }` descriptor into the inline function
 call. Supported values are primitive EDM types; unsupported or malformed values
 are rejected before transport.
 
+OData V2 service operations use a different wire contract. Call
+`invokeFunctionImport(name, { method, parameters }, options?)` on the service,
+not on an entity set. The unqualified FunctionImport name becomes one validated
+service-root path segment, while typed parameters become query-string literals
+for the explicitly declared `GET` or `POST` method. Strings, booleans, integer
+types, decimal, double, single, Int64, Guid, DateTime, DateTimeOffset, Time, and
+hexadecimal Binary values are supported; nullable values are omitted. ODX
+rejects malformed identifiers, literals, and other EDM types before transport.
+It does not reinterpret a V2 POST FunctionImport as a qualified V4 action or
+move its parameters into a JSON body.
+Generated Nuxt services advertise this additive contract with
+`supportsV2FunctionImports === true`; the base `ODataService` shape remains
+compatible with transports that do not implement V2 service operations.
+
 Use `listPage` or `fetchPage` when the consumer needs an OData V4
 `@odata.count` or V2 `__count`. Their explicit
 `{ items, totalCount, continuation }` result
@@ -396,6 +410,7 @@ Service-level methods:
 | `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
 | `batchChangeSets(changeSets, options?)` | `POST .../$batch` | `Promise<readonly ODataBatchChangeSetResult[]>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
+| `invokeFunctionImport(name, invocation, options?)` | declared V2 `GET` or `POST` | `Promise<TResult>` |
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
 members, root `update`, binary `update-media`, `create-navigation`,

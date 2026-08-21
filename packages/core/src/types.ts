@@ -281,6 +281,28 @@ export interface ODataActionInvocation<TParameters = Record<string, unknown>> {
   readonly parameters?: TParameters
 }
 
+export interface ODataV2FunctionImportInvocation {
+  /** HTTP method declared by the OData V2 FunctionImport metadata. */
+  readonly method: 'GET' | 'POST'
+  /**
+   * Typed primitive parameters serialized as OData V2 service-operation query
+   * literals. Null values are omitted according to the nullable-parameter URI
+   * convention.
+   */
+  readonly parameters?: Readonly<Record<string, ODataFunctionParameter>>
+}
+
+/** Additive capability for protocol-correct OData V2 service operations. */
+export interface ODataV2FunctionImportCapability {
+  readonly supportsV2FunctionImports: true
+  /** Invokes a service-root OData V2 FunctionImport with URI parameters. */
+  invokeFunctionImport: <TResult = unknown>(
+    name: string,
+    invocation: ODataV2FunctionImportInvocation,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+}
+
 /**
  * Structured OData query options.
  * T: The model type of the entity being queried.
@@ -911,6 +933,10 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
 
+/** OData service with explicit V2 FunctionImport invocation support. */
+export type ODataV2FunctionImportService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataEntitySet<any>> & ODataV2FunctionImportCapability
+
 /**
  * OData service whose entity sets expose explicit collection-page reads.
  * Kept separate so structural implementations of `ODataService` remain valid.
@@ -959,7 +985,7 @@ export type ODataNavigationReferenceResponseService<E extends string = string, M
 
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>
-  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>> & {
+  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>> & ODataV2FunctionImportCapability & {
     readonly supportsActionResponses: true
     invokeWithResponse: ODataActionResponseEntitySet<never>['invokeWithResponse']
   }
