@@ -16,11 +16,11 @@ export async function $odata<T = unknown>(
 ): Promise<T> {
   const { entitySet, headers, ...requestOptions } = options
   const path = entitySet ? `${service}/${entitySet}` : service
-  const res = await client<T>(path, {
-    ...requestOptions,
-    headers: mergeHeaders({ accept: 'application/json' }, headers as HeadersInit | undefined),
+  const res = await client<T>(path, jsonRequestOptions(
     method,
-  })
+    requestOptions,
+    headers as HeadersInit | undefined,
+  ))
   return flattenOData(res) as T
 }
 
@@ -150,11 +150,11 @@ async function requestWithResponse(
 ): Promise<{ body: unknown, entityId?: string, etag?: string, location?: string, sapMessage?: string }> {
   const { entitySet, headers, ...requestOptions } = options
   const path = entitySet ? `${service}/${entitySet}` : service
-  const response = await client.raw<unknown>(path, {
-    ...requestOptions,
-    headers: mergeHeaders({ accept: 'application/json' }, headers as HeadersInit | undefined),
+  const response = await client.raw<unknown>(path, jsonRequestOptions(
     method,
-  })
+    requestOptions,
+    headers as HeadersInit | undefined,
+  ))
   const body = response._data
   const headerEtag = normalizeEtag(response.headers.get('etag'))
   const etag = headerEtag ?? extractBodyEtag(body)
@@ -168,6 +168,27 @@ async function requestWithResponse(
     ...(etag ? { etag } : {}),
     ...(location ? { location } : {}),
     ...(sapMessage ? { sapMessage } : {}),
+  }
+}
+
+function jsonRequestOptions(
+  method: 'GET' | 'POST' | 'PATCH' | 'MERGE' | 'DELETE',
+  requestOptions: Readonly<Record<string, unknown>>,
+  headers: HeadersInit | undefined,
+): Readonly<Record<string, unknown>> {
+  const serializeMergeBody = method === 'MERGE'
+    && typeof requestOptions.body === 'object'
+    && requestOptions.body !== null
+  return {
+    ...requestOptions,
+    ...(serializeMergeBody
+      ? { body: JSON.stringify(requestOptions.body) }
+      : {}),
+    headers: mergeHeaders({
+      accept: 'application/json',
+      ...(serializeMergeBody ? { 'content-type': 'application/json' } : {}),
+    }, headers),
+    method,
   }
 }
 

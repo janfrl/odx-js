@@ -33,6 +33,23 @@ describe('$odata fetcher', () => {
     }))
   })
 
+  it('serializes MERGE records explicitly for fetch-compatible transports', async () => {
+    const client = vi.fn().mockResolvedValue({ d: { ID: 1, Name: 'Merged' } })
+
+    await expect($odata(client, 'S/Products(1)', 'MERGE', {
+      body: { Name: 'Merged' },
+    })).resolves.toEqual({ ID: 1, Name: 'Merged' })
+
+    expect(client).toHaveBeenCalledWith('S/Products(1)', {
+      body: '{"Name":"Merged"}',
+      headers: {
+        'accept': 'application/json',
+        'content-type': 'application/json',
+      },
+      method: 'MERGE',
+    })
+  })
+
   it('preserves OData enumeration member names in JSON action bodies', async () => {
     const client = vi.fn().mockResolvedValue({})
     const body = Object.freeze({ Priority: 'Urgent' })
@@ -256,9 +273,10 @@ describe('$odataWithResponse fetcher', () => {
       etag: 'W/"entity-2"',
     })
     expect(client.raw).toHaveBeenCalledWith('S/Products(1)', {
-      body: { Name: 'Standing Desk' },
+      body: '{"Name":"Standing Desk"}',
       headers: {
         'accept': 'application/json',
+        'content-type': 'application/json',
         'if-match': 'W/"entity-1"',
       },
       method: 'MERGE',

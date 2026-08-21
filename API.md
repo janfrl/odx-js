@@ -361,7 +361,9 @@ PATCH with MERGE or infer an update verb from service metadata; both protocol
 operations remain visible and independently testable. These methods belong to
 the separate additive `ODataMergeEntitySet` / `ODataMergeService` capability,
 advertised by `supportsMerge === true`; existing concurrency contracts are not
-widened.
+widened. ODX Core serializes MERGE record bodies explicitly with JSON content
+type because Fetch-compatible clients do not universally classify MERGE as a
+JSON mutation method.
 
 `fetchMedia` and `updateMedia` expose the additive `ODataMediaEntitySet`
 contract, advertised by `supportsMediaStreams === true`. Omitting

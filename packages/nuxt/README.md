@@ -142,7 +142,9 @@ response contract for a related collection below a root or contained parent.
 For SAP Gateway OData V2 services that require the legacy update verb, use
 `merge()` or `mergeWithResponse()` explicitly. PATCH remains the default
 `update()` behavior; ODX never changes the verb implicitly. Runtime entity sets
-advertise this separate capability with `supportsMerge === true`.
+advertise this separate capability with `supportsMerge === true`. ODX Core
+serializes MERGE record bodies explicitly as JSON so the same payload reaches
+browser proxy, direct Node, and Fetch-compatible transports.
 
 Read or replace a media entity's default stream, or a named `Edm.Stream`
 property, without constructing a `$value` URL:
