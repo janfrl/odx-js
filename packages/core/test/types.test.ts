@@ -21,6 +21,8 @@ import type {
   ODataMutationResponse,
   ODataNavigationEntityRead,
   ODataNavigationReferenceEntitySet,
+  ODataNavigationReferenceResponseEntitySet,
+  ODataNavigationReferenceResponseService,
   ODataNavigationReferenceService,
   ODataPagedEntitySet,
   ODataPagedService,
@@ -202,6 +204,20 @@ describe('portable imperative transport types', () => {
       .toHaveProperty('linkNavigation')
   })
 
+  it('preserves relationship-write responses without widening the reference contract', () => {
+    type ProductsService = ODataNavigationReferenceResponseService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataNavigationReferenceResponseEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['linkNavigationWithResponse']>>>()
+      .toEqualTypeOf<ODataMutationResponse<unknown>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['unlinkNavigationWithResponse']>>>()
+      .toEqualTypeOf<ODataMutationResponse<unknown>>()
+    expectTypeOf<ODataNavigationReferenceEntitySet<Product>>()
+      .not
+      .toHaveProperty('linkNavigationWithResponse')
+  })
+
   it('combines generated runtime capabilities without widening additive contracts', () => {
     type ProductsService = ODataRuntimeService<'Products', { Products: Product }>
     type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
@@ -213,6 +229,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataDeleteResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedNavigationEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataNavigationReferenceResponseEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNextPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationPage']>>>()

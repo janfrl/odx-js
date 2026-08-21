@@ -234,7 +234,9 @@ Entity-set methods:
 | `updateNavigationWithResponse(source, navigationPath, update, options?)` | `PATCH` | `Promise<ODataMutationResponse<TResult>>` |
 | `removeNavigation(source, navigationPath, targetKey, options?)` | `DELETE` | `Promise<unknown>` |
 | `linkNavigation(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$ref` | `Promise<unknown>` |
+| `linkNavigationWithResponse(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$ref` | `Promise<ODataMutationResponse<TResult>>` |
 | `unlinkNavigation(source, navigationPath, targetKey, options?)` | `DELETE .../$ref` | `Promise<unknown>` |
+| `unlinkNavigationWithResponse(source, navigationPath, targetKey, options?)` | `DELETE .../$ref` | `Promise<ODataMutationResponse<TResult>>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
 | `merge(key, body, options?)` | `MERGE` | `Promise<T>` |
@@ -269,6 +271,11 @@ non-contained relationship through `$ref`. `linkNavigation` adds an existing
 target through a validated service-relative `@odata.id`; `unlinkNavigation`
 removes that relationship without deleting the target. Runtime entity sets
 advertise the latter contract with `supportsNavigationReferences === true`.
+When the backend's optional representation, next ETag, or SAP Gateway feedback
+is significant, use `linkNavigationWithResponse` or
+`unlinkNavigationWithResponse`. The additive response capability is advertised
+by `supportsNavigationReferenceResponses === true`; the original relationship
+methods remain body-only and source-compatible.
 All navigation mutations
 require a non-empty path of identifier segments, keeping keys, navigation
 structure, and payload separate until the ODX client boundary. `invoke` requires a qualified action name. Omit

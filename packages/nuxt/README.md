@@ -269,12 +269,22 @@ the service-relative reference. `unlinkNavigation` removes only the relationship
 const categories = useOData('Northwind').entitySet('Products')
 await categories.linkNavigation(1, ['Categories'], 'Categories', 7)
 await categories.unlinkNavigation(1, ['Categories'], 7)
+
+const linked = await categories.linkNavigationWithResponse(
+  1,
+  ['Categories'],
+  'Categories',
+  7,
+  { headers: { 'If-Match': etag } },
+)
 ```
 
 Runtime entity sets advertise this contract with
 `supportsNavigationReferences === true`. Metadata-aware integrations should
 require both that marker and a proven non-contained navigation before exposing
-relationship editing.
+relationship editing. Response-aware relationship writes retain an optional
+representation, ETag, and `sap-message` as `sapMessage`; clients advertise
+them separately through `supportsNavigationReferenceResponses === true`.
 
 `changeSet()` accepts service-, collection-, and entity-bound `action` members,
 `create-navigation`, `update-navigation`, `delete-navigation`,

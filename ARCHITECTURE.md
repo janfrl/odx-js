@@ -162,6 +162,10 @@ cross the same structural Nuxt Fiori transport boundary.
 Root and structured navigation DELETEs follow the same additive pattern through
 `supportsDeleteResponses`, `removeWithResponse`, and
 `removeNavigationWithResponse`; existing body-only removal ports stay valid.
+Non-contained `$ref` links follow that boundary as well: response-aware link
+and unlink methods preserve optional representations, ETags, and allowlisted
+SAP feedback behind `supportsNavigationReferenceResponses`, while the original
+relationship API stays structurally compatible.
 
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
 OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in

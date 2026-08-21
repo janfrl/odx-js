@@ -444,6 +444,26 @@ export interface ODataNavigationReferenceEntitySet<T = any> extends ODataEntityS
   ) => Promise<unknown>
 }
 
+/** Entity-set client that preserves response metadata from OData `$ref` writes. */
+export interface ODataNavigationReferenceResponseEntitySet<T = any> extends ODataNavigationReferenceEntitySet<T> {
+  readonly supportsNavigationReferenceResponses: true
+  /** Adds an existing relationship while preserving optional backend feedback. */
+  linkNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  /** Removes an existing relationship while preserving optional backend feedback. */
+  unlinkNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+}
+
 /**
  * Entity-set client with explicit, SSR-safe collection page reads. This
  * extends the original entity-set contract without making existing structural
@@ -680,7 +700,7 @@ export type ODataRuntimeEntitySet<T = any>
     & ODataContinuationEntitySet<T>
     & ODataCreateEntitySet<T>
     & ODataMediaEntitySet<T>
-    & ODataNavigationReferenceEntitySet<T>
+    & ODataNavigationReferenceResponseEntitySet<T>
 
 /** Describes a PATCH target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
@@ -871,11 +891,13 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
                   ? ODataVersionedNavigationEntitySet<TModel>
                   : TEntitySet extends ODataVersionedEntitySet<any>
                     ? ODataVersionedEntitySet<TModel>
-                    : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                      ? ODataNavigationReferenceEntitySet<TModel>
-                      : TEntitySet extends ODataPagedEntitySet<any>
-                        ? ODataPagedEntitySet<TModel>
-                        : ODataEntitySet<TModel>
+                    : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
+                      ? ODataNavigationReferenceResponseEntitySet<TModel>
+                      : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                        ? ODataNavigationReferenceEntitySet<TModel>
+                        : TEntitySet extends ODataPagedEntitySet<any>
+                          ? ODataPagedEntitySet<TModel>
+                          : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -921,6 +943,10 @@ export type ODataMergeService<E extends string = string, M extends Record<string
 /** OData service that can link and unlink existing related entities. */
 export type ODataNavigationReferenceService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataNavigationReferenceEntitySet<any>>
+
+/** OData service that preserves response metadata from relationship writes. */
+export type ODataNavigationReferenceResponseService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataNavigationReferenceResponseEntitySet<any>>
 
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>

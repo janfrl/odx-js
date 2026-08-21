@@ -177,6 +177,7 @@ export function useOData(service?: string): any {
       supportsContainedNavigationSources: true,
       supportsNavigationRootReferences: true,
       supportsNavigationReferences: true,
+      supportsNavigationReferenceResponses: true,
       supportsEntityResponses: true,
       supportsNavigationEntityResponses: true,
       supportsOptimisticConcurrency: true,
@@ -640,6 +641,23 @@ export function useOData(service?: string): any {
           body: createODataEntityReference(targetEntitySet, targetKey),
         })
       },
+      linkNavigationWithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetEntitySet: string,
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => {
+        const referenceUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+          '$ref',
+        )
+        return $odataMutationWithResponse<TResult>(client, referenceUrl, 'POST', {
+          ...(options as any),
+          body: createODataEntityReference(targetEntitySet, targetKey),
+        })
+      },
       unlinkNavigation: (
         source: ODataNavigationSource,
         navigationPath: readonly string[],
@@ -657,6 +675,22 @@ export function useOData(service?: string): any {
         return options === undefined
           ? $odata<unknown>(client, referenceUrl, 'DELETE')
           : $odata<unknown>(client, referenceUrl, 'DELETE', options)
+      },
+      unlinkNavigationWithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const referenceUrl = joinODataPath(
+          `${navigationUrl}(${formatODataKey(targetKey)})`,
+          '$ref',
+        )
+        return $odataMutationWithResponse<TResult>(client, referenceUrl, 'DELETE', options as any)
       },
       update: (key: ODataKey, body: Partial<TModel>, options?: ODataRequestOptions): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`

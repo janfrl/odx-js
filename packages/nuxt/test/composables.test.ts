@@ -81,6 +81,7 @@ describe('useOData Composable', () => {
       '$root/Products(ID=\'A%2FB\',IsActiveEntity=false)/Items',
     )
     expect(entitySet.supportsNavigationReferences).toBe(true)
+    expect(entitySet.supportsNavigationReferenceResponses).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsNavigationEntityResponses).toBe(true)
@@ -1369,6 +1370,44 @@ describe('useOData Composable', () => {
         expect.any(Function),
         '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Categories(ID=\'A%2FB\')/$ref',
         'DELETE',
+      )
+    })
+
+    it('preserves response metadata from relationship writes', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+      const headers = { 'If-Match': 'W/"product-1"' }
+
+      const linked = await entitySet.linkNavigationWithResponse(
+        { ID: 1, Locale: 'en' },
+        ['Categories'],
+        'Categories',
+        { ID: 'A/B' },
+        { headers },
+      )
+      const unlinked = await entitySet.unlinkNavigationWithResponse(
+        { ID: 1, Locale: 'en' },
+        ['Categories'],
+        { ID: 'A/B' },
+      )
+
+      expect(linked).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(unlinked).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Categories/$ref',
+        'POST',
+        {
+          body: { '@odata.id': 'Categories(ID=\'A%2FB\')' },
+          headers,
+        },
+      )
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Categories(ID=\'A%2FB\')/$ref',
+        'DELETE',
+        undefined,
       )
     })
 
