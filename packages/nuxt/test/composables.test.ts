@@ -84,6 +84,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
     expect(entitySet.supportsCreateResponses).toBe(true)
+    expect(entitySet.supportsActionResponses).toBe(true)
     expect(entitySet.supportsMerge).toBe(true)
     expect(entitySet.supportsMediaStreams).toBe(true)
     expect(entitySet.supportsContinuations).toBe(true)
@@ -1218,6 +1219,38 @@ describe('useOData Composable', () => {
         '/api/odx/MyService/Products(1)/Items(ID=42)/Demo.RepriceItem',
         'POST',
         { body: { Percent: 5 } },
+      )
+    })
+
+    it('preserves response metadata from service- and entity-bound actions', async () => {
+      const api = useOData('MyService')
+      const headers = { Prefer: 'return=minimal' }
+
+      await api.invokeWithResponse('Demo.ResetCatalog', {
+        parameters: { KeepAudit: true },
+      }, { headers })
+      const response = await api.entitySet('Products').invokeWithResponse(
+        'Demo.ArchiveProduct',
+        {
+          key: { ID: 1, Active: true },
+          parameters: { Reason: 'obsolete' },
+        },
+      )
+
+      expect(response).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/MyService/Demo.ResetCatalog',
+        'POST',
+        { body: { KeepAudit: true }, headers },
+      )
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/MyService/Products(ID=1,Active=true)/Demo.ArchiveProduct',
+        'POST',
+        { body: { Reason: 'obsolete' } },
       )
     })
 

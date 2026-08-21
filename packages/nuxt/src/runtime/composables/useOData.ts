@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -147,6 +147,7 @@ export function useOData(service?: string): any {
       supportsEntityResponses: true,
       supportsOptimisticConcurrency: true,
       supportsCreateResponses: true,
+      supportsActionResponses: true,
       supportsMerge: true,
       supportsMediaStreams: true,
       supportsContinuations: true,
@@ -701,6 +702,36 @@ export function useOData(service?: string): any {
           },
         )
       },
+      invokeWithResponse: <TResult = unknown, TParameters = Record<string, unknown>>(
+        action: string,
+        invocation: ODataActionInvocation<TParameters> = {},
+        options?: ODataRequestOptions,
+      ): Promise<ODataActionResponse<TResult>> => {
+        validateODataQualifiedName(action, 'OData action')
+        if (invocation.navigationPath !== undefined && invocation.key === undefined) {
+          throw new TypeError(
+            'An OData navigation-bound action requires an entity key.',
+          )
+        }
+        const entityPath = invocation.key === undefined
+          ? fullPath
+          : navigationSourcePath(invocation.key)
+        const bindingPath = invocation.navigationPath === undefined
+          ? entityPath
+          : joinODataPath(
+              entityPath,
+              formatODataNavigationPath(invocation.navigationPath),
+            )
+        return $odataMutationWithResponse<TResult>(
+          client,
+          joinODataPath(bindingPath, action),
+          'POST',
+          {
+            ...(options as any),
+            body: invocation.parameters ?? {},
+          },
+        )
+      },
     }
   }
 
@@ -839,6 +870,7 @@ export function useOData(service?: string): any {
     const rootMethods = Object.assign(createMethods(serviceName), {
       supportsAtomicActionChangesets: true as const,
       supportsAtomicMediaChangesets: true as const,
+      supportsActionResponses: true as const,
       supportsBatchChangeSets: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),

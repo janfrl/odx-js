@@ -1,5 +1,8 @@
 import type {
   ODataActionInvocation,
+  ODataActionResponse,
+  ODataActionResponseEntitySet,
+  ODataActionResponseService,
   ODataAtomicMutation,
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
@@ -139,6 +142,20 @@ describe('portable imperative transport types', () => {
       .toHaveProperty('createWithResponse')
   })
 
+  it('adds action responses without widening body-only invocation', () => {
+    type ProductsService = ODataActionResponseService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataActionResponseEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['invokeWithResponse']>>>()
+      .toEqualTypeOf<ODataActionResponse<unknown>>()
+    expectTypeOf<Awaited<ReturnType<ProductsService['invokeWithResponse']>>>()
+      .toEqualTypeOf<ODataActionResponse<unknown>>()
+    expectTypeOf<ODataEntitySet<Product>>()
+      .not
+      .toHaveProperty('invokeWithResponse')
+  })
+
   it('adds relationship references without widening the base entity-set contract', () => {
     type ProductsService = ODataNavigationReferenceService<'Products', { Products: Product }>
     type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
@@ -158,6 +175,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataRuntimeEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataMergeEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataCreateEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataActionResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNextPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<Product>>()

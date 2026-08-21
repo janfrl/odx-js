@@ -159,6 +159,9 @@ export interface ODataCreateResponse<T> extends ODataMutationResponse<T> {
   location?: string
 }
 
+/** OData action result with optional response metadata and SAP feedback. */
+export type ODataActionResponse<T> = ODataMutationResponse<T>
+
 /** Binary OData entity or named-stream payload with safe response metadata. */
 export interface ODataMediaResponse {
   data: ArrayBuffer
@@ -584,6 +587,20 @@ export interface ODataCreateEntitySet<T = any> extends ODataEntitySet<T> {
   ) => Promise<ODataCreateResponse<TResult>>
 }
 
+/** Entity-set client that preserves response metadata from OData actions. */
+export interface ODataActionResponseEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsActionResponses: true
+  /**
+   * Invokes an OData action while preserving its optional representation,
+   * response ETag, and legacy SAP Gateway message header.
+   */
+  invokeWithResponse: <TResult = unknown, TParameters = Record<string, unknown>>(
+    action: string,
+    invocation?: ODataActionInvocation<TParameters>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataActionResponse<TResult>>
+}
+
 /** Entity-set client with imperative OData media-stream reads and replacements. */
 export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
   readonly supportsMediaStreams: true
@@ -618,6 +635,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 /** Complete entity-set capability implemented by the generated ODX client. */
 export type ODataRuntimeEntitySet<T = any>
   = ODataMergeEntitySet<T>
+    & ODataActionResponseEntitySet<T>
     & ODataContinuationEntitySet<T>
     & ODataCreateEntitySet<T>
     & ODataMediaEntitySet<T>
@@ -764,6 +782,10 @@ type ODataServiceContract<
   entitySet: <Name extends E>(name: Name) => ODataEntitySetWithModel<TEntitySet, Name extends keyof M ? M[Name] : any>
   /** Invokes a service-level unbound OData action. */
   invoke: ODataEntitySet<never>['invoke']
+  /** Advertises response-aware service-level action invocation. */
+  readonly supportsActionResponses?: true
+  /** Invokes a service-level action while preserving response metadata. */
+  invokeWithResponse?: ODataActionResponseEntitySet<never>['invokeWithResponse']
   /** Invokes an unbound OData function. */
   invokeFunction: ODataEntitySet<never>['invokeFunction']
   /**
@@ -794,19 +816,21 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
     ? ODataRuntimeEntitySet<TModel>
     : TEntitySet extends ODataMergeEntitySet<any>
       ? ODataMergeEntitySet<TModel>
-      : TEntitySet extends ODataCreateEntitySet<any>
-        ? ODataCreateEntitySet<TModel>
-        : TEntitySet extends ODataContinuationEntitySet<any>
-          ? ODataContinuationEntitySet<TModel>
-          : TEntitySet extends ODataConcurrencyEntitySet<any>
-            ? ODataConcurrencyEntitySet<TModel>
-            : TEntitySet extends ODataVersionedEntitySet<any>
-              ? ODataVersionedEntitySet<TModel>
-              : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                ? ODataNavigationReferenceEntitySet<TModel>
-                : TEntitySet extends ODataPagedEntitySet<any>
-                  ? ODataPagedEntitySet<TModel>
-                  : ODataEntitySet<TModel>
+      : TEntitySet extends ODataActionResponseEntitySet<any>
+        ? ODataActionResponseEntitySet<TModel>
+        : TEntitySet extends ODataCreateEntitySet<any>
+          ? ODataCreateEntitySet<TModel>
+          : TEntitySet extends ODataContinuationEntitySet<any>
+            ? ODataContinuationEntitySet<TModel>
+            : TEntitySet extends ODataConcurrencyEntitySet<any>
+              ? ODataConcurrencyEntitySet<TModel>
+              : TEntitySet extends ODataVersionedEntitySet<any>
+                ? ODataVersionedEntitySet<TModel>
+                : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                  ? ODataNavigationReferenceEntitySet<TModel>
+                  : TEntitySet extends ODataPagedEntitySet<any>
+                    ? ODataPagedEntitySet<TModel>
+                    : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -830,6 +854,13 @@ export type ODataConcurrencyService<E extends string = string, M extends Record<
 export type ODataCreateService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataCreateEntitySet<any>>
 
+/** OData service with response-aware action invocation. */
+export type ODataActionResponseService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataActionResponseEntitySet<any>> & {
+    readonly supportsActionResponses: true
+    invokeWithResponse: ODataActionResponseEntitySet<never>['invokeWithResponse']
+  }
+
 /** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
 export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataMergeEntitySet<any>>
@@ -840,7 +871,10 @@ export type ODataNavigationReferenceService<E extends string = string, M extends
 
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>
-  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>>
+  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>> & {
+    readonly supportsActionResponses: true
+    invokeWithResponse: ODataActionResponseEntitySet<never>['invokeWithResponse']
+  }
 
 /**
  * Global registry for OData services.

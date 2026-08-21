@@ -155,6 +155,10 @@ The runtime composable maps typed service-level actions, root updates,
 contained-entity mutations and media streams, and non-contained relationship
 links to framework-neutral atomic or independent changesets and owns service
 URL resolution plus `$batch` transport.
+Ordinary service-, collection-, entity-, and navigation-bound actions expose a
+capability-negotiated response-aware path alongside the body-only API so
+optional representations, ETags, and allowlisted SAP mutation feedback can
+cross the same structural Nuxt Fiori transport boundary.
 
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
 OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in
