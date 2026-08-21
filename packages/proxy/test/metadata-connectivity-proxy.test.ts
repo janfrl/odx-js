@@ -7,7 +7,7 @@ import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { refreshRuntimeMetadata } from '../src/utils/metadata-refresh'
+import { readRuntimeMetadataSnapshot, refreshRuntimeMetadata } from '../src/utils/metadata-refresh'
 import { resolveProxyTarget } from '../src/utils/target'
 
 vi.mock('../src/utils/target', async importOriginal => ({
@@ -30,6 +30,21 @@ describe('metadata refresh through Connectivity proxy', () => {
     for (const root of roots)
       rmSync(root, { recursive: true, force: true })
     roots.length = 0
+  })
+
+  it('fails closed when a local service has no metadata file URL', () => {
+    const service = {
+      name: 'IncompleteLocalService',
+      strategy: 'proxied',
+    } as ODataServiceConfig
+    const config = {
+      basePath: '/api/odx',
+      mode: 'sdk',
+      services: [service],
+    } as ODataProxyConfig
+
+    expect(() => readRuntimeMetadataSnapshot(config, service))
+      .toThrow('requires a metadata file URL')
   })
 
   it('uses the resolved dispatcher and principal propagation header', async () => {

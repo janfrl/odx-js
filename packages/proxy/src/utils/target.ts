@@ -40,12 +40,12 @@ export async function resolveProxyTarget(
 
   const isRealCloud = !!process.env.VCAP_SERVICES
   const hasDestination = !!matched.destination
-  const hasAbsoluteUrl = matched.url?.startsWith('http')
+  const absoluteUrl = matched.url?.startsWith('http') ? matched.url : undefined
   const isDirect = matched.strategy === 'direct'
   const proxyMode = matched.proxyMode || config.defaultProxyMode
 
   // 1. Absolute URL
-  if (hasAbsoluteUrl) {
+  if (absoluteUrl) {
     const auth = matched.auth || {}
     let authHeaderValue = ''
     if (!isDirect) {
@@ -57,7 +57,7 @@ export async function resolveProxyTarget(
       }
     }
     return {
-      url: matched.url,
+      url: absoluteUrl,
       authHeader: authHeaderValue,
       isRelative: false,
       strategy: matched.strategy,

@@ -78,6 +78,22 @@ describe('proxy target resolution', () => {
     })
   })
 
+  it('returns a configured absolute target without widening it to undefined', async () => {
+    const absoluteConfig: ODataProxyConfig = {
+      ...config,
+      services: [{
+        name: 'BusinessPartner',
+        url: 'https://example.test/odata',
+        strategy: 'proxied',
+      }],
+    }
+
+    await expect(resolveProxyTarget(event, absoluteConfig, 'BusinessPartner')).resolves.toMatchObject({
+      url: 'https://example.test/odata',
+      isRelative: false,
+    })
+  })
+
   it('preserves Connectivity routing credentials from an OnPremise destination', async () => {
     process.env.NODE_ENV = 'production'
     vi.mocked(resolveBtpDestination).mockResolvedValue({

@@ -250,6 +250,15 @@ export function shouldUseRemoteRuntimeMetadata(service: ODataServiceConfig): boo
   return shouldFetchRemoteMetadata(service)
 }
 
+function resolveLocalMetadataInputPath(config: ODataProxyConfig, service: ODataServiceConfig): string {
+  if (!service.url) {
+    throw new Error(
+      `Local OData service "${service.name}" requires a metadata file URL.`,
+    )
+  }
+  return resolve(config.rootDir ?? '', service.url)
+}
+
 export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: ODataServiceConfig, options: { sanitizeFailureReasons?: boolean } = {}): RuntimeMetadataSnapshot {
   const sanitizeReason = (reason: string | null): string | null => {
     if (!reason || !options.sanitizeFailureReasons) {
@@ -260,7 +269,7 @@ export function readRuntimeMetadataSnapshot(config: ODataProxyConfig, service: O
   }
 
   if (!shouldFetchRemoteMetadata(service)) {
-    const inputPath = resolve(config.rootDir ?? '', service.url)
+    const inputPath = resolveLocalMetadataInputPath(config, service)
     if (!fs.existsSync(inputPath)) {
       return {
         service: service.name,
@@ -377,7 +386,7 @@ async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, 
 
 export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<RuntimeMetadataRefreshResult> {
   if (!shouldFetchRemoteMetadata(service)) {
-    const inputPath = resolve(config.rootDir ?? '', service.url)
+    const inputPath = resolveLocalMetadataInputPath(config, service)
     if (!fs.existsSync(inputPath)) {
       throw new Error(`Input EDMX file not found at ${inputPath}`)
     }
