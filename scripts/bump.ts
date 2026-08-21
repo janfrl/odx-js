@@ -1,14 +1,12 @@
 import process from 'node:process'
 import { consola } from 'consola'
 import { loadWorkspace } from './_utils'
+import { assertSemanticVersion } from './version-policy'
 
 async function main() {
   const workspace = await loadWorkspace(process.cwd())
   const newVersion = process.argv[2] || workspace.rootPkg.data.version
-
-  if (!newVersion) {
-    throw new Error('No version found to bump!')
-  }
+  assertSemanticVersion(newVersion)
 
   const pkgNames = workspace.packages.map(pkg => pkg.data.name)
 
