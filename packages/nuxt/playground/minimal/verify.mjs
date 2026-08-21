@@ -21,8 +21,8 @@ assertFile(generatedRegistryPath)
 
 const generatedRegistry = readFileSync(generatedRegistryPath, 'utf8')
 assertIncludes(generatedRegistry, 'interface ODataServiceRegistry', 'generated registry')
-assertIncludes(generatedRegistry, 'MinimalLocal: ODataService<"Products"', 'generated registry')
-assertIncludes(generatedRegistry, '"Sales-Order": ODataService<"Products"', 'generated registry')
+assertIncludes(generatedRegistry, 'MinimalLocal: ODataRuntimeService<"Products"', 'generated registry')
+assertIncludes(generatedRegistry, '"Sales-Order": ODataRuntimeService<"Products"', 'generated registry')
 assertIncludes(generatedRegistry, '"Products": MinimalLocalModels.Product', 'generated registry')
 
 const app = readFileSync(appPath, 'utf8')
