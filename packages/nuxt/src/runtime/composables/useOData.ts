@@ -148,6 +148,7 @@ export function useOData(service?: string): any {
       supportsOptimisticConcurrency: true,
       supportsCreateResponses: true,
       supportsActionResponses: true,
+      supportsDeleteResponses: true,
       supportsMerge: true,
       supportsMediaStreams: true,
       supportsContinuations: true,
@@ -558,6 +559,19 @@ export function useOData(service?: string): any {
           ? $odata<unknown>(client, targetUrl, 'DELETE')
           : $odata<unknown>(client, targetUrl, 'DELETE', options)
       },
+      removeNavigationWithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const targetUrl = `${navigationUrl}(${formatODataKey(targetKey)})`
+        return $odataMutationWithResponse<TResult>(client, targetUrl, 'DELETE', options as any)
+      },
       linkNavigation: (
         source: ODataNavigationSource,
         navigationPath: readonly string[],
@@ -701,6 +715,14 @@ export function useOData(service?: string): any {
             body: invocation.parameters ?? {},
           },
         )
+      },
+
+      removeWithResponse: (
+        key: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TModel>> => {
+        const itemPath = `${fullPath}(${formatODataKey(key)})`
+        return $odataMutationWithResponse<TModel>(client, itemPath, 'DELETE', options as any)
       },
       invokeWithResponse: <TResult = unknown, TParameters = Record<string, unknown>>(
         action: string,

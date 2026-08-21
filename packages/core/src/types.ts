@@ -162,6 +162,9 @@ export interface ODataCreateResponse<T> extends ODataMutationResponse<T> {
 /** OData action result with optional response metadata and SAP feedback. */
 export type ODataActionResponse<T> = ODataMutationResponse<T>
 
+/** OData delete result with an optional representation and SAP feedback. */
+export type ODataDeleteResponse<T = unknown> = ODataMutationResponse<T>
+
 /** Binary OData entity or named-stream payload with safe response metadata. */
 export interface ODataMediaResponse {
   data: ArrayBuffer
@@ -601,6 +604,23 @@ export interface ODataActionResponseEntitySet<T = any> extends ODataEntitySet<T>
   ) => Promise<ODataActionResponse<TResult>>
 }
 
+/** Entity-set client that preserves response metadata from OData deletes. */
+export interface ODataDeleteResponseEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsDeleteResponses: true
+  /** Deletes an entity while preserving optional response metadata. */
+  removeWithResponse: (
+    key: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataDeleteResponse<T>>
+  /** Deletes a related entity while preserving optional response metadata. */
+  removeNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataDeleteResponse<TResult>>
+}
+
 /** Entity-set client with imperative OData media-stream reads and replacements. */
 export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
   readonly supportsMediaStreams: true
@@ -636,6 +656,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 export type ODataRuntimeEntitySet<T = any>
   = ODataMergeEntitySet<T>
     & ODataActionResponseEntitySet<T>
+    & ODataDeleteResponseEntitySet<T>
     & ODataContinuationEntitySet<T>
     & ODataCreateEntitySet<T>
     & ODataMediaEntitySet<T>
@@ -816,21 +837,23 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
     ? ODataRuntimeEntitySet<TModel>
     : TEntitySet extends ODataMergeEntitySet<any>
       ? ODataMergeEntitySet<TModel>
-      : TEntitySet extends ODataActionResponseEntitySet<any>
-        ? ODataActionResponseEntitySet<TModel>
-        : TEntitySet extends ODataCreateEntitySet<any>
-          ? ODataCreateEntitySet<TModel>
-          : TEntitySet extends ODataContinuationEntitySet<any>
-            ? ODataContinuationEntitySet<TModel>
-            : TEntitySet extends ODataConcurrencyEntitySet<any>
-              ? ODataConcurrencyEntitySet<TModel>
-              : TEntitySet extends ODataVersionedEntitySet<any>
-                ? ODataVersionedEntitySet<TModel>
-                : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                  ? ODataNavigationReferenceEntitySet<TModel>
-                  : TEntitySet extends ODataPagedEntitySet<any>
-                    ? ODataPagedEntitySet<TModel>
-                    : ODataEntitySet<TModel>
+      : TEntitySet extends ODataDeleteResponseEntitySet<any>
+        ? ODataDeleteResponseEntitySet<TModel>
+        : TEntitySet extends ODataActionResponseEntitySet<any>
+          ? ODataActionResponseEntitySet<TModel>
+          : TEntitySet extends ODataCreateEntitySet<any>
+            ? ODataCreateEntitySet<TModel>
+            : TEntitySet extends ODataContinuationEntitySet<any>
+              ? ODataContinuationEntitySet<TModel>
+              : TEntitySet extends ODataConcurrencyEntitySet<any>
+                ? ODataConcurrencyEntitySet<TModel>
+                : TEntitySet extends ODataVersionedEntitySet<any>
+                  ? ODataVersionedEntitySet<TModel>
+                  : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                    ? ODataNavigationReferenceEntitySet<TModel>
+                    : TEntitySet extends ODataPagedEntitySet<any>
+                      ? ODataPagedEntitySet<TModel>
+                      : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -860,6 +883,10 @@ export type ODataActionResponseService<E extends string = string, M extends Reco
     readonly supportsActionResponses: true
     invokeWithResponse: ODataActionResponseEntitySet<never>['invokeWithResponse']
   }
+
+/** OData service whose entity sets preserve delete response metadata. */
+export type ODataDeleteResponseService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataDeleteResponseEntitySet<any>>
 
 /** OData service whose entity sets expose explicit SAP Gateway MERGE updates. */
 export type ODataMergeService<E extends string = string, M extends Record<string, any> = any>

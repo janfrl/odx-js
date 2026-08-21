@@ -159,6 +159,9 @@ Ordinary service-, collection-, entity-, and navigation-bound actions expose a
 capability-negotiated response-aware path alongside the body-only API so
 optional representations, ETags, and allowlisted SAP mutation feedback can
 cross the same structural Nuxt Fiori transport boundary.
+Root and structured navigation DELETEs follow the same additive pattern through
+`supportsDeleteResponses`, `removeWithResponse`, and
+`removeNavigationWithResponse`; existing body-only removal ports stay valid.
 
 Nuxt module code should stay focused on Nuxt lifecycle integration. Reusable
 OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in

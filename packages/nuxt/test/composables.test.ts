@@ -85,6 +85,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsOptimisticConcurrency).toBe(true)
     expect(entitySet.supportsCreateResponses).toBe(true)
     expect(entitySet.supportsActionResponses).toBe(true)
+    expect(entitySet.supportsDeleteResponses).toBe(true)
     expect(entitySet.supportsMerge).toBe(true)
     expect(entitySet.supportsMediaStreams).toBe(true)
     expect(entitySet.supportsContinuations).toBe(true)
@@ -1251,6 +1252,35 @@ describe('useOData Composable', () => {
         '/api/odx/MyService/Products(ID=1,Active=true)/Demo.ArchiveProduct',
         'POST',
         { body: { Reason: 'obsolete' } },
+      )
+    })
+
+    it('preserves response metadata from root and navigation deletes', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+      const headers = { 'If-Match': 'W/"entity-1"' }
+
+      const rootResponse = await entitySet.removeWithResponse(1, { headers })
+      const navigationResponse = await entitySet.removeNavigationWithResponse(
+        { ID: 1, Locale: 'en' },
+        ['Items'],
+        { ItemID: 'A/B', Locale: 'en' },
+      )
+
+      expect(rootResponse).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(navigationResponse).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ raw: expect.any(Function) }),
+        '/api/odx/routed-api/Products(1)',
+        'DELETE',
+        { headers },
+      )
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ raw: expect.any(Function) }),
+        `/api/odx/routed-api/Products(ID=1,Locale='en')/Items(ItemID='A%2FB',Locale='en')`,
+        'DELETE',
+        undefined,
       )
     })
 
