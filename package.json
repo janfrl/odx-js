@@ -25,6 +25,7 @@
     "examples": "pnpm run example:core && pnpm run example:proxy",
     "verify:packages": "pnpm --filter @me-tools/odx-metadata run verify && pnpm --filter @me-tools/odx-core run verify && pnpm --filter @me-tools/odx-proxy run verify && pnpm --filter @me-tools/odx-nuxt run verify && pnpm --filter @me-tools/odx-explorer run verify && pnpm --filter odx-approuter run verify && pnpm --filter docs run verify",
     "release": "tsx scripts/release.ts",
+    "release:check": "tsx scripts/release.ts",
     "bump": "tsx scripts/bump.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit && pnpm --filter @me-tools/odx-explorer typecheck && pnpm --filter docs typecheck",

@@ -48,6 +48,14 @@ released-version compatibility matrix remain prerequisites for the first public
 prerelease. Fixture and ODX transports must continue to run in parallel until
 their public behavior agrees.
 
+Release verification is non-mutating by default and packs the five public
+packages in dependency order. Registry publication requires the explicit
+`--publish` switch, uses the `next` channel during prerelease evaluation, and
+rejects `latest` unless the stable-channel promotion is separately authorized.
+The first token-backed bootstrap remains temporary; R1 is not complete until
+trusted publishing, provenance, and registry installation are independently
+verified.
+
 Reusable OData key, resource-path, query, and batch construction belongs in
 `odx-core`; HTTP execution, Nuxt `AsyncData`, runtime configuration, and
 cancellation adaptation belong in `odx-nuxt`. Moving those protocol operations

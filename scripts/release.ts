@@ -1,21 +1,33 @@
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import process from 'node:process'
 import { consola } from 'consola'
 import { loadWorkspace } from './_utils'
+import {
+  assertReleaseTagAllowed,
+  releasePublishes,
+  releaseTag,
+} from './release-policy'
 
-function execCommand(command: string, cwd?: string) {
-  consola.info(`Executing: ${command}`)
-  execSync(command, { stdio: 'inherit', cwd })
+function execPnpm(args: readonly string[], cwd?: string) {
+  const pnpmCli = process.env.npm_execpath
+  if (pnpmCli === undefined)
+    throw new Error('Run the release entrypoint through a pnpm package script.')
+  consola.info(`Executing: pnpm ${args.join(' ')}`)
+  execFileSync(process.execPath, [pnpmCli, ...args], { stdio: 'inherit', cwd })
 }
 
 async function main() {
   const repoRoot = process.cwd()
   const workspace = await loadWorkspace(repoRoot)
-  const tag = process.env.TAG || 'latest'
+  const publish = releasePublishes(process.argv.slice(2))
+  const tag = releaseTag(process.env.TAG)
+  assertReleaseTagAllowed(tag, process.env.ALLOW_LATEST)
 
-  consola.start(`Starting release for version v${workspace.rootPkg.data.version} with tag ${tag}`)
+  consola.start(
+    `${publish ? 'Starting release' : 'Checking release'} for version v${workspace.rootPkg.data.version} with tag ${tag}`,
+  )
 
-  execCommand('pnpm verify')
+  execPnpm(['verify'])
 
   const publishOrder = [
     '@me-tools/odx-metadata',
@@ -35,12 +47,25 @@ async function main() {
       throw new Error(`Release package is unexpectedly private: ${packageName}`)
     }
 
-    consola.info(`Publishing ${packageName}...`)
-    execCommand(`pnpm publish --access public --no-git-checks --provenance --tag ${tag}`, pkg.dir)
-    consola.success(`Published ${pkg.data.name}`)
+    const publishArgs = [
+      'publish',
+      '--access',
+      'public',
+      '--no-git-checks',
+      '--tag',
+      tag,
+      ...(publish ? ['--provenance'] : ['--dry-run']),
+    ]
+    consola.info(`${publish ? 'Publishing' : 'Packing'} ${packageName}...`)
+    execPnpm(publishArgs, pkg.dir)
+    consola.success(`${publish ? 'Published' : 'Verified'} ${pkg.data.name}`)
   }
 
-  consola.success('Release completed successfully!')
+  consola.success(
+    publish
+      ? 'Release completed successfully!'
+      : 'Release dry run completed; no package was published.',
+  )
 }
 
 main().catch((err) => {

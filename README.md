@@ -16,7 +16,10 @@ organization.
 
 This repository is a monorepo managed with `pnpm`.
 All five ODX product packages below are configured for public publication, but
-have not yet been published. The
+have not yet been published. `pnpm release:check` verifies the complete publish
+order with dry-run packages and defaults to the `next` dist-tag; only the
+explicit publish path can mutate the registry, and `latest` additionally
+requires an explicit post-prerelease promotion. The
 `packages/approuter` workspace is a private SAP BTP deployment module, not a
 reusable npm package.
 

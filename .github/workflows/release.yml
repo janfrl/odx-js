@@ -32,7 +32,7 @@ jobs:
         run: pnpm bump "${GITHUB_REF_NAME#v}"
 
       - name: Verify and publish packages
-        run: pnpm release
+        run: pnpm release -- --publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          TAG: latest
+          TAG: next
