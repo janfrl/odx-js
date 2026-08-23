@@ -4,6 +4,7 @@ export default defineBuildConfig({
   entries: [
     { input: 'src/module', name: 'module' },
     { input: 'src/generate', name: 'generate' },
+    { input: 'src/server', name: 'server' },
   ],
   declaration: true,
   clean: true,

@@ -22,6 +22,11 @@
       "import": "./dist/generate.mjs",
       "default": "./dist/generate.mjs"
     },
+    "./server": {
+      "types": "./dist/server.d.mts",
+      "import": "./dist/server.mjs",
+      "default": "./dist/server.mjs"
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/module.mjs",
@@ -32,6 +37,9 @@
       ],
       "generate": [
         "./dist/generate.d.mts"
+      ],
+      "server": [
+        "./dist/server.d.mts"
       ]
     }
   },
