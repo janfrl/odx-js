@@ -22,12 +22,24 @@ function createEvent(fetch: typeof globalThis.fetch): H3Event {
   } as unknown as H3Event
 }
 
+function requestUrl(request: RequestInfo | URL): string {
+  if (typeof request === 'string')
+    return request
+  return request instanceof URL ? request.href : request.url
+}
+
 describe('nitro server mutation service', () => {
-  it('uses the request-scoped proxy route for actions and relationship writes', async () => {
+  it('uses the request-scoped proxy route for entity, action, and relationship writes', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
-      const url = typeof request === 'string' ? request : request.url
+      const url = requestUrl(request)
+      if (url.endsWith('/Products')) {
+        return Response.json({ ID: 1, Name: 'Created' })
+      }
       if (url.endsWith('/Demo.SetCategory')) {
         return Response.json({ Category: 'LIGHT' })
+      }
+      if (url.endsWith('/Products(1)')) {
+        return Response.json({ deleted: true })
       }
       return new Response(null, { status: 204 })
     })
@@ -36,6 +48,9 @@ describe('nitro server mutation service', () => {
       'catalog',
     ).entitySet('Products')
 
+    await expect(products.create<{ ID: number, Name: string }>({ Name: 'Created' }))
+      .resolves
+      .toEqual({ ID: 1, Name: 'Created' })
     await expect(products.invoke<{ Category: string }>('Demo.SetCategory', {
       key: 1,
       parameters: { Category: 'LIGHT' },
@@ -44,29 +59,42 @@ describe('nitro server mutation service', () => {
     })).resolves.toEqual({ Category: 'LIGHT' })
     await products.linkNavigation(1, ['Reviews'], 'Reviews', 10)
     await products.unlinkNavigation(1, ['Reviews'], 10)
+    await expect(products.remove<{ deleted: boolean }>(1, {
+      headers: { 'If-Match': 'W/"product-2"' },
+    })).resolves.toEqual({ deleted: true })
 
-    expect(requestFetch).toHaveBeenCalledTimes(3)
+    expect(requestFetch).toHaveBeenCalledTimes(5)
     const requests = requestFetch.mock.calls.map(([request, init]) => ({
-      url: typeof request === 'string' ? request : request.url,
+      url: requestUrl(request),
       method: init?.method,
       headers: new Headers(init?.headers),
       body: init?.body,
     }))
     expect(requests[0]).toMatchObject({
+      url: '/api/odx/catalog-api/Products',
+      method: 'POST',
+      body: JSON.stringify({ Name: 'Created' }),
+    })
+    expect(requests[1]).toMatchObject({
       url: '/api/odx/catalog-api/Products(1)/Demo.SetCategory',
       method: 'POST',
       body: JSON.stringify({ Category: 'LIGHT' }),
     })
-    expect(requests[0]!.headers.get('if-match')).toBe('W/"product-1"')
-    expect(requests[1]).toMatchObject({
+    expect(requests[1]!.headers.get('if-match')).toBe('W/"product-1"')
+    expect(requests[2]).toMatchObject({
       url: '/api/odx/catalog-api/Products(1)/Reviews/$ref',
       method: 'POST',
       body: JSON.stringify({ '@odata.id': 'Reviews(10)' }),
     })
-    expect(requests[2]).toMatchObject({
+    expect(requests[3]).toMatchObject({
       url: '/api/odx/catalog-api/Products(1)/Reviews(10)/$ref',
       method: 'DELETE',
     })
+    expect(requests[4]).toMatchObject({
+      url: '/api/odx/catalog-api/Products(1)',
+      method: 'DELETE',
+    })
+    expect(requests[4]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
   it('owns changeset serialization and response parsing inside ODX', async () => {
@@ -126,7 +154,7 @@ describe('nitro server mutation service', () => {
     }])
     expect(requestFetch).toHaveBeenCalledOnce()
     const [request, init] = requestFetch.mock.calls[0]!
-    expect(typeof request === 'string' ? request : request.url)
+    expect(requestUrl(request))
       .toBe('/api/odx/catalog-api/$batch')
     const headers = new Headers(init?.headers)
     expect(init?.method).toBe('POST')

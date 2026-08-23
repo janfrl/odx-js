@@ -3,9 +3,9 @@
 The official Nuxt module for the ODX ecosystem. It provides type-safe OData composables, automated SDK generation, and native DevTools integration.
 
 Nuxt auto-imports `useOData` in application code. Nitro server routes use the
-explicit request-context-aware mutation service when they need Actions,
-relationship writes, or changesets without recreating OData URLs or multipart
-payloads:
+explicit request-context-aware mutation service when they need entity writes,
+Actions, relationship writes, or changesets without recreating
+OData URLs or multipart payloads:
 
 ```ts
 import { createODataServerMutationService } from '@me-tools/odx-nuxt/server'
@@ -18,6 +18,10 @@ export default defineEventHandler(async (event) => {
   )
 })
 ```
+
+The entity-set service also exposes request-scoped `create(body)` and
+`remove(key)` operations. All methods use the configured ODX proxy route and
+the current Nitro request context rather than calling an upstream origin.
 
 ## Installation
 

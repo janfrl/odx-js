@@ -36,6 +36,14 @@ interface ODataFetchClient {
 }
 
 export interface ODataServerMutationEntitySet {
+  create: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
+    body: TBody,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  remove: <TResult = unknown>(
+    key: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
     invocation?: ODataActionInvocation<TParameters>,
@@ -168,6 +176,17 @@ export function createODataServerMutationService(
       const sourcePath = (source: ODataNavigationSource): string =>
         joinODataPath(servicePath, createODataNavigationSourcePath(entitySet, source))
       return {
+        create: <TResult, TBody extends Record<string, unknown>>(
+          body: TBody,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(client, joinODataPath(servicePath, entitySet), 'POST', {
+          ...(options as Record<string, unknown> | undefined),
+          body,
+        }),
+        remove: <TResult>(
+          key: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(client, sourcePath(key), 'DELETE', options as Record<string, unknown> | undefined),
         invoke: <TResult, TParameters>(
           action: string,
           invocation: ODataActionInvocation<TParameters> = {},
