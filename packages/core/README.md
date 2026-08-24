@@ -74,8 +74,9 @@ operation identity and binding paths.
 
 The `@me-tools/odx-core/server` entry also projects parsed
 `@me-tools/odx-metadata` documents into the established entity, navigation,
-association, and version contracts. This is the migration boundary away from
-the legacy file-based EDMX extractor.
+association, and version contracts. Callers parse XML or JSON CSDL through
+`parseCsdl` first; core no longer exposes a second regex- or file-based EDMX
+parser.
 
 ## Installation
 
@@ -93,9 +94,9 @@ pnpm --filter @me-tools/odx-core run verify
 
 This runs the focused core Vitest tests and then the same standalone core
 fixture check as `pnpm run example:core`. It verifies package utilities and
-parsing behavior, plus framework-free usage for EDMX version detection, entity
-extraction, query stringification, OData response flattening, and the low-level
-`$odata` helper.
+CSDL projection behavior, plus framework-free usage for OData version
+detection, entity extraction, query stringification, OData response flattening,
+and the low-level `$odata` helper.
 
 For full documentation, architecture details, and API reference, see the root
 documentation in this repository.

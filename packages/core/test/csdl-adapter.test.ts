@@ -7,11 +7,6 @@ import {
   extractAssociationsFromCsdlDocument,
   extractEntitiesFromCsdlDocument,
 } from '../src/csdl-adapter'
-import {
-  detectODataVersionFromContent,
-  extractAssociationsFromEdmxContent,
-  extractEntitiesFromEdmxContent,
-} from '../src/server'
 
 function fixture(name: 'v2' | 'v4'): string {
   return readFileSync(new URL(`../../../playground/edmx/${name}.edmx`, import.meta.url), 'utf8')
@@ -26,29 +21,123 @@ function parse(xml: string): CsdlDocument {
 }
 
 describe('cSDL compatibility projection', () => {
-  it.each(['v2', 'v4'] as const)(
-    'matches the established entity projection for the %s corpus',
-    (version) => {
-      const xml = fixture(version)
-      expect(extractEntitiesFromCsdlDocument(parse(xml)))
-        .toEqual(extractEntitiesFromEdmxContent(xml))
-    },
-  )
+  it('projects the fixed V2 corpus without a parallel XML parser', () => {
+    const document = parse(fixture('v2'))
 
-  it('matches established V2 association projection', () => {
-    const xml = fixture('v2')
-    expect(extractAssociationsFromCsdlDocument(parse(xml)))
-      .toEqual(extractAssociationsFromEdmxContent(xml))
+    expect(detectODataVersionFromCsdlDocument(document)).toBe('v2')
+    expect(extractEntitiesFromCsdlDocument(document)).toEqual([
+      {
+        name: 'Products',
+        type: 'Product',
+        properties: [
+          { name: 'ID', type: 'Edm.String', isKey: true },
+          { name: 'Name', type: 'Edm.String', isKey: false },
+          { name: 'Price', type: 'Edm.Decimal', isKey: false },
+          { name: 'Currency', type: 'Edm.String', isKey: false },
+          { name: 'SupplierID', type: 'Edm.String', isKey: false },
+          { name: 'CategoryID', type: 'Edm.String', isKey: false },
+        ],
+        navigationProperties: [
+          {
+            name: 'Supplier',
+            relationship: 'DummyService.Product_Supplier_ManyToOne',
+            fromRole: 'Product',
+            toRole: 'Supplier',
+          },
+          {
+            name: 'Category',
+            relationship: 'DummyService.Product_Category_ManyToOne',
+            fromRole: 'Product',
+            toRole: 'Category',
+          },
+        ],
+      },
+      {
+        name: 'Suppliers',
+        type: 'Supplier',
+        properties: [
+          { name: 'ID', type: 'Edm.String', isKey: true },
+          { name: 'Name', type: 'Edm.String', isKey: false },
+          { name: 'City', type: 'Edm.String', isKey: false },
+        ],
+        navigationProperties: [{
+          name: 'Products',
+          relationship: 'DummyService.Product_Supplier_ManyToOne',
+          fromRole: 'Supplier',
+          toRole: 'Product',
+        }],
+      },
+      {
+        name: 'Categories',
+        type: 'Category',
+        properties: [
+          { name: 'ID', type: 'Edm.String', isKey: true },
+          { name: 'Name', type: 'Edm.String', isKey: false },
+        ],
+        navigationProperties: [{
+          name: 'Products',
+          relationship: 'DummyService.Product_Category_ManyToOne',
+          fromRole: 'Category',
+          toRole: 'Product',
+        }],
+      },
+    ])
+    expect(extractAssociationsFromCsdlDocument(document)).toEqual([
+      {
+        name: 'Product_Supplier_ManyToOne',
+        ends: [
+          { type: 'DummyService.Product', role: 'Product', multiplicity: '*' },
+          { type: 'DummyService.Supplier', role: 'Supplier', multiplicity: '1' },
+        ],
+      },
+      {
+        name: 'Product_Category_ManyToOne',
+        ends: [
+          { type: 'DummyService.Product', role: 'Product', multiplicity: '*' },
+          { type: 'DummyService.Category', role: 'Category', multiplicity: '1' },
+        ],
+      },
+    ])
   })
 
-  it.each(['v2', 'v4'] as const)(
-    'matches established %s version detection',
-    (version) => {
-      const xml = fixture(version)
-      expect(detectODataVersionFromCsdlDocument(parse(xml)))
-        .toBe(detectODataVersionFromContent(xml))
-    },
-  )
+  it('projects the fixed V4 corpus without V2 associations', () => {
+    const document = parse(fixture('v4'))
+
+    expect(detectODataVersionFromCsdlDocument(document)).toBe('v4')
+    expect(extractEntitiesFromCsdlDocument(document)).toEqual([
+      {
+        name: 'Products',
+        type: 'Product',
+        properties: [
+          { name: 'ID', type: 'Edm.String', isKey: true },
+          { name: 'Name', type: 'Edm.String', isKey: false },
+          { name: 'Price', type: 'Edm.Decimal', isKey: false },
+          { name: 'Category_ID', type: 'Edm.String', isKey: false },
+        ],
+        navigationProperties: [{
+          name: 'Category',
+          relationship: 'V4Service.Category',
+          fromRole: '',
+          toRole: '',
+        }],
+      },
+      {
+        name: 'Categories',
+        type: 'Category',
+        properties: [
+          { name: 'ID', type: 'Edm.String', isKey: true },
+          { name: 'Name', type: 'Edm.String', isKey: false },
+        ],
+        navigationProperties: [{
+          name: 'Products',
+          relationship: 'Collection(V4Service.Product)',
+          fromRole: '',
+          toRole: '',
+        }],
+      },
+    ])
+    expect(extractAssociationsFromCsdlDocument(document)).toEqual([])
+  })
 
   it('resolves qualified and aliased entity types without local-name collisions', () => {
     const document = parse(`

@@ -43,10 +43,9 @@ and its analytical `$apply` query member. The clean packed consumer proves
 shared request-option compatibility, exact key, navigation-source, and
 atomic-mutation compatibility, as well as entity-set assignability across the
 public package boundary.
-Published shared types, removal of the remaining metadata mirror, and a
-released-version compatibility matrix remain prerequisites for the first public
-prerelease. Fixture and ODX transports must continue to run in parallel until
-their public behavior agrees.
+Published shared types and a released-version compatibility matrix remain
+prerequisites for the first public prerelease. Fixture and ODX transports must
+continue to run in parallel until their public behavior agrees.
 
 Release verification is non-mutating by default and packs the five public
 packages in dependency order. Registry publication requires the explicit
@@ -63,15 +62,14 @@ does not make core a transport client. The portable imperative entity-set
 surface and the Nuxt setup-time `AsyncData` surface should remain distinguishable
 so non-Nuxt consumers do not need to emulate Vue-shaped contracts.
 
-`odx-metadata` is the target CSDL ingestion implementation. The core `./server`
-entry now exposes an explicit CSDL-document compatibility adapter, with corpus
-characterization for V2/V4 versions and entities, V2 associations, navigation,
-aliases, and duplicate local type names. Explorer schema/config endpoints and
-Nuxt type generation consume that adapter; graph summaries are derived from the
-parsed document rather than reparsing XML with regular expressions. The older
-regex/file extractor now has no production callers and remains temporarily as a
-compatibility API until a broader customer corpus proves equivalent behavior.
-It must not evolve into a second semantic parser.
+`odx-metadata` is the only CSDL ingestion implementation. The core `./server`
+entry exposes an explicit CSDL-document projection, with fixed corpus contracts
+for V2/V4 versions and entities, V2 associations, navigation, aliases, and
+duplicate local type names. Explorer schema/config endpoints and Nuxt type
+generation consume that adapter; graph summaries are derived from the parsed
+document rather than reparsing XML with regular expressions. The former
+regex/file extractor had no production callers and has been removed, so it
+cannot evolve into a second semantic parser.
 
 ODX and Nuxt Fiori remain separate repositories and release independently.
 They should share provenance and compatibility discipline, not lockstep
