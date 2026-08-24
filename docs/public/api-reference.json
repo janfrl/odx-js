@@ -2529,7 +2529,7 @@
   },
   "ODataContainedEntitySegment": {
     "title": "ODataContainedEntitySegment",
-    "description": "One keyed containment hop below an entity-set root.",
+    "description": "One containment hop below an entity-set root. To-one hops omit the key.",
     "properties": [
       {
         "name": "navigationPath",
@@ -2538,8 +2538,8 @@
       },
       {
         "name": "key",
-        "type": "ODataKey",
-        "required": true
+        "type": "ODataKey | undefined",
+        "required": false
       }
     ]
   },
@@ -3026,6 +3026,23 @@
         "name": "fetchNavigationOneWithResponse",
         "type": "<TResult = unknown>(request: ODataNavigationEntityRead<TResult>, options?: ODataRequestOptions) => Promise<ODataEntityResponse<TResult>>",
         "description": "Reads one related entity and preserves its ETag for a conditional mutation.",
+        "required": true
+      }
+    ]
+  },
+  "ODataContainedEntityResponseSet": {
+    "title": "ODataContainedEntityResponseSet",
+    "description": "Entity-set client that preserves response metadata for exact contained entities.",
+    "properties": [
+      {
+        "name": "supportsContainedEntityResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "fetchContainedOneWithResponse",
+        "type": "<TResult = T>(source: ODataContainedEntitySource, query?: ODataQuery<TResult>, options?: ODataRequestOptions) => Promise<ODataEntityResponse<TResult>>",
+        "description": "Reads one exact contained entity without serializing its resource path in the caller.",
         "required": true
       }
     ]
