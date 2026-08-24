@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContainedEntitySource, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -177,6 +177,7 @@ export function useOData(service?: string): any {
     return {
       supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
+      supportsContainedEntityResponses: true,
       supportsNavigationRootReferences: true,
       supportsNavigationReferences: true,
       supportsNavigationReferenceResponses: true,
@@ -377,6 +378,17 @@ export function useOData(service?: string): any {
       ): Promise<ODataEntityResponse<TModel>> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odataWithResponse<TModel>(client, itemPath, 'GET', {
+          ...(options as any),
+          query: stringifyQuery(query || {}),
+        })
+      },
+
+      fetchContainedOneWithResponse: <TResult = TModel>(
+        source: ODataContainedEntitySource,
+        query?: ODataQuery<TResult>,
+        options?: ODataRequestOptions,
+      ): Promise<ODataEntityResponse<TResult>> => {
+        return $odataWithResponse<TResult>(client, navigationSourcePath(source), 'GET', {
           ...(options as any),
           query: stringifyQuery(query || {}),
         })

@@ -602,6 +602,17 @@ export interface ODataVersionedNavigationEntitySet<T = any> extends ODataVersion
   ) => Promise<ODataEntityResponse<TResult>>
 }
 
+/** Entity-set client that preserves response metadata for exact contained entities. */
+export interface ODataContainedEntityResponseSet<T = any> extends ODataEntitySet<T> {
+  readonly supportsContainedEntityResponses: true
+  /** Reads one exact contained entity without serializing its resource path in the caller. */
+  fetchContainedOneWithResponse: <TResult = T>(
+    source: ODataContainedEntitySource,
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataEntityResponse<TResult>>
+}
+
 /**
  * Entity-set client with an explicit optimistic-concurrency mutation path.
  * Kept separate so structural implementations of `ODataVersionedEntitySet`
@@ -745,6 +756,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 export type ODataRuntimeEntitySet<T = any>
   = ODataNavigationMergeEntitySet<T>
     & ODataVersionedNavigationEntitySet<T>
+    & ODataContainedEntityResponseSet<T>
     & ODataActionResponseEntitySet<T>
     & ODataDeleteResponseEntitySet<T>
     & ODataContinuationEntitySet<T>

@@ -799,6 +799,28 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('reads an exact contained entity with response metadata', async () => {
+      const signal = new AbortController().signal
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+
+      expect(entitySet.supportsContainedEntityResponses).toBe(true)
+      await entitySet.fetchContainedOneWithResponse({
+        kind: 'contained-entity',
+        rootKey: { ID: 1, IsActiveEntity: false },
+        path: [{ navigationPath: ['Items'], key: { ItemID: 'A/B' } }],
+      }, { $select: ['ItemID', 'Name'] }, { signal })
+
+      expect(core.$odataWithResponse).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,IsActiveEntity=false)/Items(ItemID=\'A%2FB\')',
+        'GET',
+        {
+          query: { $select: ['ItemID', 'Name'] },
+          signal,
+        },
+      )
+    })
+
     it('reads a collection relative to an entity', async () => {
       const signal = new AbortController().signal
       const api = useOData('RoutedService' as any)

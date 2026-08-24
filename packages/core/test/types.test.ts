@@ -7,6 +7,7 @@ import type {
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
   ODataConcurrencyService,
+  ODataContainedEntityResponseSet,
   ODataContinuationEntitySet,
   ODataCreateEntitySet,
   ODataCreateResponse,
@@ -189,6 +190,16 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ODataVersionedEntitySet<Product>>()
       .not
       .toHaveProperty('fetchNavigationOneWithResponse')
+  })
+
+  it('keeps exact contained reads capability-marked', () => {
+    expectTypeOf<ODataRuntimeEntitySet<Product>>()
+      .toExtend<ODataContainedEntityResponseSet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ODataRuntimeEntitySet<Product>['fetchContainedOneWithResponse']>>>()
+      .toEqualTypeOf<ODataEntityResponse<unknown>>()
+    expectTypeOf<ODataEntitySet<Product>>()
+      .not
+      .toHaveProperty('fetchContainedOneWithResponse')
   })
 
   it('adds create responses without widening the base entity-set contract', () => {
