@@ -10,7 +10,7 @@
     "postinstall": "nuxi prepare",
     "clean": "nuxt cleanup",
     "metadata:extract": "tsx scripts/extract-metadata.ts",
-    "verify": "pnpm run metadata:extract && pnpm --dir .. run docs:api",
+    "verify": "pnpm run metadata:extract && pnpm --dir .. run docs:api && node scripts/validate-installation.mjs",
     "typecheck": "nuxi typecheck"
   },
   "dependencies": {
