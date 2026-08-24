@@ -1908,6 +1908,18 @@
       }
     ]
   },
+  "formatODataV2FunctionImportParameters": {
+    "title": "formatODataV2FunctionImportParameters",
+    "description": "Serializes typed primitive parameters for OData V2 service-operation URIs.",
+    "properties": [
+      {
+        "name": "parameters",
+        "type": "Readonly<Record<string, ODataFunctionParameter>>",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
   "formatODataKey": {
     "title": "formatODataKey",
     "description": "Serializes a primitive or composite OData entity key for a resource path.",
@@ -2630,6 +2642,40 @@
       }
     ]
   },
+  "ODataV2FunctionImportInvocation": {
+    "title": "ODataV2FunctionImportInvocation",
+    "properties": [
+      {
+        "name": "method",
+        "type": "\"GET\" | \"POST\"",
+        "description": "HTTP method declared by the OData V2 FunctionImport metadata.",
+        "required": true
+      },
+      {
+        "name": "parameters",
+        "type": "Readonly<Record<string, ODataFunctionParameter>> | undefined",
+        "description": "Typed primitive parameters serialized as OData V2 service-operation query\nliterals. Null values are omitted according to the nullable-parameter URI\nconvention.",
+        "required": false
+      }
+    ]
+  },
+  "ODataV2FunctionImportCapability": {
+    "title": "ODataV2FunctionImportCapability",
+    "description": "Additive capability for protocol-correct OData V2 service operations.",
+    "properties": [
+      {
+        "name": "supportsV2FunctionImports",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "invokeFunctionImport",
+        "type": "<TResult = unknown>(name: string, invocation: ODataV2FunctionImportInvocation, options?: ODataRequestOptions) => Promise<TResult>",
+        "description": "Invokes a service-root OData V2 FunctionImport with URI parameters.",
+        "required": true
+      }
+    ]
+  },
   "ODataQuery": {
     "title": "ODataQuery",
     "description": "Structured OData query options.\nT: The model type of the entity being queried.",
@@ -3030,6 +3076,29 @@
       }
     ]
   },
+  "ODataNavigationMergeEntitySet": {
+    "title": "ODataNavigationMergeEntitySet",
+    "description": "Entity-set client with explicit SAP Gateway OData V2 navigation MERGE updates.",
+    "properties": [
+      {
+        "name": "supportsNavigationMerge",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "mergeNavigation",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: ODataRequestOptions) => Promise<TResult>",
+        "description": "Performs MERGE against a to-one navigation or one keyed related entity.",
+        "required": true
+      },
+      {
+        "name": "mergeNavigationWithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], update: ODataNavigationUpdate, options?: ODataRequestOptions) => Promise<ODataMutationResponse<TResult>>",
+        "description": "Performs navigation MERGE and preserves its optional representation and next ETag.",
+        "required": true
+      }
+    ]
+  },
   "ODataCreateEntitySet": {
     "title": "ODataCreateEntitySet",
     "description": "Entity-set client with explicit create response metadata.",
@@ -3130,12 +3199,12 @@
   },
   "ODataNavigationUpdate": {
     "title": "ODataNavigationUpdate",
-    "description": "Describes a PATCH target below a parent entity navigation path.",
+    "description": "Describes an update target below a parent entity navigation path.",
     "properties": [
       {
         "name": "body",
         "type": "Readonly<Record<string, unknown>>",
-        "description": "PATCH payload for the related entity.",
+        "description": "Update payload for the related entity.",
         "required": true
       },
       {
