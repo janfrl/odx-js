@@ -7,6 +7,10 @@ import type {
   ODataChangeSetResponse,
   ODataCreateResponse,
   ODataKey,
+  ODataMediaMutationResponse,
+  ODataMediaRequestOptions,
+  ODataMediaResponse,
+  ODataMediaUpdateOptions,
   ODataMutationResponse,
   ODataNavigationSource,
   ODataProxyConfig,
@@ -17,7 +21,9 @@ import {
   $odata,
   $odataActionWithResponse,
   $odataCreateWithResponse,
+  $odataFetchMedia,
   $odataMutationWithResponse,
+  $odataUpdateMedia,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
@@ -68,6 +74,15 @@ export interface ODataServerMutationEntitySet {
     key: ODataKey,
     options?: ODataRequestOptions,
   ) => Promise<ODataMutationResponse<TResult>>
+  fetchMedia: (
+    key: ODataNavigationSource,
+    options?: ODataMediaRequestOptions,
+  ) => Promise<ODataMediaResponse>
+  updateMedia: (
+    key: ODataNavigationSource,
+    body: ArrayBuffer | Uint8Array,
+    options: ODataMediaUpdateOptions,
+  ) => Promise<ODataMediaMutationResponse>
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
     invocation?: ODataActionInvocation<TParameters>,
@@ -270,6 +285,32 @@ export function createODataServerMutationService(
           'DELETE',
           options as Record<string, unknown> | undefined,
         ),
+        fetchMedia: (
+          key: ODataNavigationSource,
+          options?: ODataMediaRequestOptions,
+        ): Promise<ODataMediaResponse> => {
+          const { streamProperty, ...requestOptions } = options ?? {}
+          const path = joinODataPath(
+            servicePath,
+            createODataMediaPath(entitySet, key, streamProperty),
+          )
+          return $odataFetchMedia(client, path, requestOptions)
+        },
+        updateMedia: (
+          key: ODataNavigationSource,
+          body: ArrayBuffer | Uint8Array,
+          options: ODataMediaUpdateOptions,
+        ): Promise<ODataMediaMutationResponse> => {
+          const { contentType, streamProperty, ...requestOptions } = options
+          const path = joinODataPath(
+            servicePath,
+            createODataMediaPath(entitySet, key, streamProperty),
+          )
+          return $odataUpdateMedia(client, path, body, {
+            ...requestOptions,
+            contentType,
+          })
+        },
         invoke: <TResult, TParameters>(
           action: string,
           invocation: ODataActionInvocation<TParameters> = {},

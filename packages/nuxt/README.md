@@ -22,9 +22,11 @@ export default defineEventHandler(async (event) => {
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
 entity-set service exposes request-scoped `create`, `update`, `remove`, and
-`invoke` operations together with their response-aware counterparts. All
-methods use the configured ODX proxy route and the current Nitro request
-context rather than calling an upstream origin.
+`invoke` operations together with their response-aware counterparts. It also
+provides binary `fetchMedia` and `updateMedia` operations for default or named
+streams without placing bytes in Nuxt's SSR payload. All methods use the
+configured ODX proxy route and the current Nitro request context rather than
+calling an upstream origin.
 
 ## Installation
 

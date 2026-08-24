@@ -4,8 +4,10 @@ import {
   $odata,
   $odataActionWithResponse,
   $odataCreateWithResponse,
+  $odataFetchMedia,
   $odataMutationWithResponse,
   $odataPage,
+  $odataUpdateMedia,
   $odataWithResponse,
   createODataContinuationPath,
   createODataEntityPath,
@@ -27,6 +29,9 @@ import {
   stringifyQuery,
   toODataCollectionPage,
   validateODataIdentifier,
+  validateODataMediaBody,
+  validateODataMediaSlug,
+  validateODataMediaType,
   validateODataQualifiedName,
 } from '@me-tools/odx-core'
 import { createFetch } from 'ofetch'
@@ -40,9 +45,6 @@ interface ODataFetchClient {
     headers: { get: (name: string) => string | null }
   }>
 }
-
-const RE_HEADER_NEWLINE = /[\r\n]/u
-const RE_MEDIA_TYPE = /^[^\s/;]+\/[^\s/;]+(?:\s*;[^\r\n]+)?$/u
 
 /**
  * Composable for interacting with OData services.
@@ -87,23 +89,6 @@ export function useOData(service?: string): any {
         Headers,
       }) as unknown as ODataFetchClient)
     : requestFetch
-
-  const mediaType = (value: string): string => {
-    const normalized = value.trim()
-    if (
-      normalized.length === 0
-      || RE_HEADER_NEWLINE.test(normalized)
-      || !RE_MEDIA_TYPE.test(normalized)
-    ) {
-      throw new TypeError('An OData media update requires a valid content type.')
-    }
-    return normalized
-  }
-  const mediaBody = (body: ArrayBuffer | Uint8Array): ArrayBuffer | Uint8Array => {
-    if (!(body instanceof ArrayBuffer) && !(body instanceof Uint8Array))
-      throw new TypeError('An OData media mutation requires an ArrayBuffer or Uint8Array body.')
-    return body
-  }
 
   const createJsonReadOptions = (options?: unknown): Record<string, any> => {
     const requestOptions = (options ?? {}) as Record<string, any>
@@ -165,14 +150,6 @@ export function useOData(service?: string): any {
       if (entitySet === undefined)
         throw new TypeError('An OData media operation requires an entity set.')
       return joinODataPath(servicePath, createODataMediaPath(entitySet, key, streamProperty))
-    }
-    const mediaSlug = (value: string | undefined): string | undefined => {
-      if (value === undefined)
-        return undefined
-      const normalized = value.trim()
-      if (normalized.length === 0 || RE_HEADER_NEWLINE.test(normalized))
-        throw new TypeError('An OData media create requires a valid slug.')
-      return normalized
     }
     return {
       supportsCollectionPages: true,
@@ -418,14 +395,14 @@ export function useOData(service?: string): any {
         if (entitySet === undefined)
           throw new TypeError('An OData media create requires an entity set.')
         const { contentType, slug, ...requestOptions } = options
-        const normalizedSlug = mediaSlug(slug)
+        const normalizedSlug = validateODataMediaSlug(slug)
         const response = await client.raw<TModel>(fullPath, {
           ...(requestOptions as any),
-          body: mediaBody(body),
+          body: validateODataMediaBody(body),
           headers: mergeHeaders(
             requestOptions.headers,
             {
-              'content-type': mediaType(contentType),
+              'content-type': validateODataMediaType(contentType),
               'prefer': 'return=representation',
               ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
             },
@@ -457,14 +434,14 @@ export function useOData(service?: string): any {
           formatODataNavigationPath(navigationPath),
         )
         const { contentType, slug, ...requestOptions } = options
-        const normalizedSlug = mediaSlug(slug)
+        const normalizedSlug = validateODataMediaSlug(slug)
         const response = await client.raw<TResult>(navigationUrl, {
           ...(requestOptions as any),
-          body: mediaBody(body),
+          body: validateODataMediaBody(body),
           headers: mergeHeaders(
             requestOptions.headers,
             {
-              'content-type': mediaType(contentType),
+              'content-type': validateODataMediaType(contentType),
               'prefer': 'return=representation',
               ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
             },
@@ -490,26 +467,7 @@ export function useOData(service?: string): any {
         options?: ODataMediaRequestOptions,
       ): Promise<ODataMediaResponse> => {
         const { streamProperty, ...requestOptions } = options ?? {}
-        const response = await client.raw<ArrayBuffer>(mediaPath(key, streamProperty), {
-          ...(requestOptions as any),
-          headers: mergeHeaders(
-            { accept: 'application/octet-stream' },
-            requestOptions.headers,
-          ),
-          method: 'GET',
-          responseType: 'arrayBuffer',
-        })
-        if (!(response._data instanceof ArrayBuffer))
-          throw new TypeError('ODX returned an invalid media response body.')
-        const contentDisposition = response.headers.get('content-disposition') ?? undefined
-        const contentType = response.headers.get('content-type') ?? undefined
-        const etag = response.headers.get('etag') ?? undefined
-        return {
-          data: response._data,
-          ...(contentDisposition === undefined ? {} : { contentDisposition }),
-          ...(contentType === undefined ? {} : { contentType }),
-          ...(etag === undefined ? {} : { etag }),
-        }
+        return $odataFetchMedia(client, mediaPath(key, streamProperty), requestOptions)
       },
 
       updateMedia: async (
@@ -518,22 +476,10 @@ export function useOData(service?: string): any {
         options: ODataMediaUpdateOptions,
       ): Promise<ODataMediaMutationResponse> => {
         const { contentType, streamProperty, ...requestOptions } = options
-        const response = await client.raw<unknown>(mediaPath(key, streamProperty), {
-          ...(requestOptions as any),
-          body: mediaBody(body),
-          headers: mergeHeaders(
-            requestOptions.headers,
-            { 'content-type': mediaType(contentType) },
-          ),
-          method: 'PUT',
-          responseType: 'arrayBuffer',
+        return $odataUpdateMedia(client, mediaPath(key, streamProperty), body, {
+          ...requestOptions,
+          contentType,
         })
-        const etag = response.headers.get('etag') ?? undefined
-        const sapMessage = response.headers.get('sap-message')?.trim() || undefined
-        return {
-          ...(etag === undefined ? {} : { etag }),
-          ...(sapMessage === undefined ? {} : { sapMessage }),
-        }
       },
 
       get: (key: ODataKey, query?: ODataQuery<TModel>, options?: unknown): ODataAsyncDataPromise<TModel> => {
@@ -915,7 +861,7 @@ export function useOData(service?: string): any {
       const headers = Object.fromEntries([
         ...Object.entries(mutation.headers ?? {}).filter(([name]) =>
           name.toLowerCase() !== 'content-type'),
-        ['Content-Type', mediaType(mutation.contentType)],
+        ['Content-Type', validateODataMediaType(mutation.contentType)],
       ])
       return Object.freeze({
         method: 'PUT' as const,
@@ -925,7 +871,7 @@ export function useOData(service?: string): any {
           mutation.streamProperty,
         ),
         headers: Object.freeze(headers),
-        body: mediaBody(mutation.body),
+        body: validateODataMediaBody(mutation.body),
       })
     }
     if (mutation.kind === 'action') {

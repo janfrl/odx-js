@@ -248,6 +248,73 @@ describe('nitro server mutation service', () => {
     expect(requests[1]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
+  it('reads and replaces media through a structured request-scoped source', async () => {
+    const initial = Uint8Array.from([37, 80, 68, 70])
+    const replacement = Uint8Array.from([1, 2, 3])
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (_request, init) => {
+      if (init?.method === 'GET') {
+        return new Response(initial, {
+          headers: {
+            'Content-Disposition': 'attachment; filename="manual.pdf"',
+            'Content-Type': 'application/pdf',
+            'ETag': 'W/"media-1"',
+          },
+        })
+      }
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'ETag': 'W/"media-2"',
+          'SAP-Message': '{"message":"Document replaced","severity":"success"}',
+        },
+      })
+    })
+    const products = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+    const attachment = {
+      kind: 'contained-entity' as const,
+      rootKey: { ID: 1, IsActiveEntity: false },
+      path: [{ navigationPath: ['Attachments'], key: { AttachmentID: 'A/B' } }],
+    }
+
+    const read = await products.fetchMedia(attachment, {
+      headers: { 'X-Correlation-ID': 'media-read-1' },
+      streamProperty: 'Content',
+    })
+    expect(Array.from(new Uint8Array(read.data))).toEqual(Array.from(initial))
+    expect(read).toMatchObject({
+      contentDisposition: 'attachment; filename="manual.pdf"',
+      contentType: 'application/pdf',
+      etag: 'W/"media-1"',
+    })
+    await expect(products.updateMedia(attachment, replacement, {
+      contentType: 'application/pdf',
+      headers: { 'If-Match': 'W/"media-1"' },
+      streamProperty: 'Content',
+    })).resolves.toEqual({
+      etag: 'W/"media-2"',
+      sapMessage: '{"message":"Document replaced","severity":"success"}',
+    })
+
+    expect(requestFetch).toHaveBeenCalledTimes(2)
+    const requests = requestFetch.mock.calls.map(([request, init]) => ({
+      body: init?.body,
+      headers: new Headers(init?.headers),
+      method: init?.method,
+      url: requestUrl(request),
+    }))
+    const url = '/api/odx/catalog-api/Products(ID=1,IsActiveEntity=false)/Attachments(AttachmentID=\'A%2FB\')/Content/$value'
+    expect(requests[0]).toMatchObject({ method: 'GET', url })
+    expect(requests[0]!.headers.get('accept')).toBe('application/octet-stream')
+    expect(requests[0]!.headers.get('x-correlation-id')).toBe('media-read-1')
+    expect(requests[1]).toMatchObject({ method: 'PUT', url })
+    expect(requests[1]!.headers.get('content-type')).toBe('application/pdf')
+    expect(requests[1]!.headers.get('if-match')).toBe('W/"media-1"')
+    expect(Array.from(requests[1]!.body as Uint8Array)).toEqual(Array.from(replacement))
+  })
+
   it('owns changeset serialization and response parsing inside ODX', async () => {
     const responseBody = [
       '--batch_response',

@@ -39,6 +39,9 @@ entity keys and named stream properties validated before adding the terminal
 `$value` segment. Atomic
 changesets additionally accept byte-preserving `update-media` members so a
 service can commit stream content and linked scalar metadata together.
+`$odataFetchMedia` and `$odataUpdateMedia` provide the same binary validation,
+allowlisted response metadata, and exact content-type rules to any raw-capable
+transport client, including framework adapters and server hosts.
 
 For optimistic concurrency, `$odataWithResponse` is the additive low-level
 entity read. It returns `{ data, etag? }`, preferring the HTTP `ETag` header
