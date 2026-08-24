@@ -222,6 +222,7 @@ Entity-set methods:
 | `createNavigationRootReference(source, path)` | none | Validated service-relative `$root/...` collection reference |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
+| `fetchContainedOneWithResponse(source, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
 | `fetchMedia(key, options?)` | `GET .../$value` | `Promise<ODataMediaResponse>` |
 | `createMedia(body, options)` | `POST` | `Promise<ODataMediaCreateResponse<T>>` |
 | `createNavigationMedia<TResult>(source, navigationPath, body, options)` | `POST` | `Promise<ODataMediaCreateResponse<TResult>>` |
@@ -342,6 +343,14 @@ mutations, or silently change the body-only behavior of `get` and `fetchOne`.
 The method lives on the additive `ODataVersionedEntitySet` and
 `ODataVersionedService` read contracts; runtime entity sets advertise it with
 `supportsEntityResponses === true`, leaving existing structural page clients
+source-compatible.
+
+Use `fetchContainedOneWithResponse` for the same response contract below one
+or more containment boundaries. Its `ODataContainedEntitySource` retains the
+root key and ordered keyed navigation segments separately, so consumers never
+construct an executable OData resource path. The additive
+`ODataContainedEntityResponseSet` capability is advertised through
+`supportsContainedEntityResponses === true`; older structural clients remain
 source-compatible.
 
 Use `updateWithResponse` for the corresponding conditional PATCH when the

@@ -121,6 +121,10 @@ navigationPath, targetKey?, query? }, options?)` preserves the same flattened
 entity and ETag contract. Omit `targetKey` for a single-valued navigation or
 provide it for one member of a related collection. Runtime clients advertise
 this additive API with `supportsNavigationEntityResponses === true`.
+For an exact contained entity address, use
+`fetchContainedOneWithResponse(source, query?, options?)`. The source keeps the
+root key and every keyed containment segment structured; runtime clients expose
+it only with `supportsContainedEntityResponses === true`.
 On SSR, response-aware methods retain Nitro's active request context while
 using the raw response path, so relative proxy calls preserve both request
 scoping and response validators.
