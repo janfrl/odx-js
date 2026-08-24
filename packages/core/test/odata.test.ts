@@ -283,7 +283,7 @@ describe('$odataWithResponse fetcher', () => {
     })
   })
 
-  it('prefers the HTTP ETag over body metadata', async () => {
+  it('prefers the HTTP ETag while retaining normalized entity metadata', async () => {
     const client = createClient({
       d: {
         __metadata: { etag: 'W/"body-1"' },
@@ -292,7 +292,7 @@ describe('$odataWithResponse fetcher', () => {
     }, 'W/"header-1"')
 
     await expect($odataWithResponse(client, 'S/Products(1)')).resolves.toEqual({
-      data: { ID: 1 },
+      data: { '@odata.etag': 'W/"body-1"', 'ID': 1 },
       etag: 'W/"header-1"',
     })
   })
