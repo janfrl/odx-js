@@ -222,10 +222,10 @@ export type ODataKey
     | boolean
     | Record<string, string | number | boolean>
 
-/** One keyed containment hop below an entity-set root. */
+/** One containment hop below an entity-set root. To-one hops omit the key. */
 export interface ODataContainedEntitySegment {
   readonly navigationPath: readonly string[]
-  readonly key: ODataKey
+  readonly key?: ODataKey
 }
 
 /**

@@ -382,12 +382,14 @@ export function createODataNavigationSourcePath(
     return createODataEntityPath(entitySet, source)
   if (source.path.length === 0) {
     throw new TypeError(
-      'A contained entity source requires at least one keyed containment segment.',
+      'A contained entity source requires at least one containment segment.',
     )
   }
   return source.path.reduce((current, segment) => joinODataPath(
     current,
-    `${formatODataNavigationPath(segment.navigationPath)}(${formatODataKey(segment.key)})`,
+    segment.key === undefined
+      ? formatODataNavigationPath(segment.navigationPath)
+      : `${formatODataNavigationPath(segment.navigationPath)}(${formatODataKey(segment.key)})`,
   ), createODataEntityPath(entitySet, source.rootKey))
 }
 

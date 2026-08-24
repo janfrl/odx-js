@@ -182,6 +182,11 @@ describe('portable OData resource paths', () => {
     })).toBe(
       'Products(ID=1,IsActiveEntity=false)/Category/Items(ItemID=\'A%2FB\')/Schedules(3)',
     )
+    expect(createODataNavigationSourcePath('Documents', {
+      kind: 'contained-entity',
+      rootKey: 'manual',
+      path: [{ navigationPath: ['Attachment'] }],
+    })).toBe('Documents(\'manual\')/Attachment')
   })
   it('creates exact navigation collection root references', () => {
     expect(createODataNavigationRootReference(
@@ -203,7 +208,7 @@ describe('portable OData resource paths', () => {
       kind: 'contained-entity',
       rootKey: 1,
       path: [],
-    })).toThrow('at least one keyed containment segment')
+    })).toThrow('at least one containment segment')
     expect(() => createODataNavigationSourcePath('Products', {
       kind: 'contained-entity',
       rootKey: 1,
