@@ -123,8 +123,10 @@ provide it for one member of a related collection. Runtime clients advertise
 this additive API with `supportsNavigationEntityResponses === true`.
 For an exact contained entity address, use
 `fetchContainedOneWithResponse(source, query?, options?)`. The source keeps the
-root key and every keyed containment segment structured; runtime clients expose
-it only with `supportsContainedEntityResponses === true`.
+root key and every containment segment structured; collection-valued segments
+carry a child key while to-one segments omit the key predicate from the
+canonical resource path. Runtime clients expose this read only with
+`supportsContainedEntityResponses === true`.
 On SSR, response-aware methods retain Nitro's active request context while
 using the raw response path, so relative proxy calls preserve both request
 scoping and response validators.
