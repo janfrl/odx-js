@@ -2,27 +2,32 @@
 
 The official Nuxt module for the ODX ecosystem. It provides type-safe OData composables, automated SDK generation, and native DevTools integration.
 
-Nuxt auto-imports `useOData` in application code. Nitro server routes use the
-explicit request-context-aware mutation service when they need entity writes,
-Actions, relationship writes, or changesets without recreating
-OData URLs or multipart payloads:
+Nuxt auto-imports `useOData` in application code. Nitro server routes use
+explicit request-context-aware read and mutation services instead of rebuilding
+proxy paths or calling an upstream origin directly:
 
 ```ts
-import { createODataServerMutationService } from '@me-tools/odx-nuxt/server'
+import { createODataServerReadService } from '@me-tools/odx-nuxt/server'
 
 export default defineEventHandler(async (event) => {
-  const catalog = createODataServerMutationService(event, 'catalog')
-  return catalog.entitySet('Products').invokeWithResponse(
-    'Demo.SetCategory',
-    { key: 1, parameters: { Category: 'LIGHT' } },
-  )
+  const catalog = createODataServerReadService(event, 'catalog')
+  return catalog.entitySet('Products').fetchPage({
+    $select: ['ID', 'Name'],
+    $top: 30,
+    $count: true,
+  })
 })
 ```
 
+The server read entity set provides `fetchList`, `fetchPage`,
+`fetchNavigationList`, `fetchNavigationPage`, and typed `invokeFunction`
+operations. It validates structured entity and navigation identities and
+preserves server-driven count and continuation metadata.
+
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
-entity-set service exposes request-scoped `create`, `update`, `remove`, and
-`invoke` operations together with their response-aware counterparts. It also
+mutation entity-set service exposes request-scoped `create`, `update`, `remove`,
+and `invoke` operations together with their response-aware counterparts. It also
 provides binary `fetchMedia` and `updateMedia` operations for default or named
 streams without placing bytes in Nuxt's SSR payload. All methods use the
 configured ODX proxy route and the current Nitro request context rather than

@@ -5,7 +5,9 @@ import type {
   ODataChangeSetMethod,
   ODataChangeSetRequest,
   ODataChangeSetResponse,
+  ODataCollectionPage,
   ODataCreateResponse,
+  ODataFunctionInvocation,
   ODataKey,
   ODataMediaMutationResponse,
   ODataMediaRequestOptions,
@@ -14,6 +16,7 @@ import type {
   ODataMutationResponse,
   ODataNavigationSource,
   ODataProxyConfig,
+  ODataQuery,
   ODataRequestOptions,
 } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
@@ -23,17 +26,20 @@ import {
   $odataCreateWithResponse,
   $odataFetchMedia,
   $odataMutationWithResponse,
+  $odataPage,
   $odataUpdateMedia,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
   createODataNavigationSourcePath,
+  formatODataFunctionCall,
   formatODataKey,
   formatODataNavigationPath,
   joinODataPath,
   mergeHeaders,
   parseODataChangeSetResponse,
   serializeODataChangeSet,
+  stringifyQuery,
   validateODataIdentifier,
   validateODataQualifiedName,
 } from '@me-tools/odx-core'
@@ -45,6 +51,38 @@ interface ODataFetchClient {
     _data?: T
     headers: { get: (name: string) => string | null }
   }>
+}
+
+export interface ODataServerReadEntitySet {
+  fetchList: <TResult = unknown>(
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult[]>
+  fetchPage: <TResult = unknown>(
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<TResult>>
+  fetchNavigationList: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult[]>
+  fetchNavigationPage: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<TResult>>
+  invokeFunction: <TResult = unknown>(
+    functionName: string,
+    invocation?: ODataFunctionInvocation,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+}
+
+export interface ODataServerReadService {
+  entitySet: (name: string) => ODataServerReadEntitySet
 }
 
 export interface ODataServerMutationEntitySet {
@@ -197,13 +235,14 @@ function atomicMutationRequest(mutation: ODataAtomicMutation): ODataChangeSetReq
   }
 }
 
-export function createODataServerMutationService(
+function resolveODataServerTransport(
   event: H3Event,
   serviceName: string,
-): ODataServerMutationService {
+  operation: 'mutations' | 'reads',
+): Readonly<{ client: ODataFetchClient, servicePath: string }> {
   const config = event.context.odataConfig as ODataProxyConfig | undefined
   if (config === undefined)
-    throw new TypeError('ODX server mutations require the Nuxt ODX server middleware.')
+    throw new TypeError(`ODX server ${operation} require the Nuxt ODX server middleware.`)
   const service = config.services.find(candidate => candidate.name === serviceName)
   if (service === undefined)
     throw new TypeError(`Unknown OData service "${serviceName}".`)
@@ -226,6 +265,88 @@ export function createODataServerMutationService(
             })(),
       })) as typeof fetch
   const client = createFetch({ fetch: contextFetch, Headers }) as unknown as ODataFetchClient
+  return { client, servicePath }
+}
+
+export function createODataServerReadService(
+  event: H3Event,
+  serviceName: string,
+): ODataServerReadService {
+  const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'reads')
+  return {
+    entitySet(name) {
+      const entitySet = validateODataIdentifier(name, 'OData entity set')
+      const collectionPath = joinODataPath(servicePath, entitySet)
+      const sourcePath = (source: ODataNavigationSource): string =>
+        joinODataPath(servicePath, createODataNavigationSourcePath(entitySet, source))
+      const navigationPath = (source: ODataNavigationSource, path: readonly string[]): string =>
+        joinODataPath(sourcePath(source), formatODataNavigationPath(path))
+      return {
+        fetchList: <TResult>(
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<TResult[]> => $odata<TResult[]>(client, collectionPath, 'GET', {
+          ...(options as Record<string, unknown> | undefined),
+          query: stringifyQuery(query),
+        }),
+        fetchPage: <TResult>(
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<ODataCollectionPage<TResult>> => $odataPage<TResult>(client, collectionPath, {
+          ...(options as Record<string, unknown> | undefined),
+          query: stringifyQuery(query),
+        }),
+        fetchNavigationList: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<TResult[]> => $odata<TResult[]>(client, navigationPath(source, path), 'GET', {
+          ...(options as Record<string, unknown> | undefined),
+          query: stringifyQuery(query),
+        }),
+        fetchNavigationPage: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<ODataCollectionPage<TResult>> => $odataPage<TResult>(client, navigationPath(source, path), {
+          ...(options as Record<string, unknown> | undefined),
+          query: stringifyQuery(query),
+        }),
+        invokeFunction: <TResult>(
+          functionName: string,
+          invocation: ODataFunctionInvocation = {},
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => {
+          if (invocation.navigationPath !== undefined && invocation.key === undefined) {
+            throw new TypeError(
+              'An OData navigation-bound function requires an entity key.',
+            )
+          }
+          const entityPath = invocation.key === undefined
+            ? collectionPath
+            : sourcePath(invocation.key)
+          const bindingPath = invocation.navigationPath === undefined
+            ? entityPath
+            : joinODataPath(entityPath, formatODataNavigationPath(invocation.navigationPath))
+          return $odata<TResult>(
+            client,
+            joinODataPath(bindingPath, formatODataFunctionCall(functionName, invocation.parameters)),
+            'GET',
+            options as Record<string, unknown> | undefined,
+          )
+        },
+      }
+    },
+  }
+}
+
+export function createODataServerMutationService(
+  event: H3Event,
+  serviceName: string,
+): ODataServerMutationService {
+  const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'mutations')
 
   return {
     entitySet(name) {
