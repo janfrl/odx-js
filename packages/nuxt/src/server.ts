@@ -85,12 +85,25 @@ export interface ODataServerMutationEntitySet {
     targetKey: ODataKey,
     options?: ODataRequestOptions,
   ) => Promise<unknown>
+  linkNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
   unlinkNavigation: (
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     targetKey: ODataKey,
     options?: ODataRequestOptions,
   ) => Promise<unknown>
+  unlinkNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
 }
 
 export interface ODataServerMutationService {
@@ -296,12 +309,46 @@ export function createODataServerMutationService(
             body: createODataEntityReference(targetEntitySet, targetKey),
           })
         },
+        linkNavigationWithResponse: <TResult>(
+          source: ODataNavigationSource,
+          navigationPath: readonly string[],
+          targetEntitySet: string,
+          targetKey: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => {
+          const path = joinODataPath(
+            sourcePath(source),
+            formatODataNavigationPath(navigationPath),
+            '$ref',
+          )
+          return $odataMutationWithResponse<TResult>(client, path, 'POST', {
+            ...(options as Record<string, unknown> | undefined),
+            body: createODataEntityReference(targetEntitySet, targetKey),
+          })
+        },
         unlinkNavigation(source, navigationPath, targetKey, options) {
           const path = joinODataPath(
             `${joinODataPath(sourcePath(source), formatODataNavigationPath(navigationPath))}(${formatODataKey(targetKey)})`,
             '$ref',
           )
           return $odata(client, path, 'DELETE', options as Record<string, unknown> | undefined)
+        },
+        unlinkNavigationWithResponse: <TResult>(
+          source: ODataNavigationSource,
+          navigationPath: readonly string[],
+          targetKey: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => {
+          const path = joinODataPath(
+            `${joinODataPath(sourcePath(source), formatODataNavigationPath(navigationPath))}(${formatODataKey(targetKey)})`,
+            '$ref',
+          )
+          return $odataMutationWithResponse<TResult>(
+            client,
+            path,
+            'DELETE',
+            options as Record<string, unknown> | undefined,
+          )
         },
       }
     },
