@@ -19,11 +19,12 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-Use `invokeWithResponse` when the host must retain the action representation,
-next ETag, response location, or SAP message. The entity-set service also
-exposes request-scoped `create(body)`, `remove(key)`, and payload-only `invoke`
-operations. All methods use the configured ODX proxy route and the current
-Nitro request context rather than calling an upstream origin.
+Use the `WithResponse` variants when the host must retain an optional
+representation, next ETag, response identity, location, or SAP message. The
+entity-set service exposes request-scoped `create`, `update`, `remove`, and
+`invoke` operations together with their response-aware counterparts. All
+methods use the configured ODX proxy route and the current Nitro request
+context rather than calling an upstream origin.
 
 ## Installation
 

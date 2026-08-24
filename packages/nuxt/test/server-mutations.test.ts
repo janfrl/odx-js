@@ -29,6 +29,82 @@ function requestUrl(request: RequestInfo | URL): string {
 }
 
 describe('nitro server mutation service', () => {
+  it('preserves create, update, and delete response metadata on structured keys', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
+      const url = requestUrl(request)
+      if (init?.method === 'POST' && url.endsWith('/Products')) {
+        return Response.json({ ID: 2, Locale: 'en', Name: 'Created' }, {
+          headers: {
+            'ETag': 'W/"product-2"',
+            'Location': '/odata/Products(ID=2,Locale=\'en\')',
+            'OData-EntityId': 'Products(ID=2,Locale=\'en\')',
+          },
+        })
+      }
+      if (init?.method === 'PATCH' && url.endsWith('/Products(ID=1,Locale=\'en\')')) {
+        return new Response(null, {
+          status: 204,
+          headers: { ETag: 'W/"product-2"' },
+        })
+      }
+      if (init?.method === 'PATCH' && url.endsWith('/Products(2)'))
+        return Response.json({ ID: 2, Name: 'Updated' })
+      if (init?.method === 'DELETE' && url.endsWith('/Products(ID=1,Locale=\'en\')')) {
+        return Response.json({ ID: 1, deleted: true }, {
+          headers: {
+            'ETag': 'W/"product-3"',
+            'SAP-Message': '{"code":"DELETED","message":"Product deleted","severity":"success"}',
+          },
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    const products = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+    const key = { ID: 1, Locale: 'en' }
+
+    await expect(products.createWithResponse({ Name: 'Created' })).resolves.toEqual({
+      data: { ID: 2, Locale: 'en', Name: 'Created' },
+      entityId: 'Products(ID=2,Locale=\'en\')',
+      etag: 'W/"product-2"',
+      location: '/odata/Products(ID=2,Locale=\'en\')',
+    })
+    await expect(products.updateWithResponse(key, { Name: 'Updated' }, {
+      headers: { 'If-Match': 'W/"product-1"' },
+    })).resolves.toEqual({ etag: 'W/"product-2"' })
+    await expect(products.update<{ ID: number, Name: string }>(2, { Name: 'Updated' }))
+      .resolves
+      .toEqual({ ID: 2, Name: 'Updated' })
+    await expect(products.removeWithResponse(key, {
+      headers: { 'If-Match': 'W/"product-2"' },
+    })).resolves.toEqual({
+      data: { ID: 1, deleted: true },
+      etag: 'W/"product-3"',
+      sapMessage: '{"code":"DELETED","message":"Product deleted","severity":"success"}',
+    })
+
+    expect(requestFetch).toHaveBeenCalledTimes(4)
+    const requests = requestFetch.mock.calls.map(([request, init]) => ({
+      body: init?.body,
+      headers: new Headers(init?.headers),
+      method: init?.method,
+      url: requestUrl(request),
+    }))
+    expect(requests[1]).toMatchObject({
+      body: JSON.stringify({ Name: 'Updated' }),
+      method: 'PATCH',
+      url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')',
+    })
+    expect(requests[1]!.headers.get('if-match')).toBe('W/"product-1"')
+    expect(requests[3]).toMatchObject({
+      method: 'DELETE',
+      url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')',
+    })
+    expect(requests[3]!.headers.get('if-match')).toBe('W/"product-2"')
+  })
+
   it('uses the request-scoped proxy route for entity, action, and relationship writes', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
       const url = requestUrl(request)

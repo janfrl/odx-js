@@ -5,7 +5,9 @@ import type {
   ODataChangeSetMethod,
   ODataChangeSetRequest,
   ODataChangeSetResponse,
+  ODataCreateResponse,
   ODataKey,
+  ODataMutationResponse,
   ODataNavigationSource,
   ODataProxyConfig,
   ODataRequestOptions,
@@ -14,6 +16,8 @@ import type { H3Event } from 'h3'
 import {
   $odata,
   $odataActionWithResponse,
+  $odataCreateWithResponse,
+  $odataMutationWithResponse,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
@@ -42,10 +46,28 @@ export interface ODataServerMutationEntitySet {
     body: TBody,
     options?: ODataRequestOptions,
   ) => Promise<TResult>
+  createWithResponse: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
+    body: TBody,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCreateResponse<TResult>>
+  update: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
+    key: ODataKey,
+    body: TBody,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  updateWithResponse: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
+    key: ODataKey,
+    body: TBody,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
   remove: <TResult = unknown>(
     key: ODataKey,
     options?: ODataRequestOptions,
   ) => Promise<TResult>
+  removeWithResponse: <TResult = unknown>(
+    key: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
     invocation?: ODataActionInvocation<TParameters>,
@@ -190,10 +212,51 @@ export function createODataServerMutationService(
           ...(options as Record<string, unknown> | undefined),
           body,
         }),
+        createWithResponse: <TResult, TBody extends Record<string, unknown>>(
+          body: TBody,
+          options?: ODataRequestOptions,
+        ): Promise<ODataCreateResponse<TResult>> => $odataCreateWithResponse<TResult>(
+          client,
+          joinODataPath(servicePath, entitySet),
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body,
+          },
+        ),
+        update: <TResult, TBody extends Record<string, unknown>>(
+          key: ODataKey,
+          body: TBody,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(client, sourcePath(key), 'PATCH', {
+          ...(options as Record<string, unknown> | undefined),
+          body,
+        }),
+        updateWithResponse: <TResult, TBody extends Record<string, unknown>>(
+          key: ODataKey,
+          body: TBody,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          sourcePath(key),
+          'PATCH',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body,
+          },
+        ),
         remove: <TResult>(
           key: ODataKey,
           options?: ODataRequestOptions,
         ): Promise<TResult> => $odata<TResult>(client, sourcePath(key), 'DELETE', options as Record<string, unknown> | undefined),
+        removeWithResponse: <TResult>(
+          key: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          sourcePath(key),
+          'DELETE',
+          options as Record<string, unknown> | undefined,
+        ),
         invoke: <TResult, TParameters>(
           action: string,
           invocation: ODataActionInvocation<TParameters> = {},
