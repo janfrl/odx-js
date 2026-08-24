@@ -1,13 +1,15 @@
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { defineNuxtConfig } from 'nuxt/config'
 
 const apiProxyTarget = process.env.ODX_EXPLORER_API_PROXY_TARGET?.replace(/\/$/, '')
+const explorerStyles = fileURLToPath(new URL('./app.css', import.meta.url))
 
 export default defineNuxtConfig({
   modules: [
     '@nuxt/ui',
   ],
-  css: ['~/app.css'],
+  css: [explorerStyles],
   ssr: false,
 
   // Nuxt 4 & Monorepo Stability
@@ -44,12 +46,4 @@ export default defineNuxtConfig({
     port: 3300,
   },
 
-  vite: {
-    server: {
-      fs: {
-        // Allow serving files from the entire monorepo
-        allow: ['../..'],
-      },
-    },
-  },
 })
