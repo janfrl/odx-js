@@ -12,16 +12,18 @@ import { createODataServerMutationService } from '@me-tools/odx-nuxt/server'
 
 export default defineEventHandler(async (event) => {
   const catalog = createODataServerMutationService(event, 'catalog')
-  return catalog.entitySet('Products').invoke(
+  return catalog.entitySet('Products').invokeWithResponse(
     'Demo.SetCategory',
     { key: 1, parameters: { Category: 'LIGHT' } },
   )
 })
 ```
 
-The entity-set service also exposes request-scoped `create(body)` and
-`remove(key)` operations. All methods use the configured ODX proxy route and
-the current Nitro request context rather than calling an upstream origin.
+Use `invokeWithResponse` when the host must retain the action representation,
+next ETag, response location, or SAP message. The entity-set service also
+exposes request-scoped `create(body)`, `remove(key)`, and payload-only `invoke`
+operations. All methods use the configured ODX proxy route and the current
+Nitro request context rather than calling an upstream origin.
 
 ## Installation
 

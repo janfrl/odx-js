@@ -1,5 +1,6 @@
 import type {
   ODataActionInvocation,
+  ODataActionResponse,
   ODataAtomicMutation,
   ODataChangeSetMethod,
   ODataChangeSetRequest,
@@ -12,6 +13,7 @@ import type {
 import type { H3Event } from 'h3'
 import {
   $odata,
+  $odataActionWithResponse,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
@@ -49,6 +51,11 @@ export interface ODataServerMutationEntitySet {
     invocation?: ODataActionInvocation<TParameters>,
     options?: ODataRequestOptions,
   ) => Promise<TResult>
+  invokeWithResponse: <TResult = unknown, TParameters = Record<string, unknown>>(
+    action: string,
+    invocation?: ODataActionInvocation<TParameters>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataActionResponse<TResult>>
   linkNavigation: (
     source: ODataNavigationSource,
     navigationPath: readonly string[],
@@ -197,6 +204,20 @@ export function createODataServerMutationService(
             ? joinODataPath(servicePath, entitySet)
             : sourcePath(invocation.key)
           return $odata<TResult>(client, joinODataPath(bindingPath, action), 'POST', {
+            ...(options as Record<string, unknown> | undefined),
+            body: invocation.parameters ?? {},
+          })
+        },
+        invokeWithResponse: <TResult, TParameters>(
+          action: string,
+          invocation: ODataActionInvocation<TParameters> = {},
+          options?: ODataRequestOptions,
+        ): Promise<ODataActionResponse<TResult>> => {
+          validateODataQualifiedName(action, 'OData action')
+          const bindingPath = invocation.key === undefined
+            ? joinODataPath(servicePath, entitySet)
+            : sourcePath(invocation.key)
+          return $odataActionWithResponse<TResult>(client, joinODataPath(bindingPath, action), {
             ...(options as Record<string, unknown> | undefined),
             body: invocation.parameters ?? {},
           })

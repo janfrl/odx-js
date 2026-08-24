@@ -36,7 +36,13 @@ describe('nitro server mutation service', () => {
         return Response.json({ ID: 1, Name: 'Created' })
       }
       if (url.endsWith('/Demo.SetCategory')) {
-        return Response.json({ Category: 'LIGHT' })
+        return Response.json({ Category: 'LIGHT' }, {
+          headers: {
+            'ETag': 'W/"product-2"',
+            'Location': '/odata/Products(1)',
+            'SAP-Message': '{"code":"CATEGORY_SET","message":"Category set","severity":"success"}',
+          },
+        })
       }
       if (url.endsWith('/Products(1)')) {
         return Response.json({ deleted: true })
@@ -51,12 +57,17 @@ describe('nitro server mutation service', () => {
     await expect(products.create<{ ID: number, Name: string }>({ Name: 'Created' }))
       .resolves
       .toEqual({ ID: 1, Name: 'Created' })
-    await expect(products.invoke<{ Category: string }>('Demo.SetCategory', {
+    await expect(products.invokeWithResponse<{ Category: string }>('Demo.SetCategory', {
       key: 1,
       parameters: { Category: 'LIGHT' },
     }, {
       headers: { 'If-Match': 'W/"product-1"' },
-    })).resolves.toEqual({ Category: 'LIGHT' })
+    })).resolves.toEqual({
+      data: { Category: 'LIGHT' },
+      etag: 'W/"product-2"',
+      location: '/odata/Products(1)',
+      sapMessage: '{"code":"CATEGORY_SET","message":"Category set","severity":"success"}',
+    })
     await products.linkNavigation(1, ['Reviews'], 'Reviews', 10)
     await products.unlinkNavigation(1, ['Reviews'], 10)
     await expect(products.remove<{ deleted: boolean }>(1, {
