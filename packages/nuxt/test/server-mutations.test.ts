@@ -248,6 +248,130 @@ describe('nitro server mutation service', () => {
     expect(requests[1]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
+  it('executes request-scoped navigation CRUD through structured paths', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
+      const headers = new Headers(init?.headers)
+      const mode = headers.get('x-contract-mode')
+      if (mode === 'create-body')
+        return Response.json({ ID: 10, Text: 'Created body' })
+      if (mode === 'create-response') {
+        return Response.json({ ID: 11, Text: 'Created response' }, {
+          status: 201,
+          headers: {
+            'ETag': 'W/"review-11"',
+            'Location': '/odata/Reviews(11)',
+            'OData-EntityId': 'Reviews(11)',
+          },
+        })
+      }
+      if (mode === 'update-body')
+        return Response.json({ ID: 12, Text: 'Updated body' })
+      if (mode === 'update-response') {
+        return Response.json({ ID: 13, Text: 'Updated response' }, {
+          headers: {
+            'ETag': 'W/"review-13-next"',
+            'SAP-Message': '{"message":"Review updated","severity":"success"}',
+          },
+        })
+      }
+      if (mode === 'remove-body')
+        return Response.json({ ID: 14, removed: true })
+      return Response.json({ ID: 15, removed: true }, {
+        headers: {
+          'ETag': 'W/"review-15-deleted"',
+          'SAP-Message': '{"message":"Review removed","severity":"success"}',
+        },
+      })
+    })
+    const reviews = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+    const source = { ID: 1, Locale: 'en' }
+
+    await expect(reviews.createNavigation<Readonly<{ ID: number, Text: string }>>(
+      source,
+      ['Reviews'],
+      { Text: 'Created body' },
+      { headers: { 'X-Contract-Mode': 'create-body' } },
+    )).resolves.toEqual({ ID: 10, Text: 'Created body' })
+    await expect(reviews.createNavigationWithResponse<Readonly<{ ID: number, Text: string }>>(
+      source,
+      ['Reviews'],
+      { Text: 'Created response' },
+      { headers: { 'X-Contract-Mode': 'create-response' } },
+    )).resolves.toEqual({
+      data: { ID: 11, Text: 'Created response' },
+      entityId: 'Reviews(11)',
+      etag: 'W/"review-11"',
+      location: '/odata/Reviews(11)',
+    })
+    await expect(reviews.updateNavigation<Readonly<{ ID: number, Text: string }>>(
+      source,
+      ['PrimaryReview'],
+      { body: { Text: 'Updated body' } },
+      { headers: { 'X-Contract-Mode': 'update-body' } },
+    )).resolves.toEqual({ ID: 12, Text: 'Updated body' })
+    await expect(reviews.updateNavigationWithResponse<Readonly<{ ID: number, Text: string }>>(
+      source,
+      ['Reviews'],
+      { body: { Text: 'Updated response' }, targetKey: 13 },
+      {
+        headers: {
+          'If-Match': 'W/"review-13"',
+          'X-Contract-Mode': 'update-response',
+        },
+      },
+    )).resolves.toEqual({
+      data: { ID: 13, Text: 'Updated response' },
+      etag: 'W/"review-13-next"',
+      sapMessage: '{"message":"Review updated","severity":"success"}',
+    })
+    await expect(reviews.removeNavigation<Readonly<{ ID: number, removed: boolean }>>(
+      source,
+      ['Reviews'],
+      14,
+      { headers: { 'X-Contract-Mode': 'remove-body' } },
+    )).resolves.toEqual({ ID: 14, removed: true })
+    await expect(reviews.removeNavigationWithResponse<Readonly<{ ID: number, removed: boolean }>>(
+      source,
+      ['Reviews'],
+      15,
+      {
+        headers: {
+          'If-Match': 'W/"review-15"',
+          'X-Contract-Mode': 'remove-response',
+        },
+      },
+    )).resolves.toEqual({
+      data: { ID: 15, removed: true },
+      etag: 'W/"review-15-deleted"',
+      sapMessage: '{"message":"Review removed","severity":"success"}',
+    })
+
+    expect(requestFetch).toHaveBeenCalledTimes(6)
+    const requests = requestFetch.mock.calls.map(([request, init]) => ({
+      body: init?.body,
+      headers: new Headers(init?.headers),
+      method: init?.method,
+      url: requestUrl(request),
+    }))
+    expect(requests.map(request => ({ method: request.method, url: request.url }))).toEqual([
+      { method: 'POST', url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews' },
+      { method: 'POST', url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews' },
+      { method: 'PATCH', url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/PrimaryReview' },
+      { method: 'PATCH', url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews(13)' },
+      { method: 'DELETE', url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews(14)' },
+      { method: 'DELETE', url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews(15)' },
+    ])
+    expect(requests[0]!.body).toBe(JSON.stringify({ Text: 'Created body' }))
+    expect(requests[1]!.body).toBe(JSON.stringify({ Text: 'Created response' }))
+    expect(requests[2]!.body).toBe(JSON.stringify({ Text: 'Updated body' }))
+    expect(requests[3]!.body).toBe(JSON.stringify({ Text: 'Updated response' }))
+    expect(requests[3]!.headers.get('if-match')).toBe('W/"review-13"')
+    expect(requests[5]!.headers.get('if-match')).toBe('W/"review-15"')
+  })
+
   it('creates, reads, and replaces media through request-scoped structured paths', async () => {
     const initial = Uint8Array.from([37, 80, 68, 70])
     const replacement = Uint8Array.from([1, 2, 3])

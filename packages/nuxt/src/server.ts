@@ -21,6 +21,7 @@ import type {
   ODataMutationResponse,
   ODataNavigationEntityRead,
   ODataNavigationSource,
+  ODataNavigationUpdate,
   ODataProxyConfig,
   ODataQuery,
   ODataRequestOptions,
@@ -151,6 +152,42 @@ export interface ODataServerMutationEntitySet {
   ) => Promise<TResult>
   removeWithResponse: <TResult = unknown>(
     key: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  createNavigation: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    body: Readonly<Record<string, unknown>>,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  createNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    body: Readonly<Record<string, unknown>>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCreateResponse<TResult>>
+  updateNavigation: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  updateNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  removeNavigation: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  removeNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
     options?: ODataRequestOptions,
   ) => Promise<ODataMutationResponse<TResult>>
   createMedia: <TResult = unknown>(
@@ -499,6 +536,20 @@ export function createODataServerMutationService(
       const collectionPath = joinODataPath(servicePath, entitySet)
       const sourcePath = (source: ODataNavigationSource): string =>
         joinODataPath(servicePath, createODataNavigationSourcePath(entitySet, source))
+      const navigationCollectionPath = (
+        source: ODataNavigationSource,
+        path: readonly string[],
+      ): string => joinODataPath(sourcePath(source), formatODataNavigationPath(path))
+      const navigationTargetPath = (
+        source: ODataNavigationSource,
+        path: readonly string[],
+        targetKey?: ODataKey,
+      ): string => {
+        const navigationPath = navigationCollectionPath(source, path)
+        return targetKey === undefined
+          ? navigationPath
+          : `${navigationPath}(${formatODataKey(targetKey)})`
+      }
       return {
         create: <TResult, TBody extends Record<string, unknown>>(
           body: TBody,
@@ -552,6 +603,83 @@ export function createODataServerMutationService(
           'DELETE',
           options as Record<string, unknown> | undefined,
         ),
+        createNavigation: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          body: Readonly<Record<string, unknown>>,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(
+          client,
+          navigationCollectionPath(source, path),
+          'POST',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body,
+          },
+        ),
+        createNavigationWithResponse: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          body: Readonly<Record<string, unknown>>,
+          options?: ODataRequestOptions,
+        ): Promise<ODataCreateResponse<TResult>> => $odataCreateWithResponse<TResult>(
+          client,
+          navigationCollectionPath(source, path),
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body,
+          },
+        ),
+        updateNavigation: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          update: ODataNavigationUpdate,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(
+          client,
+          navigationTargetPath(source, path, update.targetKey),
+          'PATCH',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body: update.body,
+          },
+        ),
+        updateNavigationWithResponse: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          update: ODataNavigationUpdate,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          navigationTargetPath(source, path, update.targetKey),
+          'PATCH',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body: update.body,
+          },
+        ),
+        removeNavigation: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          targetKey: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(
+          client,
+          navigationTargetPath(source, path, targetKey),
+          'DELETE',
+          options as Record<string, unknown> | undefined,
+        ),
+        removeNavigationWithResponse: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          targetKey: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          navigationTargetPath(source, path, targetKey),
+          'DELETE',
+          options as Record<string, unknown> | undefined,
+        ),
         createMedia: <TResult>(
           body: ArrayBuffer | Uint8Array,
           options: ODataMediaCreateOptions,
@@ -565,7 +693,7 @@ export function createODataServerMutationService(
         ): Promise<ODataMediaCreateResponse<TResult>> =>
           $odataCreateMedia<TResult>(
             client,
-            joinODataPath(sourcePath(source), formatODataNavigationPath(path)),
+            navigationCollectionPath(source, path),
             body,
             options,
           ),

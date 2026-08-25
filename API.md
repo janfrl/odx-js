@@ -278,6 +278,9 @@ is significant, use `linkNavigationWithResponse` or
 `unlinkNavigationWithResponse`. The additive response capability is advertised
 by `supportsNavigationReferenceResponses === true`; the original relationship
 methods remain body-only and source-compatible.
+The request-scoped Nuxt server mutation entity set exposes the same structured
+`createNavigation`, `updateNavigation`, and `removeNavigation` operations and
+their response-aware variants through the current Nitro proxy context.
 All navigation mutations
 require a non-empty path of identifier segments, keeping keys, navigation
 structure, and payload separate until the ODX client boundary. `invoke` requires a qualified action name. Omit

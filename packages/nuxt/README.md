@@ -32,7 +32,10 @@ request-scoped proxy path and never follow a backend-owned URL.
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
 mutation entity-set service exposes request-scoped `create`, `update`, `remove`,
-and `invoke` operations together with their response-aware counterparts. It also
+and `invoke` operations together with their response-aware counterparts. The
+same service provides structured `createNavigation`, `updateNavigation`, and
+`removeNavigation` operations, including response-aware variants, without
+requiring an application endpoint to serialize parent or related keys. It also
 provides binary `createMedia`, `createNavigationMedia`, `fetchMedia`, and
 `updateMedia` operations without placing bytes in Nuxt's SSR payload. Creates
 post an initial default stream to the validated entity set or structured
@@ -211,6 +214,10 @@ Runtime entity sets expose `supportsCreateResponses === true`. The existing
 `create()` method remains the body-only convenience path.
 `createNavigationWithResponse(source, path, body, options)` provides the same
 response contract for a related collection below a root or contained parent.
+The request-scoped Nitro mutation service exposes the same structured
+navigation create, update, and delete families. They retain the current Nitro
+request context while deriving collection, to-one, and keyed to-many targets
+from the parent source, navigation path, and optional related key.
 
 For SAP Gateway OData V2 services that require the legacy update verb, use
 `merge()` or `mergeWithResponse()` explicitly. PATCH remains the default
