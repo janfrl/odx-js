@@ -315,6 +315,66 @@ describe('nitro server mutation service', () => {
     expect(Array.from(requests[1]!.body as Uint8Array)).toEqual(Array.from(replacement))
   })
 
+  it('invokes OData V2 FunctionImports at the request-scoped service root', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) =>
+      Response.json({
+        method: init?.method,
+        url: requestUrl(request),
+      }))
+    const signal = new AbortController().signal
+    const service = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    )
+
+    expect(service.supportsV2FunctionImports).toBe(true)
+    await expect(service.invokeFunctionImport<Readonly<{ method: string, url: string }>>(
+      'ApproveProduct',
+      {
+        method: 'POST',
+        parameters: {
+          ID: { type: 'Edm.Int32', value: 1 },
+          Reason: { type: 'Edm.String', value: 'A/B\'s desk' },
+          Optional: { type: 'Edm.String', value: null },
+        },
+      },
+      { signal },
+    )).resolves.toMatchObject({ method: 'POST' })
+
+    expect(requestFetch).toHaveBeenCalledOnce()
+    const [request, init] = requestFetch.mock.calls[0]!
+    const url = requestUrl(request)
+    expect(url).toContain('/api/odx/catalog-api/ApproveProduct?')
+    expect(decodeURIComponent(url)).toContain('ID=1')
+    expect(new URL(url, 'http://localhost').searchParams.get('Reason'))
+      .toBe('\'A/B\'\'s desk\'')
+    expect(decodeURIComponent(url)).not.toContain('Optional')
+    expect(init?.method).toBe('POST')
+    expect(init?.body).toBeUndefined()
+    expect(init?.signal).toBe(signal)
+  })
+
+  it('rejects unsafe V2 FunctionImports before request-scoped transport', () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>()
+    const service = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    )
+
+    expect(() => service.invokeFunctionImport('../ApproveProduct', { method: 'POST' }))
+      .toThrow('valid identifier')
+    expect(() => service.invokeFunctionImport('ApproveProduct', {
+      method: 'DELETE',
+    } as any)).toThrow('explicit GET or POST')
+    expect(() => service.invokeFunctionImport('ApproveProduct', {
+      method: 'POST',
+      parameters: {
+        Value: { type: 'Edm.Duration', value: 'PT1H' } as any,
+      },
+    })).toThrow('Unsupported OData V2 FunctionImport parameter type')
+    expect(requestFetch).not.toHaveBeenCalled()
+  })
+
   it('owns changeset serialization and response parsing inside ODX', async () => {
     const responseBody = [
       '--batch_response',

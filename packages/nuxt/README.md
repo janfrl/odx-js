@@ -38,6 +38,25 @@ streams without placing bytes in Nuxt's SSR payload. All methods use the
 configured ODX proxy route and the current Nitro request context rather than
 calling an upstream origin.
 
+For an OData V2 service operation, invoke the metadata-declared FunctionImport
+on the request-scoped mutation service. Parameters remain typed structured data;
+ODX serializes them as V2 URI literals at the service root and sends no JSON body:
+
+```ts
+const legacy = createODataServerMutationService(event, 'legacyCatalog')
+const approved = await legacy.invokeFunctionImport('ApproveProduct', {
+  method: 'POST',
+  parameters: {
+    ID: { type: 'Edm.Int32', value: 1 },
+    Reason: { type: 'Edm.String', value: 'reviewed' },
+  },
+}, { signal })
+```
+
+The explicit `supportsV2FunctionImports` capability and the same fail-closed
+name, method, primitive-type, and value validation as the browser service prevent
+Nitro handlers from constructing a parallel service-operation URL.
+
 ## Installation
 
 ```bash

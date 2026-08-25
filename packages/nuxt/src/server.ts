@@ -22,6 +22,8 @@ import type {
   ODataProxyConfig,
   ODataQuery,
   ODataRequestOptions,
+  ODataV2FunctionImportCapability,
+  ODataV2FunctionImportInvocation,
 } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import {
@@ -41,6 +43,7 @@ import {
   formatODataFunctionCall,
   formatODataKey,
   formatODataNavigationPath,
+  formatODataV2FunctionImportParameters,
   joinODataPath,
   mergeHeaders,
   parseODataChangeSetResponse,
@@ -194,7 +197,7 @@ export interface ODataServerMutationEntitySet {
   ) => Promise<ODataMutationResponse<TResult>>
 }
 
-export interface ODataServerMutationService {
+export interface ODataServerMutationService extends ODataV2FunctionImportCapability {
   entitySet: (name: string) => ODataServerMutationEntitySet
   changeSet: (
     mutations: readonly ODataAtomicMutation[],
@@ -454,6 +457,30 @@ export function createODataServerMutationService(
   const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'mutations')
 
   return {
+    supportsV2FunctionImports: true,
+    invokeFunctionImport: <TResult>(
+      name: string,
+      invocation: ODataV2FunctionImportInvocation,
+      options?: ODataRequestOptions,
+    ): Promise<TResult> => {
+      if (invocation.method !== 'GET' && invocation.method !== 'POST') {
+        throw new TypeError(
+          'An OData V2 FunctionImport requires an explicit GET or POST method.',
+        )
+      }
+      return $odata<TResult>(
+        client,
+        joinODataPath(
+          servicePath,
+          validateODataIdentifier(name, 'OData V2 FunctionImport'),
+        ),
+        invocation.method,
+        {
+          ...(options as Record<string, unknown> | undefined),
+          query: formatODataV2FunctionImportParameters(invocation.parameters),
+        },
+      )
+    },
     entitySet(name) {
       const entitySet = validateODataIdentifier(name, 'OData entity set')
       const sourcePath = (source: ODataNavigationSource): string =>
