@@ -12,6 +12,8 @@ import type {
   ODataEntityResponse,
   ODataFunctionInvocation,
   ODataKey,
+  ODataMediaCreateOptions,
+  ODataMediaCreateResponse,
   ODataMediaMutationResponse,
   ODataMediaRequestOptions,
   ODataMediaResponse,
@@ -29,6 +31,7 @@ import type { H3Event } from 'h3'
 import {
   $odata,
   $odataActionWithResponse,
+  $odataCreateMedia,
   $odataCreateWithResponse,
   $odataFetchMedia,
   $odataMutationWithResponse,
@@ -150,6 +153,16 @@ export interface ODataServerMutationEntitySet {
     key: ODataKey,
     options?: ODataRequestOptions,
   ) => Promise<ODataMutationResponse<TResult>>
+  createMedia: <TResult = unknown>(
+    body: ArrayBuffer | Uint8Array,
+    options: ODataMediaCreateOptions,
+  ) => Promise<ODataMediaCreateResponse<TResult>>
+  createNavigationMedia: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    body: ArrayBuffer | Uint8Array,
+    options: ODataMediaCreateOptions,
+  ) => Promise<ODataMediaCreateResponse<TResult>>
   fetchMedia: (
     key: ODataNavigationSource,
     options?: ODataMediaRequestOptions,
@@ -483,13 +496,14 @@ export function createODataServerMutationService(
     },
     entitySet(name) {
       const entitySet = validateODataIdentifier(name, 'OData entity set')
+      const collectionPath = joinODataPath(servicePath, entitySet)
       const sourcePath = (source: ODataNavigationSource): string =>
         joinODataPath(servicePath, createODataNavigationSourcePath(entitySet, source))
       return {
         create: <TResult, TBody extends Record<string, unknown>>(
           body: TBody,
           options?: ODataRequestOptions,
-        ): Promise<TResult> => $odata<TResult>(client, joinODataPath(servicePath, entitySet), 'POST', {
+        ): Promise<TResult> => $odata<TResult>(client, collectionPath, 'POST', {
           ...(options as Record<string, unknown> | undefined),
           body,
         }),
@@ -498,7 +512,7 @@ export function createODataServerMutationService(
           options?: ODataRequestOptions,
         ): Promise<ODataCreateResponse<TResult>> => $odataCreateWithResponse<TResult>(
           client,
-          joinODataPath(servicePath, entitySet),
+          collectionPath,
           {
             ...(options as Record<string, unknown> | undefined),
             body,
@@ -538,6 +552,23 @@ export function createODataServerMutationService(
           'DELETE',
           options as Record<string, unknown> | undefined,
         ),
+        createMedia: <TResult>(
+          body: ArrayBuffer | Uint8Array,
+          options: ODataMediaCreateOptions,
+        ): Promise<ODataMediaCreateResponse<TResult>> =>
+          $odataCreateMedia<TResult>(client, collectionPath, body, options),
+        createNavigationMedia: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          body: ArrayBuffer | Uint8Array,
+          options: ODataMediaCreateOptions,
+        ): Promise<ODataMediaCreateResponse<TResult>> =>
+          $odataCreateMedia<TResult>(
+            client,
+            joinODataPath(sourcePath(source), formatODataNavigationPath(path)),
+            body,
+            options,
+          ),
         fetchMedia: (
           key: ODataNavigationSource,
           options?: ODataMediaRequestOptions,

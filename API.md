@@ -423,6 +423,12 @@ entity data. Both create methods keep validated `Content-Type`,
 headers. ODX validates address segments but leaves navigation cardinality and
 media-entity semantics to the metadata-aware caller.
 
+The framework-agnostic `$odataCreateMedia` helper owns this transport contract.
+Nuxt exposes the same root and navigation create methods on
+`createODataServerMutationService(event, service).entitySet(name)`, so Nitro
+handlers use the current request's proxy, authentication, CSRF, and abort
+context instead of constructing a second client or contacting the origin.
+
 Service-level methods:
 
 | Method | HTTP | Return |

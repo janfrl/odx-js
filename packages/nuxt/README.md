@@ -33,10 +33,22 @@ Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
 mutation entity-set service exposes request-scoped `create`, `update`, `remove`,
 and `invoke` operations together with their response-aware counterparts. It also
-provides binary `fetchMedia` and `updateMedia` operations for default or named
-streams without placing bytes in Nuxt's SSR payload. All methods use the
-configured ODX proxy route and the current Nitro request context rather than
-calling an upstream origin.
+provides binary `createMedia`, `createNavigationMedia`, `fetchMedia`, and
+`updateMedia` operations without placing bytes in Nuxt's SSR payload. Creates
+post an initial default stream to the validated entity set or structured
+navigation collection and retain the representation, ETag, entity ID, location,
+and SAP message advertised by the service. Reads and replacements address
+default or named streams. All methods use the configured ODX proxy route and
+the current Nitro request context rather than calling an upstream origin.
+
+```ts
+const catalog = createODataServerMutationService(event, 'catalog')
+const documents = catalog.entitySet('Documents')
+const created = await documents.createMedia(bytes, {
+  contentType: 'application/pdf',
+  slug: 'manual.pdf',
+})
+```
 
 For an OData V2 service operation, invoke the metadata-declared FunctionImport
 on the request-scoped mutation service. Parameters remain typed structured data;

@@ -31,6 +31,9 @@ vi.mock('@me-tools/odx-core', async () => {
     serializeODataBatchChangeSets,
   } = await import('../../core/src/odata-changeset')
   const {
+    $odataCreateMedia,
+  } = await import('../../core/src/odata-media')
+  const {
     createODataEntityReference,
     createODataMediaPath,
     createODataNavigationRootReference,
@@ -40,6 +43,7 @@ vi.mock('@me-tools/odx-core', async () => {
     ...actual as any,
     $odata: vi.fn(() => Promise.resolve({ success: true })),
     $odataActionWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"', location: 'Operations(42)' })),
+    $odataCreateMedia,
     $odataCreateWithResponse: vi.fn(() => Promise.resolve({ entityId: 'Products(1)', etag: 'W/"entity-1"' })),
     $odataMutationWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"' })),
     $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),

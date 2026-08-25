@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  $odataCreateMedia,
   $odataFetchMedia,
   $odataUpdateMedia,
   validateODataMediaBody,
@@ -8,6 +9,81 @@ import {
 } from '../src/odata-media'
 
 describe('framework-agnostic OData media transport', () => {
+  it('creates binary media and preserves its representation and response identity', async () => {
+    const body = Uint8Array.from([37, 80, 68, 70])
+    const raw = vi.fn().mockResolvedValue({
+      _data: {
+        d: {
+          __metadata: { etag: 'W/"body-etag"' },
+          ID: 7,
+          FileName: 'manual.pdf',
+        },
+      },
+      headers: new Headers({
+        'etag': ' W/"media-7" ',
+        'location': ' /odata/Documents(7) ',
+        'odata-entityid': ' Documents(7) ',
+        'sap-message': ' {"message":"Created"} ',
+      }),
+    })
+
+    await expect($odataCreateMedia<Readonly<{ ID: number, FileName: string }>>(
+      { raw } as any,
+      'Documents',
+      body,
+      {
+        contentType: ' application/pdf ',
+        headers: {
+          'Content-Type': 'text/plain',
+          'Prefer': 'return=minimal',
+          'Slug': 'ignored.txt',
+          'X-Correlation-ID': 'media-create-7',
+        },
+        slug: ' manual.pdf ',
+      },
+    )).resolves.toEqual({
+      data: {
+        '@odata.etag': 'W/"body-etag"',
+        'ID': 7,
+        'FileName': 'manual.pdf',
+      },
+      entityId: 'Documents(7)',
+      etag: 'W/"media-7"',
+      location: '/odata/Documents(7)',
+      sapMessage: '{"message":"Created"}',
+    })
+    expect(raw).toHaveBeenCalledWith('Documents', {
+      body,
+      headers: {
+        'content-type': 'application/pdf',
+        'prefer': 'return=representation',
+        'slug': 'manual.pdf',
+        'x-correlation-id': 'media-create-7',
+      },
+      method: 'POST',
+      responseType: 'json',
+    })
+  })
+
+  it('retains bodyless media-create identity metadata', async () => {
+    const raw = vi.fn().mockResolvedValue({
+      headers: new Headers({
+        'location': '/odata/Documents(8)',
+        'odata-entityid': 'Documents(8)',
+      }),
+    })
+
+    await expect($odataCreateMedia(
+      { raw } as any,
+      'Documents',
+      new ArrayBuffer(0),
+      { contentType: 'application/octet-stream' },
+    )).resolves.toEqual({
+      entityId: 'Documents(8)',
+      location: '/odata/Documents(8)',
+    })
+  })
+
   it('reads binary data and preserves safe response metadata', async () => {
     const data = Uint8Array.from([37, 80, 68, 70]).buffer
     const raw = vi.fn().mockResolvedValue({

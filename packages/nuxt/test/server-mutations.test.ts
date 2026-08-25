@@ -248,10 +248,24 @@ describe('nitro server mutation service', () => {
     expect(requests[1]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
-  it('reads and replaces media through a structured request-scoped source', async () => {
+  it('creates, reads, and replaces media through request-scoped structured paths', async () => {
     const initial = Uint8Array.from([37, 80, 68, 70])
     const replacement = Uint8Array.from([1, 2, 3])
-    const requestFetch = vi.fn<typeof globalThis.fetch>(async (_request, init) => {
+    const created = Uint8Array.from([4, 5, 6])
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
+      const url = requestUrl(request)
+      if (init?.method === 'POST') {
+        const contained = url.endsWith('/Products(ID=1,IsActiveEntity=false)/Attachments')
+        return Response.json({ ID: contained ? 8 : 7, FileName: contained ? 'note.txt' : 'manual.pdf' }, {
+          status: 201,
+          headers: {
+            'ETag': contained ? 'W/"media-8"' : 'W/"media-7"',
+            'Location': contained ? '/odata/Attachments(8)' : '/odata/Products(7)',
+            'OData-EntityId': contained ? 'Attachments(8)' : 'Products(7)',
+            'SAP-Message': '{"message":"Document created","severity":"success"}',
+          },
+        })
+      }
       if (init?.method === 'GET') {
         return new Response(initial, {
           headers: {
@@ -279,6 +293,33 @@ describe('nitro server mutation service', () => {
       path: [{ navigationPath: ['Attachments'], key: { AttachmentID: 'A/B' } }],
     }
 
+    await expect(products.createMedia<Readonly<{ ID: number, FileName: string }>>(
+      created,
+      {
+        contentType: 'application/pdf',
+        slug: 'manual.pdf',
+      },
+    )).resolves.toEqual({
+      data: { ID: 7, FileName: 'manual.pdf' },
+      entityId: 'Products(7)',
+      etag: 'W/"media-7"',
+      location: '/odata/Products(7)',
+      sapMessage: '{"message":"Document created","severity":"success"}',
+    })
+    await expect(products.createNavigationMedia<Readonly<{ ID: number, FileName: string }>>(
+      { ID: 1, IsActiveEntity: false },
+      ['Attachments'],
+      created,
+      {
+        contentType: 'text/plain',
+        slug: 'note.txt',
+      },
+    )).resolves.toMatchObject({
+      data: { ID: 8, FileName: 'note.txt' },
+      entityId: 'Attachments(8)',
+      etag: 'W/"media-8"',
+    })
+
     const read = await products.fetchMedia(attachment, {
       headers: { 'X-Correlation-ID': 'media-read-1' },
       streamProperty: 'Content',
@@ -298,21 +339,35 @@ describe('nitro server mutation service', () => {
       sapMessage: '{"message":"Document replaced","severity":"success"}',
     })
 
-    expect(requestFetch).toHaveBeenCalledTimes(2)
+    expect(requestFetch).toHaveBeenCalledTimes(4)
     const requests = requestFetch.mock.calls.map(([request, init]) => ({
       body: init?.body,
       headers: new Headers(init?.headers),
       method: init?.method,
       url: requestUrl(request),
     }))
+    expect(requests[0]).toMatchObject({
+      method: 'POST',
+      url: '/api/odx/catalog-api/Products',
+    })
+    expect(requests[0]!.headers.get('content-type')).toBe('application/pdf')
+    expect(requests[0]!.headers.get('prefer')).toBe('return=representation')
+    expect(requests[0]!.headers.get('slug')).toBe('manual.pdf')
+    expect(Array.from(requests[0]!.body as Uint8Array)).toEqual(Array.from(created))
+    expect(requests[1]).toMatchObject({
+      method: 'POST',
+      url: '/api/odx/catalog-api/Products(ID=1,IsActiveEntity=false)/Attachments',
+    })
+    expect(requests[1]!.headers.get('content-type')).toBe('text/plain')
+    expect(requests[1]!.headers.get('slug')).toBe('note.txt')
     const url = '/api/odx/catalog-api/Products(ID=1,IsActiveEntity=false)/Attachments(AttachmentID=\'A%2FB\')/Content/$value'
-    expect(requests[0]).toMatchObject({ method: 'GET', url })
-    expect(requests[0]!.headers.get('accept')).toBe('application/octet-stream')
-    expect(requests[0]!.headers.get('x-correlation-id')).toBe('media-read-1')
-    expect(requests[1]).toMatchObject({ method: 'PUT', url })
-    expect(requests[1]!.headers.get('content-type')).toBe('application/pdf')
-    expect(requests[1]!.headers.get('if-match')).toBe('W/"media-1"')
-    expect(Array.from(requests[1]!.body as Uint8Array)).toEqual(Array.from(replacement))
+    expect(requests[2]).toMatchObject({ method: 'GET', url })
+    expect(requests[2]!.headers.get('accept')).toBe('application/octet-stream')
+    expect(requests[2]!.headers.get('x-correlation-id')).toBe('media-read-1')
+    expect(requests[3]).toMatchObject({ method: 'PUT', url })
+    expect(requests[3]!.headers.get('content-type')).toBe('application/pdf')
+    expect(requests[3]!.headers.get('if-match')).toBe('W/"media-1"')
+    expect(Array.from(requests[3]!.body as Uint8Array)).toEqual(Array.from(replacement))
   })
 
   it('invokes OData V2 FunctionImports at the request-scoped service root', async () => {

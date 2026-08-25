@@ -3,6 +3,7 @@ import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#i
 import {
   $odata,
   $odataActionWithResponse,
+  $odataCreateMedia,
   $odataCreateWithResponse,
   $odataFetchMedia,
   $odataMutationWithResponse,
@@ -30,7 +31,6 @@ import {
   toODataCollectionPage,
   validateODataIdentifier,
   validateODataMediaBody,
-  validateODataMediaSlug,
   validateODataMediaType,
   validateODataQualifiedName,
 } from '@me-tools/odx-core'
@@ -394,33 +394,7 @@ export function useOData(service?: string): any {
       ): Promise<ODataMediaCreateResponse<TModel>> => {
         if (entitySet === undefined)
           throw new TypeError('An OData media create requires an entity set.')
-        const { contentType, slug, ...requestOptions } = options
-        const normalizedSlug = validateODataMediaSlug(slug)
-        const response = await client.raw<TModel>(fullPath, {
-          ...(requestOptions as any),
-          body: validateODataMediaBody(body),
-          headers: mergeHeaders(
-            requestOptions.headers,
-            {
-              'content-type': validateODataMediaType(contentType),
-              'prefer': 'return=representation',
-              ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
-            },
-          ),
-          method: 'POST',
-          responseType: 'json',
-        })
-        const entityId = response.headers.get('odata-entityid')?.trim() || undefined
-        const etag = response.headers.get('etag') ?? undefined
-        const location = response.headers.get('location')?.trim() || undefined
-        const sapMessage = response.headers.get('sap-message')?.trim() || undefined
-        return {
-          ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TModel }),
-          ...(entityId === undefined ? {} : { entityId }),
-          ...(etag === undefined ? {} : { etag }),
-          ...(location === undefined ? {} : { location }),
-          ...(sapMessage === undefined ? {} : { sapMessage }),
-        }
+        return $odataCreateMedia<TModel>(client, fullPath, body, options)
       },
 
       createNavigationMedia: async <TResult = unknown>(
@@ -433,33 +407,7 @@ export function useOData(service?: string): any {
           navigationSourcePath(source),
           formatODataNavigationPath(navigationPath),
         )
-        const { contentType, slug, ...requestOptions } = options
-        const normalizedSlug = validateODataMediaSlug(slug)
-        const response = await client.raw<TResult>(navigationUrl, {
-          ...(requestOptions as any),
-          body: validateODataMediaBody(body),
-          headers: mergeHeaders(
-            requestOptions.headers,
-            {
-              'content-type': validateODataMediaType(contentType),
-              'prefer': 'return=representation',
-              ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
-            },
-          ),
-          method: 'POST',
-          responseType: 'json',
-        })
-        const entityId = response.headers.get('odata-entityid')?.trim() || undefined
-        const etag = response.headers.get('etag') ?? undefined
-        const location = response.headers.get('location')?.trim() || undefined
-        const sapMessage = response.headers.get('sap-message')?.trim() || undefined
-        return {
-          ...(response._data === undefined ? {} : { data: flattenOData(response._data) as TResult }),
-          ...(entityId === undefined ? {} : { entityId }),
-          ...(etag === undefined ? {} : { etag }),
-          ...(location === undefined ? {} : { location }),
-          ...(sapMessage === undefined ? {} : { sapMessage }),
-        }
+        return $odataCreateMedia<TResult>(client, navigationUrl, body, options)
       },
 
       fetchMedia: async (

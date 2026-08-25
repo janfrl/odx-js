@@ -1,9 +1,11 @@
 import type {
+  ODataMediaCreateOptions,
+  ODataMediaCreateResponse,
   ODataMediaMutationResponse,
   ODataMediaResponse,
   ODataRequestOptions,
 } from './types'
-import { mergeHeaders } from './odata-utils'
+import { flattenOData, mergeHeaders } from './odata-utils'
 
 interface ODataRawClient {
   raw: <T>(path: string, options?: unknown) => Promise<{
@@ -14,6 +16,41 @@ interface ODataRawClient {
 
 export interface ODataMediaTransportUpdateOptions extends ODataRequestOptions {
   readonly contentType: string
+}
+
+export async function $odataCreateMedia<T>(
+  client: ODataRawClient,
+  path: string,
+  body: ArrayBuffer | Uint8Array,
+  options: ODataMediaCreateOptions,
+): Promise<ODataMediaCreateResponse<T>> {
+  const { contentType, slug, ...requestOptions } = options
+  const normalizedSlug = validateODataMediaSlug(slug)
+  const response = await client.raw<T>(path, {
+    ...requestOptions,
+    body: validateODataMediaBody(body),
+    headers: mergeHeaders(
+      requestOptions.headers,
+      {
+        'content-type': validateODataMediaType(contentType),
+        'prefer': 'return=representation',
+        ...(normalizedSlug === undefined ? {} : { slug: normalizedSlug }),
+      },
+    ),
+    method: 'POST',
+    responseType: 'json',
+  })
+  const entityId = response.headers.get('odata-entityid')?.trim() || undefined
+  const etag = response.headers.get('etag')?.trim() || undefined
+  const location = response.headers.get('location')?.trim() || undefined
+  const sapMessage = response.headers.get('sap-message')?.trim() || undefined
+  return {
+    ...(response._data === undefined ? {} : { data: flattenOData(response._data) as T }),
+    ...(entityId === undefined ? {} : { entityId }),
+    ...(etag === undefined ? {} : { etag }),
+    ...(location === undefined ? {} : { location }),
+    ...(sapMessage === undefined ? {} : { sapMessage }),
+  }
 }
 
 const RE_HEADER_NEWLINE = /[\r\n]/u
