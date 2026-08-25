@@ -6,6 +6,7 @@ import type {
   ODataChangeSetRequest,
   ODataChangeSetResponse,
   ODataCollectionPage,
+  ODataContinuation,
   ODataCreateResponse,
   ODataFunctionInvocation,
   ODataKey,
@@ -28,6 +29,7 @@ import {
   $odataMutationWithResponse,
   $odataPage,
   $odataUpdateMedia,
+  createODataContinuationPath,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
@@ -62,6 +64,10 @@ export interface ODataServerReadEntitySet {
     query?: ODataQuery<TResult>,
     options?: ODataRequestOptions,
   ) => Promise<ODataCollectionPage<TResult>>
+  fetchNextPage: <TResult = unknown>(
+    continuation: ODataContinuation,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<TResult>>
   fetchNavigationList: <TResult = unknown>(
     source: ODataNavigationSource,
     navigationPath: readonly string[],
@@ -72,6 +78,12 @@ export interface ODataServerReadEntitySet {
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataCollectionPage<TResult>>
+  fetchNavigationNextPage: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    continuation: ODataContinuation,
     options?: ODataRequestOptions,
   ) => Promise<ODataCollectionPage<TResult>>
   invokeFunction: <TResult = unknown>(
@@ -296,6 +308,14 @@ export function createODataServerReadService(
           ...(options as Record<string, unknown> | undefined),
           query: stringifyQuery(query),
         }),
+        fetchNextPage: <TResult>(
+          continuation: ODataContinuation,
+          options?: ODataRequestOptions,
+        ): Promise<ODataCollectionPage<TResult>> => $odataPage<TResult>(
+          client,
+          createODataContinuationPath(collectionPath, continuation),
+          options as Record<string, unknown> | undefined,
+        ),
         fetchNavigationList: <TResult>(
           source: ODataNavigationSource,
           path: readonly string[],
@@ -314,6 +334,16 @@ export function createODataServerReadService(
           ...(options as Record<string, unknown> | undefined),
           query: stringifyQuery(query),
         }),
+        fetchNavigationNextPage: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          continuation: ODataContinuation,
+          options?: ODataRequestOptions,
+        ): Promise<ODataCollectionPage<TResult>> => $odataPage<TResult>(
+          client,
+          createODataContinuationPath(navigationPath(source, path), continuation),
+          options as Record<string, unknown> | undefined,
+        ),
         invokeFunction: <TResult>(
           functionName: string,
           invocation: ODataFunctionInvocation = {},

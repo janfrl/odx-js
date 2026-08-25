@@ -76,6 +76,64 @@ describe('nitro server read service', () => {
     )
   })
 
+  it('anchors opaque entity-set and navigation continuations to their owning proxy paths', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
+      const url = requestUrl(request)
+      if (url.includes('/Reviews?cursor=review-2')) {
+        return Response.json({
+          d: { results: [{ ID: 11, Text: 'Detailed' }] },
+        })
+      }
+      if (url.includes('/Reviews')) {
+        return Response.json({
+          d: {
+            __count: '2',
+            __next: 'https://private.example.test/elsewhere?cursor=review-2',
+            results: [{ ID: 10, Text: 'Useful' }],
+          },
+        })
+      }
+      if (url.includes('%24skiptoken=product-2')) {
+        return Response.json({ value: [{ ID: 2, Name: 'Mouse' }] })
+      }
+      return Response.json({
+        '@odata.count': 2,
+        '@odata.nextLink': 'https://private.example.test/elsewhere?%24skiptoken=product-2',
+        'value': [{ ID: 1, Name: 'Keyboard' }],
+      })
+    })
+    const products = createODataServerReadService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+
+    const first = await products.fetchPage<{ ID: number, Name: string }>({ $top: 1 })
+    await expect(products.fetchNextPage<{ ID: number, Name: string }>(
+      first.continuation!,
+    )).resolves.toEqual({
+      items: [{ ID: 2, Name: 'Mouse' }],
+    })
+    const firstReviews = await products.fetchNavigationPage<{ ID: number, Text: string }>(
+      { ID: 1, Locale: 'en' },
+      ['Reviews'],
+      { $top: 1 },
+    )
+    await expect(products.fetchNavigationNextPage<{ ID: number, Text: string }>(
+      { ID: 1, Locale: 'en' },
+      ['Reviews'],
+      firstReviews.continuation!,
+    )).resolves.toEqual({
+      items: [{ ID: 11, Text: 'Detailed' }],
+    })
+
+    expect(requestUrl(requestFetch.mock.calls[1]![0])).toBe(
+      '/api/odx/catalog-api/Products?%24skiptoken=product-2',
+    )
+    expect(requestUrl(requestFetch.mock.calls[3]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews?cursor=review-2',
+    )
+  })
+
   it('invokes typed functions on collection, entity, and navigation bindings', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async request =>
       Response.json({ path: requestUrl(request) }))
@@ -117,6 +175,14 @@ describe('nitro server read service', () => {
     expect(() => products.invokeFunction('Demo.Score', {
       navigationPath: ['Reviews'],
     })).toThrow('requires an entity key')
+    expect(() => products.fetchNextPage({ token: '#unsafe' })).toThrow(
+      'valid OData continuation token',
+    )
+    expect(() => products.fetchNavigationNextPage(
+      1,
+      ['Reviews'],
+      { token: '' },
+    )).toThrow('valid OData continuation token')
     expect(requestFetch).not.toHaveBeenCalled()
   })
 
