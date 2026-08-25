@@ -6,8 +6,10 @@ import type {
   ODataChangeSetRequest,
   ODataChangeSetResponse,
   ODataCollectionPage,
+  ODataContainedEntitySource,
   ODataContinuation,
   ODataCreateResponse,
+  ODataEntityResponse,
   ODataFunctionInvocation,
   ODataKey,
   ODataMediaMutationResponse,
@@ -15,6 +17,7 @@ import type {
   ODataMediaResponse,
   ODataMediaUpdateOptions,
   ODataMutationResponse,
+  ODataNavigationEntityRead,
   ODataNavigationSource,
   ODataProxyConfig,
   ODataQuery,
@@ -29,6 +32,7 @@ import {
   $odataMutationWithResponse,
   $odataPage,
   $odataUpdateMedia,
+  $odataWithResponse,
   createODataContinuationPath,
   createODataEntityPath,
   createODataEntityReference,
@@ -56,6 +60,25 @@ interface ODataFetchClient {
 }
 
 export interface ODataServerReadEntitySet {
+  fetchOne: <TResult = unknown>(
+    key: ODataKey,
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  fetchOneWithResponse: <TResult = unknown>(
+    key: ODataKey,
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataEntityResponse<TResult>>
+  fetchContainedOneWithResponse: <TResult = unknown>(
+    source: ODataContainedEntitySource,
+    query?: ODataQuery<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataEntityResponse<TResult>>
+  fetchNavigationOneWithResponse: <TResult = unknown>(
+    request: ODataNavigationEntityRead<TResult>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataEntityResponse<TResult>>
   fetchList: <TResult = unknown>(
     query?: ODataQuery<TResult>,
     options?: ODataRequestOptions,
@@ -294,6 +317,58 @@ export function createODataServerReadService(
       const navigationPath = (source: ODataNavigationSource, path: readonly string[]): string =>
         joinODataPath(sourcePath(source), formatODataNavigationPath(path))
       return {
+        fetchOne: <TResult>(
+          key: ODataKey,
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(client, sourcePath(key), 'GET', {
+          ...(options as Record<string, unknown> | undefined),
+          query: stringifyQuery(query),
+        }),
+        fetchOneWithResponse: <TResult>(
+          key: ODataKey,
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<ODataEntityResponse<TResult>> => $odataWithResponse<TResult>(
+          client,
+          sourcePath(key),
+          'GET',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            query: stringifyQuery(query),
+          },
+        ),
+        fetchContainedOneWithResponse: <TResult>(
+          source: ODataContainedEntitySource,
+          query: ODataQuery<TResult> = {},
+          options?: ODataRequestOptions,
+        ): Promise<ODataEntityResponse<TResult>> => $odataWithResponse<TResult>(
+          client,
+          sourcePath(source),
+          'GET',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            query: stringifyQuery(query),
+          },
+        ),
+        fetchNavigationOneWithResponse: <TResult>(
+          request: ODataNavigationEntityRead<TResult>,
+          options?: ODataRequestOptions,
+        ): Promise<ODataEntityResponse<TResult>> => {
+          const relatedPath = navigationPath(
+            request.source,
+            typeof request.navigationPath === 'string'
+              ? [request.navigationPath]
+              : request.navigationPath,
+          )
+          const itemPath = request.targetKey === undefined
+            ? relatedPath
+            : `${relatedPath}(${formatODataKey(request.targetKey)})`
+          return $odataWithResponse<TResult>(client, itemPath, 'GET', {
+            ...(options as Record<string, unknown> | undefined),
+            query: stringifyQuery(request.query ?? {}),
+          })
+        },
         fetchList: <TResult>(
           query: ODataQuery<TResult> = {},
           options?: ODataRequestOptions,

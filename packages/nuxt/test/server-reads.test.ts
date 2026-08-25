@@ -29,6 +29,78 @@ function requestUrl(request: RequestInfo | URL): string {
 }
 
 describe('nitro server read service', () => {
+  it('reads exact entities and preserves response validators on structured paths', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
+      const url = requestUrl(request)
+      const name = url.includes('/Supplier')
+        ? 'Acme'
+        : url.includes('/Attachments')
+          ? 'manual.pdf'
+          : 'Keyboard'
+      return Response.json(
+        { ID: 1, Name: name },
+        { headers: { ETag: `W/"${name}"` } },
+      )
+    })
+    const controller = new AbortController()
+    const products = createODataServerReadService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+    const key = { ID: 1, Locale: 'en' }
+
+    await expect(products.fetchOne<{ ID: number, Name: string }>(
+      key,
+      { $select: ['ID', 'Name'] },
+      { signal: controller.signal },
+    )).resolves.toEqual({ ID: 1, Name: 'Keyboard' })
+    await expect(products.fetchOneWithResponse<{ ID: number, Name: string }>(
+      key,
+    )).resolves.toEqual({
+      data: { ID: 1, Name: 'Keyboard' },
+      etag: 'W/"Keyboard"',
+    })
+    await expect(products.fetchNavigationOneWithResponse<{ ID: number, Name: string }>({
+      source: key,
+      navigationPath: 'Supplier',
+      query: { $select: ['ID', 'Name'] },
+    })).resolves.toEqual({
+      data: { ID: 1, Name: 'Acme' },
+      etag: 'W/"Acme"',
+    })
+    await expect(products.fetchNavigationOneWithResponse({
+      source: key,
+      navigationPath: ['Reviews'],
+      targetKey: { ID: 10 },
+    })).resolves.toMatchObject({ etag: 'W/"Keyboard"' })
+    await expect(products.fetchContainedOneWithResponse({
+      kind: 'contained-entity',
+      rootKey: key,
+      path: [{ navigationPath: ['Attachments'], key: { AttachmentID: 'A/B' } }],
+    })).resolves.toEqual({
+      data: { ID: 1, Name: 'manual.pdf' },
+      etag: 'W/"manual.pdf"',
+    })
+
+    expect(requestFetch).toHaveBeenCalledTimes(5)
+    expect(requestUrl(requestFetch.mock.calls[0]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')?$select=ID,Name',
+    )
+    expect(requestFetch.mock.calls[0]![1]?.signal).toBe(controller.signal)
+    expect(requestUrl(requestFetch.mock.calls[1]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')',
+    )
+    expect(requestUrl(requestFetch.mock.calls[2]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Supplier?$select=ID,Name',
+    )
+    expect(requestUrl(requestFetch.mock.calls[3]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews(ID=10)',
+    )
+    expect(requestUrl(requestFetch.mock.calls[4]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Attachments(AttachmentID=\'A%2FB\')',
+    )
+  })
+
   it('uses the request-scoped proxy route for lists and server-driven pages', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
       const url = requestUrl(request)
@@ -183,6 +255,15 @@ describe('nitro server read service', () => {
       ['Reviews'],
       { token: '' },
     )).toThrow('valid OData continuation token')
+    expect(() => products.fetchNavigationOneWithResponse({
+      source: 1,
+      navigationPath: ['Reviews', '../Secret'],
+    })).toThrow('valid identifier segments')
+    expect(() => products.fetchContainedOneWithResponse({
+      kind: 'contained-entity',
+      rootKey: 1,
+      path: [{ navigationPath: ['../Attachments'], key: 2 }],
+    })).toThrow('valid identifier segments')
     expect(requestFetch).not.toHaveBeenCalled()
   })
 

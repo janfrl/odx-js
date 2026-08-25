@@ -19,12 +19,15 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-The server read entity set provides `fetchList`, `fetchPage`, `fetchNextPage`,
-`fetchNavigationList`, `fetchNavigationPage`, `fetchNavigationNextPage`, and
-typed `invokeFunction` operations. It validates structured entity and
-navigation identities and preserves server-driven count and continuation
-metadata. Continuation methods anchor the opaque token to the same validated
-request-scoped proxy path; they never follow a backend-owned URL.
+The server read entity set provides `fetchOne`, `fetchOneWithResponse`,
+`fetchContainedOneWithResponse`, `fetchNavigationOneWithResponse`, `fetchList`,
+`fetchPage`, `fetchNextPage`, `fetchNavigationList`, `fetchNavigationPage`,
+`fetchNavigationNextPage`, and typed `invokeFunction` operations. Exact entity
+response variants preserve the entity and its optional ETag for conditional
+follow-up mutations. All methods validate structured entity and navigation
+identities. Page reads retain server-driven count and continuation metadata;
+continuation methods anchor the opaque token to the same validated
+request-scoped proxy path and never follow a backend-owned URL.
 
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
