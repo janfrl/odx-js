@@ -1846,6 +1846,92 @@
     "description": "Raised when an explicitly protected SAP mutation cannot obtain a token.",
     "properties": []
   },
+  "validateODataMediaType": {
+    "title": "validateODataMediaType",
+    "properties": [
+      {
+        "name": "value",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "validateODataMediaBody": {
+    "title": "validateODataMediaBody",
+    "properties": [
+      {
+        "name": "body",
+        "type": "ArrayBuffer | Uint8Array<ArrayBufferLike>",
+        "required": true
+      }
+    ]
+  },
+  "validateODataMediaSlug": {
+    "title": "validateODataMediaSlug",
+    "properties": [
+      {
+        "name": "value",
+        "type": "string | undefined",
+        "required": true
+      }
+    ]
+  },
+  "$odataFetchMedia": {
+    "title": "$odataFetchMedia",
+    "properties": [
+      {
+        "name": "client",
+        "type": "ODataRawClient",
+        "required": true
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "ODataRequestOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
+  "$odataUpdateMedia": {
+    "title": "$odataUpdateMedia",
+    "properties": [
+      {
+        "name": "client",
+        "type": "ODataRawClient",
+        "required": true
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "ArrayBuffer | Uint8Array<ArrayBufferLike>",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "ODataMediaTransportUpdateOptions",
+        "required": true
+      }
+    ]
+  },
+  "ODataMediaTransportUpdateOptions": {
+    "title": "ODataMediaTransportUpdateOptions",
+    "properties": [
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
   "validateODataIdentifier": {
     "title": "validateODataIdentifier",
     "description": "Validates and returns one OData identifier without path delimiters.",
