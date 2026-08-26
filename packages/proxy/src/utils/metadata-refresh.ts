@@ -49,6 +49,7 @@ const RE_ABSOLUTE_PATH = /(^|\s)\/[^\s)"']+/g
 const RE_URL_HOST = /\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+(?::\d+)?\b/gi
 const RE_INVALID_METADATA_REASON = /^Received invalid or empty metadata/
 const RE_WHITESPACE = /\s+/g
+const runtimeMetadataRefreshes = new Map<string, Promise<RuntimeMetadataRefreshResult>>()
 
 export function getRuntimeMetadataCachePaths(config: ODataProxyConfig, serviceName: string): { tempFile: string, persistentCacheFile: string, stateFile: string } {
   const buildDir = config.buildDir ?? ''
@@ -384,17 +385,7 @@ async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, 
   return { url: metadataUrl, headers, connectivityRequest }
 }
 
-export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<RuntimeMetadataRefreshResult> {
-  if (!shouldFetchRemoteMetadata(service)) {
-    const inputPath = resolveLocalMetadataInputPath(config, service)
-    if (!fs.existsSync(inputPath)) {
-      throw new Error(`Input EDMX file not found at ${inputPath}`)
-    }
-
-    const xml = fs.readFileSync(inputPath, 'utf-8')
-    return createMetadataResult(service, inputPath, xml, 'local', false, null)
-  }
-
+async function refreshRemoteRuntimeMetadata(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<RuntimeMetadataRefreshResult> {
   const { tempFile, persistentCacheFile, stateFile } = getRuntimeMetadataCachePaths(config, service.name)
 
   try {
@@ -425,5 +416,35 @@ export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyC
     const result = createMetadataResult(service, tempFile, xml, 'cache', true, sanitizeMetadataFailureReason(err))
     writeMetadataState(stateFile, result)
     return result
+  }
+}
+
+export async function refreshRuntimeMetadata(event: H3Event, config: ODataProxyConfig, service: ODataServiceConfig): Promise<RuntimeMetadataRefreshResult> {
+  if (!shouldFetchRemoteMetadata(service)) {
+    const inputPath = resolveLocalMetadataInputPath(config, service)
+    if (!fs.existsSync(inputPath)) {
+      throw new Error(`Input EDMX file not found at ${inputPath}`)
+    }
+
+    const xml = fs.readFileSync(inputPath, 'utf-8')
+    return createMetadataResult(service, inputPath, xml, 'local', false, null)
+  }
+
+  const { stateFile } = getRuntimeMetadataCachePaths(config, service.name)
+  const refreshKey = resolve(stateFile)
+  const activeRefresh = runtimeMetadataRefreshes.get(refreshKey)
+  if (activeRefresh) {
+    return activeRefresh
+  }
+
+  const refresh = refreshRemoteRuntimeMetadata(event, config, service)
+  runtimeMetadataRefreshes.set(refreshKey, refresh)
+  try {
+    return await refresh
+  }
+  finally {
+    if (runtimeMetadataRefreshes.get(refreshKey) === refresh) {
+      runtimeMetadataRefreshes.delete(refreshKey)
+    }
   }
 }

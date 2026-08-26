@@ -598,7 +598,8 @@ Runtime metadata refresh and TypeScript SDK generation are intentionally
 separate contracts. Production refresh updates Explorer metadata cache state
 only and may return `stale: true` when it had to use cached EDMX because the
 backend was unreachable. Generated SDK/type files remain development, build, or
-CI artifacts.
+CI artifacts. Concurrent refreshes for the same cache are coalesced into one
+upstream request. A later explicit refresh starts a fresh request.
 
 Production traffic history is disabled unless SQL log storage is explicitly
 configured. The `OdxLogStore` boundary, memory implementation, db0-backed SQL

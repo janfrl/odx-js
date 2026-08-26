@@ -12,6 +12,9 @@ Explorer schema responses are projected from the loss-aware
 `@me-tools/odx-metadata` CSDL document. Raw XML is parsed once; entity,
 association, navigation, version, and namespace summaries share that parsed
 source instead of maintaining endpoint-specific XML regular expressions.
+Concurrent production refreshes for the same runtime metadata cache share one
+upstream request, preventing duplicate work and nondeterministic cache-state
+writes. A later explicit refresh always starts a fresh request.
 
 The exported Nitro module keeps its request plugins and their generated shared
 chunks inside the host bundle. This preserves Nitro's virtual runtime imports

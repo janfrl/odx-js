@@ -197,13 +197,19 @@ function writeRuntimeMetadataCache(config: ODataProxyConfig, serviceName: string
   return paths
 }
 
-async function listenMetadataBackend(options: { xml?: string, status?: number } = {}) {
+async function listenMetadataBackend(options: { delayMs?: number, xml?: string, status?: number } = {}) {
   const requests: Array<{ url?: string, headers: Record<string, string | string[] | undefined> }> = []
   const server = createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers })
-    res.statusCode = options.status ?? 200
-    res.setHeader('content-type', 'application/xml')
-    res.end(options.xml ?? metadataXml)
+    const respond = () => {
+      res.statusCode = options.status ?? 200
+      res.setHeader('content-type', 'application/xml')
+      res.end(options.xml ?? metadataXml)
+    }
+    if (options.delayMs)
+      setTimeout(respond, options.delayMs)
+    else
+      respond()
   })
   const url = await listenOnLoopback(server)
 
@@ -380,6 +386,64 @@ describe('production Explorer endpoint policy', () => {
       expect(backend.requests[0]?.headers['x-service-header']).toBe('service')
       expect(backend.requests[0]?.headers['x-global-header']).toBe('global')
       expect(backend.requests[0]?.headers.authorization).toBe(`Basic ${Buffer.from('service-user:service-password').toString('base64')}`)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('coalesces concurrent refreshes for the same runtime metadata cache', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ delayMs: 25 })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const endpoint = `${server.url}/__odx__/generate?service=RemoteService`
+      const [first, second] = await Promise.all([
+        ofetch<any>(endpoint),
+        ofetch<any>(endpoint),
+      ])
+
+      expect(backend.requests).toHaveLength(1)
+      expect(second).toEqual(first)
+      expect(first).toMatchObject({
+        success: true,
+        operation: 'metadata-refresh',
+        stale: false,
+        source: 'remote',
+      })
+
+      await ofetch(endpoint)
+      expect(backend.requests).toHaveLength(2)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('releases a coalesced refresh after an upstream failure', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ delayMs: 25, status: 503 })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const server = await listenExplorerApi(config, { authenticated: true })
+
+    try {
+      const endpoint = `${server.url}/__odx__/generate?service=RemoteService`
+      const failures = await Promise.allSettled([
+        ofetch(endpoint, { retry: 0 }),
+        ofetch(endpoint, { retry: 0 }),
+      ])
+
+      expect(failures.map(result => result.status)).toEqual(['rejected', 'rejected'])
+      expect(backend.requests).toHaveLength(1)
+
+      await expect(ofetch(endpoint, { retry: 0 })).rejects.toMatchObject({ status: 500 })
+      expect(backend.requests).toHaveLength(2)
     }
     finally {
       await server.close()
