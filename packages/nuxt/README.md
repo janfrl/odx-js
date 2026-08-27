@@ -36,7 +36,10 @@ mutation service invokes unbound V4 actions at the service root, including a
 response-aware variant. Its entity-set service exposes request-scoped `create`,
 `update`, `remove`, and `invoke` operations together with their response-aware
 counterparts. Entity-set actions support collection, entity, and navigation
-bindings. The same service provides structured `createNavigation`,
+bindings. SAP Gateway V2 handlers can explicitly select `merge` or
+`mergeWithResponse` for root entities and the corresponding structured
+navigation methods; the service never silently substitutes MERGE for PATCH. The
+same service provides structured `createNavigation`,
 `updateNavigation`, and
 `removeNavigation` operations, including response-aware variants, without
 requiring an application endpoint to serialize parent or related keys. It also
@@ -47,6 +50,12 @@ navigation collection and retain the representation, ETag, entity ID, location,
 and SAP message advertised by the service. Reads and replacements address
 default or named streams. All methods use the configured ODX proxy route and
 the current Nitro request context rather than calling an upstream origin.
+
+For atomic V2 updates, the request-scoped service advertises
+`supportsV2AtomicChangesets === true` and exposes `v2ChangeSet`. It accepts only
+typed root and navigation updates, serializes every member as `MERGE`, and sends
+the SAP Gateway V2 version headers. Unsupported mutation kinds fail before the
+request-scoped proxy transport runs.
 
 ```ts
 const catalog = createODataServerMutationService(event, 'catalog')

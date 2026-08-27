@@ -25,6 +25,7 @@ import type {
   ODataProxyConfig,
   ODataQuery,
   ODataRequestOptions,
+  ODataV2AtomicMutation,
   ODataV2FunctionImportCapability,
   ODataV2FunctionImportInvocation,
 } from '@me-tools/odx-core'
@@ -134,6 +135,8 @@ export interface ODataServerReadService {
 }
 
 export interface ODataServerMutationEntitySet {
+  readonly supportsMerge: true
+  readonly supportsNavigationMerge: true
   create: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
     body: TBody,
     options?: ODataRequestOptions,
@@ -148,6 +151,16 @@ export interface ODataServerMutationEntitySet {
     options?: ODataRequestOptions,
   ) => Promise<TResult>
   updateWithResponse: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
+    key: ODataKey,
+    body: TBody,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  merge: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
+    key: ODataKey,
+    body: TBody,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  mergeWithResponse: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
     key: ODataKey,
     body: TBody,
     options?: ODataRequestOptions,
@@ -179,6 +192,18 @@ export interface ODataServerMutationEntitySet {
     options?: ODataRequestOptions,
   ) => Promise<TResult>
   updateNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  mergeNavigation: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    update: ODataNavigationUpdate,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  mergeNavigationWithResponse: <TResult = unknown>(
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     update: ODataNavigationUpdate,
@@ -254,6 +279,7 @@ export interface ODataServerMutationEntitySet {
 }
 
 export interface ODataServerMutationService extends ODataV2FunctionImportCapability {
+  readonly supportsV2AtomicChangesets: true
   /** Invokes an unbound OData V4 action at the configured service root. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
@@ -269,6 +295,10 @@ export interface ODataServerMutationService extends ODataV2FunctionImportCapabil
   entitySet: (name: string) => ODataServerMutationEntitySet
   changeSet: (
     mutations: readonly ODataAtomicMutation[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataChangeSetResponse[]>
+  v2ChangeSet: (
+    mutations: readonly ODataV2AtomicMutation[],
     options?: ODataRequestOptions,
   ) => Promise<readonly ODataChangeSetResponse[]>
 }
@@ -338,6 +368,33 @@ function atomicMutationRequest(mutation: ODataAtomicMutation): ODataChangeSetReq
     ...(mutation.kind === 'link-navigation'
       ? { body: createODataEntityReference(mutation.targetEntitySet, mutation.targetKey) }
       : 'body' in mutation ? { body: mutation.body } : {}),
+  }
+}
+
+function v2AtomicMutationRequest(
+  mutation: ODataV2AtomicMutation,
+): ODataChangeSetRequest {
+  let path: string
+  if (mutation.kind === 'update') {
+    path = createODataEntityPath(mutation.entitySet, mutation.key)
+  }
+  else if (mutation.kind === 'update-navigation') {
+    const navigationPath = joinODataPath(
+      createODataNavigationSourcePath(mutation.entitySet, mutation.key),
+      formatODataNavigationPath(mutation.navigationPath),
+    )
+    path = mutation.targetKey === undefined
+      ? navigationPath
+      : `${navigationPath}(${formatODataKey(mutation.targetKey)})`
+  }
+  else {
+    throw new TypeError('Unsupported OData V2 changeset mutation.')
+  }
+  return {
+    method: 'MERGE',
+    path,
+    headers: mutation.headers,
+    body: mutation.body,
   }
 }
 
@@ -545,6 +602,7 @@ export function createODataServerMutationService(
   const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'mutations')
 
   return {
+    supportsV2AtomicChangesets: true,
     supportsV2FunctionImports: true,
     invoke: <TResult, TParameters>(
       action: string,
@@ -621,6 +679,8 @@ export function createODataServerMutationService(
           : `${navigationPath}(${formatODataKey(targetKey)})`
       }
       return {
+        supportsMerge: true,
+        supportsNavigationMerge: true,
         create: <TResult, TBody extends Record<string, unknown>>(
           body: TBody,
           options?: ODataRequestOptions,
@@ -655,6 +715,27 @@ export function createODataServerMutationService(
           client,
           sourcePath(key),
           'PATCH',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body,
+          },
+        ),
+        merge: <TResult, TBody extends Record<string, unknown>>(
+          key: ODataKey,
+          body: TBody,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(client, sourcePath(key), 'MERGE', {
+          ...(options as Record<string, unknown> | undefined),
+          body,
+        }),
+        mergeWithResponse: <TResult, TBody extends Record<string, unknown>>(
+          key: ODataKey,
+          body: TBody,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          sourcePath(key),
+          'MERGE',
           {
             ...(options as Record<string, unknown> | undefined),
             body,
@@ -723,6 +804,34 @@ export function createODataServerMutationService(
           client,
           navigationTargetPath(source, path, update.targetKey),
           'PATCH',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body: update.body,
+          },
+        ),
+        mergeNavigation: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          update: ODataNavigationUpdate,
+          options?: ODataRequestOptions,
+        ): Promise<TResult> => $odata<TResult>(
+          client,
+          navigationTargetPath(source, path, update.targetKey),
+          'MERGE',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body: update.body,
+          },
+        ),
+        mergeNavigationWithResponse: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          update: ODataNavigationUpdate,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          navigationTargetPath(source, path, update.targetKey),
+          'MERGE',
           {
             ...(options as Record<string, unknown> | undefined),
             body: update.body,
@@ -900,6 +1009,27 @@ export function createODataServerMutationService(
           'Accept': 'multipart/mixed',
           'Content-Type': payload.contentType,
           'OData-Version': '4.0',
+        }),
+        body: payload.body,
+        responseType: 'text',
+      })
+      if (typeof response._data !== 'string')
+        throw new TypeError('The OData batch response body must be text.')
+      return parseODataChangeSetResponse(
+        response._data,
+        response.headers.get('content-type') ?? '',
+      )
+    },
+    async v2ChangeSet(mutations, options = {}) {
+      const payload = serializeODataChangeSet(mutations.map(v2AtomicMutationRequest))
+      const response = await client.raw<string>(joinODataPath(servicePath, '$batch'), {
+        ...options,
+        method: 'POST',
+        headers: mergeHeaders(options.headers, {
+          'Accept': 'multipart/mixed',
+          'Content-Type': payload.contentType,
+          'DataServiceVersion': '2.0',
+          'MaxDataServiceVersion': '2.0',
         }),
         body: payload.body,
         responseType: 'text',

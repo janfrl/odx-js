@@ -105,6 +105,56 @@ describe('nitro server mutation service', () => {
     expect(requests[3]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
+  it('uses explicit SAP Gateway MERGE for root and navigation updates', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (_request, init) =>
+      new Response(null, {
+        status: 204,
+        headers: { ETag: init?.method === 'MERGE' ? 'W/"merged"' : 'W/"wrong"' },
+      }))
+    const products = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+
+    expect(products.supportsMerge).toBe(true)
+    expect(products.supportsNavigationMerge).toBe(true)
+    await products.merge(1, { Name: 'Root' })
+    await expect(products.mergeWithResponse(2, { Name: 'Root response' }, {
+      headers: { 'If-Match': 'W/"root-2"' },
+    })).resolves.toEqual({ etag: 'W/"merged"' })
+    await products.mergeNavigation(1, ['Supplier'], {
+      body: { Name: 'Supplier' },
+    })
+    await expect(products.mergeNavigationWithResponse(1, ['Reviews'], {
+      targetKey: 3,
+      body: { Text: 'Reviewed' },
+    }, {
+      headers: { 'If-Match': 'W/"review-3"' },
+    })).resolves.toEqual({ etag: 'W/"merged"' })
+
+    expect(requestFetch).toHaveBeenCalledTimes(4)
+    const requests = requestFetch.mock.calls.map(([request, init]) => ({
+      body: init?.body,
+      headers: new Headers(init?.headers),
+      method: init?.method,
+      url: requestUrl(request),
+    }))
+    expect(requests.map(request => request.method)).toEqual([
+      'MERGE',
+      'MERGE',
+      'MERGE',
+      'MERGE',
+    ])
+    expect(requests.map(request => request.url)).toEqual([
+      '/api/odx/catalog-api/Products(1)',
+      '/api/odx/catalog-api/Products(2)',
+      '/api/odx/catalog-api/Products(1)/Supplier',
+      '/api/odx/catalog-api/Products(1)/Reviews(3)',
+    ])
+    expect(requests[1]?.headers.get('if-match')).toBe('W/"root-2"')
+    expect(requests[3]?.headers.get('if-match')).toBe('W/"review-3"')
+  })
+
   it('uses the request-scoped proxy route for entity, action, and relationship writes', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
       const url = requestUrl(request)
@@ -713,6 +763,73 @@ describe('nitro server mutation service', () => {
     expect(init?.body).toContain('PATCH Products(1)/Supplier(2) HTTP/1.1')
     expect(init?.body).toContain('If-Match: W/"product-1"')
     expect(init?.body).toContain('If-Match: W/"supplier-2"')
+  })
+
+  it('owns bounded request-scoped SAP Gateway V2 MERGE changesets', async () => {
+    const responseBody = [
+      '--batch_response',
+      'Content-Type: multipart/mixed; boundary=changeset_response',
+      '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '',
+      '--changeset_response--',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(responseBody, {
+      headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' },
+    }))
+    const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+
+    expect(service.supportsV2AtomicChangesets).toBe(true)
+    await expect(service.v2ChangeSet([{
+      kind: 'update',
+      entitySet: 'Products',
+      key: 1,
+      body: { Name: 'Legacy root' },
+      headers: { 'If-Match': 'W/"root-1"' },
+    }, {
+      kind: 'update-navigation',
+      entitySet: 'Products',
+      key: 1,
+      navigationPath: ['Reviews'],
+      targetKey: 3,
+      body: { Text: 'Legacy review' },
+      headers: { 'If-Match': 'W/"review-3"' },
+    }])).resolves.toEqual([
+      { status: 204, headers: {} },
+      { status: 204, headers: {} },
+    ])
+
+    const [request, init] = requestFetch.mock.calls[0]!
+    expect(requestUrl(request)).toBe('/api/odx/catalog-api/$batch')
+    const headers = new Headers(init?.headers)
+    expect(headers.get('dataserviceversion')).toBe('2.0')
+    expect(headers.get('maxdataserviceversion')).toBe('2.0')
+    expect(headers.get('odata-version')).toBeNull()
+    expect(init?.body).toContain('MERGE Products(1) HTTP/1.1')
+    expect(init?.body).toContain('MERGE Products(1)/Reviews(3) HTTP/1.1')
+    expect(init?.body).toContain('If-Match: W/"root-1"')
+    expect(init?.body).toContain('If-Match: W/"review-3"')
+
+    await expect(service.v2ChangeSet([{
+      kind: 'action',
+      scope: 'service',
+      action: 'Catalog.Reset',
+    } as any])).rejects.toThrow('Unsupported OData V2 changeset mutation')
+    expect(requestFetch).toHaveBeenCalledOnce()
   })
 
   it('fails closed for missing middleware and unknown services', () => {

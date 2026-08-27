@@ -449,6 +449,11 @@ the read service owns root `invokeFunction`, while the mutation service owns
 root `invoke` and `invokeWithResponse`. They reject entity or navigation
 bindings at the root. Entity-set methods cover collection, entity, and
 navigation bindings without accepting executable URL fragments from callers.
+Their entity-set mutation surface also exposes explicit `merge`,
+`mergeWithResponse`, `mergeNavigation`, and `mergeNavigationWithResponse`
+methods with `supportsMerge` and `supportsNavigationMerge` capability flags.
+These request-scoped methods preserve the current H3 proxy, authentication,
+CSRF, abort, and telemetry context while keeping PATCH and MERGE distinct.
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
 members, root `update`, binary `update-media`, `create-navigation`,
@@ -466,8 +471,10 @@ identifier segments before transport.
 `update` and `update-navigation` members, serializes both as `MERGE`, retains
 each member's `If-Match`, and sends V2 `DataServiceVersion` headers instead of
 `OData-Version: 4.0`. Generated Nuxt services advertise it through
-`supportsV2AtomicChangesets === true`. Other mutation kinds remain unsupported
-by this V2 contract and are not silently translated or split into requests.
+`supportsV2AtomicChangesets === true`. The request-scoped Nitro mutation service
+advertises and implements the same bounded contract through the current H3
+proxy context. Other mutation kinds remain unsupported by this V2 contract and
+are not silently translated or split into requests.
 
 `update-media` accepts only `ArrayBuffer` or `Uint8Array`, requires an exact
 valid `contentType`, and derives the default or named `$value` target from an
