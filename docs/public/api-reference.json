@@ -1846,6 +1846,31 @@
     "description": "Raised when an explicitly protected SAP mutation cannot obtain a token.",
     "properties": []
   },
+  "$odataCreateMedia": {
+    "title": "$odataCreateMedia",
+    "properties": [
+      {
+        "name": "client",
+        "type": "ODataRawClient",
+        "required": true
+      },
+      {
+        "name": "path",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "ArrayBuffer | Uint8Array<ArrayBufferLike>",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "ODataMediaCreateOptions",
+        "required": true
+      }
+    ]
+  },
   "validateODataMediaType": {
     "title": "validateODataMediaType",
     "properties": [
