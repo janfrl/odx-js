@@ -184,6 +184,98 @@ describe('nitro server mutation service', () => {
     expect(requests[4]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
+  it('invokes actions across service and navigation bindings', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
+      const url = requestUrl(request)
+      if (url.endsWith('/Demo.Recalculate')) {
+        return Response.json({ recalculated: true }, {
+          headers: {
+            'ETag': 'W/"service-2"',
+            'SAP-Message': '{"message":"Recalculated","severity":"success"}',
+          },
+        })
+      }
+      return Response.json({ path: url })
+    })
+    const signal = new AbortController().signal
+    const service = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    )
+    const products = service.entitySet('Products')
+
+    await expect(service.invoke<{ accepted: boolean }>('Demo.Schedule', {
+      parameters: { Mode: 'FULL' },
+    }, { signal })).resolves.toEqual({ path: '/api/odx/catalog-api/Demo.Schedule' })
+    await expect(service.invokeWithResponse<{ recalculated: boolean }>(
+      'Demo.Recalculate',
+    )).resolves.toEqual({
+      data: { recalculated: true },
+      etag: 'W/"service-2"',
+      sapMessage: '{"message":"Recalculated","severity":"success"}',
+    })
+    await products.invoke('Demo.Rate', {
+      key: 1,
+      navigationPath: ['Reviews'],
+      parameters: { Rating: 5 },
+    })
+    await products.invokeWithResponse('Demo.Publish', {
+      key: { ID: 1, Locale: 'en' },
+      navigationPath: ['Reviews'],
+    })
+
+    expect(requestFetch).toHaveBeenCalledTimes(4)
+    const requests = requestFetch.mock.calls.map(([request, init]) => ({
+      body: init?.body,
+      method: init?.method,
+      signal: init?.signal,
+      url: requestUrl(request),
+    }))
+    expect(requests).toEqual([{
+      body: JSON.stringify({ Mode: 'FULL' }),
+      method: 'POST',
+      signal,
+      url: '/api/odx/catalog-api/Demo.Schedule',
+    }, {
+      body: JSON.stringify({}),
+      method: 'POST',
+      signal: undefined,
+      url: '/api/odx/catalog-api/Demo.Recalculate',
+    }, {
+      body: JSON.stringify({ Rating: 5 }),
+      method: 'POST',
+      signal: undefined,
+      url: '/api/odx/catalog-api/Products(1)/Reviews/Demo.Rate',
+    }, {
+      body: JSON.stringify({}),
+      method: 'POST',
+      signal: undefined,
+      url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews/Demo.Publish',
+    }])
+  })
+
+  it('rejects invalid service and navigation action bindings before transport', () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>()
+    const service = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    )
+    const products = service.entitySet('Products')
+
+    expect(() => service.invoke('../Demo.Schedule')).toThrow('qualified name')
+    expect(() => service.invoke('Demo.Schedule', { key: 1 })).toThrow(
+      'cannot declare an entity or navigation binding',
+    )
+    expect(() => products.invoke('Demo.Rate', {
+      navigationPath: ['Reviews'],
+    })).toThrow('requires an entity key')
+    expect(() => products.invokeWithResponse('Demo.Publish', {
+      key: 1,
+      navigationPath: ['../Reviews'],
+    })).toThrow('valid identifier segments')
+    expect(requestFetch).not.toHaveBeenCalled()
+  })
+
   it('preserves response metadata from request-scoped relationship writes', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
       const url = requestUrl(request)

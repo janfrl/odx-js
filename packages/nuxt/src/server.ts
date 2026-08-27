@@ -124,6 +124,12 @@ export interface ODataServerReadEntitySet {
 }
 
 export interface ODataServerReadService {
+  /** Invokes an unbound OData V4 function at the configured service root. */
+  invokeFunction: <TResult = unknown>(
+    functionName: string,
+    invocation?: ODataFunctionInvocation,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
   entitySet: (name: string) => ODataServerReadEntitySet
 }
 
@@ -248,6 +254,18 @@ export interface ODataServerMutationEntitySet {
 }
 
 export interface ODataServerMutationService extends ODataV2FunctionImportCapability {
+  /** Invokes an unbound OData V4 action at the configured service root. */
+  invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
+    action: string,
+    invocation?: ODataActionInvocation<TParameters>,
+    options?: ODataRequestOptions,
+  ) => Promise<TResult>
+  /** Invokes the same action while preserving optional response metadata. */
+  invokeWithResponse: <TResult = unknown, TParameters = Record<string, unknown>>(
+    action: string,
+    invocation?: ODataActionInvocation<TParameters>,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataActionResponse<TResult>>
   entitySet: (name: string) => ODataServerMutationEntitySet
   changeSet: (
     mutations: readonly ODataAtomicMutation[],
@@ -362,6 +380,26 @@ export function createODataServerReadService(
 ): ODataServerReadService {
   const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'reads')
   return {
+    invokeFunction: <TResult>(
+      functionName: string,
+      invocation: ODataFunctionInvocation = {},
+      options?: ODataRequestOptions,
+    ): Promise<TResult> => {
+      if (invocation.key !== undefined || invocation.navigationPath !== undefined) {
+        throw new TypeError(
+          'A service-level OData function cannot declare an entity or navigation binding.',
+        )
+      }
+      return $odata<TResult>(
+        client,
+        joinODataPath(
+          servicePath,
+          formatODataFunctionCall(functionName, invocation.parameters),
+        ),
+        'GET',
+        options as Record<string, unknown> | undefined,
+      )
+    },
     entitySet(name) {
       const entitySet = validateODataIdentifier(name, 'OData entity set')
       const collectionPath = joinODataPath(servicePath, entitySet)
@@ -508,6 +546,38 @@ export function createODataServerMutationService(
 
   return {
     supportsV2FunctionImports: true,
+    invoke: <TResult, TParameters>(
+      action: string,
+      invocation: ODataActionInvocation<TParameters> = {},
+      options?: ODataRequestOptions,
+    ): Promise<TResult> => {
+      validateODataQualifiedName(action, 'OData action')
+      if (invocation.key !== undefined || invocation.navigationPath !== undefined) {
+        throw new TypeError(
+          'A service-level OData action cannot declare an entity or navigation binding.',
+        )
+      }
+      return $odata<TResult>(client, joinODataPath(servicePath, action), 'POST', {
+        ...(options as Record<string, unknown> | undefined),
+        body: invocation.parameters ?? {},
+      })
+    },
+    invokeWithResponse: <TResult, TParameters>(
+      action: string,
+      invocation: ODataActionInvocation<TParameters> = {},
+      options?: ODataRequestOptions,
+    ): Promise<ODataActionResponse<TResult>> => {
+      validateODataQualifiedName(action, 'OData action')
+      if (invocation.key !== undefined || invocation.navigationPath !== undefined) {
+        throw new TypeError(
+          'A service-level OData action cannot declare an entity or navigation binding.',
+        )
+      }
+      return $odataActionWithResponse<TResult>(client, joinODataPath(servicePath, action), {
+        ...(options as Record<string, unknown> | undefined),
+        body: invocation.parameters ?? {},
+      })
+    },
     invokeFunctionImport: <TResult>(
       name: string,
       invocation: ODataV2FunctionImportInvocation,
@@ -729,9 +799,17 @@ export function createODataServerMutationService(
           options?: ODataRequestOptions,
         ): Promise<TResult> => {
           validateODataQualifiedName(action, 'OData action')
-          const bindingPath = invocation.key === undefined
+          if (invocation.navigationPath !== undefined && invocation.key === undefined) {
+            throw new TypeError(
+              'An OData navigation-bound action requires an entity key.',
+            )
+          }
+          const entityPath = invocation.key === undefined
             ? joinODataPath(servicePath, entitySet)
             : sourcePath(invocation.key)
+          const bindingPath = invocation.navigationPath === undefined
+            ? entityPath
+            : joinODataPath(entityPath, formatODataNavigationPath(invocation.navigationPath))
           return $odata<TResult>(client, joinODataPath(bindingPath, action), 'POST', {
             ...(options as Record<string, unknown> | undefined),
             body: invocation.parameters ?? {},
@@ -743,9 +821,17 @@ export function createODataServerMutationService(
           options?: ODataRequestOptions,
         ): Promise<ODataActionResponse<TResult>> => {
           validateODataQualifiedName(action, 'OData action')
-          const bindingPath = invocation.key === undefined
+          if (invocation.navigationPath !== undefined && invocation.key === undefined) {
+            throw new TypeError(
+              'An OData navigation-bound action requires an entity key.',
+            )
+          }
+          const entityPath = invocation.key === undefined
             ? joinODataPath(servicePath, entitySet)
             : sourcePath(invocation.key)
+          const bindingPath = invocation.navigationPath === undefined
+            ? entityPath
+            : joinODataPath(entityPath, formatODataNavigationPath(invocation.navigationPath))
           return $odataActionWithResponse<TResult>(client, joinODataPath(bindingPath, action), {
             ...(options as Record<string, unknown> | undefined),
             body: invocation.parameters ?? {},

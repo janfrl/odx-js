@@ -235,6 +235,28 @@ describe('nitro server read service', () => {
     )
   })
 
+  it('invokes unbound typed functions at the request-scoped service root', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async request =>
+      Response.json({ path: requestUrl(request) }))
+    const signal = new AbortController().signal
+    const catalog = createODataServerReadService(
+      createEvent(requestFetch),
+      'catalog',
+    )
+
+    await catalog.invokeFunction('Demo.ServiceDefaults', {
+      parameters: {
+        Locale: { type: 'Edm.String', value: 'en-US' },
+      },
+    }, { signal })
+
+    expect(requestFetch).toHaveBeenCalledOnce()
+    expect(requestUrl(requestFetch.mock.calls[0]![0])).toBe(
+      '/api/odx/catalog-api/Demo.ServiceDefaults(Locale=\'en-US\')',
+    )
+    expect(requestFetch.mock.calls[0]![1]?.signal).toBe(signal)
+  })
+
   it('fails closed before transport for invalid services and bindings', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>()
     const event = createEvent(requestFetch)
@@ -243,6 +265,11 @@ describe('nitro server read service', () => {
       'Unknown OData service "missing".',
     )
     const products = createODataServerReadService(event, 'catalog').entitySet('Products')
+    const catalog = createODataServerReadService(event, 'catalog')
+    expect(() => catalog.invokeFunction('../Demo.Defaults')).toThrow('qualified name')
+    expect(() => catalog.invokeFunction('Demo.Defaults', { key: 1 })).toThrow(
+      'cannot declare an entity or navigation binding',
+    )
     expect(() => products.invokeFunction('../Demo.Defaults')).toThrow('qualified name')
     expect(() => products.invokeFunction('Demo.Score', {
       navigationPath: ['Reviews'],

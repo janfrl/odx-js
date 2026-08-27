@@ -439,8 +439,16 @@ Service-level methods:
 | `changeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
 | `v2ChangeSet(mutations, options?)` | `POST .../$batch` | `Promise<readonly ODataChangeSetResponse[]>` |
 | `batchChangeSets(changeSets, options?)` | `POST .../$batch` | `Promise<readonly ODataBatchChangeSetResult[]>` |
+| `invoke(action, invocation?, options?)` | `POST` | `Promise<TResult>` |
+| `invokeWithResponse(action, invocation?, options?)` | `POST` | `Promise<ODataActionResponse<TResult>>` |
 | `invokeFunction(functionName, invocation?, options?)` | `GET` | `Promise<TResult>` |
 | `invokeFunctionImport(name, invocation, options?)` | declared V2 `GET` or `POST` | `Promise<TResult>` |
+
+The request-scoped Nuxt services expose the same unbound V4 operation shape:
+the read service owns root `invokeFunction`, while the mutation service owns
+root `invoke` and `invokeWithResponse`. They reject entity or navigation
+bindings at the root. Entity-set methods cover collection, entity, and
+navigation bindings without accepting executable URL fragments from callers.
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
 members, root `update`, binary `update-media`, `create-navigation`,

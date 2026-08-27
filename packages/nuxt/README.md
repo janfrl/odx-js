@@ -19,7 +19,8 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-The server read entity set provides `fetchOne`, `fetchOneWithResponse`,
+The server read service invokes unbound V4 functions directly at the configured
+service root. Its entity set provides `fetchOne`, `fetchOneWithResponse`,
 `fetchContainedOneWithResponse`, `fetchNavigationOneWithResponse`, `fetchList`,
 `fetchPage`, `fetchNextPage`, `fetchNavigationList`, `fetchNavigationPage`,
 `fetchNavigationNextPage`, and typed `invokeFunction` operations. Exact entity
@@ -31,9 +32,12 @@ request-scoped proxy path and never follow a backend-owned URL.
 
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
-mutation entity-set service exposes request-scoped `create`, `update`, `remove`,
-and `invoke` operations together with their response-aware counterparts. The
-same service provides structured `createNavigation`, `updateNavigation`, and
+mutation service invokes unbound V4 actions at the service root, including a
+response-aware variant. Its entity-set service exposes request-scoped `create`,
+`update`, `remove`, and `invoke` operations together with their response-aware
+counterparts. Entity-set actions support collection, entity, and navigation
+bindings. The same service provides structured `createNavigation`,
+`updateNavigation`, and
 `removeNavigation` operations, including response-aware variants, without
 requiring an application endpoint to serialize parent or related keys. It also
 provides binary `createMedia`, `createNavigationMedia`, `fetchMedia`, and
