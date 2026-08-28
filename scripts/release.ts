@@ -4,6 +4,7 @@ import { consola } from 'consola'
 import { loadWorkspace } from './_utils'
 import {
   assertReleaseTagAllowed,
+  assertReleaseVersionAllowed,
   coordinatedReleaseVersion,
   releasePublishes,
   releaseTag,
@@ -42,6 +43,7 @@ async function main() {
   const version = coordinatedReleaseVersion(
     releasePackages.map(pkg => ({ name: pkg.data.name, version: pkg.data.version })),
   )
+  assertReleaseVersionAllowed(version, tag, publish)
 
   consola.start(
     `${publish ? 'Starting release' : 'Checking release'} for version v${version} with tag ${tag}`,

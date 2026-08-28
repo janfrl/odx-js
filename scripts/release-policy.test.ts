@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertReleaseTagAllowed,
+  assertReleaseVersionAllowed,
   coordinatedReleaseVersion,
   releasePublishes,
   releaseTag,
@@ -45,5 +46,15 @@ describe('odx release policy', () => {
       { name: '@me-tools/odx-core', version: '0.0.1-next.0' },
       { name: '@me-tools/odx-nuxt', version: '0.0.2-next.0' },
     ])).toThrow('must share one coordinated release version')
+  })
+
+  it('keeps published versions on their deliberate npm channel', () => {
+    expect(() => assertReleaseVersionAllowed('0.0.1', 'next', false)).not.toThrow()
+    expect(() => assertReleaseVersionAllowed('0.0.1-next.0', 'next', true)).not.toThrow()
+    expect(() => assertReleaseVersionAllowed('1.0.0', 'latest', true)).not.toThrow()
+    expect(() => assertReleaseVersionAllowed('0.0.1', 'next', true))
+      .toThrow('stable version 0.0.1 with the next dist-tag')
+    expect(() => assertReleaseVersionAllowed('1.0.0-rc.1', 'latest', true))
+      .toThrow('prerelease version 1.0.0-rc.1 with the latest dist-tag')
   })
 })

@@ -232,8 +232,9 @@ publishing. The private workspace version is not a release identity.
 A deliberately pushed `v*` tag sets every public package to the tag version,
 publishes the coordinated set under the guarded `next` dist-tag, and creates a
 GitHub prerelease with versioned generated notes only after npm publication
-succeeds. Do not push a release tag until its package version, compatibility
-matrix, and consumer evidence have been reviewed together.
+succeeds. The publisher rejects stable versions on `next` and prerelease
+versions on `latest`. Do not push a release tag until its package version,
+compatibility matrix, and consumer evidence have been reviewed together.
 
 ## Review Checklist
 

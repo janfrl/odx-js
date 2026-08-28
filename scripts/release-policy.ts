@@ -62,3 +62,24 @@ export function assertReleaseTagAllowed(
     )
   }
 }
+
+export function assertReleaseVersionAllowed(
+  version: string,
+  tag: string,
+  publish: boolean,
+): void {
+  if (!publish)
+    return
+
+  const prerelease = version.split('+', 1)[0].includes('-')
+  if (tag === 'next' && !prerelease) {
+    throw new Error(
+      `Publishing stable version ${version} with the next dist-tag is not allowed. Use a prerelease version.`,
+    )
+  }
+  if (tag === 'latest' && prerelease) {
+    throw new Error(
+      `Publishing prerelease version ${version} with the latest dist-tag is not allowed.`,
+    )
+  }
+}
