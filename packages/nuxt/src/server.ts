@@ -45,6 +45,8 @@ import {
   createODataEntityReference,
   createODataMediaPath,
   createODataNavigationSourcePath,
+  createODataV2EntityReference,
+  createODataV2NavigationReferencePath,
   formatODataFunctionCall,
   formatODataKey,
   formatODataNavigationPath,
@@ -281,6 +283,7 @@ export interface ODataServerMutationEntitySet {
 export interface ODataServerMutationService extends ODataV2FunctionImportCapability {
   readonly supportsV2AtomicChangesets: true
   readonly supportsV2AtomicNavigationMutations: true
+  readonly supportsV2AtomicNavigationReferences: true
   /** Invokes an unbound OData V4 action at the configured service root. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
@@ -381,6 +384,33 @@ function v2AtomicMutationRequest(
       path: createODataEntityPath(mutation.entitySet, mutation.key),
       headers: mutation.headers,
       body: mutation.body,
+    }
+  }
+  if (mutation.kind === 'link-navigation') {
+    return {
+      method: 'POST',
+      path: createODataV2NavigationReferencePath(
+        mutation.entitySet,
+        mutation.key,
+        mutation.navigationPath,
+      ),
+      headers: mutation.headers,
+      body: createODataV2EntityReference(
+        mutation.targetEntitySet,
+        mutation.targetKey,
+      ),
+    }
+  }
+  if (mutation.kind === 'unlink-navigation') {
+    return {
+      method: 'DELETE',
+      path: createODataV2NavigationReferencePath(
+        mutation.entitySet,
+        mutation.key,
+        mutation.navigationPath,
+        mutation.targetKey,
+      ),
+      headers: mutation.headers,
     }
   }
   if (mutation.kind !== 'create-navigation'
@@ -619,6 +649,7 @@ export function createODataServerMutationService(
   return {
     supportsV2AtomicChangesets: true,
     supportsV2AtomicNavigationMutations: true,
+    supportsV2AtomicNavigationReferences: true,
     supportsV2FunctionImports: true,
     invoke: <TResult, TParameters>(
       action: string,

@@ -57,7 +57,10 @@ typed root and navigation updates as `MERGE`. Runtimes that additionally expose
 `supportsV2AtomicNavigationMutations === true` accept structured navigation
 creates as `POST` and deletes as `DELETE` in the same changeset. Every path is
 derived from structured keys, and SAP Gateway V2 version headers remain owned
-by ODX. Unsupported mutation kinds fail before request-scoped proxy transport.
+by ODX. Runtimes advertising `supportsV2AtomicNavigationReferences === true`
+also accept direct relationship link and unlink members through V2 `$links`;
+link bodies use the canonical `{ "uri": "Set(key)" }` representation. Unsupported
+or multi-segment reference shapes fail before request-scoped proxy transport.
 
 ```ts
 const catalog = createODataServerMutationService(event, 'catalog')
@@ -425,8 +428,10 @@ structured navigation updates, creates, or deletes. Updates use `MERGE`, creates
 use `POST`, deletes use `DELETE`, and every member retains its own headers.
 Require `supportsV2AtomicChangesets === true` for the update contract and
 `supportsV2AtomicNavigationMutations === true` before sending create or delete
-members; unsupported V2 mutation kinds are not converted to V4 `PATCH` or split
-into separate writes.
+members. Require `supportsV2AtomicNavigationReferences === true` before sending
+direct `link-navigation` or `unlink-navigation` members; ODX serializes these
+through V2 `$links` rather than V4 `$ref`. Unsupported V2 mutation kinds are not
+converted to V4 `PATCH` or split into separate writes.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so

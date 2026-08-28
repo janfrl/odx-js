@@ -798,6 +798,20 @@ describe('nitro server mutation service', () => {
       'HTTP/1.1 204 No Content',
       '',
       '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '',
       '--changeset_response--',
       '--batch_response--',
       '',
@@ -809,6 +823,7 @@ describe('nitro server mutation service', () => {
 
     expect(service.supportsV2AtomicChangesets).toBe(true)
     expect(service.supportsV2AtomicNavigationMutations).toBe(true)
+    expect(service.supportsV2AtomicNavigationReferences).toBe(true)
     await expect(service.v2ChangeSet([{
       kind: 'update',
       entitySet: 'Products',
@@ -836,7 +851,22 @@ describe('nitro server mutation service', () => {
       navigationPath: ['Reviews'],
       targetKey: 2,
       headers: { 'If-Match': 'W/"review-2"' },
+    }, {
+      kind: 'link-navigation',
+      entitySet: 'Products',
+      key: 1,
+      navigationPath: ['Tags'],
+      targetEntitySet: 'Tags',
+      targetKey: 'A/B',
+    }, {
+      kind: 'unlink-navigation',
+      entitySet: 'Products',
+      key: 1,
+      navigationPath: ['Tags'],
+      targetKey: 'old',
     }])).resolves.toEqual([
+      { status: 204, headers: {} },
+      { status: 204, headers: {} },
       { status: 204, headers: {} },
       { status: 204, headers: {} },
       { status: 204, headers: {} },
@@ -854,6 +884,9 @@ describe('nitro server mutation service', () => {
     expect(init?.body).toContain('POST Products(1)/Reviews HTTP/1.1')
     expect(init?.body).toContain('"Text":"New legacy review"')
     expect(init?.body).toContain('DELETE Products(1)/Reviews(2) HTTP/1.1')
+    expect(init?.body).toContain('POST Products(1)/$links/Tags HTTP/1.1')
+    expect(init?.body).toContain('{"uri":"Tags(\'A%2FB\')"}')
+    expect(init?.body).toContain('DELETE Products(1)/$links/Tags(\'old\') HTTP/1.1')
     expect(init?.body).toContain('If-Match: W/"root-1"')
     expect(init?.body).toContain('If-Match: W/"review-3"')
     expect(init?.body).toContain('If-Match: W/"review-2"')

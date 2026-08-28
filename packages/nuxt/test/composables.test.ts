@@ -37,6 +37,8 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataEntityReference,
     createODataMediaPath,
     createODataNavigationRootReference,
+    createODataV2EntityReference,
+    createODataV2NavigationReferencePath,
     formatODataV2FunctionImportParameters,
   } = await import('../../core/src/odata-path')
   return {
@@ -52,6 +54,8 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataEntityReference,
     createODataMediaPath,
     createODataNavigationRootReference,
+    createODataV2EntityReference,
+    createODataV2NavigationReferencePath,
     formatODataV2FunctionImportParameters,
     flattenOData,
     parseODataBatchChangeSetsResponse,
@@ -1734,6 +1738,20 @@ describe('useOData Composable', () => {
         'HTTP/1.1 204 No Content',
         '',
         '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
         '--changeset_response--',
         '--batch_response--',
         '',
@@ -1747,6 +1765,7 @@ describe('useOData Composable', () => {
 
       expect(api.supportsV2AtomicChangesets).toBe(true)
       expect(api.supportsV2AtomicNavigationMutations).toBe(true)
+      expect(api.supportsV2AtomicNavigationReferences).toBe(true)
       const responses = await api.v2ChangeSet!([{
         kind: 'update',
         entitySet: 'Products',
@@ -1773,9 +1792,24 @@ describe('useOData Composable', () => {
         navigationPath: ['Reviews'],
         targetKey: 2,
         headers: { 'If-Match': 'W/"review-2"' },
+      }, {
+        kind: 'link-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Tags'],
+        targetEntitySet: 'Tags',
+        targetKey: 'A/B',
+      }, {
+        kind: 'unlink-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Tags'],
+        targetKey: 'old',
       }])
 
       expect(responses).toEqual([
+        { status: 204, headers: {} },
+        { status: 204, headers: {} },
         { status: 204, headers: {} },
         { status: 204, headers: {} },
         { status: 204, headers: {} },
@@ -1799,6 +1833,9 @@ describe('useOData Composable', () => {
       expect(options.body).toContain('POST Products(1)/Reviews HTTP/1.1')
       expect(options.body).toContain('"Text":"New legacy review"')
       expect(options.body).toContain('DELETE Products(1)/Reviews(2) HTTP/1.1')
+      expect(options.body).toContain('POST Products(1)/$links/Tags HTTP/1.1')
+      expect(options.body).toContain('{"uri":"Tags(\'A%2FB\')"}')
+      expect(options.body).toContain('DELETE Products(1)/$links/Tags(\'old\') HTTP/1.1')
       expect(options.body).not.toContain('PATCH ')
       expect(options.body).toContain('If-Match: W/"product-1"')
       expect(options.body).toContain('If-Match: W/"category-1"')

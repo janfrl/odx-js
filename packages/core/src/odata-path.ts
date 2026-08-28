@@ -361,6 +361,39 @@ export function createODataEntityReference(
   return Object.freeze({ '@odata.id': createODataEntityPath(entitySet, key) })
 }
 
+/** Creates a safe service-relative entity reference for an OData V2 `$links` body. */
+export function createODataV2EntityReference(
+  entitySet: string,
+  key: ODataKey,
+): Readonly<{ uri: string }> {
+  return Object.freeze({ uri: createODataEntityPath(entitySet, key) })
+}
+
+/** Creates a bounded OData V2 `$links` path for one direct navigation property. */
+export function createODataV2NavigationReferencePath(
+  entitySet: string,
+  source: ODataNavigationSource,
+  navigationPath: readonly string[],
+  targetKey?: ODataKey,
+): string {
+  if (navigationPath.length !== 1) {
+    throw new TypeError(
+      'An OData V2 navigation reference requires exactly one navigation path segment.',
+    )
+  }
+  const navigation = validateODataIdentifier(
+    navigationPath[0]!,
+    'OData V2 navigation reference',
+  )
+  return joinODataPath(
+    createODataNavigationSourcePath(entitySet, source),
+    '$links',
+    targetKey === undefined
+      ? navigation
+      : `${navigation}(${formatODataKey(targetKey)})`,
+  )
+}
+
 function isContainedEntitySource(
   source: ODataNavigationSource,
 ): source is ODataContainedEntitySource {

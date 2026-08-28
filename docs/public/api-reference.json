@@ -2122,6 +2122,48 @@
       }
     ]
   },
+  "createODataV2EntityReference": {
+    "title": "createODataV2EntityReference",
+    "description": "Creates a safe service-relative entity reference for an OData V2 `$links` body.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      }
+    ]
+  },
+  "createODataV2NavigationReferencePath": {
+    "title": "createODataV2NavigationReferencePath",
+    "description": "Creates a bounded OData V2 `$links` path for one direct navigation property.",
+    "properties": [
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "source",
+        "type": "ODataNavigationSource",
+        "required": true
+      },
+      {
+        "name": "navigationPath",
+        "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "targetKey",
+        "type": "ODataKey | undefined",
+        "required": false
+      }
+    ]
+  },
   "createODataNavigationSourcePath": {
     "title": "createODataNavigationSourcePath",
     "description": "Creates the exact keyed source path for a navigation operation.",

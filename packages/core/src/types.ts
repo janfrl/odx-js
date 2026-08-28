@@ -888,6 +888,8 @@ export type ODataV2AtomicMutation
   = | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
     | ODataAtomicNavigationDelete
+    | ODataAtomicNavigationLink
+    | ODataAtomicNavigationUnlink
     | ODataAtomicNavigationUpdate
 
 /**
@@ -910,6 +912,8 @@ type ODataServiceContract<
   readonly supportsV2AtomicChangesets?: true
   /** Advertises POST/DELETE navigation members in SAP Gateway V2 changesets. */
   readonly supportsV2AtomicNavigationMutations?: true
+  /** Advertises `$links` relationship members in SAP Gateway V2 changesets. */
+  readonly supportsV2AtomicNavigationReferences?: true
   /**
    * Accesses a specific entity set of the service.
    */

@@ -5,6 +5,8 @@ import {
   createODataMediaPath,
   createODataNavigationRootReference,
   createODataNavigationSourcePath,
+  createODataV2EntityReference,
+  createODataV2NavigationReferencePath,
   formatODataFunctionCall,
   formatODataFunctionParameter,
   formatODataKey,
@@ -170,6 +172,26 @@ describe('portable OData resource paths', () => {
       .toEqual({ '@odata.id': 'Categories(ID=\'A%2FB\')' })
     expect(() => createODataEntityReference('../Categories', 1))
       .toThrow('valid identifier')
+  })
+  it('creates bounded V2 relationship references and $links paths', () => {
+    expect(createODataV2EntityReference('Products', { ID: 'A/B' }))
+      .toEqual({ uri: 'Products(ID=\'A%2FB\')' })
+    expect(createODataV2NavigationReferencePath(
+      'Categories',
+      1,
+      ['Products'],
+    )).toBe('Categories(1)/$links/Products')
+    expect(createODataV2NavigationReferencePath(
+      'Categories',
+      1,
+      ['Products'],
+      { ID: 'A/B' },
+    )).toBe('Categories(1)/$links/Products(ID=\'A%2FB\')')
+    expect(() => createODataV2NavigationReferencePath(
+      'Categories',
+      1,
+      ['Products', 'Supplier'],
+    )).toThrow('exactly one navigation path segment')
   })
   it('creates exact contained navigation source paths', () => {
     expect(createODataNavigationSourcePath('Products', {

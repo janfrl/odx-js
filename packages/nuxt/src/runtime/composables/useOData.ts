@@ -16,6 +16,8 @@ import {
   createODataMediaPath,
   createODataNavigationRootReference,
   createODataNavigationSourcePath,
+  createODataV2EntityReference,
+  createODataV2NavigationReferencePath,
   flattenOData,
   formatODataFunctionCall,
   formatODataKey,
@@ -883,6 +885,33 @@ export function useOData(service?: string): any {
         body: mutation.body,
       })
     }
+    if (mutation.kind === 'link-navigation') {
+      return Object.freeze({
+        method: 'POST' as const,
+        path: createODataV2NavigationReferencePath(
+          mutation.entitySet,
+          mutation.key,
+          mutation.navigationPath,
+        ),
+        headers: mutation.headers,
+        body: createODataV2EntityReference(
+          mutation.targetEntitySet,
+          mutation.targetKey,
+        ),
+      })
+    }
+    if (mutation.kind === 'unlink-navigation') {
+      return Object.freeze({
+        method: 'DELETE' as const,
+        path: createODataV2NavigationReferencePath(
+          mutation.entitySet,
+          mutation.key,
+          mutation.navigationPath,
+          mutation.targetKey,
+        ),
+        headers: mutation.headers,
+      })
+    }
     if (mutation.kind !== 'create-navigation'
       && mutation.kind !== 'delete-navigation'
       && mutation.kind !== 'update-navigation') {
@@ -1004,6 +1033,7 @@ export function useOData(service?: string): any {
       supportsBatchChangeSets: true as const,
       supportsV2AtomicChangesets: true as const,
       supportsV2AtomicNavigationMutations: true as const,
+      supportsV2AtomicNavigationReferences: true as const,
       supportsV2FunctionImports: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),
