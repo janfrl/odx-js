@@ -222,6 +222,19 @@ commits when it makes the commit type and message clearer.
 Each commit should represent one coherent change, so the Conventional Commit
 type accurately describes the content.
 
+## Releases
+
+The five public ODX packages ship as one coordinated version. `pnpm
+release:check` derives that identity from the public package manifests, rejects
+version drift, runs the complete verifier, and performs npm dry-runs without
+publishing. The private workspace version is not a release identity.
+
+A deliberately pushed `v*` tag sets every public package to the tag version,
+publishes the coordinated set under the guarded `next` dist-tag, and creates a
+GitHub prerelease with versioned generated notes only after npm publication
+succeeds. Do not push a release tag until its package version, compatibility
+matrix, and consumer evidence have been reviewed together.
+
 ## Review Checklist
 
 Before finishing a change, verify that it:
