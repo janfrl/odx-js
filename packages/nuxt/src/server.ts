@@ -312,6 +312,7 @@ export interface ODataServerMutationService extends ODataV2FunctionImportCapabil
   readonly supportsV2AtomicNavigationMutations: true
   readonly supportsV2AtomicNavigationReferences: true
   readonly supportsV2AtomicActionChangesets: true
+  readonly supportsV2AtomicRootMutations: true
   /** Invokes an unbound OData V4 action at the configured service root. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
@@ -336,6 +337,21 @@ export interface ODataServerMutationService extends ODataV2FunctionImportCapabil
 }
 
 function atomicMutationRequest(mutation: ODataAtomicMutation): ODataChangeSetRequest {
+  if (mutation.kind === 'create') {
+    return {
+      method: 'POST',
+      path: validateODataIdentifier(mutation.entitySet, 'OData entity set'),
+      headers: mutation.headers,
+      body: mutation.body,
+    }
+  }
+  if (mutation.kind === 'delete') {
+    return {
+      method: 'DELETE',
+      path: createODataEntityPath(mutation.entitySet, mutation.key),
+      headers: mutation.headers,
+    }
+  }
   if (mutation.kind === 'update-media') {
     const headers = Object.fromEntries([
       ...Object.entries(mutation.headers ?? {}).filter(([name]) =>
@@ -406,6 +422,21 @@ function atomicMutationRequest(mutation: ODataAtomicMutation): ODataChangeSetReq
 function v2AtomicMutationRequest(
   mutation: ODataV2AtomicMutation,
 ): ODataChangeSetRequest {
+  if (mutation.kind === 'create') {
+    return {
+      method: 'POST',
+      path: validateODataIdentifier(mutation.entitySet, 'OData entity set'),
+      headers: mutation.headers,
+      body: mutation.body,
+    }
+  }
+  if (mutation.kind === 'delete') {
+    return {
+      method: 'DELETE',
+      path: createODataEntityPath(mutation.entitySet, mutation.key),
+      headers: mutation.headers,
+    }
+  }
   if (mutation.kind === 'function-import') {
     if (mutation.invocation.method !== 'POST') {
       throw new TypeError(
@@ -698,6 +729,7 @@ export function createODataServerMutationService(
     supportsV2AtomicNavigationMutations: true,
     supportsV2AtomicNavigationReferences: true,
     supportsV2AtomicActionChangesets: true,
+    supportsV2AtomicRootMutations: true,
     supportsV2FunctionImports: true,
     invoke: <TResult, TParameters>(
       action: string,

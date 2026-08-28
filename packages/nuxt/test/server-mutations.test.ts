@@ -28,6 +28,27 @@ function requestUrl(request: RequestInfo | URL): string {
   return request instanceof URL ? request.href : request.url
 }
 
+function emptyChangeSetResponse(memberCount: number): string {
+  const members = Array.from({ length: memberCount }).fill([
+    '--changeset_response',
+    'Content-Type: application/http',
+    'Content-Transfer-Encoding: binary',
+    '',
+    'HTTP/1.1 204 No Content',
+    '',
+    '',
+  ]).flat() as string[]
+  return [
+    '--batch_response',
+    'Content-Type: multipart/mixed; boundary=changeset_response',
+    '',
+    ...members,
+    '--changeset_response--',
+    '--batch_response--',
+    '',
+  ].join('\r\n')
+}
+
 describe('nitro server mutation service', () => {
   it('preserves create, update, and delete response metadata on structured keys', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
@@ -828,6 +849,43 @@ describe('nitro server mutation service', () => {
     expect(init?.body).toContain('PATCH Products(1)/Supplier(2) HTTP/1.1')
     expect(init?.body).toContain('If-Match: W/"product-1"')
     expect(init?.body).toContain('If-Match: W/"supplier-2"')
+  })
+
+  it('owns atomic root create and delete members for V4 and SAP Gateway V2', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+      emptyChangeSetResponse(2),
+      { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+    ))
+    const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+    const mutations = [{
+      kind: 'create' as const,
+      entitySet: 'Products',
+      body: { ID: 2, Name: 'Created root' },
+    }, {
+      kind: 'delete' as const,
+      entitySet: 'Products',
+      key: { ID: 1, Locale: 'en' },
+      headers: { 'If-Match': 'W/"product-1"' },
+    }]
+
+    await expect(service.changeSet(mutations)).resolves.toHaveLength(2)
+    expect(service.supportsV2AtomicRootMutations).toBe(true)
+    await expect(service.v2ChangeSet(mutations)).resolves.toHaveLength(2)
+
+    expect(requestFetch).toHaveBeenCalledTimes(2)
+    const v4 = requestFetch.mock.calls[0]?.[1]
+    const v2 = requestFetch.mock.calls[1]?.[1]
+    for (const request of [v4, v2]) {
+      expect(request?.body).toContain('POST Products HTTP/1.1')
+      expect(request?.body).toContain('{"ID":2,"Name":"Created root"}')
+      expect(request?.body).toContain(
+        'DELETE Products(ID=1,Locale=\'en\') HTTP/1.1',
+      )
+      expect(request?.body).toContain('If-Match: W/"product-1"')
+    }
+    expect(new Headers(v4?.headers).get('odata-version')).toBe('4.0')
+    expect(new Headers(v2?.headers).get('dataserviceversion')).toBe('2.0')
+    expect(new Headers(v2?.headers).get('odata-version')).toBeNull()
   })
 
   it('owns bounded request-scoped SAP Gateway V2 navigation changesets', async () => {

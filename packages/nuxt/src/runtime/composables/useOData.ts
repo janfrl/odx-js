@@ -875,6 +875,21 @@ export function useOData(service?: string): any {
   const atomicMutationRequest = (
     mutation: ODataAtomicMutation,
   ): ODataChangeSetRequest => {
+    if (mutation.kind === 'create') {
+      return Object.freeze({
+        method: 'POST' as const,
+        path: validateODataIdentifier(mutation.entitySet, 'OData entity set'),
+        headers: mutation.headers,
+        body: mutation.body,
+      })
+    }
+    if (mutation.kind === 'delete') {
+      return Object.freeze({
+        method: 'DELETE' as const,
+        path: createODataEntityPath(mutation.entitySet, mutation.key),
+        headers: mutation.headers,
+      })
+    }
     if (mutation.kind === 'update-media') {
       const headers = Object.fromEntries([
         ...Object.entries(mutation.headers ?? {}).filter(([name]) =>
@@ -945,6 +960,21 @@ export function useOData(service?: string): any {
   const v2AtomicMutationRequest = (
     mutation: ODataV2AtomicMutation,
   ): ODataChangeSetRequest => {
+    if (mutation.kind === 'create') {
+      return Object.freeze({
+        method: 'POST' as const,
+        path: validateODataIdentifier(mutation.entitySet, 'OData entity set'),
+        headers: mutation.headers,
+        body: mutation.body,
+      })
+    }
+    if (mutation.kind === 'delete') {
+      return Object.freeze({
+        method: 'DELETE' as const,
+        path: createODataEntityPath(mutation.entitySet, mutation.key),
+        headers: mutation.headers,
+      })
+    }
     if (mutation.kind === 'function-import') {
       if (mutation.invocation.method !== 'POST') {
         throw new TypeError(
@@ -1122,6 +1152,7 @@ export function useOData(service?: string): any {
       supportsV2AtomicNavigationMutations: true as const,
       supportsV2AtomicNavigationReferences: true as const,
       supportsV2AtomicActionChangesets: true as const,
+      supportsV2AtomicRootMutations: true as const,
       supportsV2FunctionImports: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),

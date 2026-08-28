@@ -435,7 +435,8 @@ the configured upstream origin into an application endpoint.
 The browser and request-scoped clients expose the same explicit V2 methods;
 multi-segment V2 relationship paths fail before proxy transport.
 
-`changeSet()` accepts service-, collection-, and entity-bound `action` members,
+`changeSet()` accepts root `create`, `update`, and `delete` members,
+service-, collection-, and entity-bound `action` members,
 `create-navigation`, `update-navigation`, `delete-navigation`,
 `link-navigation`, and `unlink-navigation` mutations in addition to top-level
 updates. A binary `update-media` member derives an entity or named-stream
@@ -462,6 +463,9 @@ through V2 `$links` rather than V4 `$ref`. Require
 `supportsV2AtomicActionChangesets === true` before adding a `function-import`
 member with an explicit POST invocation. Unsupported V2 mutation kinds and GET
 imports are not converted to V4 `PATCH` or split into separate writes.
+Require `supportsV2AtomicRootMutations === true` before adding root `create` or
+`delete` members. They serialize as `POST EntitySet` and
+`DELETE EntitySet(key)` while preserving member headers such as `If-Match`.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so

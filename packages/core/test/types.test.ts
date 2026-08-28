@@ -80,6 +80,19 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<true | undefined>()
     expectTypeOf<ODataRuntimeService['supportsV2AtomicNavigationMutations']>()
       .toEqualTypeOf<true | undefined>()
+    expectTypeOf<ODataRuntimeService['supportsV2AtomicRootMutations']>()
+      .toEqualTypeOf<true | undefined>()
+    expectTypeOf<{
+      kind: 'create'
+      entitySet: 'Products'
+      body: { Name: string }
+    }>().toExtend<ODataAtomicMutation>()
+    expectTypeOf<{
+      kind: 'delete'
+      entitySet: 'Products'
+      key: number
+      headers: { 'If-Match': string }
+    }>().toExtend<ODataV2AtomicMutation>()
     expectTypeOf<{
       kind: 'update-media'
       entitySet: 'Documents'

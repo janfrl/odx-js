@@ -3590,6 +3590,58 @@
       }
     ]
   },
+  "ODataAtomicCreate": {
+    "title": "ODataAtomicCreate",
+    "description": "Creates a root entity as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"create\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "Readonly<Record<string, unknown>>",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataAtomicDelete": {
+    "title": "ODataAtomicDelete",
+    "description": "Deletes a root entity as one member of an atomic OData changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"delete\"",
+        "required": true
+      },
+      {
+        "name": "entitySet",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "key",
+        "type": "ODataKey",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
   "ODataAtomicMediaUpdate": {
     "title": "ODataAtomicMediaUpdate",
     "description": "Replaces an entity stream as one member of an atomic OData changeset.",

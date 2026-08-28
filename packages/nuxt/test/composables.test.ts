@@ -1827,6 +1827,7 @@ describe('useOData Composable', () => {
       expect(api.supportsV2AtomicNavigationMutations).toBe(true)
       expect(api.supportsV2AtomicNavigationReferences).toBe(true)
       expect(api.supportsV2AtomicActionChangesets).toBe(true)
+      expect(api.supportsV2AtomicRootMutations).toBe(true)
       const responses = await api.v2ChangeSet!([{
         kind: 'update',
         entitySet: 'Products',
@@ -1929,11 +1930,72 @@ describe('useOData Composable', () => {
         invocation: { method: 'GET' },
       } as any])).rejects.toThrow('explicit POST method')
       await expect(api.v2ChangeSet!([{
-        kind: 'delete',
+        kind: 'update-media',
         entitySet: 'Products',
         key: 1,
+        contentType: 'text/plain',
+        body: new Uint8Array(),
       } as any])).rejects.toThrow('Unsupported OData V2 changeset mutation')
       expect(raw).not.toHaveBeenCalled()
+    })
+
+    it('serializes root create and delete members for V4 and SAP Gateway V2', async () => {
+      const responseBody = [
+        '--batch_response',
+        'Content-Type: multipart/mixed; boundary=changeset_response',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response--',
+        '--batch_response--',
+        '',
+      ].join('\r\n')
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: responseBody,
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+      const mutations = [{
+        kind: 'create' as const,
+        entitySet: 'Products',
+        body: { ID: 2, Name: 'Created root' },
+      }, {
+        kind: 'delete' as const,
+        entitySet: 'Products',
+        key: { ID: 1, Locale: 'en' },
+        headers: { 'If-Match': 'W/"product-1"' },
+      }]
+
+      await expect(api.changeSet(mutations)).resolves.toHaveLength(2)
+      await expect(api.v2ChangeSet!(mutations)).resolves.toHaveLength(2)
+
+      expect(raw).toHaveBeenCalledTimes(2)
+      const v4 = raw.mock.calls[0]?.[1] as any
+      const v2 = raw.mock.calls[1]?.[1] as any
+      for (const request of [v4, v2]) {
+        expect(request.body).toContain('POST Products HTTP/1.1')
+        expect(request.body).toContain('{"ID":2,"Name":"Created root"}')
+        expect(request.body).toContain(
+          'DELETE Products(ID=1,Locale=\'en\') HTTP/1.1',
+        )
+        expect(request.body).toContain('If-Match: W/"product-1"')
+      }
+      expect(v4.headers['odata-version']).toBe('4.0')
+      expect(v2.headers.dataserviceversion).toBe('2.0')
+      expect(v2.headers).not.toHaveProperty('odata-version')
     })
 
     it('posts root and navigation updates as one service-level batch', async () => {

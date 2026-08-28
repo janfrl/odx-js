@@ -858,6 +858,22 @@ export interface ODataAtomicNavigationDelete {
   readonly headers?: Readonly<Record<string, string>>
 }
 
+/** Creates a root entity as one member of an atomic OData changeset. */
+export interface ODataAtomicCreate {
+  readonly kind: 'create'
+  readonly entitySet: string
+  readonly body: Readonly<Record<string, unknown>>
+  readonly headers?: Readonly<Record<string, string>>
+}
+
+/** Deletes a root entity as one member of an atomic OData changeset. */
+export interface ODataAtomicDelete {
+  readonly kind: 'delete'
+  readonly entitySet: string
+  readonly key: ODataKey
+  readonly headers?: Readonly<Record<string, string>>
+}
+
 /** Replaces an entity stream as one member of an atomic OData changeset. */
 export interface ODataAtomicMediaUpdate {
   readonly kind: 'update-media'
@@ -921,6 +937,8 @@ export type ODataAtomicAction
 /** A mutation supported by the typed service-level atomic changeset API. */
 export type ODataAtomicMutation
   = | ODataAtomicAction
+    | ODataAtomicCreate
+    | ODataAtomicDelete
     | ODataAtomicMediaUpdate
     | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
@@ -932,6 +950,8 @@ export type ODataAtomicMutation
 /** Bounded SAP Gateway V2 changeset members with explicit method semantics. */
 export type ODataV2AtomicMutation
   = | ODataV2AtomicFunctionImport
+    | ODataAtomicCreate
+    | ODataAtomicDelete
     | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
     | ODataAtomicNavigationDelete
@@ -963,6 +983,8 @@ type ODataServiceContract<
   readonly supportsV2AtomicNavigationReferences?: true
   /** Advertises explicit POST FunctionImport members in SAP Gateway V2 changesets. */
   readonly supportsV2AtomicActionChangesets?: true
+  /** Advertises root entity POST/DELETE members in SAP Gateway V2 changesets. */
+  readonly supportsV2AtomicRootMutations?: true
   /**
    * Accesses a specific entity set of the service.
    */

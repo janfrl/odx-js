@@ -11,6 +11,7 @@ const requiredContracts = [
   'supportsV2FunctionImports',
   'invokeFunctionImport',
   'supportsV2AtomicActionChangesets',
+  'supportsV2AtomicRootMutations',
   'v2ChangeSet',
   'function-import',
   'If-Match',

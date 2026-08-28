@@ -465,7 +465,7 @@ These request-scoped methods preserve the current H3 proxy, authentication,
 CSRF, abort, and telemetry context while keeping PATCH and MERGE distinct.
 
 `changeSet` accepts typed service-, collection-, and entity-bound `action`
-members, root `update`, binary `update-media`, `create-navigation`,
+members, root `create`, `update`, and `delete`, binary `update-media`, `create-navigation`,
 `update-navigation`, and
 `delete-navigation`, `link-navigation`, and `unlink-navigation` mutations and
 serializes them into one atomic OData V4
@@ -477,7 +477,7 @@ the outer batch status alone. Entity-set and navigation names are validated as
 identifier segments before transport.
 
 `v2ChangeSet` is the bounded SAP Gateway V2 counterpart. It accepts only root
-`update`, `update-navigation`, `create-navigation`, `delete-navigation`,
+`create`, `update`, `delete`, `update-navigation`, `create-navigation`, `delete-navigation`,
 `link-navigation`, `unlink-navigation`, and explicit POST `function-import`
 members. Updates serialize as
 `MERGE`, entity creates as `POST`, and entity deletes as `DELETE`. Relationship
@@ -497,6 +497,10 @@ typed primitive parameters reuse the direct FunctionImport URI-literal
 contract, each member may keep its own `If-Match`, and the body remains empty.
 GET service operations, V4 action shapes, and other mutation kinds remain
 unsupported and are not silently translated or split into requests.
+Root creates and deletes require the separate
+`supportsV2AtomicRootMutations` marker. They use `POST EntitySet` and
+`DELETE EntitySet(key)` with structured keys and member-owned headers. This
+contract does not imply Content-ID references between members.
 
 `update-media` accepts only `ArrayBuffer` or `Uint8Array`, requires an exact
 valid `contentType`, and derives the default or named `$value` target from an
@@ -522,6 +526,8 @@ contract, plus `supportsV2AtomicChangesets === true` for the bounded V2
 root/navigation MERGE changeset.
 Generated services also advertise `supportsV2AtomicActionChangesets === true`
 for the bounded POST FunctionImport member contract.
+They advertise `supportsV2AtomicRootMutations === true` for independent root
+create and delete members.
 
 Keys may be strings, numbers, booleans, or composite key objects.
 
