@@ -1805,6 +1805,13 @@ describe('useOData Composable', () => {
         'HTTP/1.1 204 No Content',
         '',
         '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
         '--changeset_response--',
         '--batch_response--',
         '',
@@ -1819,12 +1826,24 @@ describe('useOData Composable', () => {
       expect(api.supportsV2AtomicChangesets).toBe(true)
       expect(api.supportsV2AtomicNavigationMutations).toBe(true)
       expect(api.supportsV2AtomicNavigationReferences).toBe(true)
+      expect(api.supportsV2AtomicActionChangesets).toBe(true)
       const responses = await api.v2ChangeSet!([{
         kind: 'update',
         entitySet: 'Products',
         key: 1,
         body: { Name: 'Updated product' },
         headers: { 'If-Match': 'W/"product-1"' },
+      }, {
+        kind: 'function-import',
+        name: 'ApproveProducts',
+        invocation: {
+          method: 'POST',
+          parameters: {
+            ID: { type: 'Edm.Int32', value: 1 },
+            Reason: { type: 'Edm.String', value: 'Ready' },
+          },
+        },
+        headers: { 'If-Match': 'W/"action-1"' },
       }, {
         kind: 'update-navigation',
         entitySet: 'Products',
@@ -1867,6 +1886,7 @@ describe('useOData Composable', () => {
         { status: 204, headers: {} },
         { status: 204, headers: {} },
         { status: 204, headers: {} },
+        { status: 204, headers: {} },
       ])
       const [url, options] = raw.mock.calls[0] as [string, any]
       expect(url).toBe('/api/odx/routed-api/$batch')
@@ -1882,6 +1902,9 @@ describe('useOData Composable', () => {
       expect(options.headers).not.toHaveProperty('odata-version')
       expect(options.headers['content-type']).toMatch(/^multipart\/mixed; boundary=batch_/u)
       expect(options.body).toContain('MERGE Products(1) HTTP/1.1')
+      expect(options.body).toContain(
+        'POST ApproveProducts?ID=1&Reason=%27Ready%27 HTTP/1.1',
+      )
       expect(options.body).toContain('MERGE Products(1)/Category HTTP/1.1')
       expect(options.body).toContain('POST Products(1)/Reviews HTTP/1.1')
       expect(options.body).toContain('"Text":"New legacy review"')
@@ -1891,6 +1914,7 @@ describe('useOData Composable', () => {
       expect(options.body).toContain('DELETE Products(1)/$links/Tags(\'old\') HTTP/1.1')
       expect(options.body).not.toContain('PATCH ')
       expect(options.body).toContain('If-Match: W/"product-1"')
+      expect(options.body).toContain('If-Match: W/"action-1"')
       expect(options.body).toContain('If-Match: W/"category-1"')
       expect(options.body).toContain('If-Match: W/"review-2"')
     })
@@ -1899,6 +1923,11 @@ describe('useOData Composable', () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       const api = useOData('RoutedService' as any)
 
+      await expect(api.v2ChangeSet!([{
+        kind: 'function-import',
+        name: 'GetSummary',
+        invocation: { method: 'GET' },
+      } as any])).rejects.toThrow('explicit POST method')
       await expect(api.v2ChangeSet!([{
         kind: 'delete',
         entitySet: 'Products',

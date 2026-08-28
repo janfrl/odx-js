@@ -877,6 +877,13 @@ describe('nitro server mutation service', () => {
       'HTTP/1.1 204 No Content',
       '',
       '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '',
       '--changeset_response--',
       '--batch_response--',
       '',
@@ -889,12 +896,24 @@ describe('nitro server mutation service', () => {
     expect(service.supportsV2AtomicChangesets).toBe(true)
     expect(service.supportsV2AtomicNavigationMutations).toBe(true)
     expect(service.supportsV2AtomicNavigationReferences).toBe(true)
+    expect(service.supportsV2AtomicActionChangesets).toBe(true)
     await expect(service.v2ChangeSet([{
       kind: 'update',
       entitySet: 'Products',
       key: 1,
       body: { Name: 'Legacy root' },
       headers: { 'If-Match': 'W/"root-1"' },
+    }, {
+      kind: 'function-import',
+      name: 'ApproveProducts',
+      invocation: {
+        method: 'POST',
+        parameters: {
+          ID: { type: 'Edm.Int32', value: 1 },
+          Reason: { type: 'Edm.String', value: 'Ready' },
+        },
+      },
+      headers: { 'If-Match': 'W/"action-1"' },
     }, {
       kind: 'update-navigation',
       entitySet: 'Products',
@@ -936,6 +955,7 @@ describe('nitro server mutation service', () => {
       { status: 204, headers: {} },
       { status: 204, headers: {} },
       { status: 204, headers: {} },
+      { status: 204, headers: {} },
     ])
 
     const [request, init] = requestFetch.mock.calls[0]!
@@ -945,6 +965,9 @@ describe('nitro server mutation service', () => {
     expect(headers.get('maxdataserviceversion')).toBe('2.0')
     expect(headers.get('odata-version')).toBeNull()
     expect(init?.body).toContain('MERGE Products(1) HTTP/1.1')
+    expect(init?.body).toContain(
+      'POST ApproveProducts?ID=1&Reason=%27Ready%27 HTTP/1.1',
+    )
     expect(init?.body).toContain('MERGE Products(1)/Reviews(3) HTTP/1.1')
     expect(init?.body).toContain('POST Products(1)/Reviews HTTP/1.1')
     expect(init?.body).toContain('"Text":"New legacy review"')
@@ -953,9 +976,15 @@ describe('nitro server mutation service', () => {
     expect(init?.body).toContain('{"uri":"Tags(\'A%2FB\')"}')
     expect(init?.body).toContain('DELETE Products(1)/$links/Tags(\'old\') HTTP/1.1')
     expect(init?.body).toContain('If-Match: W/"root-1"')
+    expect(init?.body).toContain('If-Match: W/"action-1"')
     expect(init?.body).toContain('If-Match: W/"review-3"')
     expect(init?.body).toContain('If-Match: W/"review-2"')
 
+    await expect(service.v2ChangeSet([{
+      kind: 'function-import',
+      name: 'GetSummary',
+      invocation: { method: 'GET' },
+    } as any])).rejects.toThrow('explicit POST method')
     await expect(service.v2ChangeSet([{
       kind: 'action',
       scope: 'service',

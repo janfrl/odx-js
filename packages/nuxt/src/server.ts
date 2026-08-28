@@ -311,6 +311,7 @@ export interface ODataServerMutationService extends ODataV2FunctionImportCapabil
   readonly supportsV2AtomicChangesets: true
   readonly supportsV2AtomicNavigationMutations: true
   readonly supportsV2AtomicNavigationReferences: true
+  readonly supportsV2AtomicActionChangesets: true
   /** Invokes an unbound OData V4 action at the configured service root. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
@@ -405,6 +406,25 @@ function atomicMutationRequest(mutation: ODataAtomicMutation): ODataChangeSetReq
 function v2AtomicMutationRequest(
   mutation: ODataV2AtomicMutation,
 ): ODataChangeSetRequest {
+  if (mutation.kind === 'function-import') {
+    if (mutation.invocation.method !== 'POST') {
+      throw new TypeError(
+        'An atomic OData V2 FunctionImport requires an explicit POST method.',
+      )
+    }
+    const query = new URLSearchParams(
+      formatODataV2FunctionImportParameters(mutation.invocation.parameters),
+    ).toString()
+    const name = validateODataIdentifier(
+      mutation.name,
+      'OData V2 FunctionImport',
+    )
+    return {
+      method: 'POST',
+      path: query.length === 0 ? name : `${name}?${query}`,
+      headers: mutation.headers,
+    }
+  }
   if (mutation.kind === 'update') {
     return {
       method: 'MERGE',
@@ -677,6 +697,7 @@ export function createODataServerMutationService(
     supportsV2AtomicChangesets: true,
     supportsV2AtomicNavigationMutations: true,
     supportsV2AtomicNavigationReferences: true,
+    supportsV2AtomicActionChangesets: true,
     supportsV2FunctionImports: true,
     invoke: <TResult, TParameters>(
       action: string,

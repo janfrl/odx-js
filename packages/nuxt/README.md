@@ -61,6 +61,10 @@ by ODX. Runtimes advertising `supportsV2AtomicNavigationReferences === true`
 also accept direct relationship link and unlink members through V2 `$links`;
 link bodies use the canonical `{ "uri": "Set(key)" }` representation. Unsupported
 or multi-segment reference shapes fail before request-scoped proxy transport.
+The independent `supportsV2AtomicActionChangesets === true` capability admits
+explicit POST FunctionImports in the same changeset. Their validated import
+names, typed URI parameters, member headers, and empty bodies reuse the direct
+V2 invocation contract; GET imports and V4 action shapes fail closed.
 
 ```ts
 const catalog = createODataServerMutationService(event, 'catalog')
@@ -454,8 +458,10 @@ Require `supportsV2AtomicChangesets === true` for the update contract and
 `supportsV2AtomicNavigationMutations === true` before sending create or delete
 members. Require `supportsV2AtomicNavigationReferences === true` before sending
 direct `link-navigation` or `unlink-navigation` members; ODX serializes these
-through V2 `$links` rather than V4 `$ref`. Unsupported V2 mutation kinds are not
-converted to V4 `PATCH` or split into separate writes.
+through V2 `$links` rather than V4 `$ref`. Require
+`supportsV2AtomicActionChangesets === true` before adding a `function-import`
+member with an explicit POST invocation. Unsupported V2 mutation kinds and GET
+imports are not converted to V4 `PATCH` or split into separate writes.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so

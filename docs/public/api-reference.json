@@ -2829,6 +2829,32 @@
       }
     ]
   },
+  "ODataV2AtomicFunctionImport": {
+    "title": "ODataV2AtomicFunctionImport",
+    "description": "Invokes one explicit POST FunctionImport inside an OData V2 changeset.",
+    "properties": [
+      {
+        "name": "kind",
+        "type": "\"function-import\"",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "invocation",
+        "type": "ODataV2FunctionImportInvocation & { readonly method: \"POST\"; }",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
   "ODataQuery": {
     "title": "ODataQuery",
     "description": "Structured OData query options.\nT: The model type of the entity being queried.",

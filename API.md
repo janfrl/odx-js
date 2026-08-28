@@ -478,7 +478,8 @@ identifier segments before transport.
 
 `v2ChangeSet` is the bounded SAP Gateway V2 counterpart. It accepts only root
 `update`, `update-navigation`, `create-navigation`, `delete-navigation`,
-`link-navigation`, and `unlink-navigation` members. Updates serialize as
+`link-navigation`, `unlink-navigation`, and explicit POST `function-import`
+members. Updates serialize as
 `MERGE`, entity creates as `POST`, and entity deletes as `DELETE`. Relationship
 writes use the V2 `source/$links/Navigation` address, a `{ "uri": "Set(key)" }`
 JSON body for linking, and the keyed `$links` address for unlinking; each member
@@ -489,9 +490,13 @@ and the additive create/delete contract through
 `supportsV2AtomicNavigationMutations`. The request-scoped Nitro mutation
 service advertises the relationship extension separately through
 `supportsV2AtomicNavigationReferences`. V2 relationship paths accept exactly
-one direct navigation segment and fail before transport otherwise. Other
-mutation kinds remain unsupported and are not silently translated or split
-into requests.
+one direct navigation segment and fail before transport otherwise. The
+separate `supportsV2AtomicActionChangesets` marker admits only a validated
+FunctionImport name plus an invocation whose method is explicitly `POST`;
+typed primitive parameters reuse the direct FunctionImport URI-literal
+contract, each member may keep its own `If-Match`, and the body remains empty.
+GET service operations, V4 action shapes, and other mutation kinds remain
+unsupported and are not silently translated or split into requests.
 
 `update-media` accepts only `ArrayBuffer` or `Uint8Array`, requires an exact
 valid `contentType`, and derives the default or named `$value` target from an
@@ -515,6 +520,8 @@ They also expose `supportsAtomicMediaChangesets === true` for binary stream
 members and `supportsBatchChangeSets === true` for the independent grouped
 contract, plus `supportsV2AtomicChangesets === true` for the bounded V2
 root/navigation MERGE changeset.
+Generated services also advertise `supportsV2AtomicActionChangesets === true`
+for the bounded POST FunctionImport member contract.
 
 Keys may be strings, numbers, booleans, or composite key objects.
 

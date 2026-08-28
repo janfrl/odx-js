@@ -945,6 +945,25 @@ export function useOData(service?: string): any {
   const v2AtomicMutationRequest = (
     mutation: ODataV2AtomicMutation,
   ): ODataChangeSetRequest => {
+    if (mutation.kind === 'function-import') {
+      if (mutation.invocation.method !== 'POST') {
+        throw new TypeError(
+          'An atomic OData V2 FunctionImport requires an explicit POST method.',
+        )
+      }
+      const query = new URLSearchParams(
+        formatODataV2FunctionImportParameters(mutation.invocation.parameters),
+      ).toString()
+      const name = validateODataIdentifier(
+        mutation.name,
+        'OData V2 FunctionImport',
+      )
+      return Object.freeze({
+        method: 'POST' as const,
+        path: query.length === 0 ? name : `${name}?${query}`,
+        headers: mutation.headers,
+      })
+    }
     if (mutation.kind === 'update') {
       return Object.freeze({
         method: 'MERGE' as const,
@@ -1102,6 +1121,7 @@ export function useOData(service?: string): any {
       supportsV2AtomicChangesets: true as const,
       supportsV2AtomicNavigationMutations: true as const,
       supportsV2AtomicNavigationReferences: true as const,
+      supportsV2AtomicActionChangesets: true as const,
       supportsV2FunctionImports: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),

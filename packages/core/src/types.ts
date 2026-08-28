@@ -303,6 +303,16 @@ export interface ODataV2FunctionImportCapability {
   ) => Promise<TResult>
 }
 
+/** Invokes one explicit POST FunctionImport inside an OData V2 changeset. */
+export interface ODataV2AtomicFunctionImport {
+  readonly kind: 'function-import'
+  readonly name: string
+  readonly invocation: ODataV2FunctionImportInvocation & {
+    readonly method: 'POST'
+  }
+  readonly headers?: Readonly<Record<string, string>>
+}
+
 /**
  * Structured OData query options.
  * T: The model type of the entity being queried.
@@ -921,7 +931,8 @@ export type ODataAtomicMutation
 
 /** Bounded SAP Gateway V2 changeset members with explicit method semantics. */
 export type ODataV2AtomicMutation
-  = | ODataAtomicUpdate
+  = | ODataV2AtomicFunctionImport
+    | ODataAtomicUpdate
     | ODataAtomicNavigationCreate
     | ODataAtomicNavigationDelete
     | ODataAtomicNavigationLink
@@ -950,6 +961,8 @@ type ODataServiceContract<
   readonly supportsV2AtomicNavigationMutations?: true
   /** Advertises `$links` relationship members in SAP Gateway V2 changesets. */
   readonly supportsV2AtomicNavigationReferences?: true
+  /** Advertises explicit POST FunctionImport members in SAP Gateway V2 changesets. */
+  readonly supportsV2AtomicActionChangesets?: true
   /**
    * Accesses a specific entity set of the service.
    */
