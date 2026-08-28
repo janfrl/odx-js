@@ -47,6 +47,7 @@ vi.mock('@me-tools/odx-core', async () => {
     $odataActionWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"', location: 'Operations(42)' })),
     $odataCreateMedia,
     $odataCreateWithResponse: vi.fn(() => Promise.resolve({ entityId: 'Products(1)', etag: 'W/"entity-1"' })),
+    $odataFunctionImportWithResponse: vi.fn(() => Promise.resolve({ data: { approved: true }, etag: 'W/"approval-1"', location: 'ApprovalResults(1)', sapMessage: '{"message":"Approved"}' })),
     $odataMutationWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-2"' })),
     $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
@@ -1717,6 +1718,18 @@ describe('useOData Composable', () => {
         },
       }, { signal })
       await api.invokeFunctionImport('GetSummary', { method: 'GET' })
+      const response = await api.invokeFunctionImportWithResponse('ApproveProduct', {
+        method: 'POST',
+        parameters: { ID: { type: 'Edm.Int32', value: 1 } },
+      }, { headers: { 'If-Match': 'W/"product-1"' } })
+
+      expect(api.supportsV2FunctionImportResponses).toBe(true)
+      expect(response).toEqual({
+        data: { approved: true },
+        etag: 'W/"approval-1"',
+        location: 'ApprovalResults(1)',
+        sapMessage: '{"message":"Approved"}',
+      })
 
       expect(core.$odata).toHaveBeenNthCalledWith(
         1,
@@ -1737,6 +1750,15 @@ describe('useOData Composable', () => {
         '/api/odx/MyService/GetSummary',
         'GET',
         { query: {} },
+      )
+      expect(core.$odataFunctionImportWithResponse).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/ApproveProduct',
+        'POST',
+        {
+          headers: { 'If-Match': 'W/"product-1"' },
+          query: { ID: '1' },
+        },
       )
     })
 

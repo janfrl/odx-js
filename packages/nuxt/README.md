@@ -81,7 +81,7 @@ ODX serializes them as V2 URI literals at the service root and sends no JSON bod
 
 ```ts
 const legacy = createODataServerMutationService(event, 'legacyCatalog')
-const approved = await legacy.invokeFunctionImport('ApproveProduct', {
+const approved = await legacy.invokeFunctionImportWithResponse('ApproveProduct', {
   method: 'POST',
   parameters: {
     ID: { type: 'Edm.Int32', value: 1 },
@@ -90,7 +90,10 @@ const approved = await legacy.invokeFunctionImport('ApproveProduct', {
 }, { signal })
 ```
 
-The explicit `supportsV2FunctionImports` capability and the same fail-closed
+The additive `supportsV2FunctionImportResponses` capability preserves an
+optional representation, ETag, Location, and SAP message. Hosts that only need
+the response body can retain `invokeFunctionImport`; older implementations stay
+structurally compatible. The baseline `supportsV2FunctionImports` capability and the same fail-closed
 name, method, primitive-type, and value validation as the browser service prevent
 Nitro handlers from constructing a parallel service-operation URL.
 
@@ -534,6 +537,9 @@ actions. `invokeFunctionImport` therefore requires the metadata-declared HTTP
 method and serializes its typed primitive parameters as V2 URI query literals,
 including for `POST`; it never sends them as a JSON action body. Invalid names,
 types, and values fail before a request is made.
+When `supportsV2FunctionImportResponses === true`, use
+`invokeFunctionImportWithResponse` with the same invocation to retain an
+optional body, ETag, Location, and SAP message without issuing a follow-up read.
 
 ## Verification
 

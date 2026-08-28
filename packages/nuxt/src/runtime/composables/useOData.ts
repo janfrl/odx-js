@@ -6,6 +6,7 @@ import {
   $odataCreateMedia,
   $odataCreateWithResponse,
   $odataFetchMedia,
+  $odataFunctionImportWithResponse,
   $odataMutationWithResponse,
   $odataPage,
   $odataUpdateMedia,
@@ -1154,6 +1155,7 @@ export function useOData(service?: string): any {
       supportsV2AtomicActionChangesets: true as const,
       supportsV2AtomicRootMutations: true as const,
       supportsV2FunctionImports: true as const,
+      supportsV2FunctionImportResponses: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),
       v2ChangeSet: createV2ChangeSet(serviceName),
@@ -1168,6 +1170,29 @@ export function useOData(service?: string): any {
           )
         }
         return $odata<TResult>(
+          client,
+          joinODataPath(
+            resolveServicePath(serviceName),
+            validateODataIdentifier(name, 'OData V2 FunctionImport'),
+          ),
+          invocation.method,
+          {
+            ...(options as any),
+            query: formatODataV2FunctionImportParameters(invocation.parameters),
+          },
+        )
+      },
+      invokeFunctionImportWithResponse: <TResult = unknown>(
+        name: string,
+        invocation: ODataV2FunctionImportInvocation,
+        options?: ODataRequestOptions,
+      ): Promise<ODataActionResponse<TResult>> => {
+        if (invocation.method !== 'GET' && invocation.method !== 'POST') {
+          throw new TypeError(
+            'An OData V2 FunctionImport requires an explicit GET or POST method.',
+          )
+        }
+        return $odataFunctionImportWithResponse<TResult>(
           client,
           joinODataPath(
             resolveServicePath(serviceName),

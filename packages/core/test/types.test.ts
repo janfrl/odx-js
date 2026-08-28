@@ -38,6 +38,7 @@ import type {
   ODataService,
   ODataServiceConfig,
   ODataV2AtomicMutation,
+  ODataV2FunctionImportResponseService,
   ODataV2FunctionImportService,
   ODataV2NavigationReferenceEntitySet,
   ODataV2NavigationReferenceService,
@@ -132,6 +133,15 @@ describe('portable imperative transport types', () => {
       .toBeFunction()
     expectTypeOf<ODataRuntimeService['supportsV2FunctionImports']>()
       .toEqualTypeOf<true>()
+    expectTypeOf<ODataV2FunctionImportService>()
+      .not
+      .toHaveProperty('invokeFunctionImportWithResponse')
+    expectTypeOf<ODataV2FunctionImportResponseService['invokeFunctionImportWithResponse']>()
+      .toBeFunction()
+    expectTypeOf<ODataRuntimeService['supportsV2FunctionImportResponses']>()
+      .toEqualTypeOf<true>()
+    expectTypeOf<Awaited<ReturnType<ODataRuntimeService['invokeFunctionImportWithResponse']>>>()
+      .toEqualTypeOf<ODataActionResponse<unknown>>()
   })
 
   it('declares analytical apply as a portable query option', () => {

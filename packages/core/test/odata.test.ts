@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { $odata, $odataActionWithResponse, $odataCreateWithResponse, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
+import { $odata, $odataActionWithResponse, $odataCreateWithResponse, $odataFunctionImportWithResponse, $odataMutationWithResponse, $odataPage, $odataWithResponse } from '../src/odata'
 
 describe('$odata fetcher', () => {
   it('constructs the correct URL for basic requests', async () => {
@@ -401,6 +401,42 @@ describe('$odataActionWithResponse fetcher', () => {
         prefer: 'respond-async',
       },
       method: 'POST',
+    })
+  })
+})
+
+describe('$odataFunctionImportWithResponse fetcher', () => {
+  it('preserves metadata from an explicitly methoded V2 FunctionImport', async () => {
+    const sapMessage = JSON.stringify({ message: 'Approved', severity: 'success' })
+    const client = {
+      raw: vi.fn().mockResolvedValue({
+        _data: { d: { approved: true } },
+        headers: new Headers({
+          'etag': 'W/"approval-1"',
+          'location': 'ApprovalResults(1)',
+          'sap-message': sapMessage,
+        }),
+      }),
+    }
+
+    await expect($odataFunctionImportWithResponse(
+      client,
+      'S/ApproveProduct',
+      'POST',
+      { query: { ID: '1' }, headers: { 'If-Match': 'W/"product-1"' } },
+    )).resolves.toEqual({
+      data: { approved: true },
+      etag: 'W/"approval-1"',
+      location: 'ApprovalResults(1)',
+      sapMessage,
+    })
+    expect(client.raw).toHaveBeenCalledWith('S/ApproveProduct', {
+      headers: {
+        'accept': 'application/json',
+        'if-match': 'W/"product-1"',
+      },
+      method: 'POST',
+      query: { ID: '1' },
     })
   })
 })

@@ -1413,6 +1413,33 @@
       }
     ]
   },
+  "$odataFunctionImportWithResponse": {
+    "title": "$odataFunctionImportWithResponse",
+    "description": "Executes an OData V2 FunctionImport with its metadata-declared method while\npreserving optional response metadata. Callers still own the validated\nservice-operation path and typed URI parameters.",
+    "properties": [
+      {
+        "name": "client",
+        "type": "{ raw: <R>(path: string, options?: any) => Promise<{ _data?: R; headers: { get: (name: string) => string | null; }; }>; }",
+        "required": true
+      },
+      {
+        "name": "service",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "method",
+        "type": "\"GET\" | \"POST\"",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "FetchOptions<\"json\", any> & { entitySet?: string; }",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
   "$odataCreateWithResponse": {
     "title": "$odataCreateWithResponse",
     "description": "Executes an entity create while preserving response metadata needed to\naddress a bodyless `Prefer: return=minimal` result.",
@@ -2825,6 +2852,23 @@
         "name": "invokeFunctionImport",
         "type": "<TResult = unknown>(name: string, invocation: ODataV2FunctionImportInvocation, options?: ODataRequestOptions) => Promise<TResult>",
         "description": "Invokes a service-root OData V2 FunctionImport with URI parameters.",
+        "required": true
+      }
+    ]
+  },
+  "ODataV2FunctionImportResponseCapability": {
+    "title": "ODataV2FunctionImportResponseCapability",
+    "description": "Additive response-metadata capability for OData V2 service operations.",
+    "properties": [
+      {
+        "name": "supportsV2FunctionImportResponses",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "invokeFunctionImportWithResponse",
+        "type": "<TResult = unknown>(name: string, invocation: ODataV2FunctionImportInvocation, options?: ODataRequestOptions) => Promise<ODataActionResponse<TResult>>",
+        "description": "Invokes a FunctionImport while preserving ETag, Location, and SAP messages.",
         "required": true
       }
     ]

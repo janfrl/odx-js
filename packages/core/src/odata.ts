@@ -114,6 +114,31 @@ export async function $odataActionWithResponse<T = unknown>(
 }
 
 /**
+ * Executes an OData V2 FunctionImport with its metadata-declared method while
+ * preserving optional response metadata. Callers still own the validated
+ * service-operation path and typed URI parameters.
+ */
+export async function $odataFunctionImportWithResponse<T = unknown>(
+  client: {
+    raw: <R>(path: string, options?: any) => Promise<{
+      _data?: R
+      headers: { get: (name: string) => string | null }
+    }>
+  },
+  service: string,
+  method: 'GET' | 'POST',
+  options: FetchOptions<'json'> & { entitySet?: string } = {},
+): Promise<ODataActionResponse<T>> {
+  const response = await requestWithResponse(client, service, method, options)
+  return {
+    ...(response.body === undefined ? {} : { data: flattenOData(response.body) as T }),
+    ...(response.etag ? { etag: response.etag } : {}),
+    ...(response.location ? { location: response.location } : {}),
+    ...(response.sapMessage ? { sapMessage: response.sapMessage } : {}),
+  }
+}
+
+/**
  * Executes an entity create while preserving response metadata needed to
  * address a bodyless `Prefer: return=minimal` result.
  */

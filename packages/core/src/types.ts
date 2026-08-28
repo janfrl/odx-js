@@ -303,6 +303,18 @@ export interface ODataV2FunctionImportCapability {
   ) => Promise<TResult>
 }
 
+/** Additive response-metadata capability for OData V2 service operations. */
+export interface ODataV2FunctionImportResponseCapability
+  extends ODataV2FunctionImportCapability {
+  readonly supportsV2FunctionImportResponses: true
+  /** Invokes a FunctionImport while preserving ETag, Location, and SAP messages. */
+  invokeFunctionImportWithResponse: <TResult = unknown>(
+    name: string,
+    invocation: ODataV2FunctionImportInvocation,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataActionResponse<TResult>>
+}
+
 /** Invokes one explicit POST FunctionImport inside an OData V2 changeset. */
 export interface ODataV2AtomicFunctionImport {
   readonly kind: 'function-import'
@@ -1063,6 +1075,10 @@ export type ODataService<E extends string = string, M extends Record<string, any
 export type ODataV2FunctionImportService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>> & ODataV2FunctionImportCapability
 
+/** OData V2 FunctionImport service that preserves optional response metadata. */
+export type ODataV2FunctionImportResponseService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataEntitySet<any>> & ODataV2FunctionImportResponseCapability
+
 /**
  * OData service whose entity sets expose explicit collection-page reads.
  * Kept separate so structural implementations of `ODataService` remain valid.
@@ -1119,7 +1135,7 @@ export type ODataV2NavigationReferenceService<E extends string = string, M exten
 
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>
-  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>> & ODataV2FunctionImportCapability & {
+  = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>> & ODataV2FunctionImportResponseCapability & {
     readonly supportsActionResponses: true
     invokeWithResponse: ODataActionResponseEntitySet<never>['invokeWithResponse']
   }

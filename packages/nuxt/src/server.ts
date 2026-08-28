@@ -26,8 +26,8 @@ import type {
   ODataQuery,
   ODataRequestOptions,
   ODataV2AtomicMutation,
-  ODataV2FunctionImportCapability,
   ODataV2FunctionImportInvocation,
+  ODataV2FunctionImportResponseCapability,
 } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import {
@@ -36,6 +36,7 @@ import {
   $odataCreateMedia,
   $odataCreateWithResponse,
   $odataFetchMedia,
+  $odataFunctionImportWithResponse,
   $odataMutationWithResponse,
   $odataPage,
   $odataUpdateMedia,
@@ -307,7 +308,7 @@ export interface ODataServerMutationEntitySet {
   ) => Promise<ODataMutationResponse<TResult>>
 }
 
-export interface ODataServerMutationService extends ODataV2FunctionImportCapability {
+export interface ODataServerMutationService extends ODataV2FunctionImportResponseCapability {
   readonly supportsV2AtomicChangesets: true
   readonly supportsV2AtomicNavigationMutations: true
   readonly supportsV2AtomicNavigationReferences: true
@@ -731,6 +732,7 @@ export function createODataServerMutationService(
     supportsV2AtomicActionChangesets: true,
     supportsV2AtomicRootMutations: true,
     supportsV2FunctionImports: true,
+    supportsV2FunctionImportResponses: true,
     invoke: <TResult, TParameters>(
       action: string,
       invocation: ODataActionInvocation<TParameters> = {},
@@ -774,6 +776,29 @@ export function createODataServerMutationService(
         )
       }
       return $odata<TResult>(
+        client,
+        joinODataPath(
+          servicePath,
+          validateODataIdentifier(name, 'OData V2 FunctionImport'),
+        ),
+        invocation.method,
+        {
+          ...(options as Record<string, unknown> | undefined),
+          query: formatODataV2FunctionImportParameters(invocation.parameters),
+        },
+      )
+    },
+    invokeFunctionImportWithResponse: <TResult>(
+      name: string,
+      invocation: ODataV2FunctionImportInvocation,
+      options?: ODataRequestOptions,
+    ): Promise<ODataActionResponse<TResult>> => {
+      if (invocation.method !== 'GET' && invocation.method !== 'POST') {
+        throw new TypeError(
+          'An OData V2 FunctionImport requires an explicit GET or POST method.',
+        )
+      }
+      return $odataFunctionImportWithResponse<TResult>(
         client,
         joinODataPath(
           servicePath,

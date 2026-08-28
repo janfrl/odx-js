@@ -10,6 +10,8 @@ const pages = [
 const requiredContracts = [
   'supportsV2FunctionImports',
   'invokeFunctionImport',
+  'supportsV2FunctionImportResponses',
+  'invokeFunctionImportWithResponse',
   'supportsV2AtomicActionChangesets',
   'supportsV2AtomicRootMutations',
   'v2ChangeSet',

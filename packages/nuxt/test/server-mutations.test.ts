@@ -761,6 +761,43 @@ describe('nitro server mutation service', () => {
     expect(init?.signal).toBe(signal)
   })
 
+  it('preserves response metadata from request-scoped V2 FunctionImports', async () => {
+    const sapMessage = JSON.stringify({ message: 'Approved', severity: 'success' })
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => Response.json(
+      { d: { approved: true } },
+      {
+        headers: {
+          'etag': 'W/"approval-1"',
+          'location': 'ApprovalResults(1)',
+          'sap-message': sapMessage,
+        },
+      },
+    ))
+    const service = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    )
+
+    expect(service.supportsV2FunctionImportResponses).toBe(true)
+    await expect(service.invokeFunctionImportWithResponse('ApproveProduct', {
+      method: 'POST',
+      parameters: { ID: { type: 'Edm.Int32', value: 1 } },
+    }, {
+      headers: { 'If-Match': 'W/"product-1"' },
+    })).resolves.toEqual({
+      data: { approved: true },
+      etag: 'W/"approval-1"',
+      location: 'ApprovalResults(1)',
+      sapMessage,
+    })
+
+    const [request, init] = requestFetch.mock.calls[0]!
+    expect(requestUrl(request)).toContain('/api/odx/catalog-api/ApproveProduct?ID=1')
+    expect(init?.method).toBe('POST')
+    expect(new Headers(init?.headers).get('if-match')).toBe('W/"product-1"')
+    expect(init?.body).toBeUndefined()
+  })
+
   it('rejects unsafe V2 FunctionImports before request-scoped transport', () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>()
     const service = createODataServerMutationService(
