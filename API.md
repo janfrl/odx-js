@@ -238,6 +238,10 @@ Entity-set methods:
 | `linkNavigationWithResponse(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$ref` | `Promise<ODataMutationResponse<TResult>>` |
 | `unlinkNavigation(source, navigationPath, targetKey, options?)` | `DELETE .../$ref` | `Promise<unknown>` |
 | `unlinkNavigationWithResponse(source, navigationPath, targetKey, options?)` | `DELETE .../$ref` | `Promise<ODataMutationResponse<TResult>>` |
+| `linkNavigationV2(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$links/...` | `Promise<unknown>` |
+| `linkNavigationV2WithResponse(source, navigationPath, targetEntitySet, targetKey, options?)` | `POST .../$links/...` | `Promise<ODataMutationResponse<TResult>>` |
+| `unlinkNavigationV2(source, navigationPath, targetKey, options?)` | `DELETE .../$links/...` | `Promise<unknown>` |
+| `unlinkNavigationV2WithResponse(source, navigationPath, targetKey, options?)` | `DELETE .../$links/...` | `Promise<ODataMutationResponse<TResult>>` |
 | `update(key, body, options?)` | `PATCH` | `Promise<T>` |
 | `updateWithResponse(key, body, options?)` | `PATCH` | `Promise<{ data?: T; etag?: string }>` |
 | `merge(key, body, options?)` | `MERGE` | `Promise<T>` |
@@ -278,6 +282,11 @@ is significant, use `linkNavigationWithResponse` or
 `unlinkNavigationWithResponse`. The additive response capability is advertised
 by `supportsNavigationReferenceResponses === true`; the original relationship
 methods remain body-only and source-compatible.
+SAP Gateway V2 callers use the separately advertised
+`supportsV2NavigationReferences` contract and its explicit `linkNavigationV2`
+and `unlinkNavigationV2` method families. ODX then emits the canonical `$links`
+path and `{ "uri": "Set(key)" }` body instead of silently sending V4 `$ref`
+syntax. Only one direct navigation segment is accepted.
 The request-scoped Nuxt server mutation entity set exposes the same structured
 `createNavigation`, `updateNavigation`, and `removeNavigation` operations and
 their response-aware variants through the current Nitro proxy context.

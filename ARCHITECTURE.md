@@ -119,7 +119,8 @@ Core must stay free of Nuxt, Nitro, Vue, and browser UI concerns. It exposes:
   construction plus relationship references and default or named media-stream
   `$value` paths, while service-root resolution and transport remain adapters.
 - Explicit, capability-negotiated SAP Gateway V2 `MERGE` paths for root and
-  related-entity updates; protocol selection remains owned by consumers.
+  related-entity updates plus direct `$links` relationship writes; protocol
+  selection remains owned by consumers.
 - Multipart serialization and response parsing for atomic OData V4 writes,
   bounded SAP Gateway V2 root/navigation MERGE writes, and ordered independent
   changesets whose partial outcomes remain explicit.
@@ -177,6 +178,9 @@ Non-contained `$ref` links follow that boundary as well: response-aware link
 and unlink methods preserve optional representations, ETags, and allowlisted
 SAP feedback behind `supportsNavigationReferenceResponses`, while the original
 relationship API stays structurally compatible.
+SAP Gateway V2 relationship writes remain a separate additive entity-set
+capability. Consumers must deliberately select the `$links` methods from their
+compiled protocol contract; ODX does not guess V2 from a generic `$ref` call.
 Imperative media creates and replacements keep binary payloads outside SSR
 state while retaining the same allowlisted SAP mutation feedback as JSON
 mutations. Media creates also preserve service-advertised identity across

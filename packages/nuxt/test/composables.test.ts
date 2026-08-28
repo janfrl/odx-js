@@ -95,6 +95,7 @@ describe('useOData Composable', () => {
     )
     expect(entitySet.supportsNavigationReferences).toBe(true)
     expect(entitySet.supportsNavigationReferenceResponses).toBe(true)
+    expect(entitySet.supportsV2NavigationReferences).toBe(true)
     expect(entitySet.supportsCollectionPages).toBe(true)
     expect(entitySet.supportsEntityResponses).toBe(true)
     expect(entitySet.supportsNavigationEntityResponses).toBe(true)
@@ -1517,6 +1518,58 @@ describe('useOData Composable', () => {
         2,
         expect.any(Function),
         '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/Categories(ID=\'A%2FB\')/$ref',
+        'DELETE',
+        undefined,
+      )
+    })
+
+    it('links and unlinks V2 relationships through explicit $links methods', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Products')
+      const source = { ID: 1, Locale: 'en' }
+      const target = { ID: 'A/B' }
+      const headers = { 'If-Match': 'W/"product-1"' }
+
+      await entitySet.linkNavigationV2(source, ['Categories'], 'Categories', target, { headers })
+      await entitySet.unlinkNavigationV2(source, ['Categories'], target)
+      const linked = await entitySet.linkNavigationV2WithResponse(
+        source,
+        ['Categories'],
+        'Categories',
+        target,
+        { headers },
+      )
+      const unlinked = await entitySet.unlinkNavigationV2WithResponse(
+        source,
+        ['Categories'],
+        target,
+      )
+
+      expect(linked).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(unlinked).toEqual({ data: { success: true }, etag: 'W/"entity-2"' })
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/$links/Categories',
+        'POST',
+        { body: { uri: 'Categories(ID=\'A%2FB\')' }, headers },
+      )
+      expect(core.$odata).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/$links/Categories(ID=\'A%2FB\')',
+        'DELETE',
+      )
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        1,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/$links/Categories',
+        'POST',
+        { body: { uri: 'Categories(ID=\'A%2FB\')' }, headers },
+      )
+      expect(core.$odataMutationWithResponse).toHaveBeenNthCalledWith(
+        2,
+        expect.any(Function),
+        '/api/odx/routed-api/Products(ID=1,Locale=\'en\')/$links/Categories(ID=\'A%2FB\')',
         'DELETE',
         undefined,
       )

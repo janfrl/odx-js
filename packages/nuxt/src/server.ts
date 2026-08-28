@@ -139,6 +139,7 @@ export interface ODataServerReadService {
 export interface ODataServerMutationEntitySet {
   readonly supportsMerge: true
   readonly supportsNavigationMerge: true
+  readonly supportsV2NavigationReferences: true
   create: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
     body: TBody,
     options?: ODataRequestOptions,
@@ -273,6 +274,32 @@ export interface ODataServerMutationEntitySet {
     options?: ODataRequestOptions,
   ) => Promise<unknown>
   unlinkNavigationWithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  linkNavigationV2: (
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<unknown>
+  linkNavigationV2WithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  unlinkNavigationV2: (
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<unknown>
+  unlinkNavigationV2WithResponse: <TResult = unknown>(
     source: ODataNavigationSource,
     navigationPath: readonly string[],
     targetKey: ODataKey,
@@ -728,6 +755,7 @@ export function createODataServerMutationService(
       return {
         supportsMerge: true,
         supportsNavigationMerge: true,
+        supportsV2NavigationReferences: true,
         create: <TResult, TBody extends Record<string, unknown>>(
           body: TBody,
           options?: ODataRequestOptions,
@@ -1045,6 +1073,63 @@ export function createODataServerMutationService(
             options as Record<string, unknown> | undefined,
           )
         },
+        linkNavigationV2(source, navigationPath, targetEntitySet, targetKey, options) {
+          return $odata(
+            client,
+            joinODataPath(
+              servicePath,
+              createODataV2NavigationReferencePath(entitySet, source, navigationPath),
+            ),
+            'POST',
+            {
+              ...(options as Record<string, unknown> | undefined),
+              body: createODataV2EntityReference(targetEntitySet, targetKey),
+            },
+          )
+        },
+        linkNavigationV2WithResponse: <TResult>(
+          source: ODataNavigationSource,
+          navigationPath: readonly string[],
+          targetEntitySet: string,
+          targetKey: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          joinODataPath(
+            servicePath,
+            createODataV2NavigationReferencePath(entitySet, source, navigationPath),
+          ),
+          'POST',
+          {
+            ...(options as Record<string, unknown> | undefined),
+            body: createODataV2EntityReference(targetEntitySet, targetKey),
+          },
+        ),
+        unlinkNavigationV2(source, navigationPath, targetKey, options) {
+          return $odata(
+            client,
+            joinODataPath(
+              servicePath,
+              createODataV2NavigationReferencePath(entitySet, source, navigationPath, targetKey),
+            ),
+            'DELETE',
+            options as Record<string, unknown> | undefined,
+          )
+        },
+        unlinkNavigationV2WithResponse: <TResult>(
+          source: ODataNavigationSource,
+          navigationPath: readonly string[],
+          targetKey: ODataKey,
+          options?: ODataRequestOptions,
+        ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+          client,
+          joinODataPath(
+            servicePath,
+            createODataV2NavigationReferencePath(entitySet, source, navigationPath, targetKey),
+          ),
+          'DELETE',
+          options as Record<string, unknown> | undefined,
+        ),
       }
     },
     async changeSet(mutations, options = {}) {

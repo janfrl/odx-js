@@ -59,6 +59,9 @@ mutation method, ODX serializes record bodies explicitly and supplies
 The additive `ODataNavigationMergeEntitySet` contract exposes the same explicit
 verb for a structured to-one navigation target or keyed related collection
 member without widening root-only MERGE clients.
+The separate `ODataV2NavigationReferenceEntitySet` contract exposes direct
+SAP Gateway `$links` writes with a service-relative `uri` body. It remains
+additive so generic OData V4 `$ref` clients are not silently reinterpreted.
 V2 `__metadata.etag` values are retained as `@odata.etag` on root and expanded
 entities so optimistic-concurrency callers can safely update related records;
 other V2 metadata remains stripped.

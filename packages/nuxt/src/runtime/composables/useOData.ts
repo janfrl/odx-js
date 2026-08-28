@@ -148,6 +148,21 @@ export function useOData(service?: string): any {
         createODataNavigationSourcePath(entitySet, source),
       )
     }
+    const v2NavigationReferencePath = (
+      source: ODataNavigationSource,
+      navigationPath: readonly string[],
+      targetKey?: ODataKey,
+    ): string => {
+      if (entitySet === undefined) {
+        throw new TypeError(
+          'An OData V2 navigation reference requires an entity set.',
+        )
+      }
+      return joinODataPath(
+        servicePath,
+        createODataV2NavigationReferencePath(entitySet, source, navigationPath, targetKey),
+      )
+    }
     const mediaPath = (key: ODataNavigationSource, streamProperty?: string): string => {
       if (entitySet === undefined)
         throw new TypeError('An OData media operation requires an entity set.')
@@ -160,6 +175,7 @@ export function useOData(service?: string): any {
       supportsNavigationRootReferences: true,
       supportsNavigationReferences: true,
       supportsNavigationReferenceResponses: true,
+      supportsV2NavigationReferences: true,
       supportsEntityResponses: true,
       supportsNavigationEntityResponses: true,
       supportsOptimisticConcurrency: true,
@@ -655,6 +671,58 @@ export function useOData(service?: string): any {
         )
         return $odataMutationWithResponse<TResult>(client, referenceUrl, 'DELETE', options as any)
       },
+      linkNavigationV2: (
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetEntitySet: string,
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<unknown> => $odata<unknown>(
+        client,
+        v2NavigationReferencePath(source, navigationPath),
+        'POST',
+        {
+          ...(options as any),
+          body: createODataV2EntityReference(targetEntitySet, targetKey),
+        },
+      ),
+      linkNavigationV2WithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetEntitySet: string,
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+        client,
+        v2NavigationReferencePath(source, navigationPath),
+        'POST',
+        {
+          ...(options as any),
+          body: createODataV2EntityReference(targetEntitySet, targetKey),
+        },
+      ),
+      unlinkNavigationV2: (
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<unknown> => {
+        const referenceUrl = v2NavigationReferencePath(source, navigationPath, targetKey)
+        return options === undefined
+          ? $odata<unknown>(client, referenceUrl, 'DELETE')
+          : $odata<unknown>(client, referenceUrl, 'DELETE', options)
+      },
+      unlinkNavigationV2WithResponse: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: readonly string[],
+        targetKey: ODataKey,
+        options?: ODataRequestOptions,
+      ): Promise<ODataMutationResponse<TResult>> => $odataMutationWithResponse<TResult>(
+        client,
+        v2NavigationReferencePath(source, navigationPath, targetKey),
+        'DELETE',
+        options as any,
+      ),
       update: (key: ODataKey, body: Partial<TModel>, options?: ODataRequestOptions): Promise<TModel> => {
         const itemPath = `${fullPath}(${formatODataKey(key)})`
         return $odata<TModel>(client, itemPath, 'PATCH', {

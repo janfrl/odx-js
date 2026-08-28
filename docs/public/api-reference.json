@@ -3046,6 +3046,41 @@
       }
     ]
   },
+  "ODataV2NavigationReferenceEntitySet": {
+    "title": "ODataV2NavigationReferenceEntitySet",
+    "description": "Entity-set client with explicit SAP Gateway OData V2 `$links` writes.",
+    "properties": [
+      {
+        "name": "supportsV2NavigationReferences",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "linkNavigationV2",
+        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetEntitySet: string, targetKey: ODataKey, options?: ODataRequestOptions) => Promise<unknown>",
+        "description": "Adds an existing entity through a V2 `$links` URI and `uri` body.",
+        "required": true
+      },
+      {
+        "name": "unlinkNavigationV2",
+        "type": "(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: ODataRequestOptions) => Promise<unknown>",
+        "description": "Removes an existing entity relationship through a V2 `$links` URI.",
+        "required": true
+      },
+      {
+        "name": "linkNavigationV2WithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], targetEntitySet: string, targetKey: ODataKey, options?: ODataRequestOptions) => Promise<ODataMutationResponse<TResult>>",
+        "description": "Adds a V2 relationship while preserving optional backend feedback.",
+        "required": true
+      },
+      {
+        "name": "unlinkNavigationV2WithResponse",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: readonly string[], targetKey: ODataKey, options?: ODataRequestOptions) => Promise<ODataMutationResponse<TResult>>",
+        "description": "Removes a V2 relationship while preserving optional backend feedback.",
+        "required": true
+      }
+    ]
+  },
   "ODataPagedEntitySet": {
     "title": "ODataPagedEntitySet",
     "description": "Entity-set client with explicit, SSR-safe collection page reads. This\nextends the original entity-set contract without making existing structural\nimplementations of `ODataEntitySet` add new required methods.",

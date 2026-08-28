@@ -495,6 +495,41 @@ export interface ODataNavigationReferenceResponseEntitySet<T = any> extends ODat
   ) => Promise<ODataMutationResponse<TResult>>
 }
 
+/** Entity-set client with explicit SAP Gateway OData V2 `$links` writes. */
+export interface ODataV2NavigationReferenceEntitySet<T = any> extends ODataEntitySet<T> {
+  readonly supportsV2NavigationReferences: true
+  /** Adds an existing entity through a V2 `$links` URI and `uri` body. */
+  linkNavigationV2: (
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<unknown>
+  /** Removes an existing entity relationship through a V2 `$links` URI. */
+  unlinkNavigationV2: (
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<unknown>
+  /** Adds a V2 relationship while preserving optional backend feedback. */
+  linkNavigationV2WithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetEntitySet: string,
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+  /** Removes a V2 relationship while preserving optional backend feedback. */
+  unlinkNavigationV2WithResponse: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    targetKey: ODataKey,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataMutationResponse<TResult>>
+}
+
 /**
  * Entity-set client with explicit, SSR-safe collection page reads. This
  * extends the original entity-set contract without making existing structural
@@ -763,6 +798,7 @@ export type ODataRuntimeEntitySet<T = any>
     & ODataCreateEntitySet<T>
     & ODataMediaEntitySet<T>
     & ODataNavigationReferenceResponseEntitySet<T>
+    & ODataV2NavigationReferenceEntitySet<T>
 
 /** Describes an update target below a parent entity navigation path. */
 export interface ODataNavigationUpdate {
@@ -975,13 +1011,15 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
                     ? ODataVersionedNavigationEntitySet<TModel>
                     : TEntitySet extends ODataVersionedEntitySet<any>
                       ? ODataVersionedEntitySet<TModel>
-                      : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
-                        ? ODataNavigationReferenceResponseEntitySet<TModel>
-                        : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                          ? ODataNavigationReferenceEntitySet<TModel>
-                          : TEntitySet extends ODataPagedEntitySet<any>
-                            ? ODataPagedEntitySet<TModel>
-                            : ODataEntitySet<TModel>
+                      : TEntitySet extends ODataV2NavigationReferenceEntitySet<any>
+                        ? ODataV2NavigationReferenceEntitySet<TModel>
+                        : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
+                          ? ODataNavigationReferenceResponseEntitySet<TModel>
+                          : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                            ? ODataNavigationReferenceEntitySet<TModel>
+                            : TEntitySet extends ODataPagedEntitySet<any>
+                              ? ODataPagedEntitySet<TModel>
+                              : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -1039,6 +1077,10 @@ export type ODataNavigationReferenceService<E extends string = string, M extends
 /** OData service that preserves response metadata from relationship writes. */
 export type ODataNavigationReferenceResponseService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataNavigationReferenceResponseEntitySet<any>>
+
+/** OData service whose entity sets expose explicit SAP Gateway V2 `$links` writes. */
+export type ODataV2NavigationReferenceService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataV2NavigationReferenceEntitySet<any>>
 
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>

@@ -397,6 +397,28 @@ const unlinked = await categories.unlinkNavigationWithResponse(
 )
 ```
 
+For an explicitly compiled OData V2 service, select the separately advertised
+`supportsV2NavigationReferences` contract. These methods use `$links` and the
+V2 `uri` body rather than V4 `$ref` syntax:
+
+```ts
+if (categories.supportsV2NavigationReferences === true) {
+  const linked = await categories.linkNavigationV2WithResponse(
+    1,
+    ['Categories'],
+    'Categories',
+    7,
+    { headers: { 'If-Match': etag } },
+  )
+  await categories.unlinkNavigationV2(
+    1,
+    ['Categories'],
+    7,
+    { headers: { 'If-Match': linked.etag ?? '*' } },
+  )
+}
+```
+
 Runtime entity sets advertise this contract with
 `supportsNavigationReferences === true`. Metadata-aware integrations should
 require both that marker and a proven non-contained navigation before exposing
@@ -406,6 +428,8 @@ them separately through `supportsNavigationReferenceResponses === true` on
 the universal client. The request-scoped Nitro mutation service exposes the
 same payload-only and response-aware relationship operations without leaking
 the configured upstream origin into an application endpoint.
+The browser and request-scoped clients expose the same explicit V2 methods;
+multi-segment V2 relationship paths fail before proxy transport.
 
 `changeSet()` accepts service-, collection-, and entity-bound `action` members,
 `create-navigation`, `update-navigation`, `delete-navigation`,

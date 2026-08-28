@@ -39,6 +39,8 @@ import type {
   ODataServiceConfig,
   ODataV2AtomicMutation,
   ODataV2FunctionImportService,
+  ODataV2NavigationReferenceEntitySet,
+  ODataV2NavigationReferenceService,
   ODataVersionedEntitySet,
   ODataVersionedNavigationEntitySet,
   ODataVersionedNavigationService,
@@ -288,6 +290,20 @@ describe('portable imperative transport types', () => {
       .toHaveProperty('linkNavigationWithResponse')
   })
 
+  it('keeps SAP Gateway V2 relationship writes behind an additive entity-set contract', () => {
+    type ProductsService = ODataV2NavigationReferenceService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataV2NavigationReferenceEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet['supportsV2NavigationReferences']>()
+      .toEqualTypeOf<true>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['linkNavigationV2WithResponse']>>>()
+      .toEqualTypeOf<ODataMutationResponse<unknown>>()
+    expectTypeOf<ODataNavigationReferenceEntitySet<Product>>()
+      .not
+      .toHaveProperty('linkNavigationV2')
+  })
+
   it('combines generated runtime capabilities without widening additive contracts', () => {
     type ProductsService = ODataRuntimeService<'Products', { Products: Product }>
     type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
@@ -300,6 +316,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedNavigationEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataNavigationReferenceResponseEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataV2NavigationReferenceEntitySet<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNextPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationPage']>>>()

@@ -390,6 +390,71 @@ describe('nitro server mutation service', () => {
     expect(requests[1]!.headers.get('if-match')).toBe('W/"product-2"')
   })
 
+  it('owns request-scoped SAP Gateway V2 relationship writes', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
+      const url = requestUrl(request)
+      if (init?.method === 'POST' && url.endsWith('/$links/Categories')) {
+        return new Response(null, {
+          status: 204,
+          headers: { ETag: 'W/"product-2"' },
+        })
+      }
+      if (init?.method === 'DELETE' && url.endsWith('/$links/Categories(ID=7,Locale=\'en\')')) {
+        return Response.json({ ID: 7, unlinked: true }, {
+          headers: {
+            'ETag': 'W/"product-3"',
+            'SAP-Message': '{"code":"UNLINKED","message":"Category unlinked","severity":"success"}',
+          },
+        })
+      }
+      return new Response(null, { status: 404 })
+    })
+    const products = createODataServerMutationService(
+      createEvent(requestFetch),
+      'catalog',
+    ).entitySet('Products')
+    const source = { ID: 1, Locale: 'en' }
+    const target = { ID: 7, Locale: 'en' }
+
+    expect(products.supportsV2NavigationReferences).toBe(true)
+    await expect(products.linkNavigationV2WithResponse(
+      source,
+      ['Categories'],
+      'Categories',
+      target,
+      { headers: { 'If-Match': 'W/"product-1"' } },
+    )).resolves.toEqual({ etag: 'W/"product-2"' })
+    await expect(products.unlinkNavigationV2WithResponse<Readonly<{ ID: number, unlinked: boolean }>>(
+      source,
+      ['Categories'],
+      target,
+      { headers: { 'If-Match': 'W/"product-2"' } },
+    )).resolves.toEqual({
+      data: { ID: 7, unlinked: true },
+      etag: 'W/"product-3"',
+      sapMessage: '{"code":"UNLINKED","message":"Category unlinked","severity":"success"}',
+    })
+
+    expect(requestFetch).toHaveBeenCalledTimes(2)
+    const requests = requestFetch.mock.calls.map(([request, init]) => ({
+      body: init?.body,
+      headers: new Headers(init?.headers),
+      method: init?.method,
+      url: requestUrl(request),
+    }))
+    expect(requests[0]).toMatchObject({
+      body: JSON.stringify({ uri: 'Categories(ID=7,Locale=\'en\')' }),
+      method: 'POST',
+      url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/$links/Categories',
+    })
+    expect(requests[0]!.headers.get('if-match')).toBe('W/"product-1"')
+    expect(requests[1]).toMatchObject({
+      method: 'DELETE',
+      url: '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/$links/Categories(ID=7,Locale=\'en\')',
+    })
+    expect(requests[1]!.headers.get('if-match')).toBe('W/"product-2"')
+  })
+
   it('executes request-scoped navigation CRUD through structured paths', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {
       const headers = new Headers(init?.headers)
