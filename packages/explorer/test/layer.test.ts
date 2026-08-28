@@ -1,9 +1,11 @@
+// @vitest-environment node
+
 import { access } from 'node:fs/promises'
 import { isAbsolute } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import config from '../nuxt.config'
 
-describe('Explorer Nuxt layer', () => {
+describe('explorer Nuxt layer', () => {
   it('resolves its stylesheet from the package instead of the consumer root', async () => {
     const stylesheet = config.css?.[0]
 
