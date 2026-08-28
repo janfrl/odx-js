@@ -765,10 +765,24 @@ describe('nitro server mutation service', () => {
     expect(init?.body).toContain('If-Match: W/"supplier-2"')
   })
 
-  it('owns bounded request-scoped SAP Gateway V2 MERGE changesets', async () => {
+  it('owns bounded request-scoped SAP Gateway V2 navigation changesets', async () => {
     const responseBody = [
       '--batch_response',
       'Content-Type: multipart/mixed; boundary=changeset_response',
+      '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '',
+      '--changeset_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
       '',
       '--changeset_response',
       'Content-Type: application/http',
@@ -794,6 +808,7 @@ describe('nitro server mutation service', () => {
     const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
 
     expect(service.supportsV2AtomicChangesets).toBe(true)
+    expect(service.supportsV2AtomicNavigationMutations).toBe(true)
     await expect(service.v2ChangeSet([{
       kind: 'update',
       entitySet: 'Products',
@@ -808,7 +823,22 @@ describe('nitro server mutation service', () => {
       targetKey: 3,
       body: { Text: 'Legacy review' },
       headers: { 'If-Match': 'W/"review-3"' },
+    }, {
+      kind: 'create-navigation',
+      entitySet: 'Products',
+      key: 1,
+      navigationPath: ['Reviews'],
+      body: { ID: 4, Text: 'New legacy review' },
+    }, {
+      kind: 'delete-navigation',
+      entitySet: 'Products',
+      key: 1,
+      navigationPath: ['Reviews'],
+      targetKey: 2,
+      headers: { 'If-Match': 'W/"review-2"' },
     }])).resolves.toEqual([
+      { status: 204, headers: {} },
+      { status: 204, headers: {} },
       { status: 204, headers: {} },
       { status: 204, headers: {} },
     ])
@@ -821,8 +851,12 @@ describe('nitro server mutation service', () => {
     expect(headers.get('odata-version')).toBeNull()
     expect(init?.body).toContain('MERGE Products(1) HTTP/1.1')
     expect(init?.body).toContain('MERGE Products(1)/Reviews(3) HTTP/1.1')
+    expect(init?.body).toContain('POST Products(1)/Reviews HTTP/1.1')
+    expect(init?.body).toContain('"Text":"New legacy review"')
+    expect(init?.body).toContain('DELETE Products(1)/Reviews(2) HTTP/1.1')
     expect(init?.body).toContain('If-Match: W/"root-1"')
     expect(init?.body).toContain('If-Match: W/"review-3"')
+    expect(init?.body).toContain('If-Match: W/"review-2"')
 
     await expect(service.v2ChangeSet([{
       kind: 'action',

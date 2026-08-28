@@ -468,13 +468,16 @@ the outer batch status alone. Entity-set and navigation names are validated as
 identifier segments before transport.
 
 `v2ChangeSet` is the bounded SAP Gateway V2 counterpart. It accepts only root
-`update` and `update-navigation` members, serializes both as `MERGE`, retains
-each member's `If-Match`, and sends V2 `DataServiceVersion` headers instead of
-`OData-Version: 4.0`. Generated Nuxt services advertise it through
-`supportsV2AtomicChangesets === true`. The request-scoped Nitro mutation service
-advertises and implements the same bounded contract through the current H3
-proxy context. Other mutation kinds remain unsupported by this V2 contract and
-are not silently translated or split into requests.
+`update`, `update-navigation`, `create-navigation`, and `delete-navigation`
+members. Updates serialize as `MERGE`, creates as `POST`, and deletes as
+`DELETE`; each member retains its own headers. The batch sends V2
+`DataServiceVersion` headers instead of `OData-Version: 4.0`. Generated Nuxt
+services advertise the update baseline through `supportsV2AtomicChangesets`
+and the additive create/delete contract through
+`supportsV2AtomicNavigationMutations`. The request-scoped Nitro mutation
+service advertises and implements both through the current H3 proxy context.
+Other mutation kinds remain unsupported and are not silently translated or
+split into requests.
 
 `update-media` accepts only `ArrayBuffer` or `Uint8Array`, requires an exact
 valid `contentType`, and derives the default or named `$value` target from an

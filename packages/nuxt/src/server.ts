@@ -280,6 +280,7 @@ export interface ODataServerMutationEntitySet {
 
 export interface ODataServerMutationService extends ODataV2FunctionImportCapability {
   readonly supportsV2AtomicChangesets: true
+  readonly supportsV2AtomicNavigationMutations: true
   /** Invokes an unbound OData V4 action at the configured service root. */
   invoke: <TResult = unknown, TParameters = Record<string, unknown>>(
     action: string,
@@ -374,27 +375,41 @@ function atomicMutationRequest(mutation: ODataAtomicMutation): ODataChangeSetReq
 function v2AtomicMutationRequest(
   mutation: ODataV2AtomicMutation,
 ): ODataChangeSetRequest {
-  let path: string
   if (mutation.kind === 'update') {
-    path = createODataEntityPath(mutation.entitySet, mutation.key)
+    return {
+      method: 'MERGE',
+      path: createODataEntityPath(mutation.entitySet, mutation.key),
+      headers: mutation.headers,
+      body: mutation.body,
+    }
   }
-  else if (mutation.kind === 'update-navigation') {
-    const navigationPath = joinODataPath(
-      createODataNavigationSourcePath(mutation.entitySet, mutation.key),
-      formatODataNavigationPath(mutation.navigationPath),
-    )
-    path = mutation.targetKey === undefined
-      ? navigationPath
-      : `${navigationPath}(${formatODataKey(mutation.targetKey)})`
-  }
-  else {
+  if (mutation.kind !== 'create-navigation'
+    && mutation.kind !== 'delete-navigation'
+    && mutation.kind !== 'update-navigation') {
     throw new TypeError('Unsupported OData V2 changeset mutation.')
   }
+
+  const navigationPath = joinODataPath(
+    createODataNavigationSourcePath(mutation.entitySet, mutation.key),
+    formatODataNavigationPath(mutation.navigationPath),
+  )
+  let path = navigationPath
+  if (mutation.kind !== 'create-navigation'
+    && !(mutation.kind === 'update-navigation' && mutation.targetKey === undefined)) {
+    const targetKey = mutation.targetKey
+    if (targetKey === undefined)
+      throw new TypeError('An OData V2 navigation delete requires a target key.')
+    path = `${navigationPath}(${formatODataKey(targetKey)})`
+  }
   return {
-    method: 'MERGE',
+    method: mutation.kind === 'create-navigation'
+      ? 'POST'
+      : mutation.kind === 'delete-navigation'
+        ? 'DELETE'
+        : 'MERGE',
     path,
     headers: mutation.headers,
-    body: mutation.body,
+    ...('body' in mutation ? { body: mutation.body } : {}),
   }
 }
 
@@ -603,6 +618,7 @@ export function createODataServerMutationService(
 
   return {
     supportsV2AtomicChangesets: true,
+    supportsV2AtomicNavigationMutations: true,
     supportsV2FunctionImports: true,
     invoke: <TResult, TParameters>(
       action: string,

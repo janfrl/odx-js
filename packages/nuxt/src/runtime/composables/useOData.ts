@@ -875,27 +875,41 @@ export function useOData(service?: string): any {
   const v2AtomicMutationRequest = (
     mutation: ODataV2AtomicMutation,
   ): ODataChangeSetRequest => {
-    let entityPath: string
     if (mutation.kind === 'update') {
-      entityPath = createODataEntityPath(mutation.entitySet, mutation.key)
+      return Object.freeze({
+        method: 'MERGE' as const,
+        path: createODataEntityPath(mutation.entitySet, mutation.key),
+        headers: mutation.headers,
+        body: mutation.body,
+      })
     }
-    else if (mutation.kind === 'update-navigation') {
-      const navigationPath = joinODataPath(
-        createODataNavigationSourcePath(mutation.entitySet, mutation.key),
-        formatODataNavigationPath(mutation.navigationPath),
-      )
-      entityPath = mutation.targetKey === undefined
-        ? navigationPath
-        : `${navigationPath}(${formatODataKey(mutation.targetKey)})`
-    }
-    else {
+    if (mutation.kind !== 'create-navigation'
+      && mutation.kind !== 'delete-navigation'
+      && mutation.kind !== 'update-navigation') {
       throw new TypeError('Unsupported OData V2 changeset mutation.')
     }
+
+    const navigationPath = joinODataPath(
+      createODataNavigationSourcePath(mutation.entitySet, mutation.key),
+      formatODataNavigationPath(mutation.navigationPath),
+    )
+    let entityPath = navigationPath
+    if (mutation.kind !== 'create-navigation'
+      && !(mutation.kind === 'update-navigation' && mutation.targetKey === undefined)) {
+      const targetKey = mutation.targetKey
+      if (targetKey === undefined)
+        throw new TypeError('An OData V2 navigation delete requires a target key.')
+      entityPath = `${navigationPath}(${formatODataKey(targetKey)})`
+    }
     return Object.freeze({
-      method: 'MERGE' as const,
+      method: mutation.kind === 'create-navigation'
+        ? 'POST' as const
+        : mutation.kind === 'delete-navigation'
+          ? 'DELETE' as const
+          : 'MERGE' as const,
       path: entityPath,
       headers: mutation.headers,
-      body: mutation.body,
+      ...('body' in mutation ? { body: mutation.body } : {}),
     })
   }
 
@@ -989,6 +1003,7 @@ export function useOData(service?: string): any {
       supportsActionResponses: true as const,
       supportsBatchChangeSets: true as const,
       supportsV2AtomicChangesets: true as const,
+      supportsV2AtomicNavigationMutations: true as const,
       supportsV2FunctionImports: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),

@@ -76,6 +76,8 @@ describe('portable imperative transport types', () => {
       .toBeFunction()
     expectTypeOf<ODataRuntimeService['supportsV2AtomicChangesets']>()
       .toEqualTypeOf<true | undefined>()
+    expectTypeOf<ODataRuntimeService['supportsV2AtomicNavigationMutations']>()
+      .toEqualTypeOf<true | undefined>()
     expectTypeOf<{
       kind: 'update-media'
       entitySet: 'Documents'
@@ -90,6 +92,20 @@ describe('portable imperative transport types', () => {
       key: number
       navigationPath: readonly ['Category']
       body: { Name: string }
+    }>().toExtend<ODataV2AtomicMutation>()
+    expectTypeOf<{
+      kind: 'create-navigation'
+      entitySet: 'Products'
+      key: number
+      navigationPath: readonly ['Reviews']
+      body: { Text: string }
+    }>().toExtend<ODataV2AtomicMutation>()
+    expectTypeOf<{
+      kind: 'delete-navigation'
+      entitySet: 'Products'
+      key: number
+      navigationPath: readonly ['Reviews']
+      targetKey: number
     }>().toExtend<ODataV2AtomicMutation>()
   })
 

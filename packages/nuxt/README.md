@@ -53,9 +53,11 @@ the current Nitro request context rather than calling an upstream origin.
 
 For atomic V2 updates, the request-scoped service advertises
 `supportsV2AtomicChangesets === true` and exposes `v2ChangeSet`. It accepts only
-typed root and navigation updates, serializes every member as `MERGE`, and sends
-the SAP Gateway V2 version headers. Unsupported mutation kinds fail before the
-request-scoped proxy transport runs.
+typed root and navigation updates as `MERGE`. Runtimes that additionally expose
+`supportsV2AtomicNavigationMutations === true` accept structured navigation
+creates as `POST` and deletes as `DELETE` in the same changeset. Every path is
+derived from structured keys, and SAP Gateway V2 version headers remain owned
+by ODX. Unsupported mutation kinds fail before request-scoped proxy transport.
 
 ```ts
 const catalog = createODataServerMutationService(event, 'catalog')
@@ -418,10 +420,13 @@ fail-closed with older ODX runtimes.
 `batchChangeSets()` sends ordered mutation groups as separate changesets inside
 one batch and returns a `succeeded` result per group, preserving partial success.
 Use `supportsBatchChangeSets === true` before depending on this newer contract.
-For SAP Gateway V2, `v2ChangeSet()` atomically combines only root and navigation
-updates, serializes both as `MERGE`, and retains per-member `If-Match` headers.
-Require `supportsV2AtomicChangesets === true`; unsupported V2 mutation kinds are
-not converted to V4 `PATCH` or split into separate writes.
+For SAP Gateway V2, `v2ChangeSet()` atomically combines root updates and
+structured navigation updates, creates, or deletes. Updates use `MERGE`, creates
+use `POST`, deletes use `DELETE`, and every member retains its own headers.
+Require `supportsV2AtomicChangesets === true` for the update contract and
+`supportsV2AtomicNavigationMutations === true` before sending create or delete
+members; unsupported V2 mutation kinds are not converted to V4 `PATCH` or split
+into separate writes.
 Invoke qualified actions at the
 service, collection, entity, or navigation binding path. Keyed contained
 entities use the same structured source as navigation reads and mutations, so

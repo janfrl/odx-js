@@ -883,9 +883,11 @@ export type ODataAtomicMutation
     | ODataAtomicNavigationUnlink
     | ODataAtomicNavigationUpdate
 
-/** Bounded SAP Gateway V2 changeset members with explicit MERGE semantics. */
+/** Bounded SAP Gateway V2 changeset members with explicit method semantics. */
 export type ODataV2AtomicMutation
   = | ODataAtomicUpdate
+    | ODataAtomicNavigationCreate
+    | ODataAtomicNavigationDelete
     | ODataAtomicNavigationUpdate
 
 /**
@@ -906,6 +908,8 @@ type ODataServiceContract<
   readonly supportsBatchChangeSets?: true
   /** Advertises bounded SAP Gateway V2 root/navigation MERGE changesets. */
   readonly supportsV2AtomicChangesets?: true
+  /** Advertises POST/DELETE navigation members in SAP Gateway V2 changesets. */
+  readonly supportsV2AtomicNavigationMutations?: true
   /**
    * Accesses a specific entity set of the service.
    */
@@ -926,7 +930,7 @@ type ODataServiceContract<
     mutations: readonly ODataAtomicMutation[],
     options?: ODataRequestOptions,
   ) => Promise<readonly import('./odata-changeset').ODataChangeSetResponse[]>
-  /** Executes root/navigation MERGE members as one SAP Gateway V2 changeset. */
+  /** Executes bounded root and navigation members as one SAP Gateway V2 changeset. */
   v2ChangeSet?: (
     mutations: readonly ODataV2AtomicMutation[],
     options?: ODataRequestOptions,

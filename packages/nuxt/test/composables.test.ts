@@ -1701,10 +1701,24 @@ describe('useOData Composable', () => {
   })
 
   describe('atomic changesets', () => {
-    it('posts bounded V2 root and navigation MERGEs as one changeset', async () => {
+    it('posts bounded V2 root and navigation mutations as one changeset', async () => {
       const responseBody = [
         '--batch_response',
         'Content-Type: multipart/mixed; boundary=changeset_response',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
+        '',
+        '--changeset_response',
+        'Content-Type: application/http',
+        'Content-Transfer-Encoding: binary',
+        '',
+        'HTTP/1.1 204 No Content',
+        '',
         '',
         '--changeset_response',
         'Content-Type: application/http',
@@ -1732,6 +1746,7 @@ describe('useOData Composable', () => {
       const api = useOData('RoutedService' as any)
 
       expect(api.supportsV2AtomicChangesets).toBe(true)
+      expect(api.supportsV2AtomicNavigationMutations).toBe(true)
       const responses = await api.v2ChangeSet!([{
         kind: 'update',
         entitySet: 'Products',
@@ -1745,9 +1760,24 @@ describe('useOData Composable', () => {
         navigationPath: ['Category'],
         body: { Name: 'Updated category' },
         headers: { 'If-Match': 'W/"category-1"' },
+      }, {
+        kind: 'create-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Reviews'],
+        body: { ID: 4, Text: 'New legacy review' },
+      }, {
+        kind: 'delete-navigation',
+        entitySet: 'Products',
+        key: 1,
+        navigationPath: ['Reviews'],
+        targetKey: 2,
+        headers: { 'If-Match': 'W/"review-2"' },
       }])
 
       expect(responses).toEqual([
+        { status: 204, headers: {} },
+        { status: 204, headers: {} },
         { status: 204, headers: {} },
         { status: 204, headers: {} },
       ])
@@ -1766,9 +1796,13 @@ describe('useOData Composable', () => {
       expect(options.headers['content-type']).toMatch(/^multipart\/mixed; boundary=batch_/u)
       expect(options.body).toContain('MERGE Products(1) HTTP/1.1')
       expect(options.body).toContain('MERGE Products(1)/Category HTTP/1.1')
+      expect(options.body).toContain('POST Products(1)/Reviews HTTP/1.1')
+      expect(options.body).toContain('"Text":"New legacy review"')
+      expect(options.body).toContain('DELETE Products(1)/Reviews(2) HTTP/1.1')
       expect(options.body).not.toContain('PATCH ')
       expect(options.body).toContain('If-Match: W/"product-1"')
       expect(options.body).toContain('If-Match: W/"category-1"')
+      expect(options.body).toContain('If-Match: W/"review-2"')
     })
 
     it('rejects unsupported V2 changeset members before transport', async () => {
