@@ -2284,6 +2284,70 @@ describe('useOData Composable', () => {
       }]])).rejects.toThrow('count does not match')
     })
 
+    it('preserves independent SAP Gateway V2 changeset outcomes', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: multipart/mixed; boundary=changeset_success',
+          '',
+          '--changeset_success',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 204 No Content',
+          '',
+          '--changeset_success--',
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 412 Precondition Failed',
+          'Content-Type: application/json',
+          '',
+          '{"error":{"code":"ETAG_MISMATCH"}}',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+
+      expect(api.supportsV2BatchChangeSets).toBe(true)
+      await expect(api.v2BatchChangeSets!([[{
+        kind: 'function-import',
+        name: 'ArchiveProduct',
+        invocation: {
+          method: 'POST',
+          parameters: { ID: { type: 'Edm.Int32', value: 1 } },
+        },
+      }], [{
+        kind: 'update',
+        entitySet: 'Products',
+        key: 2,
+        body: { Active: false },
+        headers: { 'If-Match': 'W/"product-2"' },
+      }]])).resolves.toEqual([{
+        succeeded: true,
+        responses: [{ status: 204, headers: {} }],
+      }, {
+        succeeded: false,
+        responses: [{
+          status: 412,
+          headers: { 'content-type': 'application/json' },
+          body: { error: { code: 'ETAG_MISMATCH' } },
+        }],
+      }])
+
+      const options = raw.mock.calls[0]?.[1] as any
+      expect(options.headers.dataserviceversion).toBe('2.0')
+      expect(options.headers.maxdataserviceversion).toBe('2.0')
+      expect(options.headers).not.toHaveProperty('odata-version')
+      expect(options.body.match(/Content-Type: multipart\/mixed; boundary=changeset_/gu))
+        .toHaveLength(2)
+      expect(options.body).toContain('POST ArchiveProduct?ID=1 HTTP/1.1')
+      expect(options.body).toContain('MERGE Products(2) HTTP/1.1')
+      expect(options.body).toContain('If-Match: W/"product-2"')
+    })
+
     it('serializes navigation creates and deletes in one atomic changeset', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({

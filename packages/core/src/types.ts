@@ -987,6 +987,8 @@ type ODataServiceContract<
   readonly supportsAtomicMediaChangesets?: true
   /** Advertises multiple independent changesets inside one OData batch. */
   readonly supportsBatchChangeSets?: true
+  /** Advertises multiple independent SAP Gateway V2 changesets inside one batch. */
+  readonly supportsV2BatchChangeSets?: true
   /** Advertises bounded SAP Gateway V2 root/navigation MERGE changesets. */
   readonly supportsV2AtomicChangesets?: true
   /** Advertises POST/DELETE navigation members in SAP Gateway V2 changesets. */
@@ -1028,6 +1030,11 @@ type ODataServiceContract<
    */
   batchChangeSets?: (
     changeSets: readonly (readonly ODataAtomicMutation[])[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly import('./odata-changeset').ODataBatchChangeSetResult[]>
+  /** Executes independent SAP Gateway V2 mutation groups in one batch. */
+  v2BatchChangeSets?: (
+    changeSets: readonly (readonly ODataV2AtomicMutation[])[],
     options?: ODataRequestOptions,
   ) => Promise<readonly import('./odata-changeset').ODataBatchChangeSetResult[]>
 } & {

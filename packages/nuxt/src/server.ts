@@ -326,6 +326,7 @@ export interface ODataServerMutationService extends ODataV2FunctionImportRespons
   readonly supportsAtomicActionChangesets: true
   readonly supportsAtomicMediaChangesets: true
   readonly supportsBatchChangeSets: true
+  readonly supportsV2BatchChangeSets: true
   readonly supportsV2AtomicChangesets: true
   readonly supportsV2AtomicNavigationMutations: true
   readonly supportsV2AtomicNavigationReferences: true
@@ -350,6 +351,10 @@ export interface ODataServerMutationService extends ODataV2FunctionImportRespons
   ) => Promise<readonly ODataChangeSetResponse[]>
   batchChangeSets: (
     changeSets: readonly (readonly ODataAtomicMutation[])[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataBatchChangeSetResult[]>
+  v2BatchChangeSets: (
+    changeSets: readonly (readonly ODataV2AtomicMutation[])[],
     options?: ODataRequestOptions,
   ) => Promise<readonly ODataBatchChangeSetResult[]>
   v2ChangeSet: (
@@ -756,6 +761,7 @@ export function createODataServerMutationService(
     supportsAtomicActionChangesets: true,
     supportsAtomicMediaChangesets: true,
     supportsBatchChangeSets: true,
+    supportsV2BatchChangeSets: true,
     supportsV2AtomicChangesets: true,
     supportsV2AtomicNavigationMutations: true,
     supportsV2AtomicNavigationReferences: true,
@@ -1313,6 +1319,35 @@ export function createODataServerMutationService(
         response._data,
         response.headers.get('content-type') ?? '',
       )
+    },
+    async v2BatchChangeSets(changeSets, options = {}) {
+      const payload = serializeODataBatchChangeSets(changeSets.map(changeSet =>
+        changeSet.map(v2AtomicMutationRequest),
+      ))
+      const response = await client.raw<string>(joinODataPath(servicePath, '$batch'), {
+        ...options,
+        method: 'POST',
+        headers: mergeHeaders(options.headers, {
+          'Accept': 'multipart/mixed',
+          'Content-Type': payload.contentType,
+          'DataServiceVersion': '2.0',
+          'MaxDataServiceVersion': '2.0',
+        }),
+        body: payload.body,
+        responseType: 'text',
+      })
+      if (typeof response._data !== 'string')
+        throw new TypeError('The OData batch response body must be text.')
+      const results = parseODataBatchChangeSetsResponse(
+        response._data,
+        response.headers.get('content-type') ?? '',
+      )
+      if (results.length !== changeSets.length) {
+        throw new TypeError(
+          'The OData batch response count does not match the requested changesets.',
+        )
+      }
+      return results
     },
   }
 }

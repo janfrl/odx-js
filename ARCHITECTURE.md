@@ -168,6 +168,10 @@ URL resolution plus `$batch` transport.
 The request-scoped Nitro mutation service exposes the same independent V4
 changeset grouping and per-group partial-success result contract without
 leaking upstream origins or executable paths into application endpoints.
+Browser and request-scoped transports expose the corresponding independent
+SAP Gateway V2 grouping behind a separate capability. Each group uses the
+bounded V2 mutation algebra and V2 version headers; ODX does not reinterpret
+V4-only members or promise atomicity across sibling groups.
 Ordinary service-, collection-, entity-, and navigation-bound actions expose a
 capability-negotiated response-aware path alongside the body-only API so
 optional representations, ETags, service-advertised locations, and allowlisted

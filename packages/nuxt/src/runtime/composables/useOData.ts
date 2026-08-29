@@ -1143,12 +1143,35 @@ export function useOData(service?: string): any {
     return results
   }
 
+  const createV2BatchChangeSets = (serviceName: string) => async (
+    changeSets: readonly (readonly ODataV2AtomicMutation[])[],
+    options: ODataRequestOptions = {},
+  ): Promise<readonly ODataBatchChangeSetResult[]> => {
+    const payload = serializeODataBatchChangeSets(changeSets.map(changeSet =>
+      changeSet.map(v2AtomicMutationRequest),
+    ))
+    const results = await postChangeSetBatch(
+      serviceName,
+      payload,
+      options,
+      parseODataBatchChangeSetsResponse,
+      'v2',
+    )
+    if (results.length !== changeSets.length) {
+      throw new TypeError(
+        'The OData batch response count does not match the requested changesets.',
+      )
+    }
+    return results
+  }
+
   const createServiceProxy = (serviceName: string): ODataRuntimeService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
       supportsAtomicActionChangesets: true as const,
       supportsAtomicMediaChangesets: true as const,
       supportsActionResponses: true as const,
       supportsBatchChangeSets: true as const,
+      supportsV2BatchChangeSets: true as const,
       supportsV2AtomicChangesets: true as const,
       supportsV2AtomicNavigationMutations: true as const,
       supportsV2AtomicNavigationReferences: true as const,
@@ -1158,6 +1181,7 @@ export function useOData(service?: string): any {
       supportsV2FunctionImportResponses: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
       changeSet: createChangeSet(serviceName),
+      v2BatchChangeSets: createV2BatchChangeSets(serviceName),
       v2ChangeSet: createV2ChangeSet(serviceName),
       invokeFunctionImport: <TResult = unknown>(
         name: string,

@@ -67,6 +67,12 @@ responses for every group, so one failed mass-action member does not erase
 successful sibling outcomes. Require `supportsBatchChangeSets === true` before
 using this additive contract.
 
+SAP Gateway V2 consumers use `v2BatchChangeSets()` behind
+`supportsV2BatchChangeSets === true`. It preserves the same ordered per-group
+success contract while deriving every member from `ODataV2AtomicMutation` and
+owning the V2 version headers. V4-only action and media members still fail
+before transport.
+
 For atomic V2 updates, the request-scoped service advertises
 `supportsV2AtomicChangesets === true` and exposes `v2ChangeSet`. It accepts only
 typed root and navigation updates as `MERGE`. Runtimes that additionally expose
@@ -471,6 +477,9 @@ fail-closed with older ODX runtimes.
 `batchChangeSets()` sends ordered mutation groups as separate changesets inside
 one batch and returns a `succeeded` result per group, preserving partial success.
 Use `supportsBatchChangeSets === true` before depending on this newer contract.
+For SAP Gateway V2, `v2BatchChangeSets()` exposes the same independent-group
+result contract behind `supportsV2BatchChangeSets === true`, using only bounded
+V2 mutation members and V2 protocol headers.
 For SAP Gateway V2, `v2ChangeSet()` atomically combines root updates and
 structured navigation updates, creates, or deletes. Updates use `MERGE`, creates
 use `POST`, deletes use `DELETE`, and every member retains its own headers.
