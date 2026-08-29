@@ -133,7 +133,7 @@ describe('portable imperative transport types', () => {
       .toBeFunction()
     expectTypeOf<ODataRuntimeService['supportsV2FunctionImports']>()
       .toEqualTypeOf<true>()
-    expectTypeOf<ODataV2FunctionImportService>()
+    expectTypeOf<ODataV2FunctionImportService<'Products', { Products: Product }>>()
       .not
       .toHaveProperty('invokeFunctionImportWithResponse')
     expectTypeOf<ODataV2FunctionImportResponseService['invokeFunctionImportWithResponse']>()
