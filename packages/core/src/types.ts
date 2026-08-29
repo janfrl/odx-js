@@ -255,6 +255,47 @@ export interface ODataRequestOptions {
   readonly [key: string]: unknown
 }
 
+/** Structured collection or exact-entity GET inside a read-only OData batch. */
+export type ODataBatchRead
+  = | {
+    readonly kind: 'collection'
+    readonly entitySet: string
+    readonly query?: ODataQuery
+    readonly headers?: Readonly<Record<string, string>>
+  }
+  | {
+    readonly kind: 'entity'
+    readonly entitySet: string
+    readonly key: ODataNavigationSource
+    readonly query?: ODataQuery
+    readonly headers?: Readonly<Record<string, string>>
+  }
+  | {
+    readonly kind: 'navigation-collection'
+    readonly entitySet: string
+    readonly source: ODataNavigationSource
+    readonly navigationPath: readonly string[]
+    readonly query?: ODataQuery
+    readonly headers?: Readonly<Record<string, string>>
+  }
+  | {
+    readonly kind: 'navigation-entity'
+    readonly entitySet: string
+    readonly source: ODataNavigationSource
+    readonly navigationPath: readonly string[]
+    readonly targetKey?: ODataKey
+    readonly query?: ODataQuery
+    readonly headers?: Readonly<Record<string, string>>
+  }
+
+/** Ordered result of one independent read inside an OData batch. */
+export interface ODataBatchReadResult {
+  readonly succeeded: boolean
+  readonly status: number
+  readonly headers: Readonly<Record<string, string>>
+  readonly body?: unknown
+}
+
 export type ODataFunctionParameterValue = string | number | boolean | null
 
 export interface ODataFunctionParameter {
@@ -981,6 +1022,10 @@ type ODataServiceContract<
   M extends Record<string, any>,
   TEntitySet extends ODataEntitySet<any>,
 > = {
+  /** Advertises independent structured GET operations inside one OData batch. */
+  readonly supportsBatchReads?: true
+  /** Advertises SAP Gateway V2 headers for independent read batches. */
+  readonly supportsV2BatchReads?: true
   /** Advertises typed OData action members inside atomic changesets. */
   readonly supportsAtomicActionChangesets?: true
   /** Advertises binary media-stream members inside atomic changesets. */
@@ -1032,6 +1077,16 @@ type ODataServiceContract<
     changeSets: readonly (readonly ODataAtomicMutation[])[],
     options?: ODataRequestOptions,
   ) => Promise<readonly import('./odata-changeset').ODataBatchChangeSetResult[]>
+  /** Executes independent structured reads in one OData V4 batch. */
+  batchReads?: (
+    reads: readonly ODataBatchRead[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataBatchReadResult[]>
+  /** Executes independent structured reads in one SAP Gateway V2 batch. */
+  v2BatchReads?: (
+    reads: readonly ODataBatchRead[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataBatchReadResult[]>
   /** Executes independent SAP Gateway V2 mutation groups in one batch. */
   v2BatchChangeSets?: (
     changeSets: readonly (readonly ODataV2AtomicMutation[])[],

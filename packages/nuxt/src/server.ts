@@ -3,6 +3,8 @@ import type {
   ODataActionResponse,
   ODataAtomicMutation,
   ODataBatchChangeSetResult,
+  ODataBatchRead,
+  ODataBatchReadResult,
   ODataChangeSetMethod,
   ODataChangeSetRequest,
   ODataChangeSetResponse,
@@ -56,8 +58,10 @@ import {
   joinODataPath,
   mergeHeaders,
   parseODataBatchChangeSetsResponse,
+  parseODataBatchReadsResponse,
   parseODataChangeSetResponse,
   serializeODataBatchChangeSets,
+  serializeODataBatchReads,
   serializeODataChangeSet,
   stringifyQuery,
   validateODataIdentifier,
@@ -136,12 +140,22 @@ export interface ODataServerReadEntitySet {
 }
 
 export interface ODataServerReadService {
+  readonly supportsBatchReads: true
+  readonly supportsV2BatchReads: true
   /** Invokes an unbound OData V4 function at the configured service root. */
   invokeFunction: <TResult = unknown>(
     functionName: string,
     invocation?: ODataFunctionInvocation,
     options?: ODataRequestOptions,
   ) => Promise<TResult>
+  batchReads: (
+    reads: readonly ODataBatchRead[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataBatchReadResult[]>
+  v2BatchReads: (
+    reads: readonly ODataBatchRead[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataBatchReadResult[]>
   entitySet: (name: string) => ODataServerReadEntitySet
 }
 
@@ -581,12 +595,89 @@ function resolveODataServerTransport(
   return { client, servicePath }
 }
 
+function batchReadRequest(read: ODataBatchRead): Readonly<{
+  path: string
+  headers?: Readonly<Record<string, string>>
+}> {
+  const entitySet = validateODataIdentifier(read.entitySet, 'OData entity set')
+  let path: string
+  if (read.kind === 'collection') {
+    path = entitySet
+  }
+  else if (read.kind === 'entity') {
+    path = createODataNavigationSourcePath(entitySet, read.key)
+  }
+  else {
+    const navigationPath = joinODataPath(
+      createODataNavigationSourcePath(entitySet, read.source),
+      formatODataNavigationPath(read.navigationPath),
+    )
+    path = read.kind === 'navigation-entity' && read.targetKey !== undefined
+      ? `${navigationPath}(${formatODataKey(read.targetKey)})`
+      : navigationPath
+  }
+  const query = new URLSearchParams(stringifyQuery(read.query ?? {})).toString()
+  return Object.freeze({
+    path: query.length === 0 ? path : `${path}?${query}`,
+    headers: read.headers,
+  })
+}
+
+async function executeServerReadBatch(
+  client: ODataFetchClient,
+  servicePath: string,
+  reads: readonly ODataBatchRead[],
+  options: ODataRequestOptions,
+  version: 'v2' | 'v4',
+): Promise<readonly ODataBatchReadResult[]> {
+  const payload = serializeODataBatchReads(reads.map(batchReadRequest))
+  const response = await client.raw<string>(joinODataPath(servicePath, '$batch'), {
+    ...options,
+    method: 'POST',
+    headers: mergeHeaders(options.headers, version === 'v2'
+      ? {
+          'Accept': 'multipart/mixed',
+          'Content-Type': payload.contentType,
+          'DataServiceVersion': '2.0',
+          'MaxDataServiceVersion': '2.0',
+        }
+      : {
+          'Accept': 'multipart/mixed',
+          'Content-Type': payload.contentType,
+          'OData-Version': '4.0',
+        }),
+    body: payload.body,
+    responseType: 'text',
+  })
+  if (typeof response._data !== 'string')
+    throw new TypeError('The OData batch response body must be text.')
+  const parsed = parseODataBatchReadsResponse(
+    response._data,
+    response.headers.get('content-type') ?? '',
+  )
+  if (parsed.length !== reads.length) {
+    throw new TypeError(
+      'The OData batch response count does not match the requested reads.',
+    )
+  }
+  return Object.freeze(parsed.map(result => Object.freeze({
+    ...result,
+    succeeded: result.status >= 200 && result.status < 300,
+  })))
+}
+
 export function createODataServerReadService(
   event: H3Event,
   serviceName: string,
 ): ODataServerReadService {
   const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'reads')
   return {
+    supportsBatchReads: true,
+    supportsV2BatchReads: true,
+    batchReads: (reads, options = {}) =>
+      executeServerReadBatch(client, servicePath, reads, options, 'v4'),
+    v2BatchReads: (reads, options = {}) =>
+      executeServerReadBatch(client, servicePath, reads, options, 'v2'),
     invokeFunction: <TResult>(
       functionName: string,
       invocation: ODataFunctionInvocation = {},

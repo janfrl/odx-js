@@ -156,6 +156,114 @@ describe('nitro server read service', () => {
     )
   })
 
+  it('batches structured V4 and SAP Gateway V2 reads with ordered partial results', async () => {
+    const responseBody = [
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 200 OK',
+      'Content-Type: application/json',
+      '',
+      '{"value":[{"ID":1,"Name":"Keyboard"}]}',
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 404 Not Found',
+      'Content-Type: application/json',
+      '',
+      '{"error":{"code":"NOT_FOUND"}}',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+      responseBody,
+      { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+    ))
+    const signal = new AbortController().signal
+    const catalog = createODataServerReadService(createEvent(requestFetch), 'catalog')
+    const reads = [{
+      kind: 'collection' as const,
+      entitySet: 'Products',
+      query: { $select: ['ID', 'Name'], $top: 1 },
+    }, {
+      kind: 'navigation-entity' as const,
+      entitySet: 'Products',
+      source: { ID: 1, Locale: 'en' },
+      navigationPath: ['Reviews'],
+      targetKey: 99,
+      headers: { 'If-None-Match': 'W/"review-99"' },
+    }]
+
+    expect(catalog).toMatchObject({
+      supportsBatchReads: true,
+      supportsV2BatchReads: true,
+    })
+    await expect(catalog.batchReads(reads, { signal })).resolves.toEqual([{
+      succeeded: true,
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: { value: [{ ID: 1, Name: 'Keyboard' }] },
+    }, {
+      succeeded: false,
+      status: 404,
+      headers: { 'content-type': 'application/json' },
+      body: { error: { code: 'NOT_FOUND' } },
+    }])
+
+    const firstOptions = requestFetch.mock.calls[0]![1]!
+    expect(requestUrl(requestFetch.mock.calls[0]![0])).toBe(
+      '/api/odx/catalog-api/$batch',
+    )
+    expect(firstOptions.signal).toBe(signal)
+    expect(new Headers(firstOptions.headers).get('odata-version')).toBe('4.0')
+    expect(String(firstOptions.body)).toContain(
+      'GET Products?%24select=ID%2CName&%24top=1 HTTP/1.1',
+    )
+    expect(String(firstOptions.body)).toContain(
+      'GET Products(ID=1,Locale=\'en\')/Reviews(99) HTTP/1.1',
+    )
+    expect(String(firstOptions.body)).toContain('If-None-Match: W/"review-99"')
+
+    await catalog.v2BatchReads(reads)
+    const secondOptions = requestFetch.mock.calls[1]![1]!
+    expect(new Headers(secondOptions.headers).get('dataserviceversion')).toBe('2.0')
+    expect(new Headers(secondOptions.headers).get('maxdataserviceversion')).toBe('2.0')
+    expect(new Headers(secondOptions.headers).has('odata-version')).toBe(false)
+  })
+
+  it('rejects unsafe or mismatched request-scoped read batches', async () => {
+    const responseBody = [
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 200 OK',
+      '',
+      '{}',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+      responseBody,
+      { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+    ))
+    const catalog = createODataServerReadService(createEvent(requestFetch), 'catalog')
+
+    await expect(catalog.batchReads([{
+      kind: 'collection',
+      entitySet: 'Products',
+    }, {
+      kind: 'entity',
+      entitySet: 'Products',
+      key: 1,
+    }])).rejects.toThrow('count does not match')
+    await expect(catalog.batchReads([{
+      kind: 'navigation-collection',
+      entitySet: 'Products',
+      source: 1,
+      navigationPath: ['../Secret'],
+    }])).rejects.toThrow('valid identifier segments')
+  })
+
   it('anchors opaque entity-set and navigation continuations to their owning proxy paths', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
       const url = requestUrl(request)

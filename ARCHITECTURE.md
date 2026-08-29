@@ -166,7 +166,9 @@ The runtime composable maps typed service-level actions, root updates,
 contained-entity mutations and media streams, and non-contained relationship
 links to framework-neutral atomic or independent changesets and owns service
 URL resolution plus `$batch` transport.
-The request-scoped Nitro mutation service exposes the same independent V4
+The request-scoped Nitro read service owns structured V4 and SAP Gateway V2
+read-only batches, preserving ordered per-read outcomes without exposing
+executable backend paths. The request-scoped Nitro mutation service exposes the same independent V4
 changeset grouping and per-group partial-success result contract without
 leaking upstream origins or executable paths into application endpoints.
 Browser and request-scoped transports expose the corresponding independent

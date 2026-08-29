@@ -35,6 +35,15 @@ The request-scoped entity set advertises these additive read families through
 `supportsContainedEntityResponses`, so shared host code can negotiate the same
 capabilities during SSR without probing for individual methods.
 
+At the service level, `batchReads()` executes independent structured
+collection, entity, navigation-collection, and navigation-entity GETs inside
+one request-scoped V4 `$batch`. `v2BatchReads()` owns the corresponding SAP
+Gateway V2 version headers. Both APIs advertise literal capability markers,
+derive every path from entity names, keys, and navigation segments, preserve
+request order and per-read status, and reject response-count mismatches. A
+failed sibling read remains an explicit result rather than rejecting successful
+siblings.
+
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
 mutation service invokes unbound V4 actions at the service root, including a

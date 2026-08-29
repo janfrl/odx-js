@@ -4,6 +4,7 @@ import type {
   ODataActionResponseEntitySet,
   ODataActionResponseService,
   ODataAtomicMutation,
+  ODataBatchRead,
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
   ODataConcurrencyService,
@@ -77,6 +78,22 @@ describe('portable imperative transport types', () => {
       .toBeFunction()
     expectTypeOf<ODataRuntimeService['supportsV2BatchChangeSets']>()
       .toEqualTypeOf<true | undefined>()
+    expectTypeOf<NonNullable<ODataRuntimeService['batchReads']>>()
+      .toBeFunction()
+    expectTypeOf<ODataRuntimeService['supportsBatchReads']>()
+      .toEqualTypeOf<true | undefined>()
+    expectTypeOf<NonNullable<ODataRuntimeService['v2BatchReads']>>()
+      .toBeFunction()
+    expectTypeOf<ODataRuntimeService['supportsV2BatchReads']>()
+      .toEqualTypeOf<true | undefined>()
+    expectTypeOf<{
+      kind: 'navigation-entity'
+      entitySet: 'Products'
+      source: { ID: number, Locale: string }
+      navigationPath: readonly ['Reviews']
+      targetKey: number
+      query: { $select: 'ID,Text' }
+    }>().toExtend<ODataBatchRead>()
     expectTypeOf<ODataRuntimeService['supportsAtomicMediaChangesets']>()
       .toEqualTypeOf<true | undefined>()
     expectTypeOf<NonNullable<ODataRuntimeService['v2ChangeSet']>>()
