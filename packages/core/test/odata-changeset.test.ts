@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   ODataChangeSetError,
   parseODataBatchChangeSetsResponse,
+  parseODataBatchReadsResponse,
   parseODataChangeSetResponse,
   serializeODataBatchChangeSets,
+  serializeODataBatchReads,
   serializeODataChangeSet,
 } from '../src/index.js'
 
@@ -13,6 +15,35 @@ const boundaries = {
 }
 
 describe('oData changesets', () => {
+  it('serializes independent GET operations as top-level batch parts', () => {
+    const payload = serializeODataBatchReads([{
+      path: 'Products?$select=ID%2CName&$top=2',
+    }, {
+      path: 'Products(1)/Category?$select=ID%2CName',
+      headers: { 'If-None-Match': 'W/"category-1"' },
+    }], { batchBoundary: 'batch_reads' })
+
+    expect(payload.contentType).toBe('multipart/mixed; boundary=batch_reads')
+    expect(payload.body).toContain(
+      'Content-Type: application/http\r\nContent-Transfer-Encoding: binary\r\n\r\nGET Products?$select=ID%2CName&$top=2 HTTP/1.1',
+    )
+    expect(payload.body).toContain('If-None-Match: W/"category-1"')
+    expect(payload.body).not.toContain('multipart/mixed; boundary=changeset')
+    expect(payload.body).not.toContain('Content-ID:')
+    expect(payload.body).toMatch(/--batch_reads--\r\n$/u)
+  })
+
+  it('rejects empty or unsafe read batches before transport', () => {
+    expect(() => serializeODataBatchReads([])).toThrow(ODataChangeSetError)
+    expect(() => serializeODataBatchReads([{
+      path: 'https://attacker.example/Products',
+    }])).toThrow(ODataChangeSetError)
+    expect(() => serializeODataBatchReads([{
+      path: 'Products',
+      headers: { Accept: 'ok\r\nInjected: true' },
+    }])).toThrow(ODataChangeSetError)
+  })
+
   it('serializes multiple writes as one atomic multipart changeset', () => {
     const payload = serializeODataChangeSet([
       {
@@ -283,5 +314,63 @@ describe('oData changesets', () => {
     }])
     expect(Object.isFrozen(results)).toBe(true)
     expect(Object.isFrozen(results[0]?.responses)).toBe(true)
+  })
+
+  it('parses independent read results without collapsing partial failures', () => {
+    const body = [
+      '--batch_response',
+      'Content-Type: application/http',
+      'Content-Transfer-Encoding: binary',
+      '',
+      'HTTP/1.1 200 OK',
+      'Content-Type: application/json',
+      'ETag: W/"products"',
+      '',
+      '{"value":[{"ID":1}],"@odata.count":1}',
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 404 Not Found',
+      'Content-Type: application/json',
+      '',
+      '{"error":{"code":"NOT_FOUND"}}',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+
+    const responses = parseODataBatchReadsResponse(
+      body,
+      'multipart/mixed; boundary=batch_response',
+    )
+
+    expect(responses).toEqual([{
+      status: 200,
+      headers: {
+        'content-type': 'application/json',
+        'etag': 'W/"products"',
+      },
+      body: { 'value': [{ ID: 1 }], '@odata.count': 1 },
+    }, {
+      status: 404,
+      headers: { 'content-type': 'application/json' },
+      body: { error: { code: 'NOT_FOUND' } },
+    }])
+    expect(Object.isFrozen(responses)).toBe(true)
+  })
+
+  it('rejects nested changesets in a read-only batch response', () => {
+    const body = [
+      '--batch_response',
+      'Content-Type: multipart/mixed; boundary=changeset_response',
+      '',
+      '--changeset_response--',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+
+    expect(() => parseODataBatchReadsResponse(
+      body,
+      'multipart/mixed; boundary=batch_response',
+    )).toThrow('read-only')
   })
 })

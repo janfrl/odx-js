@@ -73,6 +73,13 @@ response-aware read semantics to a single-valued navigation or one keyed member
 of a related collection. Structured parent sources keep nested containment and
 keys separate from executable path strings.
 
+`serializeODataBatchReads` creates read-only `$batch` envelopes from validated
+service-relative GET operations. Reads remain top-level `application/http`
+parts rather than changesets, and `parseODataBatchReadsResponse` returns their
+ordered status, headers, and JSON or text bodies without collapsing a failed
+read into a transport-wide failure. Absolute URLs, header injection, empty
+batches, and nested write changesets fail closed.
+
 OData JSON operation advertisements survive response flattening as instance
 control information. In particular, an available minimal-metadata
 `"#Namespace.Action": {}` remains an empty object and is not collapsed into

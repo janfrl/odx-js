@@ -22,6 +22,18 @@ export interface ODataBatchChangeSetsPayload {
   readonly changeSetBoundaries: readonly string[]
 }
 
+/** One safe service-relative GET operation inside an OData batch. */
+export interface ODataBatchReadRequest {
+  readonly path: string
+  readonly headers?: Readonly<Record<string, string>>
+}
+
+export interface ODataBatchReadsPayload {
+  readonly body: string
+  readonly contentType: string
+  readonly batchBoundary: string
+}
+
 export interface ODataChangeSetResponse {
   readonly status: number
   readonly headers: Readonly<Record<string, string>>
@@ -41,6 +53,10 @@ export interface SerializeODataChangeSetOptions {
 export interface SerializeODataBatchChangeSetsOptions {
   readonly batchBoundary?: string
   readonly changeSetBoundaries?: readonly string[]
+}
+
+export interface SerializeODataBatchReadsOptions {
+  readonly batchBoundary?: string
 }
 
 const RE_BOUNDARY = /^[\w'()+,./:=?-]{1,70}$/u
@@ -113,6 +129,26 @@ function validateRequest(request: ODataChangeSetRequest): void {
       'core.changeset.missing-binary-content-type',
       'A binary changeset operation requires an explicit Content-Type header.',
     )
+  }
+}
+
+function validateReadRequest(request: ODataBatchReadRequest): void {
+  if (request.path.length === 0
+    || request.path.startsWith('/')
+    || request.path.includes('://')
+    || RE_CONTROL.test(request.path)) {
+    throw new ODataChangeSetError(
+      'core.batch-reads.invalid-path',
+      'An OData batch read requires a safe service-relative path.',
+    )
+  }
+  for (const [name, value] of Object.entries(request.headers ?? {})) {
+    if (name.length === 0 || RE_CONTROL.test(name) || RE_CONTROL.test(value)) {
+      throw new ODataChangeSetError(
+        'core.batch-reads.invalid-header',
+        'OData batch read headers must not contain control characters.',
+      )
+    }
   }
 }
 
@@ -227,6 +263,53 @@ function operationPart(
   return request.body === undefined
     ? prefix.slice(0, -2)
     : `${prefix}${JSON.stringify(request.body)}`
+}
+
+function readPart(
+  request: ODataBatchReadRequest,
+  boundary: string,
+): string {
+  const headers = {
+    Accept: 'application/json',
+    ...request.headers,
+  }
+  return [
+    `--${boundary}`,
+    'Content-Type: application/http',
+    'Content-Transfer-Encoding: binary',
+    '',
+    `GET ${request.path} HTTP/1.1`,
+    ...Object.entries(headers).map(([name, value]) => `${name}: ${value}`),
+    '',
+  ].join('\r\n')
+}
+
+/** Serializes independent, side-effect-free GET operations into one OData batch. */
+export function serializeODataBatchReads(
+  requests: readonly ODataBatchReadRequest[],
+  options: SerializeODataBatchReadsOptions = {},
+): ODataBatchReadsPayload {
+  if (requests.length === 0) {
+    throw new ODataChangeSetError(
+      'core.batch-reads.empty',
+      'An OData read batch requires at least one operation.',
+    )
+  }
+  requests.forEach(validateReadRequest)
+  const batchBoundary = validBoundary(
+    options.batchBoundary ?? randomBoundary('batch'),
+    'Batch boundary',
+  )
+  const body = [
+    ...requests.map(request => readPart(request, batchBoundary)),
+    `--${batchBoundary}--`,
+    '',
+  ].join('\r\n')
+  return Object.freeze({
+    body,
+    contentType: `multipart/mixed; boundary=${batchBoundary}`,
+    batchBoundary,
+  })
 }
 
 export function serializeODataChangeSet(
@@ -465,4 +548,38 @@ export function parseODataBatchChangeSetsResponse(
     )
   }
   return Object.freeze(results)
+}
+
+/** Parses top-level application/http results from a read-only OData batch. */
+export function parseODataBatchReadsResponse(
+  body: string,
+  contentType: string,
+): readonly ODataChangeSetResponse[] {
+  const batchBoundary = boundaryFromContentType(contentType)
+  const responses: ODataChangeSetResponse[] = []
+  for (const batchPart of splitParts(body, batchBoundary)) {
+    const headerSeparator = RE_HEADER_SEPARATOR.exec(batchPart)
+    if (headerSeparator === null)
+      continue
+    const mimeHeaders = parseHeaders(batchPart.slice(0, headerSeparator.index))
+    const nestedType = mimeHeaders['content-type'] ?? ''
+    if (RE_MULTIPART_MIXED.test(nestedType)) {
+      throw new ODataChangeSetError(
+        'core.batch-reads.nested-changeset',
+        'A read-only OData batch response must not contain a nested changeset.',
+      )
+    }
+    if (RE_APPLICATION_HTTP.test(nestedType)) {
+      responses.push(parseHttpPart(
+        batchPart.slice(headerSeparator.index + headerSeparator[0].length),
+      ))
+    }
+  }
+  if (responses.length === 0) {
+    throw new ODataChangeSetError(
+      'core.batch-reads.empty-response',
+      'The OData batch response does not contain read results.',
+    )
+  }
+  return Object.freeze(responses)
 }
