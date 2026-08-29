@@ -91,6 +91,7 @@ describe('nitro server mutation service', () => {
       supportsActionResponses: true,
       supportsAtomicActionChangesets: true,
       supportsAtomicMediaChangesets: true,
+      supportsBatchChangeSets: true,
     })
     expect(products).toMatchObject({
       supportsActionResponses: true,
@@ -903,6 +904,89 @@ describe('nitro server mutation service', () => {
     expect(init?.body).toContain('PATCH Products(1)/Supplier(2) HTTP/1.1')
     expect(init?.body).toContain('If-Match: W/"product-1"')
     expect(init?.body).toContain('If-Match: W/"supplier-2"')
+  })
+
+  it('preserves independent request-scoped changeset outcomes', async () => {
+    const responseBody = [
+      '--batch_response',
+      'Content-Type: multipart/mixed; boundary=changeset_success',
+      '',
+      '--changeset_success',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 204 No Content',
+      '',
+      '--changeset_success--',
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 412 Precondition Failed',
+      'Content-Type: application/json',
+      '',
+      '{"error":{"code":"ETAG_MISMATCH"}}',
+      '--batch_response--',
+      '',
+    ].join('\r\n')
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(responseBody, {
+      headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' },
+    }))
+    const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+
+    await expect(service.batchChangeSets([[{
+      kind: 'action',
+      scope: 'entity',
+      entitySet: 'Products',
+      key: 1,
+      action: 'Catalog.ArchiveProduct',
+      headers: { 'If-Match': 'W/"product-1"' },
+    }], [{
+      kind: 'delete',
+      entitySet: 'Products',
+      key: 2,
+      headers: { 'If-Match': 'W/"product-2"' },
+    }]], {
+      headers: { 'X-Correlation-ID': 'mass-action-1' },
+    })).resolves.toEqual([{
+      succeeded: true,
+      responses: [{ status: 204, headers: {} }],
+    }, {
+      succeeded: false,
+      responses: [{
+        status: 412,
+        headers: { 'content-type': 'application/json' },
+        body: { error: { code: 'ETAG_MISMATCH' } },
+      }],
+    }])
+
+    expect(service.supportsBatchChangeSets).toBe(true)
+    const [request, init] = requestFetch.mock.calls[0]!
+    expect(requestUrl(request)).toBe('/api/odx/catalog-api/$batch')
+    expect(new Headers(init?.headers).get('odata-version')).toBe('4.0')
+    expect(new Headers(init?.headers).get('x-correlation-id')).toBe('mass-action-1')
+    expect(init?.body?.match(/Content-Type: multipart\/mixed; boundary=changeset_/gu))
+      .toHaveLength(2)
+    expect(init?.body).toContain('POST Products(1)/Catalog.ArchiveProduct HTTP/1.1')
+    expect(init?.body).toContain('DELETE Products(2) HTTP/1.1')
+    expect(init?.body).toContain('If-Match: W/"product-1"')
+    expect(init?.body).toContain('If-Match: W/"product-2"')
+  })
+
+  it('rejects mismatched request-scoped changeset response groups', async () => {
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+      emptyChangeSetResponse(1),
+      { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+    ))
+    const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+
+    await expect(service.batchChangeSets([[{
+      kind: 'delete',
+      entitySet: 'Products',
+      key: 1,
+    }], [{
+      kind: 'delete',
+      entitySet: 'Products',
+      key: 2,
+    }]])).rejects.toThrow('count does not match')
   })
 
   it('owns atomic root create and delete members for V4 and SAP Gateway V2', async () => {

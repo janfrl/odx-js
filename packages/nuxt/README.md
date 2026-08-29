@@ -61,6 +61,12 @@ relationship-response capabilities. These literal markers let SSR hosts stay
 fail-closed while sharing capability-driven transport selection with browser
 code.
 
+`batchChangeSets()` executes ordered, independent mutation groups in one
+request-scoped V4 batch. It preserves a `succeeded` result and the parsed
+responses for every group, so one failed mass-action member does not erase
+successful sibling outcomes. Require `supportsBatchChangeSets === true` before
+using this additive contract.
+
 For atomic V2 updates, the request-scoped service advertises
 `supportsV2AtomicChangesets === true` and exposes `v2ChangeSet`. It accepts only
 typed root and navigation updates as `MERGE`. Runtimes that additionally expose

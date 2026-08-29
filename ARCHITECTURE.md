@@ -165,6 +165,9 @@ The runtime composable maps typed service-level actions, root updates,
 contained-entity mutations and media streams, and non-contained relationship
 links to framework-neutral atomic or independent changesets and owns service
 URL resolution plus `$batch` transport.
+The request-scoped Nitro mutation service exposes the same independent V4
+changeset grouping and per-group partial-success result contract without
+leaking upstream origins or executable paths into application endpoints.
 Ordinary service-, collection-, entity-, and navigation-bound actions expose a
 capability-negotiated response-aware path alongside the body-only API so
 optional representations, ETags, service-advertised locations, and allowlisted

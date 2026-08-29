@@ -2,6 +2,7 @@ import type {
   ODataActionInvocation,
   ODataActionResponse,
   ODataAtomicMutation,
+  ODataBatchChangeSetResult,
   ODataChangeSetMethod,
   ODataChangeSetRequest,
   ODataChangeSetResponse,
@@ -54,7 +55,9 @@ import {
   formatODataV2FunctionImportParameters,
   joinODataPath,
   mergeHeaders,
+  parseODataBatchChangeSetsResponse,
   parseODataChangeSetResponse,
+  serializeODataBatchChangeSets,
   serializeODataChangeSet,
   stringifyQuery,
   validateODataIdentifier,
@@ -322,6 +325,7 @@ export interface ODataServerMutationService extends ODataV2FunctionImportRespons
   readonly supportsActionResponses: true
   readonly supportsAtomicActionChangesets: true
   readonly supportsAtomicMediaChangesets: true
+  readonly supportsBatchChangeSets: true
   readonly supportsV2AtomicChangesets: true
   readonly supportsV2AtomicNavigationMutations: true
   readonly supportsV2AtomicNavigationReferences: true
@@ -344,6 +348,10 @@ export interface ODataServerMutationService extends ODataV2FunctionImportRespons
     mutations: readonly ODataAtomicMutation[],
     options?: ODataRequestOptions,
   ) => Promise<readonly ODataChangeSetResponse[]>
+  batchChangeSets: (
+    changeSets: readonly (readonly ODataAtomicMutation[])[],
+    options?: ODataRequestOptions,
+  ) => Promise<readonly ODataBatchChangeSetResult[]>
   v2ChangeSet: (
     mutations: readonly ODataV2AtomicMutation[],
     options?: ODataRequestOptions,
@@ -747,6 +755,7 @@ export function createODataServerMutationService(
     supportsActionResponses: true,
     supportsAtomicActionChangesets: true,
     supportsAtomicMediaChangesets: true,
+    supportsBatchChangeSets: true,
     supportsV2AtomicChangesets: true,
     supportsV2AtomicNavigationMutations: true,
     supportsV2AtomicNavigationReferences: true,
@@ -1255,6 +1264,34 @@ export function createODataServerMutationService(
         response._data,
         response.headers.get('content-type') ?? '',
       )
+    },
+    async batchChangeSets(changeSets, options = {}) {
+      const payload = serializeODataBatchChangeSets(changeSets.map(changeSet =>
+        changeSet.map(atomicMutationRequest),
+      ))
+      const response = await client.raw<string>(joinODataPath(servicePath, '$batch'), {
+        ...options,
+        method: 'POST',
+        headers: mergeHeaders(options.headers, {
+          'Accept': 'multipart/mixed',
+          'Content-Type': payload.contentType,
+          'OData-Version': '4.0',
+        }),
+        body: payload.body,
+        responseType: 'text',
+      })
+      if (typeof response._data !== 'string')
+        throw new TypeError('The OData batch response body must be text.')
+      const results = parseODataBatchChangeSetsResponse(
+        response._data,
+        response.headers.get('content-type') ?? '',
+      )
+      if (results.length !== changeSets.length) {
+        throw new TypeError(
+          'The OData batch response count does not match the requested changesets.',
+        )
+      }
+      return results
     },
     async v2ChangeSet(mutations, options = {}) {
       const payload = serializeODataChangeSet(mutations.map(v2AtomicMutationRequest))
