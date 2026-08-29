@@ -54,6 +54,14 @@ headers, and parsed body values. Any non-2xx member throws
 `ODataChangeSetError` with the complete parsed response set; an outer HTTP 200
 alone is never interpreted as mutation success.
 
+All batch response parsers recognize line-delimited MIME framing, preserve
+boundary text inside payload values, and ignore preamble/epilogue as specified
+by [RFC 2046 section 5.1.1](https://www.rfc-editor.org/rfc/rfc2046#section-5.1.1).
+A missing outer or nested closing delimiter rejects with
+`core.changeset.incomplete-response`; no partial result is presented as a
+complete batch. For mutations this leaves the upstream outcome unknown, not
+rolled back: reconcile before retrying instead of replaying writes blindly.
+
 The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It
 contains no Nuxt, Node.js, or transport behavior.
 

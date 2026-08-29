@@ -80,6 +80,13 @@ ordered status, headers, and JSON or text bodies without collapsing a failed
 read into a transport-wide failure. Absolute URLs, header injection, empty
 batches, and nested write changesets fail closed.
 
+All read and changeset response parsers preserve boundary-like text inside JSON
+values and require complete line-delimited MIME envelopes, including nested
+changesets. Preamble and epilogue are ignored. A missing closing delimiter
+throws `ODataChangeSetError` with `core.changeset.incomplete-response`. For a
+write, this does not prove rollback or make an automatic retry safe; the host
+must reconcile the unknown outcome.
+
 OData JSON operation advertisements survive response flattening as instance
 control information. In particular, an available minimal-metadata
 `"#Namespace.Action": {}` remains an empty object and is not collapsed into

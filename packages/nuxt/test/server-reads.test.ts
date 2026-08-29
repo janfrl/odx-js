@@ -231,6 +231,36 @@ describe('nitro server read service', () => {
     expect(new Headers(secondOptions.headers).has('odata-version')).toBe(false)
   })
 
+  it.each(['batchReads', 'v2BatchReads'] as const)('%s preserves boundary text and rejects truncated envelopes', async (method) => {
+    const entity = { ID: 1, Name: 'Keep --batch_response in the product name' }
+    const operation = [
+      '--batch_response',
+      'Content-Type: application/http',
+      '',
+      'HTTP/1.1 200 OK',
+      'Content-Type: application/json',
+      '',
+      JSON.stringify({ value: [entity] }),
+    ].join('\r\n')
+    let responseBody = `${operation}\r\n--batch_response--`
+    const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+      responseBody,
+      { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+    ))
+    const catalog = createODataServerReadService(createEvent(requestFetch), 'catalog')
+    const reads = [{ kind: 'collection' as const, entitySet: 'Products' }]
+    await expect(catalog[method](reads)).resolves.toMatchObject([{
+      succeeded: true,
+      body: { value: [entity] },
+    }])
+
+    responseBody = operation
+    await expect(catalog[method](reads)).rejects.toMatchObject({
+      code: 'core.changeset.incomplete-response',
+    })
+    expect(requestFetch).toHaveBeenCalledTimes(2)
+  })
+
   it('rejects unsafe or mismatched request-scoped read batches', async () => {
     const responseBody = [
       '--batch_response',

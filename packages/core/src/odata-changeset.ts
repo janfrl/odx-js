@@ -64,7 +64,7 @@ const RE_CONTROL = /[\r\n]/u
 const RE_CONTENT_TYPE_BOUNDARY = /boundary=(?:"([^"]+)"|([^;\s]+))/iu
 const RE_HTTP_RESPONSE = /^HTTP\/1\.[01]\s+(\d{3})(?:\s+(?:\S.*)?)?$/mu
 const RE_LEADING_LINE_BREAK = /^\r?\n/u
-const RE_TRAILING_LINE_BREAK = /\r?\n$/u
+const RE_REGEXP_META = /[.*+?^${}()|[\]\\]/gu
 const RE_LINE_BREAK = /\r?\n/u
 const RE_HEADER_SEPARATOR = /\r?\n\r?\n/u
 const RE_MULTIPART_MIXED = /multipart\/mixed/iu
@@ -442,10 +442,24 @@ function boundaryFromContentType(contentType: string): string {
 }
 
 function splitParts(body: string, boundary: string): readonly string[] {
-  return body.split(`--${boundary}`)
-    .slice(1)
-    .map(part => part.replace(RE_LEADING_LINE_BREAK, '').replace(RE_TRAILING_LINE_BREAK, ''))
-    .filter(part => part.length > 0 && part !== '--')
+  // RFC 2046 §5.1.1: delimiters own their preceding line break. Boundary text
+  // inside a payload is not framing; preamble and epilogue are not operations.
+  const escaped = boundary.replace(RE_REGEXP_META, '\\$&')
+  const delimiter = new RegExp(`(?:^|\\r?\\n)--${escaped}(--)?[\\t ]*(?=\\r?\\n|$)`, 'gu')
+  const parts: string[] = []
+  let start: number | undefined
+  for (const match of body.matchAll(delimiter)) {
+    if (start !== undefined)
+      parts.push(body.slice(start, match.index))
+    if (match[1] === '--')
+      return parts
+    const end = match.index + match[0].length
+    start = end + (body.startsWith('\r\n', end) ? 2 : body[end] === '\n' ? 1 : 0)
+  }
+  throw new ODataChangeSetError(
+    'core.changeset.incomplete-response',
+    'The OData batch response is missing a closing MIME boundary.',
+  )
 }
 
 function parseHeaders(block: string): Readonly<Record<string, string>> {
