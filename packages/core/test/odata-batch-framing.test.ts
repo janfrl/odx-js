@@ -28,6 +28,22 @@ const parsers = [
   },
 ]
 
+it.each([false, true])('does not treat a pending batch mutation response as completed (nested=%s)', (nested) => {
+  const pending = operation.replace('200 OK', '202 Accepted')
+  const body = [
+    boundary,
+    ...(nested ? ['Content-Type: multipart/mixed; boundary=pending_group', '', '--pending_group'] : []),
+    pending,
+    ...(nested ? ['--pending_group--'] : []),
+    `${boundary}--`,
+  ].join('\r\n')
+  for (const parse of [parseODataChangeSetResponse, parseODataBatchChangeSetsResponse]) {
+    expect(() => parse(body, contentType)).toThrow(/pending asynchronous/u)
+  }
+  if (!nested)
+    expect(parseODataBatchReadsResponse(body, contentType)[0]?.status).toBe(202)
+})
+
 it.each([200, 412])('does not flatten independent changeset groups into one atomic outcome (%s)', (status) => {
   const body = [
     ...[0, 1].flatMap(index => [

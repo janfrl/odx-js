@@ -74,6 +74,13 @@ instead of flattening their successes or failures into an atomic outcome.
 Use `parseODataBatchChangeSetsResponse` for intentionally independent groups;
 a valid single error response for a failed changeset remains supported.
 
+Mutation batch parsers reject `202 Accepted` members with
+`core.changeset.pending-response` and retain their response details on the error.
+These synchronous APIs do not poll an asynchronous status monitor or interpret
+acceptance as completed persistence. The host must establish the final outcome
+before retrying; this is not evidence of rollback. Raw read-batch parsing still
+preserves individual HTTP statuses.
+
 `ODataChangeSetResponse.contentId` preserves the optional MIME `Content-ID`
 outside the embedded HTTP `headers`. Raw parsers retain wire order. Serialized
 changeset payloads expose immutable `contentIds` in request order; independent

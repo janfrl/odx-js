@@ -598,6 +598,13 @@ export function parseODataBatchChangeSetsResponse(
     }
     if (responses.length === 0)
       throw invalidResponsePart()
+    if (responses.some(response => response.status === 202)) {
+      throw new ODataChangeSetError(
+        'core.changeset.pending-response',
+        'The OData batch contains a pending asynchronous result, not a completed mutation outcome.',
+        responses,
+      )
+    }
     results.push(Object.freeze({
       succeeded: responses.every(response =>
         response.status >= 200 && response.status < 300,

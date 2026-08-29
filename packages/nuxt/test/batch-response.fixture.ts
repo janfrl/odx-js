@@ -1,5 +1,5 @@
 /** Deliberately ordered MIME results for both Nuxt transport implementations. */
-export function batchResponse(groups: readonly (readonly (string | undefined)[])[]): string {
+export function batchResponse(groups: readonly (readonly (string | undefined)[])[], status = 200): string {
   return [
     ...groups.flatMap((ids, index) => [
       '--batch_response',
@@ -10,7 +10,7 @@ export function batchResponse(groups: readonly (readonly (string | undefined)[])
         'Content-Type: application/http',
         ...(id === undefined ? [] : [`Content-ID: ${id}`]),
         '',
-        'HTTP/1.1 200 OK',
+        `HTTP/1.1 ${status} Result`,
         'Content-Type: application/json',
         `ETag: W/"${id ?? 'legacy'}"`,
         '',

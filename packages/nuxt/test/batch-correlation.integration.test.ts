@@ -19,6 +19,7 @@ afterEach(async () => {
 it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates MIME identities across a real HTTP exchange without replay', async (method) => {
   const requests: { url?: string, method?: string, body: string }[] = []
   let groups = [['2', '1']]
+  let status = 200
   const server = createServer(async (request, response) => {
     request.setEncoding('utf8')
     let body = ''
@@ -26,7 +27,7 @@ it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates MIME identities ac
       body += chunk
     requests.push({ url: request.url, method: request.method, body })
     response.writeHead(200, { 'Content-Type': 'multipart/mixed; boundary=batch_response' })
-    response.end(batchResponse(groups))
+    response.end(batchResponse(groups, status))
   })
   servers.push(server)
   await new Promise<void>((resolve, reject) => {
@@ -62,7 +63,13 @@ it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates MIME identities ac
   await expect(service[method](mutations)).rejects.toMatchObject({
     code: 'core.changeset.response-count-mismatch',
   })
-  expect(requests).toHaveLength(3)
+  groups = [['1', '2']]
+  status = 202
+  await expect(service[method](mutations)).rejects.toMatchObject({
+    code: 'core.changeset.pending-response',
+    responses: [{ status: 202 }, { status: 202 }],
+  })
+  expect(requests).toHaveLength(4)
   for (const request of requests) {
     expect(request.url).toBe('/api/odx/catalog-api/$batch')
     expect(request.method).toBe('POST')
