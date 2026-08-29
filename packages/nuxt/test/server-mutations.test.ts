@@ -80,11 +80,28 @@ describe('nitro server mutation service', () => {
       }
       return new Response(null, { status: 404 })
     })
-    const products = createODataServerMutationService(
+    const service = createODataServerMutationService(
       createEvent(requestFetch),
       'catalog',
-    ).entitySet('Products')
+    )
+    const products = service.entitySet('Products')
     const key = { ID: 1, Locale: 'en' }
+
+    expect(service).toMatchObject({
+      supportsActionResponses: true,
+      supportsAtomicActionChangesets: true,
+      supportsAtomicMediaChangesets: true,
+    })
+    expect(products).toMatchObject({
+      supportsActionResponses: true,
+      supportsCreateResponses: true,
+      supportsDeleteResponses: true,
+      supportsMediaStreams: true,
+      supportsMerge: true,
+      supportsNavigationMerge: true,
+      supportsNavigationReferenceResponses: true,
+      supportsV2NavigationReferences: true,
+    })
 
     await expect(products.createWithResponse({ Name: 'Created' })).resolves.toEqual({
       data: { ID: 2, Locale: 'en', Name: 'Created' },

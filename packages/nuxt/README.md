@@ -29,6 +29,11 @@ follow-up mutations. All methods validate structured entity and navigation
 identities. Page reads retain server-driven count and continuation metadata;
 continuation methods anchor the opaque token to the same validated
 request-scoped proxy path and never follow a backend-owned URL.
+The request-scoped entity set advertises these additive read families through
+`supportsCollectionPages`, `supportsContinuations`,
+`supportsEntityResponses`, `supportsNavigationEntityResponses`, and
+`supportsContainedEntityResponses`, so shared host code can negotiate the same
+capabilities during SSR without probing for individual methods.
 
 Use the `WithResponse` variants when the host must retain an optional
 representation, next ETag, response identity, location, or SAP message. The
@@ -50,6 +55,11 @@ navigation collection and retain the representation, ETag, entity ID, location,
 and SAP message advertised by the service. Reads and replacements address
 default or named streams. All methods use the configured ODX proxy route and
 the current Nitro request context rather than calling an upstream origin.
+The service advertises response-aware actions and atomic action/media members;
+its entity sets separately advertise create, action, delete, media, merge, and
+relationship-response capabilities. These literal markers let SSR hosts stay
+fail-closed while sharing capability-driven transport selection with browser
+code.
 
 For atomic V2 updates, the request-scoped service advertises
 `supportsV2AtomicChangesets === true` and exposes `v2ChangeSet`. It accepts only

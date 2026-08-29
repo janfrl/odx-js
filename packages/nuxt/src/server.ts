@@ -71,6 +71,11 @@ interface ODataFetchClient {
 }
 
 export interface ODataServerReadEntitySet {
+  readonly supportsCollectionPages: true
+  readonly supportsContinuations: true
+  readonly supportsContainedEntityResponses: true
+  readonly supportsEntityResponses: true
+  readonly supportsNavigationEntityResponses: true
   fetchOne: <TResult = unknown>(
     key: ODataKey,
     query?: ODataQuery<TResult>,
@@ -138,8 +143,13 @@ export interface ODataServerReadService {
 }
 
 export interface ODataServerMutationEntitySet {
+  readonly supportsActionResponses: true
+  readonly supportsCreateResponses: true
+  readonly supportsDeleteResponses: true
+  readonly supportsMediaStreams: true
   readonly supportsMerge: true
   readonly supportsNavigationMerge: true
+  readonly supportsNavigationReferenceResponses: true
   readonly supportsV2NavigationReferences: true
   create: <TResult = unknown, TBody extends Record<string, unknown> = Record<string, unknown>>(
     body: TBody,
@@ -309,6 +319,9 @@ export interface ODataServerMutationEntitySet {
 }
 
 export interface ODataServerMutationService extends ODataV2FunctionImportResponseCapability {
+  readonly supportsActionResponses: true
+  readonly supportsAtomicActionChangesets: true
+  readonly supportsAtomicMediaChangesets: true
   readonly supportsV2AtomicChangesets: true
   readonly supportsV2AtomicNavigationMutations: true
   readonly supportsV2AtomicNavigationReferences: true
@@ -589,6 +602,11 @@ export function createODataServerReadService(
       const navigationPath = (source: ODataNavigationSource, path: readonly string[]): string =>
         joinODataPath(sourcePath(source), formatODataNavigationPath(path))
       return {
+        supportsCollectionPages: true,
+        supportsContinuations: true,
+        supportsContainedEntityResponses: true,
+        supportsEntityResponses: true,
+        supportsNavigationEntityResponses: true,
         fetchOne: <TResult>(
           key: ODataKey,
           query: ODataQuery<TResult> = {},
@@ -726,6 +744,9 @@ export function createODataServerMutationService(
   const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'mutations')
 
   return {
+    supportsActionResponses: true,
+    supportsAtomicActionChangesets: true,
+    supportsAtomicMediaChangesets: true,
     supportsV2AtomicChangesets: true,
     supportsV2AtomicNavigationMutations: true,
     supportsV2AtomicNavigationReferences: true,
@@ -831,8 +852,13 @@ export function createODataServerMutationService(
           : `${navigationPath}(${formatODataKey(targetKey)})`
       }
       return {
+        supportsActionResponses: true,
+        supportsCreateResponses: true,
+        supportsDeleteResponses: true,
+        supportsMediaStreams: true,
         supportsMerge: true,
         supportsNavigationMerge: true,
+        supportsNavigationReferenceResponses: true,
         supportsV2NavigationReferences: true,
         create: <TResult, TBody extends Record<string, unknown>>(
           body: TBody,

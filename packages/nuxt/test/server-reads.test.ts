@@ -49,6 +49,14 @@ describe('nitro server read service', () => {
     ).entitySet('Products')
     const key = { ID: 1, Locale: 'en' }
 
+    expect(products).toMatchObject({
+      supportsCollectionPages: true,
+      supportsContinuations: true,
+      supportsContainedEntityResponses: true,
+      supportsEntityResponses: true,
+      supportsNavigationEntityResponses: true,
+    })
+
     await expect(products.fetchOne<{ ID: number, Name: string }>(
       key,
       { $select: ['ID', 'Name'] },
