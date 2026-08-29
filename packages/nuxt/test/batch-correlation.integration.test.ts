@@ -18,7 +18,7 @@ afterEach(async () => {
 
 it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates MIME identities across a real HTTP exchange without replay', async (method) => {
   const requests: { url?: string, method?: string, body: string }[] = []
-  let ids = ['2', '1']
+  let groups = [['2', '1']]
   const server = createServer(async (request, response) => {
     request.setEncoding('utf8')
     let body = ''
@@ -26,7 +26,7 @@ it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates MIME identities ac
       body += chunk
     requests.push({ url: request.url, method: request.method, body })
     response.writeHead(200, { 'Content-Type': 'multipart/mixed; boundary=batch_response' })
-    response.end(batchResponse([ids]))
+    response.end(batchResponse(groups))
   })
   servers.push(server)
   await new Promise<void>((resolve, reject) => {
@@ -54,11 +54,15 @@ it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates MIME identities ac
   const responses = await service[method](mutations)
   expect(responses.map(item => [item.contentId, item.body, item.headers.etag]))
     .toEqual([['1', { ID: '1' }, 'W/"1"'], ['2', { ID: '2' }, 'W/"2"']])
-  ids = ['1', '1']
+  groups = [['1', '1']]
   await expect(service[method](mutations)).rejects.toMatchObject({
     code: 'core.changeset.response-id-mismatch',
   })
-  expect(requests).toHaveLength(2)
+  groups = [['1'], ['2']]
+  await expect(service[method](mutations)).rejects.toMatchObject({
+    code: 'core.changeset.response-count-mismatch',
+  })
+  expect(requests).toHaveLength(3)
   for (const request of requests) {
     expect(request.url).toBe('/api/odx/catalog-api/$batch')
     expect(request.method).toBe('POST')

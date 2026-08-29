@@ -28,6 +28,24 @@ const parsers = [
   },
 ]
 
+it.each([200, 412])('does not flatten independent changeset groups into one atomic outcome (%s)', (status) => {
+  const body = [
+    ...[0, 1].flatMap(index => [
+      boundary,
+      `Content-Type: multipart/mixed; boundary=changeset_${index}`,
+      '',
+      `--changeset_${index}`,
+      index === 0 ? operation : operation.replace('200 OK', `${status} Result`),
+      `--changeset_${index}--`,
+    ]),
+    `${boundary}--`,
+  ].join('\r\n')
+  expect(parseODataBatchChangeSetsResponse(body, contentType).map(group => group.succeeded))
+    .toEqual([true, status === 200])
+  expect(() => parseODataChangeSetResponse(body, contentType))
+    .toThrow(/exactly one changeset/u)
+})
+
 describe.each(parsers)('$name MIME framing', ({ parse }) => {
   it('preserves inline boundary text and ignores preamble and epilogue', () => {
     const body = [

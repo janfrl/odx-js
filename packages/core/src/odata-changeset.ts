@@ -560,8 +560,14 @@ export function parseODataChangeSetResponse(
   contentType: string,
 ): readonly ODataChangeSetResponse[] {
   const results = parseODataBatchChangeSetsResponse(body, contentType)
-  const responses = Object.freeze(results.flatMap(result => result.responses))
-  if (results.some(result => !result.succeeded)) {
+  if (results.length !== 1) {
+    throw new ODataChangeSetError(
+      'core.changeset.response-count-mismatch',
+      'An atomic OData response must contain exactly one changeset result.',
+    )
+  }
+  const { responses, succeeded } = results[0]!
+  if (!succeeded) {
     throw new ODataChangeSetError(
       'core.changeset.failed',
       'The atomic OData changeset failed.',

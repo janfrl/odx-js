@@ -68,6 +68,12 @@ operation or changeset. Envelopes require `multipart/mixed`, operations require
 MIME type casing and parameters remain supported. These structural failures
 are distinct from valid non-2xx operation responses.
 
+The single-atomic-changeset parser requires exactly one outer result group.
+It rejects multiple sibling groups with `core.changeset.response-count-mismatch`
+instead of flattening their successes or failures into an atomic outcome.
+Use `parseODataBatchChangeSetsResponse` for intentionally independent groups;
+a valid single error response for a failed changeset remains supported.
+
 `ODataChangeSetResponse.contentId` preserves the optional MIME `Content-ID`
 outside the embedded HTTP `headers`. Raw parsers retain wire order. Serialized
 changeset payloads expose immutable `contentIds` in request order; independent
