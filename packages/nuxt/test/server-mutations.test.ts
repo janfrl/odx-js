@@ -49,6 +49,33 @@ function emptyChangeSetResponse(memberCount: number): string {
   ].join('\r\n')
 }
 
+it.each(['changeSet', 'v2ChangeSet'] as const)('%s does not report success after skipping a malformed result part', async (method) => {
+  const responseBody = [
+    '--batch_response',
+    'Content-Type: application/http',
+    '',
+    'HTTP/1.1 204 No Content',
+    '',
+    '--batch_response',
+    'Content-Type: text/plain',
+    '',
+    'Unknown mutation outcome',
+    '--batch_response--',
+  ].join('\r\n')
+  const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+    responseBody,
+    { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+  ))
+  const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+  await expect(service[method]([{
+    kind: 'update',
+    entitySet: 'Products',
+    key: 1,
+    body: { Active: true },
+  }])).rejects.toMatchObject({ code: 'core.changeset.invalid-response-part' })
+  expect(requestFetch).toHaveBeenCalledTimes(1)
+})
+
 describe('nitro server mutation service', () => {
   it('preserves create, update, and delete response metadata on structured keys', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request, init) => {

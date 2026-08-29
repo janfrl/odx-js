@@ -86,6 +86,10 @@ changesets. Preamble and epilogue are ignored. A missing closing delimiter
 throws `ODataChangeSetError` with `core.changeset.incomplete-response`. For a
 write, this does not prove rollback or make an automatic retry safe; the host
 must reconcile the unknown outcome.
+Empty or unsupported result parts likewise reject with
+`core.changeset.invalid-response-part`; they are never skipped to produce a
+shorter apparent success. Valid HTTP failures retain their ordinary per-read
+or per-changeset outcome contract.
 
 OData JSON operation advertisements survive response flattening as instance
 control information. In particular, an available minimal-metadata

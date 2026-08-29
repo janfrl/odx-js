@@ -231,7 +231,7 @@ describe('nitro server read service', () => {
     expect(new Headers(secondOptions.headers).has('odata-version')).toBe(false)
   })
 
-  it.each(['batchReads', 'v2BatchReads'] as const)('%s preserves boundary text and rejects truncated envelopes', async (method) => {
+  it.each(['batchReads', 'v2BatchReads'] as const)('%s preserves boundary text and rejects malformed envelopes', async (method) => {
     const entity = { ID: 1, Name: 'Keep --batch_response in the product name' }
     const operation = [
       '--batch_response',
@@ -258,7 +258,11 @@ describe('nitro server read service', () => {
     await expect(catalog[method](reads)).rejects.toMatchObject({
       code: 'core.changeset.incomplete-response',
     })
-    expect(requestFetch).toHaveBeenCalledTimes(2)
+    responseBody = [operation, '--batch_response', 'Content-Type: text/plain', '', 'Unknown result', '--batch_response--'].join('\r\n')
+    await expect(catalog[method](reads)).rejects.toMatchObject({
+      code: 'core.changeset.invalid-response-part',
+    })
+    expect(requestFetch).toHaveBeenCalledTimes(3)
   })
 
   it('rejects unsafe or mismatched request-scoped read batches', async () => {

@@ -67,8 +67,8 @@ const RE_LEADING_LINE_BREAK = /^\r?\n/u
 const RE_REGEXP_META = /[.*+?^${}()|[\]\\]/gu
 const RE_LINE_BREAK = /\r?\n/u
 const RE_HEADER_SEPARATOR = /\r?\n\r?\n/u
-const RE_MULTIPART_MIXED = /multipart\/mixed/iu
-const RE_APPLICATION_HTTP = /application\/http/iu
+const RE_MULTIPART_MIXED = /^multipart\/mixed(?:\s*;|\s*$)/iu
+const RE_APPLICATION_HTTP = /^application\/http(?:\s*;|\s*$)/iu
 
 export class ODataChangeSetError extends Error {
   readonly code: string
@@ -430,6 +430,12 @@ export function serializeODataBatchChangeSets(
 }
 
 function boundaryFromContentType(contentType: string): string {
+  if (!RE_MULTIPART_MIXED.test(contentType.trim())) {
+    throw new ODataChangeSetError(
+      'core.changeset.invalid-response-content-type',
+      'An OData batch response envelope must use multipart/mixed.',
+    )
+  }
   const match = RE_CONTENT_TYPE_BOUNDARY.exec(contentType)
   const value = match?.[1] ?? match?.[2]
   if (value === undefined) {
@@ -471,9 +477,34 @@ function parseHeaders(block: string): Readonly<Record<string, string>> {
   })))
 }
 
+function invalidResponsePart(): ODataChangeSetError {
+  return new ODataChangeSetError(
+    'core.changeset.invalid-response-part',
+    'An OData batch response part is empty, malformed, or has an unsupported MIME type.',
+  )
+}
+
+function parseMimePart(part: string): { contentType: string, content: string } {
+  const separator = RE_HEADER_SEPARATOR.exec(part)
+  if (separator === null)
+    throw invalidResponsePart()
+  const headers = parseHeaders(part.slice(0, separator.index))
+  return {
+    contentType: headers['content-type'] ?? '',
+    content: part.slice(separator.index + separator[0].length),
+  }
+}
+
+function parseHttpMimePart(part: string): ODataChangeSetResponse {
+  const { contentType, content } = parseMimePart(part)
+  if (!RE_APPLICATION_HTTP.test(contentType))
+    throw invalidResponsePart()
+  return parseHttpPart(content)
+}
+
 function parseHttpPart(part: string): ODataChangeSetResponse {
   const response = RE_HTTP_RESPONSE.exec(part)
-  if (response?.index === undefined) {
+  if (response?.index !== 0) {
     throw new ODataChangeSetError(
       'core.changeset.invalid-response',
       'A changeset response part does not contain an HTTP status line.',
@@ -531,29 +562,24 @@ export function parseODataBatchChangeSetsResponse(
   const batchParts = splitParts(body, batchBoundary)
   const results: ODataBatchChangeSetResult[] = []
   for (const batchPart of batchParts) {
-    const headerSeparator = RE_HEADER_SEPARATOR.exec(batchPart)
-    if (headerSeparator === null)
-      continue
-    const mimeHeaders = parseHeaders(batchPart.slice(0, headerSeparator.index))
-    const content = batchPart.slice(headerSeparator.index + headerSeparator[0].length)
-    const nestedType = mimeHeaders['content-type'] ?? ''
+    const { contentType: nestedType, content } = parseMimePart(batchPart)
     const responses: ODataChangeSetResponse[] = []
     if (RE_MULTIPART_MIXED.test(nestedType)) {
       const changeSetBoundary = boundaryFromContentType(nestedType)
       for (const part of splitParts(content, changeSetBoundary))
-        responses.push(parseHttpPart(part))
+        responses.push(parseHttpMimePart(part))
     }
     else if (RE_APPLICATION_HTTP.test(nestedType)) {
       responses.push(parseHttpPart(content))
     }
-    if (responses.length > 0) {
-      results.push(Object.freeze({
-        succeeded: responses.every(response =>
-          response.status >= 200 && response.status < 300,
-        ),
-        responses: Object.freeze(responses),
-      }))
-    }
+    if (responses.length === 0)
+      throw invalidResponsePart()
+    results.push(Object.freeze({
+      succeeded: responses.every(response =>
+        response.status >= 200 && response.status < 300,
+      ),
+      responses: Object.freeze(responses),
+    }))
   }
   if (results.length === 0) {
     throw new ODataChangeSetError(
@@ -572,22 +598,16 @@ export function parseODataBatchReadsResponse(
   const batchBoundary = boundaryFromContentType(contentType)
   const responses: ODataChangeSetResponse[] = []
   for (const batchPart of splitParts(body, batchBoundary)) {
-    const headerSeparator = RE_HEADER_SEPARATOR.exec(batchPart)
-    if (headerSeparator === null)
-      continue
-    const mimeHeaders = parseHeaders(batchPart.slice(0, headerSeparator.index))
-    const nestedType = mimeHeaders['content-type'] ?? ''
+    const { contentType: nestedType, content } = parseMimePart(batchPart)
     if (RE_MULTIPART_MIXED.test(nestedType)) {
       throw new ODataChangeSetError(
         'core.batch-reads.nested-changeset',
         'A read-only OData batch response must not contain a nested changeset.',
       )
     }
-    if (RE_APPLICATION_HTTP.test(nestedType)) {
-      responses.push(parseHttpPart(
-        batchPart.slice(headerSeparator.index + headerSeparator[0].length),
-      ))
-    }
+    if (!RE_APPLICATION_HTTP.test(nestedType))
+      throw invalidResponsePart()
+    responses.push(parseHttpPart(content))
   }
   if (responses.length === 0) {
     throw new ODataChangeSetError(

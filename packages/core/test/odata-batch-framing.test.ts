@@ -51,6 +51,12 @@ describe.each(parsers)('$name MIME framing', ({ parse }) => {
     expect(parse(body, contentType)[0]?.body).toEqual(entity)
   })
 
+  it('accepts MIME type casing and application/http parameters', () => {
+    const parameterized = operation.replace('application/http', 'Application/HTTP; msgtype=response')
+    const body = [boundary, parameterized, `${boundary}--`].join('\r\n')
+    expect(parse(body, contentType.replace('multipart/mixed', 'Multipart/Mixed'))[0]?.body).toEqual(entity)
+  })
+
   it('rejects a complete-looking HTTP result without a closing MIME delimiter', () => {
     const body = [boundary, operation, ''].join('\r\n')
     expect(() => parse(body, contentType)).toThrow(/closing MIME boundary/u)
@@ -59,6 +65,27 @@ describe.each(parsers)('$name MIME framing', ({ parse }) => {
   it('does not mistake inline closing text for a completed envelope', () => {
     const body = [boundary, operation, `Not a delimiter: ${boundary}--`].join('\r\n')
     expect(() => parse(body, contentType)).toThrow(/closing MIME boundary/u)
+  })
+
+  it.each([
+    'Content-Type: text/plain\r\n\r\nUnrecognized result',
+    'Content-Type: application/http-extra\r\n\r\nHTTP/1.1 200 OK\r\n',
+    'Content-Type: application/http',
+    '',
+  ])('rejects an invalid sibling part instead of silently reporting success: %j', (invalid) => {
+    const body = [boundary, operation, boundary, invalid, `${boundary}--`].join('\r\n')
+    expect(() => parse(body, contentType)).toThrow(/response part/u)
+  })
+
+  it('rejects an HTTP status line hidden after unrelated content', () => {
+    const invalid = operation.replace('HTTP/1.1 200 OK', 'Unexpected prefix\r\nHTTP/1.1 200 OK')
+    const body = [boundary, invalid, `${boundary}--`].join('\r\n')
+    expect(() => parse(body, contentType)).toThrow(/HTTP status line/u)
+  })
+
+  it('rejects a non-multipart outer content type even with a boundary parameter', () => {
+    const body = [boundary, operation, `${boundary}--`].join('\r\n')
+    expect(() => parse(body, 'text/plain; boundary="batch.response+1"')).toThrow(/multipart\/mixed/u)
   })
 })
 
@@ -73,4 +100,32 @@ it('rejects an unclosed nested changeset even when the outer batch is complete',
   ].join('\r\n')
   expect(() => parseODataBatchChangeSetsResponse(body, contentType))
     .toThrow(/closing MIME boundary/u)
+})
+
+it('rejects an empty changeset instead of losing its position between sibling results', () => {
+  const body = [
+    boundary,
+    operation,
+    boundary,
+    'Content-Type: multipart/mixed; boundary=changeset_empty',
+    '',
+    '--changeset_empty--',
+    `${boundary}--`,
+  ].join('\r\n')
+  expect(() => parseODataBatchChangeSetsResponse(body, contentType))
+    .toThrow(/response part/u)
+})
+
+it('validates the MIME type of nested changeset operations', () => {
+  const body = [
+    boundary,
+    'Content-Type: multipart/mixed; boundary=changeset_wrong_type',
+    '',
+    '--changeset_wrong_type',
+    operation.replace('Content-Type: application/http', 'Content-Type: text/plain'),
+    '--changeset_wrong_type--',
+    `${boundary}--`,
+  ].join('\r\n')
+  expect(() => parseODataBatchChangeSetsResponse(body, contentType))
+    .toThrow(/response part/u)
 })

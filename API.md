@@ -61,6 +61,12 @@ A missing outer or nested closing delimiter rejects with
 `core.changeset.incomplete-response`; no partial result is presented as a
 complete batch. For mutations this leaves the upstream outcome unknown, not
 rolled back: reconcile before retrying instead of replaying writes blindly.
+Closed envelopes also reject empty or unsupported result parts with
+`core.changeset.invalid-response-part`, rather than silently dropping an
+operation or changeset. Envelopes require `multipart/mixed`, operations require
+`application/http`, and each operation starts with its HTTP status line.
+MIME type casing and parameters remain supported. These structural failures
+are distinct from valid non-2xx operation responses.
 
 The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It
 contains no Nuxt, Node.js, or transport behavior.
