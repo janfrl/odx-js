@@ -2255,6 +2255,73 @@ describe('useOData Composable', () => {
       expect(body).toContain('POST Products(2)/Demo.ArchiveProduct HTTP/1.1')
     })
 
+    it('batches structured browser reads with V4 and SAP Gateway V2 headers', async () => {
+      const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
+      raw.mockResolvedValue({
+        _data: [
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 200 OK',
+          'Content-Type: application/json',
+          '',
+          '{"value":[{"ID":1,"Name":"Keyboard"}]}',
+          '--batch_response',
+          'Content-Type: application/http',
+          '',
+          'HTTP/1.1 304 Not Modified',
+          'ETag: W/"category-1"',
+          '',
+          '--batch_response--',
+          '',
+        ].join('\r\n'),
+        headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
+      })
+      const api = useOData('RoutedService' as any)
+      const signal = new AbortController().signal
+      const reads = [{
+        kind: 'collection' as const,
+        entitySet: 'Products',
+        query: { $select: ['ID', 'Name'], $top: 1 },
+      }, {
+        kind: 'navigation-entity' as const,
+        entitySet: 'Products',
+        source: { ID: 1, Locale: 'en' },
+        navigationPath: ['Category'],
+        headers: { 'If-None-Match': 'W/"category-1"' },
+      }]
+
+      expect(api.supportsBatchReads).toBe(true)
+      expect(api.supportsV2BatchReads).toBe(true)
+      await expect(api.batchReads!(reads, { signal })).resolves.toEqual([{
+        succeeded: true,
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+        body: { value: [{ ID: 1, Name: 'Keyboard' }] },
+      }, {
+        succeeded: false,
+        status: 304,
+        headers: { etag: 'W/"category-1"' },
+      }])
+
+      const firstOptions = raw.mock.calls[0]?.[1] as any
+      expect(firstOptions.signal).toBe(signal)
+      expect(firstOptions.headers['odata-version']).toBe('4.0')
+      expect(firstOptions.body).toContain(
+        'GET Products?%24select=ID%2CName&%24top=1 HTTP/1.1',
+      )
+      expect(firstOptions.body).toContain(
+        'GET Products(ID=1,Locale=\'en\')/Category HTTP/1.1',
+      )
+      expect(firstOptions.body).toContain('If-None-Match: W/"category-1"')
+
+      await api.v2BatchReads!(reads)
+      const secondOptions = raw.mock.calls[1]?.[1] as any
+      expect(secondOptions.headers.dataserviceversion).toBe('2.0')
+      expect(secondOptions.headers.maxdataserviceversion).toBe('2.0')
+      expect(secondOptions.headers).not.toHaveProperty('odata-version')
+    })
+
     it('rejects an independent batch response count mismatch', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({
@@ -2282,6 +2349,14 @@ describe('useOData Composable', () => {
         key: 2,
         body: { Active: true },
       }]])).rejects.toThrow('count does not match')
+      await expect(api.batchReads!([{
+        kind: 'collection',
+        entitySet: 'Products',
+      }, {
+        kind: 'entity',
+        entitySet: 'Products',
+        key: 1,
+      }])).rejects.toThrow('count does not match')
     })
 
     it('preserves independent SAP Gateway V2 changeset outcomes', async () => {

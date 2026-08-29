@@ -35,7 +35,8 @@ The request-scoped entity set advertises these additive read families through
 `supportsContainedEntityResponses`, so shared host code can negotiate the same
 capabilities during SSR without probing for individual methods.
 
-At the service level, `batchReads()` executes independent structured
+At the service level, both the browser composable and request-scoped service
+use `batchReads()` to execute independent structured
 collection, entity, navigation-collection, and navigation-entity GETs inside
 one request-scoped V4 `$batch`. `v2BatchReads()` owns the corresponding SAP
 Gateway V2 version headers. Both APIs advertise literal capability markers,

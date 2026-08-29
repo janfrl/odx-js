@@ -162,7 +162,7 @@ The Nuxt module is the host integration layer. Its setup flow is:
 7. Generate OData model and registry types during `prepare:types`.
 8. Register the ODX Explorer as a Nuxt DevTools custom tab in development.
 
-The runtime composable maps typed service-level actions, root updates,
+The runtime composable maps structured independent read batches, typed service-level actions, root updates,
 contained-entity mutations and media streams, and non-contained relationship
 links to framework-neutral atomic or independent changesets and owns service
 URL resolution plus `$batch` transport.

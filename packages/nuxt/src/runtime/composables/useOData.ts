@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContainedEntitySource, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataBatchRead, ODataBatchReadResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContainedEntitySource, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -27,8 +27,10 @@ import {
   joinODataPath,
   mergeHeaders,
   parseODataBatchChangeSetsResponse,
+  parseODataBatchReadsResponse,
   parseODataChangeSetResponse,
   serializeODataBatchChangeSets,
+  serializeODataBatchReads,
   serializeODataChangeSet,
   stringifyQuery,
   toODataCollectionPage,
@@ -1060,6 +1062,34 @@ export function useOData(service?: string): any {
     })
   }
 
+  const batchReadRequest = (read: ODataBatchRead): Readonly<{
+    path: string
+    headers?: Readonly<Record<string, string>>
+  }> => {
+    const entitySet = validateODataIdentifier(read.entitySet, 'OData entity set')
+    let path: string
+    if (read.kind === 'collection') {
+      path = entitySet
+    }
+    else if (read.kind === 'entity') {
+      path = createODataNavigationSourcePath(entitySet, read.key)
+    }
+    else {
+      const navigationPath = joinODataPath(
+        createODataNavigationSourcePath(entitySet, read.source),
+        formatODataNavigationPath(read.navigationPath),
+      )
+      path = read.kind === 'navigation-entity' && read.targetKey !== undefined
+        ? `${navigationPath}(${formatODataKey(read.targetKey)})`
+        : navigationPath
+    }
+    const query = new URLSearchParams(stringifyQuery(read.query ?? {})).toString()
+    return Object.freeze({
+      path: query.length === 0 ? path : `${path}?${query}`,
+      headers: read.headers,
+    })
+  }
+
   const postChangeSetBatch = async <T>(
     serviceName: string,
     payload: { readonly body: string | Uint8Array, readonly contentType: string },
@@ -1143,6 +1173,32 @@ export function useOData(service?: string): any {
     return results
   }
 
+  const createBatchReads = (
+    serviceName: string,
+    version: 'v2' | 'v4',
+  ) => async (
+    reads: readonly ODataBatchRead[],
+    options: ODataRequestOptions = {},
+  ): Promise<readonly ODataBatchReadResult[]> => {
+    const payload = serializeODataBatchReads(reads.map(batchReadRequest))
+    const responses = await postChangeSetBatch(
+      serviceName,
+      payload,
+      options,
+      parseODataBatchReadsResponse,
+      version,
+    )
+    if (responses.length !== reads.length) {
+      throw new TypeError(
+        'The OData batch response count does not match the requested reads.',
+      )
+    }
+    return Object.freeze(responses.map(result => Object.freeze({
+      ...result,
+      succeeded: result.status >= 200 && result.status < 300,
+    })))
+  }
+
   const createV2BatchChangeSets = (serviceName: string) => async (
     changeSets: readonly (readonly ODataV2AtomicMutation[])[],
     options: ODataRequestOptions = {},
@@ -1171,7 +1227,9 @@ export function useOData(service?: string): any {
       supportsAtomicMediaChangesets: true as const,
       supportsActionResponses: true as const,
       supportsBatchChangeSets: true as const,
+      supportsBatchReads: true as const,
       supportsV2BatchChangeSets: true as const,
+      supportsV2BatchReads: true as const,
       supportsV2AtomicChangesets: true as const,
       supportsV2AtomicNavigationMutations: true as const,
       supportsV2AtomicNavigationReferences: true as const,
@@ -1180,8 +1238,10 @@ export function useOData(service?: string): any {
       supportsV2FunctionImports: true as const,
       supportsV2FunctionImportResponses: true as const,
       batchChangeSets: createBatchChangeSets(serviceName),
+      batchReads: createBatchReads(serviceName, 'v4'),
       changeSet: createChangeSet(serviceName),
       v2BatchChangeSets: createV2BatchChangeSets(serviceName),
+      v2BatchReads: createBatchReads(serviceName, 'v2'),
       v2ChangeSet: createV2ChangeSet(serviceName),
       invokeFunctionImport: <TResult = unknown>(
         name: string,
