@@ -1521,6 +1521,23 @@
       }
     ]
   },
+  "serializeODataBatchReads": {
+    "title": "serializeODataBatchReads",
+    "description": "Serializes independent, side-effect-free GET operations into one OData batch.",
+    "properties": [
+      {
+        "name": "requests",
+        "type": "readonly ODataBatchReadRequest[]",
+        "required": true
+      },
+      {
+        "name": "options",
+        "type": "SerializeODataBatchReadsOptions",
+        "default": "{}",
+        "required": false
+      }
+    ]
+  },
   "serializeODataChangeSet": {
     "title": "serializeODataChangeSet",
     "properties": [
@@ -1572,6 +1589,22 @@
   "parseODataBatchChangeSetsResponse": {
     "title": "parseODataBatchChangeSetsResponse",
     "description": "Parses every independent changeset result without collapsing partial failures.",
+    "properties": [
+      {
+        "name": "body",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "parseODataBatchReadsResponse": {
+    "title": "parseODataBatchReadsResponse",
+    "description": "Parses top-level application/http results from a read-only OData batch.",
     "properties": [
       {
         "name": "body",
@@ -1661,6 +1694,42 @@
       }
     ]
   },
+  "ODataBatchReadRequest": {
+    "title": "ODataBatchReadRequest",
+    "description": "One safe service-relative GET operation inside an OData batch.",
+    "properties": [
+      {
+        "name": "path",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataBatchReadsPayload": {
+    "title": "ODataBatchReadsPayload",
+    "properties": [
+      {
+        "name": "body",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "contentType",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "batchBoundary",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
   "ODataChangeSetResponse": {
     "title": "ODataChangeSetResponse",
     "properties": [
@@ -1722,6 +1791,16 @@
       {
         "name": "changeSetBoundaries",
         "type": "readonly string[] | undefined",
+        "required": false
+      }
+    ]
+  },
+  "SerializeODataBatchReadsOptions": {
+    "title": "SerializeODataBatchReadsOptions",
+    "properties": [
+      {
+        "name": "batchBoundary",
+        "type": "string | undefined",
         "required": false
       }
     ]
@@ -2756,6 +2835,32 @@
       {
         "name": "headers",
         "type": "Readonly<Record<string, string>> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataBatchReadResult": {
+    "title": "ODataBatchReadResult",
+    "description": "Ordered result of one independent read inside an OData batch.",
+    "properties": [
+      {
+        "name": "succeeded",
+        "type": "boolean",
+        "required": true
+      },
+      {
+        "name": "status",
+        "type": "number",
+        "required": true
+      },
+      {
+        "name": "headers",
+        "type": "Readonly<Record<string, string>>",
+        "required": true
+      },
+      {
+        "name": "body",
+        "type": "unknown",
         "required": false
       }
     ]
