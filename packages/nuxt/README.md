@@ -490,6 +490,18 @@ Use `supportsBatchChangeSets === true` before depending on this newer contract.
 For SAP Gateway V2, `v2BatchChangeSets()` exposes the same independent-group
 result contract behind `supportsV2BatchChangeSets === true`, using only bounded
 V2 mutation members and V2 protocol headers.
+
+Both browser and request-scoped mutation transports correlate successful
+changeset results with the sent MIME `Content-ID` values. Returned data and
+ETags follow request order even if a service reorders the response parts.
+Each response retains its optional `contentId` outside the HTTP headers.
+Mixed missing/present IDs, duplicate or foreign IDs, and mismatched successful
+result counts reject rather than assigning a result to the wrong operation.
+Entirely ID-less legacy groups keep wire order for compatibility, so that
+fallback cannot verify identity correlation. Failed independent groups keep
+their existing outcome contract; malformed responses never trigger an automatic
+write replay.
+
 For SAP Gateway V2, `v2ChangeSet()` atomically combines root updates and
 structured navigation updates, creates, or deletes. Updates use `MERGE`, creates
 use `POST`, deletes use `DELETE`, and every member retains its own headers.

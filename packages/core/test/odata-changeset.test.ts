@@ -230,9 +230,10 @@ describe('oData changesets', () => {
       body,
       'multipart/mixed; boundary=batch_response',
     )).toEqual([
-      { status: 204, headers: { etag: 'W/"product-2"' } },
+      { status: 204, contentId: '1', headers: { etag: 'W/"product-2"' } },
       {
         status: 200,
+        contentId: '2',
         headers: { 'content-type': 'application/json' },
         body: { ID: 11, Amount: '125.00' },
       },

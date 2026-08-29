@@ -44,6 +44,8 @@ import {
   $odataPage,
   $odataUpdateMedia,
   $odataWithResponse,
+  correlateODataBatchChangeSetResponses,
+  correlateODataChangeSetResponses,
   createODataContinuationPath,
   createODataEntityPath,
   createODataEntityReference,
@@ -1357,10 +1359,10 @@ export function createODataServerMutationService(
       })
       if (typeof response._data !== 'string')
         throw new TypeError('The OData batch response body must be text.')
-      return parseODataChangeSetResponse(
+      return correlateODataChangeSetResponses(parseODataChangeSetResponse(
         response._data,
         response.headers.get('content-type') ?? '',
-      )
+      ), payload.contentIds)
     },
     async batchChangeSets(changeSets, options = {}) {
       const payload = serializeODataBatchChangeSets(changeSets.map(changeSet =>
@@ -1383,12 +1385,7 @@ export function createODataServerMutationService(
         response._data,
         response.headers.get('content-type') ?? '',
       )
-      if (results.length !== changeSets.length) {
-        throw new TypeError(
-          'The OData batch response count does not match the requested changesets.',
-        )
-      }
-      return results
+      return correlateODataBatchChangeSetResponses(results, payload.contentIds)
     },
     async v2ChangeSet(mutations, options = {}) {
       const payload = serializeODataChangeSet(mutations.map(v2AtomicMutationRequest))
@@ -1406,10 +1403,10 @@ export function createODataServerMutationService(
       })
       if (typeof response._data !== 'string')
         throw new TypeError('The OData batch response body must be text.')
-      return parseODataChangeSetResponse(
+      return correlateODataChangeSetResponses(parseODataChangeSetResponse(
         response._data,
         response.headers.get('content-type') ?? '',
-      )
+      ), payload.contentIds)
     },
     async v2BatchChangeSets(changeSets, options = {}) {
       const payload = serializeODataBatchChangeSets(changeSets.map(changeSet =>
@@ -1433,12 +1430,7 @@ export function createODataServerMutationService(
         response._data,
         response.headers.get('content-type') ?? '',
       )
-      if (results.length !== changeSets.length) {
-        throw new TypeError(
-          'The OData batch response count does not match the requested changesets.',
-        )
-      }
-      return results
+      return correlateODataBatchChangeSetResponses(results, payload.contentIds)
     },
   }
 }

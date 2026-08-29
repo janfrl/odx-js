@@ -1,6 +1,7 @@
 import * as core from '@me-tools/odx-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, ref } from 'vue'
+import { batchResponse } from './batch-response.fixture'
 
 const runtimeConfig = vi.hoisted(() => ({
   public: {
@@ -69,6 +70,51 @@ vi.mock('@me-tools/odx-core', async () => {
 const { useOData } = await import('../src/runtime/composables/useOData')
 
 describe('useOData Composable', () => {
+  it.each(['changeSet', 'v2ChangeSet'] as const)('%s keeps reordered result data and ETags paired with request identities', async (method) => {
+    const raw = globalThis.$fetch.raw as ReturnType<typeof vi.fn>
+    raw.mockResolvedValue({
+      _data: batchResponse([['2', '1']]),
+      headers: new Headers({ 'Content-Type': 'multipart/mixed; boundary=batch_response' }),
+    })
+    const api = useOData('RoutedService')
+    const mutations = [1, 2].map(key => ({
+      kind: 'update' as const,
+      entitySet: 'Products',
+      key,
+      body: { Active: true },
+    }))
+    const responses = await api[method]!(mutations)
+    expect(responses.map(item => [item.contentId, item.body, item.headers.etag]))
+      .toEqual([['1', { ID: '1' }, 'W/"1"'], ['2', { ID: '2' }, 'W/"2"']])
+    raw.mockResolvedValue({
+      _data: batchResponse([['1', '1']]),
+      headers: new Headers({ 'Content-Type': 'multipart/mixed; boundary=batch_response' }),
+    })
+    await expect(api[method]!(mutations)).rejects.toMatchObject({
+      code: 'core.changeset.response-id-mismatch',
+    })
+    expect(raw).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(['batchChangeSets', 'v2BatchChangeSets'] as const)('%s correlates batch-global response IDs in the composable', async (method) => {
+    const raw = globalThis.$fetch.raw as ReturnType<typeof vi.fn>
+    raw.mockResolvedValue({
+      _data: batchResponse([['2', '1'], ['4', '3']]),
+      headers: new Headers({ 'Content-Type': 'multipart/mixed; boundary=batch_response' }),
+    })
+    const api = useOData('RoutedService')
+    const groups = [[1, 2], [3, 4]].map(keys => keys.map(key => ({
+      kind: 'update' as const,
+      entitySet: 'Products',
+      key,
+      body: { Active: true },
+    })))
+    const results = await api[method]!(groups)
+    expect(results.map(result => result.responses.map(item => item.contentId)))
+      .toEqual([['1', '2'], ['3', '4']])
+    expect(raw).toHaveBeenCalledTimes(1)
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     const fetchMock = vi.fn() as any
@@ -2104,16 +2150,7 @@ describe('useOData Composable', () => {
     it('preserves a named stream and sibling metadata in one atomic changeset', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({
-        _data: [
-          '--batch_response',
-          'Content-Type: application/http',
-          'Content-Transfer-Encoding: binary',
-          '',
-          'HTTP/1.1 204 No Content',
-          '',
-          '--batch_response--',
-          '',
-        ].join('\r\n'),
+        _data: batchResponse([['1', '2']]),
         headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
       })
       const media = Uint8Array.from([0, 255, 13, 10, 45, 45, 127])
@@ -2150,16 +2187,7 @@ describe('useOData Composable', () => {
     it('serializes service, collection, and entity actions in one atomic changeset', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({
-        _data: [
-          '--batch_response',
-          'Content-Type: application/http',
-          'Content-Transfer-Encoding: binary',
-          '',
-          'HTTP/1.1 204 No Content',
-          '',
-          '--batch_response--',
-          '',
-        ].join('\r\n'),
+        _data: batchResponse([['1', '2', '3']]),
         headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
       })
       const api = useOData('RoutedService' as any)
@@ -2426,20 +2454,7 @@ describe('useOData Composable', () => {
     it('serializes navigation creates and deletes in one atomic changeset', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({
-        _data: [
-          '--batch_response',
-          'Content-Type: multipart/mixed; boundary=changeset_response',
-          '',
-          '--changeset_response',
-          'Content-Type: application/http',
-          '',
-          'HTTP/1.1 204 No Content',
-          '',
-          '',
-          '--changeset_response--',
-          '--batch_response--',
-          '',
-        ].join('\r\n'),
+        _data: batchResponse([['1', '2']]),
         headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
       })
 
@@ -2474,15 +2489,7 @@ describe('useOData Composable', () => {
     it('serializes relationship links without deleting target entities', async () => {
       const raw = (globalThis.$fetch as any).raw as ReturnType<typeof vi.fn>
       raw.mockResolvedValue({
-        _data: [
-          '--batch_response',
-          'Content-Type: application/http',
-          '',
-          'HTTP/1.1 204 No Content',
-          '',
-          '--batch_response--',
-          '',
-        ].join('\r\n'),
+        _data: batchResponse([['1', '2']]),
         headers: { get: vi.fn(() => 'multipart/mixed; boundary=batch_response') },
       })
 

@@ -91,6 +91,17 @@ Empty or unsupported result parts likewise reject with
 shorter apparent success. Valid HTTP failures retain their ordinary per-read
 or per-changeset outcome contract.
 
+Changeset serializers expose immutable request `contentIds`. Response parsers
+retain MIME identity in the optional `ODataChangeSetResponse.contentId`, not
+in HTTP `headers`, and preserve wire order. Use
+`correlateODataChangeSetResponses(parsed, payload.contentIds)` to pair successful
+results with the serialized requests, or `correlateODataBatchChangeSetResponses`
+for independent groups. Nuxt's mutation transports do this automatically.
+Missing, duplicate, or foreign IDs within an identified successful group fail
+closed, as do mismatched successful result counts. Entirely ID-less legacy
+groups retain wire order for compatibility; that fallback cannot detect
+reordered results and should not be used as evidence of identity correlation.
+
 OData JSON operation advertisements survive response flattening as instance
 control information. In particular, an available minimal-metadata
 `"#Namespace.Action": {}` remains an empty object and is not collapsed into

@@ -5,6 +5,8 @@ import type {
   ODataActionResponseService,
   ODataAtomicMutation,
   ODataBatchRead,
+  ODataChangeSetPayload,
+  ODataChangeSetResponse,
   ODataCollectionPage,
   ODataConcurrencyEntitySet,
   ODataConcurrencyService,
@@ -56,6 +58,10 @@ interface Product {
 }
 
 describe('portable imperative transport types', () => {
+  it('exposes MIME response identity separately from HTTP headers', () => {
+    expectTypeOf<ODataChangeSetResponse['contentId']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<ODataChangeSetPayload['contentIds']>().toEqualTypeOf<readonly string[]>()
+  })
   it('allows server-owned BTP destination resolution without a backend URL', () => {
     expectTypeOf<{
       name: 'BusinessPartner'

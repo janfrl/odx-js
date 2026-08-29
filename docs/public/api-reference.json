@@ -1618,6 +1618,38 @@
       }
     ]
   },
+  "correlateODataChangeSetResponses": {
+    "title": "correlateODataChangeSetResponses",
+    "description": "Correlates successful results with serialized request IDs; ID-less legacy responses retain wire order.",
+    "properties": [
+      {
+        "name": "responses",
+        "type": "readonly ODataChangeSetResponse[]",
+        "required": true
+      },
+      {
+        "name": "contentIds",
+        "type": "readonly string[]",
+        "required": true
+      }
+    ]
+  },
+  "correlateODataBatchChangeSetResponses": {
+    "title": "correlateODataBatchChangeSetResponses",
+    "description": "Correlates successful sibling groups without changing their independent failure outcomes.",
+    "properties": [
+      {
+        "name": "results",
+        "type": "readonly ODataBatchChangeSetResult[]",
+        "required": true
+      },
+      {
+        "name": "contentIds",
+        "type": "readonly (readonly string[])[]",
+        "required": true
+      }
+    ]
+  },
   "ODataChangeSetRequest": {
     "title": "ODataChangeSetRequest",
     "properties": [
@@ -1666,6 +1698,11 @@
         "name": "changeSetBoundary",
         "type": "string",
         "required": true
+      },
+      {
+        "name": "contentIds",
+        "type": "readonly string[]",
+        "required": true
       }
     ]
   },
@@ -1690,6 +1727,11 @@
       {
         "name": "changeSetBoundaries",
         "type": "readonly string[]",
+        "required": true
+      },
+      {
+        "name": "contentIds",
+        "type": "readonly (readonly string[])[]",
         "required": true
       }
     ]
@@ -1733,6 +1775,12 @@
   "ODataChangeSetResponse": {
     "title": "ODataChangeSetResponse",
     "properties": [
+      {
+        "name": "contentId",
+        "type": "string | undefined",
+        "description": "MIME request identifier, distinct from the embedded HTTP response headers.",
+        "required": false
+      },
       {
         "name": "status",
         "type": "number",

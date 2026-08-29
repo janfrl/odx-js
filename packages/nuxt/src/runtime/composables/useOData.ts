@@ -11,6 +11,8 @@ import {
   $odataPage,
   $odataUpdateMedia,
   $odataWithResponse,
+  correlateODataBatchChangeSetResponses,
+  correlateODataChangeSetResponses,
   createODataContinuationPath,
   createODataEntityPath,
   createODataEntityReference,
@@ -1134,7 +1136,10 @@ export function useOData(service?: string): any {
       serviceName,
       payload,
       options,
-      parseODataChangeSetResponse,
+      (body, type) => correlateODataChangeSetResponses(
+        parseODataChangeSetResponse(body, type),
+        payload.contentIds,
+      ),
     )
   }
 
@@ -1147,7 +1152,10 @@ export function useOData(service?: string): any {
       serviceName,
       payload,
       options,
-      parseODataChangeSetResponse,
+      (body, type) => correlateODataChangeSetResponses(
+        parseODataChangeSetResponse(body, type),
+        payload.contentIds,
+      ),
       'v2',
     )
   }
@@ -1165,12 +1173,7 @@ export function useOData(service?: string): any {
       options,
       parseODataBatchChangeSetsResponse,
     )
-    if (results.length !== changeSets.length) {
-      throw new TypeError(
-        'The OData batch response count does not match the requested changesets.',
-      )
-    }
-    return results
+    return correlateODataBatchChangeSetResponses(results, payload.contentIds)
   }
 
   const createBatchReads = (
@@ -1213,12 +1216,7 @@ export function useOData(service?: string): any {
       parseODataBatchChangeSetsResponse,
       'v2',
     )
-    if (results.length !== changeSets.length) {
-      throw new TypeError(
-        'The OData batch response count does not match the requested changesets.',
-      )
-    }
-    return results
+    return correlateODataBatchChangeSetResponses(results, payload.contentIds)
   }
 
   const createServiceProxy = (serviceName: string): ODataRuntimeService => {

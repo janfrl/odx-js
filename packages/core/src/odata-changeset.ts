@@ -13,6 +13,7 @@ export interface ODataChangeSetPayload {
   readonly contentType: string
   readonly batchBoundary: string
   readonly changeSetBoundary: string
+  readonly contentIds: readonly string[]
 }
 
 export interface ODataBatchChangeSetsPayload {
@@ -20,6 +21,7 @@ export interface ODataBatchChangeSetsPayload {
   readonly contentType: string
   readonly batchBoundary: string
   readonly changeSetBoundaries: readonly string[]
+  readonly contentIds: readonly (readonly string[])[]
 }
 
 /** One safe service-relative GET operation inside an OData batch. */
@@ -35,6 +37,8 @@ export interface ODataBatchReadsPayload {
 }
 
 export interface ODataChangeSetResponse {
+  /** MIME request identifier, distinct from the embedded HTTP response headers. */
+  readonly contentId?: string
   readonly status: number
   readonly headers: Readonly<Record<string, string>>
   readonly body?: unknown
@@ -355,6 +359,7 @@ export function serializeODataChangeSet(
     contentType: `multipart/mixed; boundary=${batchBoundary}`,
     batchBoundary,
     changeSetBoundary,
+    contentIds: Object.freeze(requests.map((_, index) => String(index + 1))),
   })
 }
 
@@ -403,6 +408,10 @@ export function serializeODataBatchChangeSets(
   changeSets.flat().forEach(request => validateBinaryBoundary(request, batchBoundary))
 
   let contentId = 0
+  const contentIds = Object.freeze(changeSets.map(changeSet =>
+    Object.freeze(changeSet.map(() => String(++contentId))),
+  ))
+  contentId = 0
   const body = serializeBody([
     ...changeSets.flatMap((changeSet, groupIndex) => {
       const boundary = changeSetBoundaries[groupIndex]!
@@ -426,6 +435,7 @@ export function serializeODataBatchChangeSets(
     contentType: `multipart/mixed; boundary=${batchBoundary}`,
     batchBoundary,
     changeSetBoundaries,
+    contentIds,
   })
 }
 
@@ -484,25 +494,32 @@ function invalidResponsePart(): ODataChangeSetError {
   )
 }
 
-function parseMimePart(part: string): { contentType: string, content: string } {
+function parseMimePart(part: string): { contentType: string, content: string, contentId?: string } {
   const separator = RE_HEADER_SEPARATOR.exec(part)
   if (separator === null)
     throw invalidResponsePart()
-  const headers = parseHeaders(part.slice(0, separator.index))
+  const headerBlock = part.slice(0, separator.index)
+  const identityHeaders = headerBlock.split(RE_LINE_BREAK).filter(line =>
+    line.slice(0, line.indexOf(':')).trim().toLowerCase() === 'content-id',
+  )
+  if (identityHeaders.length > 1)
+    throw invalidResponsePart()
+  const headers = parseHeaders(headerBlock)
   return {
     contentType: headers['content-type'] ?? '',
     content: part.slice(separator.index + separator[0].length),
+    ...(headers['content-id'] === undefined ? {} : { contentId: headers['content-id'] }),
   }
 }
 
 function parseHttpMimePart(part: string): ODataChangeSetResponse {
-  const { contentType, content } = parseMimePart(part)
+  const { contentType, content, contentId } = parseMimePart(part)
   if (!RE_APPLICATION_HTTP.test(contentType))
     throw invalidResponsePart()
-  return parseHttpPart(content)
+  return parseHttpPart(content, contentId)
 }
 
-function parseHttpPart(part: string): ODataChangeSetResponse {
+function parseHttpPart(part: string, contentId?: string): ODataChangeSetResponse {
   const response = RE_HTTP_RESPONSE.exec(part)
   if (response?.index !== 0) {
     throw new ODataChangeSetError(
@@ -533,6 +550,7 @@ function parseHttpPart(part: string): ODataChangeSetResponse {
   return Object.freeze({
     status,
     headers,
+    ...(contentId === undefined ? {} : { contentId }),
     ...(parsedBody === undefined ? {} : { body: parsedBody }),
   })
 }
@@ -562,7 +580,7 @@ export function parseODataBatchChangeSetsResponse(
   const batchParts = splitParts(body, batchBoundary)
   const results: ODataBatchChangeSetResult[] = []
   for (const batchPart of batchParts) {
-    const { contentType: nestedType, content } = parseMimePart(batchPart)
+    const { contentType: nestedType, content, contentId } = parseMimePart(batchPart)
     const responses: ODataChangeSetResponse[] = []
     if (RE_MULTIPART_MIXED.test(nestedType)) {
       const changeSetBoundary = boundaryFromContentType(nestedType)
@@ -570,7 +588,7 @@ export function parseODataBatchChangeSetsResponse(
         responses.push(parseHttpMimePart(part))
     }
     else if (RE_APPLICATION_HTTP.test(nestedType)) {
-      responses.push(parseHttpPart(content))
+      responses.push(parseHttpPart(content, contentId))
     }
     if (responses.length === 0)
       throw invalidResponsePart()
@@ -598,7 +616,7 @@ export function parseODataBatchReadsResponse(
   const batchBoundary = boundaryFromContentType(contentType)
   const responses: ODataChangeSetResponse[] = []
   for (const batchPart of splitParts(body, batchBoundary)) {
-    const { contentType: nestedType, content } = parseMimePart(batchPart)
+    const { contentType: nestedType, content, contentId } = parseMimePart(batchPart)
     if (RE_MULTIPART_MIXED.test(nestedType)) {
       throw new ODataChangeSetError(
         'core.batch-reads.nested-changeset',
@@ -607,7 +625,7 @@ export function parseODataBatchReadsResponse(
     }
     if (!RE_APPLICATION_HTTP.test(nestedType))
       throw invalidResponsePart()
-    responses.push(parseHttpPart(content))
+    responses.push(parseHttpPart(content, contentId))
   }
   if (responses.length === 0) {
     throw new ODataChangeSetError(
@@ -616,4 +634,57 @@ export function parseODataBatchReadsResponse(
     )
   }
   return Object.freeze(responses)
+}
+
+/** Correlates successful results with serialized request IDs; ID-less legacy responses retain wire order. */
+export function correlateODataChangeSetResponses(
+  responses: readonly ODataChangeSetResponse[],
+  contentIds: readonly string[],
+): readonly ODataChangeSetResponse[] {
+  const expectedIds = new Set(contentIds)
+  if (responses.length !== contentIds.length || contentIds.length === 0
+    || expectedIds.size !== contentIds.length
+    || contentIds.some(id => id.length === 0)) {
+    throw new ODataChangeSetError(
+      'core.changeset.response-count-mismatch',
+      'The OData changeset response count or request identifiers are invalid.',
+    )
+  }
+  if (responses.every(response => response.contentId === undefined))
+    return Object.freeze([...responses])
+  const byId = new Map<string, ODataChangeSetResponse>()
+  for (const response of responses) {
+    if (response.contentId === undefined || !expectedIds.has(response.contentId)
+      || byId.has(response.contentId)) {
+      throw new ODataChangeSetError(
+        'core.changeset.response-id-mismatch',
+        'The OData changeset response identifiers are missing, duplicate, or unexpected.',
+      )
+    }
+    byId.set(response.contentId, response)
+  }
+  return Object.freeze(contentIds.map(id => byId.get(id)!))
+}
+
+/** Correlates successful sibling groups without changing their independent failure outcomes. */
+export function correlateODataBatchChangeSetResponses(
+  results: readonly ODataBatchChangeSetResult[],
+  contentIds: readonly (readonly string[])[],
+): readonly ODataBatchChangeSetResult[] {
+  const allIds = contentIds.flat()
+  if (results.length !== contentIds.length || contentIds.length === 0
+    || contentIds.some(ids => ids.length === 0)
+    || allIds.some(id => id.length === 0)
+    || new Set(allIds).size !== allIds.length) {
+    throw new ODataChangeSetError(
+      'core.changeset.response-count-mismatch',
+      'The OData batch response count does not match the requested changesets.',
+    )
+  }
+  return Object.freeze(results.map((result, index) => result.succeeded
+    ? Object.freeze({
+        ...result,
+        responses: correlateODataChangeSetResponses(result.responses, contentIds[index]!),
+      })
+    : result))
 }

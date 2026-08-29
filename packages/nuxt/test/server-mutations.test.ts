@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 import { describe, expect, it, vi } from 'vitest'
 import { createODataServerMutationService } from '../src/server'
+import { batchResponse } from './batch-response.fixture'
 
 function createEvent(fetch: typeof globalThis.fetch): H3Event {
   return {
@@ -48,6 +49,53 @@ function emptyChangeSetResponse(memberCount: number): string {
     '',
   ].join('\r\n')
 }
+
+it.each(['changeSet', 'v2ChangeSet'] as const)('%s correlates reordered MIME results and rejects ambiguous identities', async (method) => {
+  let responseBody = batchResponse([['2', '1']])
+  const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+    responseBody,
+    { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+  ))
+  const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+  const mutations = [1, 2].map(key => ({
+    kind: 'update' as const,
+    entitySet: 'Products',
+    key,
+    body: { Active: true },
+  }))
+  const responses = await service[method](mutations)
+  expect(responses.map(item => [item.contentId, item.body, item.headers.etag]))
+    .toEqual([['1', { ID: '1' }, 'W/"1"'], ['2', { ID: '2' }, 'W/"2"']])
+  for (const ids of [['1', '1'], ['1', undefined], ['1', 'foreign']]) {
+    responseBody = batchResponse([ids])
+    await expect(service[method](mutations)).rejects.toMatchObject({
+      code: 'core.changeset.response-id-mismatch',
+    })
+  }
+  responseBody = batchResponse([['1']])
+  await expect(service[method](mutations)).rejects.toMatchObject({
+    code: 'core.changeset.response-count-mismatch',
+  })
+  expect(requestFetch).toHaveBeenCalledTimes(5)
+})
+
+it.each(['batchChangeSets', 'v2BatchChangeSets'] as const)('%s correlates each group using batch-global IDs', async (method) => {
+  const requestFetch = vi.fn<typeof globalThis.fetch>(async () => new Response(
+    batchResponse([['2', '1'], ['4', '3']]),
+    { headers: { 'Content-Type': 'multipart/mixed; boundary=batch_response' } },
+  ))
+  const service = createODataServerMutationService(createEvent(requestFetch), 'catalog')
+  const groups = [[1, 2], [3, 4]].map(keys => keys.map(key => ({
+    kind: 'update' as const,
+    entitySet: 'Products',
+    key,
+    body: { Active: true },
+  })))
+  const results = await service[method](groups)
+  expect(results.map(result => result.responses.map(item => item.contentId)))
+    .toEqual([['1', '2'], ['3', '4']])
+  expect(requestFetch).toHaveBeenCalledTimes(1)
+})
 
 it.each(['changeSet', 'v2ChangeSet'] as const)('%s does not report success after skipping a malformed result part', async (method) => {
   const responseBody = [

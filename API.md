@@ -68,6 +68,24 @@ operation or changeset. Envelopes require `multipart/mixed`, operations require
 MIME type casing and parameters remain supported. These structural failures
 are distinct from valid non-2xx operation responses.
 
+`ODataChangeSetResponse.contentId` preserves the optional MIME `Content-ID`
+outside the embedded HTTP `headers`. Raw parsers retain wire order. Serialized
+changeset payloads expose immutable `contentIds` in request order; independent
+batch payloads expose one array per group with batch-global identifiers.
+`correlateODataChangeSetResponses(responses, contentIds)` restores request order
+without detaching bodies or ETags. `correlateODataBatchChangeSetResponses`
+applies that contract to successful sibling groups while preserving failed
+group outcomes, including a single error response for a whole changeset.
+
+Nuxt browser and request-scoped V2/V4 mutation methods apply correlation
+automatically. Successful response counts must match the requests. If any
+response supplies an ID, every successful response in that group must supply a
+unique expected ID; mismatches reject with `core.changeset.response-id-mismatch`.
+For compatibility, groups entirely lacking IDs retain their legacy wire order,
+but that path cannot detect service-side reordering and is not proof of
+correlation. A conforming service should echo the sent IDs as described in
+[OData 4.01 section 11.7.7](https://docs.oasis-open.org/odata/odata/v4.01/odata-v4.01-part1-protocol.html).
+
 The contract follows OData 4.01 Part 1, sections 11.7.2 and 11.7.3. It
 contains no Nuxt, Node.js, or transport behavior.
 
