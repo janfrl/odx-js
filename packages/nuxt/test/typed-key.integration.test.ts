@@ -37,6 +37,15 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
     ])
     await read.fetchOne(value)
     expect(requests[2]?.url).toBe(`/api/odx/catalog/Balances('${value}')`)
+    const child = createODataTypedKey([{ field: 'ID', type: 'Edm.Int64', value: '9223372036854775807' }], version)
+    const source = { kind: 'contained-entity' as const, rootKey: key, path: [{ navigationPath: ['Items'], key: child }] }
+    const containedPath = `/api/odx/catalog/Balances(${value}${version === 'v2' ? 'M' : ''})/Items(9223372036854775807${version === 'v2' ? 'L' : ''})`
+    expect(await read.fetchContainedOneWithResponse(source)).toMatchObject({ data: { ID: value }, etag: 'W/"next"' })
+    expect(await read.fetchNavigationOneWithResponse({ source, navigationPath: ['Supplier'] })).toMatchObject({ data: { ID: value }, etag: 'W/"next"' })
+    expect(requests.slice(3)).toEqual([
+      { url: containedPath, method: 'GET', etag: undefined },
+      { url: `${containedPath}/Supplier`, method: 'GET', etag: undefined },
+    ])
   }
   finally {
     server.closeAllConnections()
