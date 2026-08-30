@@ -350,6 +350,14 @@ shape for qualified OData V4 functions, but sends `GET` and serializes each
 parameter from an explicit `{ type, value }` descriptor into the inline function
 call. Supported values are primitive EDM types; unsupported or malformed values
 are rejected before transport.
+V4 integer parameters also enforce their EDM bounds: Byte 0–255, SByte −128–127,
+Int16 −32768–32767, Int32 −2147483648–2147483647, and Int64
+−9223372036854775808–9223372036854775807. Both numeric and string inputs are
+checked; Int64 outside the JavaScript safe integer range requires an exact
+string. Fractional or exponent-form integer strings and unsafe numeric Int64
+inputs fail before service-root, collection-, entity-, or navigation-bound
+requests. Accepted strings retain their spelling, and nullable `null` remains
+the V4 literal `null`. Decimal and floating-point parameter behavior is unchanged.
 
 OData V2 service operations use a different wire contract. Call
 `invokeFunctionImport(name, { method, parameters }, options?)` on the service,

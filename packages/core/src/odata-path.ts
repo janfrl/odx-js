@@ -83,7 +83,7 @@ function invalidParameterValue(type: string): never {
   throw new TypeError(`OData function parameter type "${type}" received an invalid value.`)
 }
 
-function v2IntegerLiteral(
+function integerLiteral(
   value: ODataFunctionParameterValue,
   type: string,
   minimum: bigint,
@@ -175,13 +175,17 @@ export function formatODataFunctionParameter(
         throw new TypeError(`OData function parameter type "${type}" received an invalid value.`)
       return String(value)
     case 'Edm.Byte':
+      return integerLiteral(value, type, 0n, 255n)
     case 'Edm.Int16':
+      return integerLiteral(value, type, -32768n, 32767n)
     case 'Edm.Int32':
+      return integerLiteral(value, type, -2147483648n, 2147483647n)
     case 'Edm.SByte':
-      return numericLiteral(value, type, true)
+      return integerLiteral(value, type, -128n, 127n)
+    case 'Edm.Int64':
+      return integerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)
     case 'Edm.Decimal':
     case 'Edm.Double':
-    case 'Edm.Int64':
     case 'Edm.Single':
       return numericLiteral(value, type, false)
     case 'Edm.Guid':
@@ -236,16 +240,16 @@ export function formatODataV2FunctionImportParameters(
         literal = String(value)
         break
       case 'Edm.Byte':
-        literal = v2IntegerLiteral(value, type, 0n, 255n)
+        literal = integerLiteral(value, type, 0n, 255n)
         break
       case 'Edm.Int16':
-        literal = v2IntegerLiteral(value, type, -32768n, 32767n)
+        literal = integerLiteral(value, type, -32768n, 32767n)
         break
       case 'Edm.Int32':
-        literal = v2IntegerLiteral(value, type, -2147483648n, 2147483647n)
+        literal = integerLiteral(value, type, -2147483648n, 2147483647n)
         break
       case 'Edm.SByte':
-        literal = v2IntegerLiteral(value, type, -128n, 127n)
+        literal = integerLiteral(value, type, -128n, 127n)
         break
       case 'Edm.Decimal':
         literal = `${v2NumericLiteral(value, type, RE_V2_DECIMAL)}M`
@@ -256,7 +260,7 @@ export function formatODataV2FunctionImportParameters(
           : `${v2NumericLiteral(value, type, RE_V2_FLOAT)}D`
         break
       case 'Edm.Int64':
-        literal = `${v2IntegerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)}L`
+        literal = `${integerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)}L`
         break
       case 'Edm.Single':
         literal = typeof value === 'string' && ['NaN', 'INF', '-INF'].includes(value)
@@ -303,11 +307,11 @@ function typedKeyLiteral(part: ODataTypedKeyPart, version: 'v2' | 'v4'): string 
     return encodeURIComponent(literal)
   }
   switch (type) {
-    case 'Edm.Byte': return v2IntegerLiteral(value, type, 0n, 255n)
-    case 'Edm.SByte': return v2IntegerLiteral(value, type, -128n, 127n)
-    case 'Edm.Int16': return v2IntegerLiteral(value, type, -32768n, 32767n)
-    case 'Edm.Int32': return v2IntegerLiteral(value, type, -2147483648n, 2147483647n)
-    case 'Edm.Int64': return v2IntegerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)
+    case 'Edm.Byte': return integerLiteral(value, type, 0n, 255n)
+    case 'Edm.SByte': return integerLiteral(value, type, -128n, 127n)
+    case 'Edm.Int16': return integerLiteral(value, type, -32768n, 32767n)
+    case 'Edm.Int32': return integerLiteral(value, type, -2147483648n, 2147483647n)
+    case 'Edm.Int64': return integerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)
     default: return formatODataFunctionParameter({ type, value })
   }
 }

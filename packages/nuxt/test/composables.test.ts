@@ -1750,6 +1750,26 @@ describe('useOData Composable', () => {
       })).toThrow('navigation path')
       expect(core.$odata).not.toHaveBeenCalled()
     })
+    it('rejects invalid V4 integer function arguments before client transport', async () => {
+      const api = useOData('MyService')
+      const products = api.entitySet('Products')
+      for (const [type, value] of [['Edm.Byte', 256], ['Edm.Int64', '1.5'], ['Edm.Int64', Number.MAX_SAFE_INTEGER + 1]] as const) {
+        const parameters = { Count: { type, value } }
+        expect(() => api.invokeFunction('Demo.Defaults', { parameters })).toThrow('invalid value')
+        expect(() => products.invokeFunction('Demo.Defaults', { parameters })).toThrow('invalid value')
+        expect(() => products.invokeFunction('Demo.Defaults', { key: 1, navigationPath: ['Items'], parameters })).toThrow('invalid value')
+      }
+      expect(core.$odata).not.toHaveBeenCalled()
+      await products.invokeFunction('Demo.Defaults', {
+        parameters: { Count: { type: 'Edm.Int64', value: '9223372036854775807' } },
+      })
+      expect(core.$odata).toHaveBeenCalledExactlyOnceWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products/Demo.Defaults(Count=9223372036854775807)',
+        'GET',
+        undefined,
+      )
+    })
 
     it('invokes OData V2 FunctionImports at the service root with URI parameters', async () => {
       const api = useOData('MyService')

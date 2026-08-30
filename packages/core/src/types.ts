@@ -312,6 +312,7 @@ export type ODataFunctionParameterValue = string | number | boolean | null
 export interface ODataFunctionParameter {
   /** Primitive EDM type used to serialize the URL literal safely. */
   readonly type: string
+  /** Integer values must fit their EDM range; use a string for Int64 outside the safe JS integer range. */
   readonly value: ODataFunctionParameterValue
 }
 

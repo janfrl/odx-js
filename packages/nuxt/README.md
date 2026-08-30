@@ -579,6 +579,13 @@ Structured action parameters remain nested JSON objects with exact property
 names and explicit `null` values. ODX does not flatten or stringify them;
 metadata-aware callers remain responsible for validating the complex contract.
 
+Typed V4 `invokeFunction` integer arguments are checked against their EDM ranges
+before any client or server request. For example, `Edm.Byte` rejects `256`, and
+`Edm.Int64` rejects fractional strings or unsafe JavaScript numbers. Pass
+`"9223372036854775807"` as a string to retain the exact Int64 maximum. The same
+checks apply to service-root, collection-, entity-, and navigation-bound calls;
+optional omission and nullable `null` retain their existing transport contract.
+
 OData V2 FunctionImports are service-root operations rather than V4 bound
 actions. `invokeFunctionImport` therefore requires the metadata-declared HTTP
 method and serializes its typed primitive parameters as V2 URI query literals,

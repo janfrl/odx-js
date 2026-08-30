@@ -18,6 +18,30 @@ import {
 } from '../src/odata-path'
 
 describe('portable OData resource paths', () => {
+  it.each([
+    ['Edm.Byte', 0, 255],
+    ['Edm.SByte', -128, 127],
+    ['Edm.Int16', -32768, 32767],
+    ['Edm.Int32', -2147483648, 2147483647],
+  ] as const)('enforces the V4 %s integer domain for numeric and string inputs', (type, minimum, maximum) => {
+    for (const value of [minimum, maximum, String(minimum), String(maximum)])
+      expect(formatODataFunctionParameter({ type, value })).toBe(String(value))
+    for (const value of [minimum - 1, maximum + 1, String(minimum - 1), String(maximum + 1), 1.5, '1.5', '1e2'])
+      expect(() => formatODataFunctionParameter({ type, value })).toThrow('invalid value')
+  })
+
+  it('requires exact in-range V4 Int64 literals and retains nullable parameters', () => {
+    for (const value of ['-9223372036854775808', '9223372036854775807', '9007199254740993', '-0', 0, Number.MAX_SAFE_INTEGER])
+      expect(formatODataFunctionParameter({ type: 'Edm.Int64', value })).toBe(String(value))
+    for (const value of ['-9223372036854775809', '9223372036854775808', '1.5', '1e2', 1.5, Number.MAX_SAFE_INTEGER + 1, Number.POSITIVE_INFINITY])
+      expect(() => formatODataFunctionParameter({ type: 'Edm.Int64', value })).toThrow('invalid value')
+    for (const type of ['Edm.Byte', 'Edm.SByte', 'Edm.Int16', 'Edm.Int32', 'Edm.Int64'])
+      expect(formatODataFunctionParameter({ type, value: null })).toBe('null')
+    // Integer tightening must not impose integer grammar on Decimal or floats.
+    for (const type of ['Edm.Decimal', 'Edm.Double', 'Edm.Single'])
+      expect(formatODataFunctionParameter({ type, value: '1.25e2' })).toBe('1.25e2')
+  })
+
   it('formats typed OData V4 function parameters without path injection', () => {
     expect(formatODataFunctionCall('Catalog.GetDefaults', {
       Name: { type: 'Edm.String', value: 'A/B\'s desk' },

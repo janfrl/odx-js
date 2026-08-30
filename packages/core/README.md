@@ -57,6 +57,13 @@ The separate `ODataV2FunctionImportService` capability keeps the base
 `ODataService` structurally compatible with transports that do not implement
 V2 service operations.
 
+V4 `formatODataFunctionParameter` and `formatODataFunctionCall` enforce the EDM
+range of Byte, SByte, Int16, Int32, and Int64 parameters before serialization.
+Use an exact string for Int64 values outside JavaScript's safe integer range;
+fractions, integer exponent strings, out-of-range values, and unsafe integer
+numbers are rejected rather than rounded. V4 literals remain unsuffixed;
+the V2-specific `L` suffix and query contract are unchanged.
+
 The additive media contracts model default media-entity streams and named
 `Edm.Stream` properties without introducing browser or renderer concepts.
 Reads return an `ArrayBuffer` plus optional `Content-Type`,
