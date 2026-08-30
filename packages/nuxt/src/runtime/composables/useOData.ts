@@ -174,6 +174,7 @@ export function useOData(service?: string): any {
       return joinODataPath(servicePath, createODataMediaPath(entitySet, key, streamProperty))
     }
     return {
+      supportsTypedEntityKeys: true,
       supportsCollectionPages: true,
       supportsContainedNavigationSources: true,
       supportsContainedEntityResponses: true,
@@ -1221,6 +1222,7 @@ export function useOData(service?: string): any {
 
   const createServiceProxy = (serviceName: string): ODataRuntimeService => {
     const rootMethods = Object.assign(createMethods(serviceName), {
+      supportsTypedEntityKeys: true as const,
       supportsAtomicActionChangesets: true as const,
       supportsAtomicMediaChangesets: true as const,
       supportsActionResponses: true as const,

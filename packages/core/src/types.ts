@@ -864,6 +864,7 @@ export interface ODataMediaEntitySet<T = any> extends ODataEntitySet<T> {
 /** Complete entity-set capability implemented by the generated ODX client. */
 export type ODataRuntimeEntitySet<T = any>
   = ODataNavigationMergeEntitySet<T>
+    & { readonly supportsTypedEntityKeys: true }
     & ODataVersionedNavigationEntitySet<T>
     & ODataContainedEntityResponseSet<T>
     & ODataActionResponseEntitySet<T>
@@ -1209,6 +1210,7 @@ export type ODataV2NavigationReferenceService<E extends string = string, M exten
 /** Complete service capability implemented by the generated ODX client. */
 export type ODataRuntimeService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataRuntimeEntitySet<any>> & ODataV2FunctionImportResponseCapability & {
+    readonly supportsTypedEntityKeys: true
     readonly supportsActionResponses: true
     invokeWithResponse: ODataActionResponseEntitySet<never>['invokeWithResponse']
   }

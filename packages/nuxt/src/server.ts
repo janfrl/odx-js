@@ -80,6 +80,7 @@ interface ODataFetchClient {
 }
 
 export interface ODataServerReadEntitySet {
+  readonly supportsTypedEntityKeys: true
   readonly supportsCollectionPages: true
   readonly supportsContinuations: true
   readonly supportsContainedEntityResponses: true
@@ -142,6 +143,7 @@ export interface ODataServerReadEntitySet {
 }
 
 export interface ODataServerReadService {
+  readonly supportsTypedEntityKeys: true
   readonly supportsBatchReads: true
   readonly supportsV2BatchReads: true
   /** Invokes an unbound OData V4 function at the configured service root. */
@@ -162,6 +164,7 @@ export interface ODataServerReadService {
 }
 
 export interface ODataServerMutationEntitySet {
+  readonly supportsTypedEntityKeys: true
   readonly supportsActionResponses: true
   readonly supportsCreateResponses: true
   readonly supportsDeleteResponses: true
@@ -338,6 +341,7 @@ export interface ODataServerMutationEntitySet {
 }
 
 export interface ODataServerMutationService extends ODataV2FunctionImportResponseCapability {
+  readonly supportsTypedEntityKeys: true
   readonly supportsActionResponses: true
   readonly supportsAtomicActionChangesets: true
   readonly supportsAtomicMediaChangesets: true
@@ -674,6 +678,7 @@ export function createODataServerReadService(
 ): ODataServerReadService {
   const { client, servicePath } = resolveODataServerTransport(event, serviceName, 'reads')
   return {
+    supportsTypedEntityKeys: true,
     supportsBatchReads: true,
     supportsV2BatchReads: true,
     batchReads: (reads, options = {}) =>
@@ -708,6 +713,7 @@ export function createODataServerReadService(
       const navigationPath = (source: ODataNavigationSource, path: readonly string[]): string =>
         joinODataPath(sourcePath(source), formatODataNavigationPath(path))
       return {
+        supportsTypedEntityKeys: true,
         supportsCollectionPages: true,
         supportsContinuations: true,
         supportsContainedEntityResponses: true,
@@ -851,6 +857,7 @@ export function createODataServerMutationService(
 
   return {
     supportsActionResponses: true,
+    supportsTypedEntityKeys: true,
     supportsAtomicActionChangesets: true,
     supportsAtomicMediaChangesets: true,
     supportsBatchChangeSets: true,
@@ -960,6 +967,7 @@ export function createODataServerMutationService(
           : `${navigationPath}(${formatODataKey(targetKey)})`
       }
       return {
+        supportsTypedEntityKeys: true,
         supportsActionResponses: true,
         supportsCreateResponses: true,
         supportsDeleteResponses: true,

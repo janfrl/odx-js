@@ -38,6 +38,8 @@ createODataEntityPath('Balances', key)
 
 The frozen, JSON-serializable key is accepted wherever `ODataKey` is accepted,
 including reads, conditional writes, composite keys, and containment sources.
+The complete Nuxt runtime and server transports advertise
+`supportsTypedEntityKeys: true` for capability-negotiating consumers.
 Select `v2` explicitly for V2 literal suffixes; this does not change the HTTP
 method, service configuration, or batch protocol. Existing primitive and named
 record keys are unchanged. Metadata ownership and completeness remain the

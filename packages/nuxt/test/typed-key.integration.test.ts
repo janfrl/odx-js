@@ -26,6 +26,8 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
     const key = createODataTypedKey([{ field: 'ID', type: 'Edm.Decimal', value }], version)
     const read = createODataServerReadService(event, 'catalog').entitySet('Balances')
     const mutation = createODataServerMutationService(event, 'catalog').entitySet('Balances')
+    expect(read.supportsTypedEntityKeys).toBe(true)
+    expect(mutation.supportsTypedEntityKeys).toBe(true)
     expect(await read.fetchOne(key)).toMatchObject({ ID: value })
     const update = version === 'v2' ? mutation.merge : mutation.update
     await update(key, { Name: 'Updated' }, { headers: { 'If-Match': 'W/"current"' } })
