@@ -61,6 +61,13 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
         { url: `/api/odx/catalog/Balances(ID=${value},IsActiveEntity=true)/Demo.draftEdit`, method: 'POST', etag: 'W/"active"' },
         { url: `/api/odx/catalog/Balances(ID=${value},IsActiveEntity=false)`, method: 'DELETE', etag: 'W/"draft"' },
       ])
+      await read.invokeFunction('Demo.GetDefaults', {
+        key: draftKey,
+        navigationPath: ['Items'],
+        parameters: { Kind: { type: 'Edm.String', value: 'Office' } },
+      })
+      expect(decodeURIComponent(requests[7]!.url!)).toBe(`/api/odx/catalog/Balances(ID=${value},IsActiveEntity=false)/Items/Demo.GetDefaults(Kind='Office')`)
+      expect(requests[7]!.method).toBe('GET')
     }
   }
   finally {
