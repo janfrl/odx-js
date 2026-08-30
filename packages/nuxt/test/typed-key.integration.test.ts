@@ -67,6 +67,14 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
     requests.push({ url: request.url, method: request.method, etag: request.headers['if-match'] })
     response.writeHead(200, { 'Content-Type': 'application/json', 'ETag': 'W/"next"' })
     const record = { ID: value, Name: 'Exact record' }
+    if (request.url?.includes('/Options?')) {
+      response.end(JSON.stringify({
+        'value': [record],
+        '@odata.count': 2,
+        ...(request.url.includes('$skiptoken=') ? {} : { '@odata.nextLink': '?$skiptoken=options-2' }),
+      }))
+      return
+    }
     response.end(JSON.stringify(request.url?.includes('/Tags?')
       ? { 'value': [record], '@odata.count': 1 }
       : record))
@@ -133,6 +141,19 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
     ])
     expect(tags).toHaveProperty('totalCount', 1)
     expect(decodeURIComponent(requests.at(-1)!.url!)).toBe(`${containedPath}/Tags?$select=ID&$top=101`)
+    const relativeKey = createODataTypedKey([
+      { field: 'ID', type: 'Edm.Decimal', value },
+      { field: 'Sequence', type: 'Edm.Int64', value: '9223372036854775807' },
+    ], version)
+    const first = await read.fetchNavigationPage(relativeKey, ['Options'], { $top: 1 })
+    expect(first.continuation).toBeDefined()
+    const next = await read.fetchNavigationNextPage(relativeKey, ['Options'], first.continuation!)
+    expect(next.items).toEqual([{ ID: value, Name: 'Exact record' }])
+    const relativePath = `/api/odx/catalog/Balances(ID=${value}${version === 'v2' ? 'M' : ''},Sequence=9223372036854775807${version === 'v2' ? 'L' : ''})/Options`
+    expect(requests.slice(-2).map(request => decodeURIComponent(request.url!))).toEqual([
+      `${relativePath}?$top=1`,
+      `${relativePath}?$skiptoken=options-2`,
+    ])
     if (version === 'v4') {
       const rootReference = createODataNavigationRootReference('Balances', source, ['Tags'])
       expect(rootReference).toBe(`$root/Balances(${value})/Items(9223372036854775807)/Tags`)
