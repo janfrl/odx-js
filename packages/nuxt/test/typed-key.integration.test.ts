@@ -11,7 +11,10 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
   const server = createServer((request, response) => {
     requests.push({ url: request.url, method: request.method, etag: request.headers['if-match'] })
     response.writeHead(200, { 'Content-Type': 'application/json', 'ETag': 'W/"next"' })
-    response.end(JSON.stringify({ ID: value, Name: 'Exact record' }))
+    const record = { ID: value, Name: 'Exact record' }
+    response.end(JSON.stringify(request.url?.includes('/Tags?')
+      ? { 'value': [record], '@odata.count': 1 }
+      : record))
   })
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject)
@@ -69,6 +72,12 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
       expect(decodeURIComponent(requests[7]!.url!)).toBe(`/api/odx/catalog/Balances(ID=${value},IsActiveEntity=false)/Items/Demo.GetDefaults(Kind='Office')`)
       expect(requests[7]!.method).toBe('GET')
     }
+    const tags = await read.fetchNavigationList(source, ['Tags'], { $select: 'ID', $top: 101 })
+    expect([...tags]).toEqual([
+      { ID: value, Name: 'Exact record' },
+    ])
+    expect(tags.totalCount).toBe(1)
+    expect(decodeURIComponent(requests.at(-1)!.url!)).toBe(`${containedPath}/Tags?$select=ID&$top=101`)
   }
   finally {
     server.closeAllConnections()
