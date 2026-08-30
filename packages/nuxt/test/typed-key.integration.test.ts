@@ -46,6 +46,22 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
       { url: containedPath, method: 'GET', etag: undefined },
       { url: `${containedPath}/Supplier`, method: 'GET', etag: undefined },
     ])
+    if (version === 'v4') {
+      const activeKey = createODataTypedKey([
+        { field: 'ID', type: 'Edm.Decimal', value },
+        { field: 'IsActiveEntity', type: 'Edm.Boolean', value: true },
+      ], version)
+      const draftKey = createODataTypedKey([
+        { field: 'ID', type: 'Edm.Decimal', value },
+        { field: 'IsActiveEntity', type: 'Edm.Boolean', value: false },
+      ], version)
+      await mutation.invoke('Demo.draftEdit', { key: activeKey, parameters: {} }, { headers: { 'If-Match': 'W/"active"' } })
+      await mutation.remove(draftKey, { headers: { 'If-Match': 'W/"draft"' } })
+      expect(requests.slice(5)).toEqual([
+        { url: `/api/odx/catalog/Balances(ID=${value},IsActiveEntity=true)/Demo.draftEdit`, method: 'POST', etag: 'W/"active"' },
+        { url: `/api/odx/catalog/Balances(ID=${value},IsActiveEntity=false)`, method: 'DELETE', etag: 'W/"draft"' },
+      ])
+    }
   }
   finally {
     server.closeAllConnections()
