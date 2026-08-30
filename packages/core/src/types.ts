@@ -212,14 +212,25 @@ export interface ODataMediaCreateResponse<T> extends ODataMediaMutationResponse 
   location?: string
 }
 
-/**
- * Possible types for OData entity keys.
- * Supports single keys (string/number) and composite keys (object).
- */
+/** One metadata-owned key part before protocol serialization. */
+export interface ODataTypedKeyPart {
+  readonly field: string
+  readonly type: string
+  readonly value: string | number | boolean
+}
+
+/** Explicit protocol-owned key identity; never a preformatted resource path. */
+export interface ODataTypedKey {
+  readonly '@odata.key': readonly ODataTypedKeyPart[]
+  readonly 'version': 'v2' | 'v4'
+}
+
+/** Primitive, named composite, or explicitly typed entity key. */
 export type ODataKey
   = | string
     | number
     | boolean
+    | ODataTypedKey
     | Record<string, string | number | boolean>
 
 /** One containment hop below an entity-set root. To-one hops omit the key. */

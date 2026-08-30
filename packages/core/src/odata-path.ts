@@ -4,6 +4,8 @@ import type {
   ODataFunctionParameterValue,
   ODataKey,
   ODataNavigationSource,
+  ODataTypedKey,
+  ODataTypedKeyPart,
 } from './types'
 
 const RE_IDENTIFIER = /^[A-Za-z_]\w*$/u
@@ -285,8 +287,71 @@ export function formatODataV2FunctionImportParameters(
   }
   return Object.freeze(result)
 }
-/** Serializes a primitive or composite OData entity key for a resource path. */
+function typedKeyLiteral(part: ODataTypedKeyPart, version: 'v2' | 'v4'): string {
+  const { type, value } = part
+  if (!['string', 'number', 'boolean'].includes(typeof value)
+    || (typeof value === 'number' && !Number.isFinite(value))) {
+    throw new TypeError('An OData typed key requires a non-null finite primitive value.')
+  }
+  if ((type === 'Edm.Int64' || type === 'Edm.Decimal')
+    && typeof value === 'number' && Number.isInteger(value) && !Number.isSafeInteger(value)) {
+    throw new TypeError('An exact OData Decimal or Int64 key requires a string outside the safe integer range.')
+  }
+  if (version === 'v2') {
+    const literal = formatODataV2FunctionImportParameters({ key: { type, value } }).key!
+    // V2 FunctionImport parameters are query values, whereas keys are path values.
+    return encodeURIComponent(literal)
+  }
+  switch (type) {
+    case 'Edm.Byte': return v2IntegerLiteral(value, type, 0n, 255n)
+    case 'Edm.SByte': return v2IntegerLiteral(value, type, -128n, 127n)
+    case 'Edm.Int16': return v2IntegerLiteral(value, type, -32768n, 32767n)
+    case 'Edm.Int32': return v2IntegerLiteral(value, type, -2147483648n, 2147483647n)
+    case 'Edm.Int64': return v2IntegerLiteral(value, type, -9223372036854775808n, 9223372036854775807n)
+    default: return formatODataFunctionParameter({ type, value })
+  }
+}
+
+function formatTypedKey(key: ODataTypedKey): string {
+  if ((key.version !== 'v2' && key.version !== 'v4')
+    || !Array.isArray(key['@odata.key']) || key['@odata.key'].length === 0) {
+    throw new TypeError('An OData typed key requires a protocol version and non-empty key parts.')
+  }
+  const names = new Set<string>()
+  const parts = key['@odata.key'].map((part) => {
+    if (part === null || typeof part !== 'object' || typeof part.field !== 'string')
+      throw new TypeError('An OData typed key part requires a field name.')
+    const name = validateODataIdentifier(part.field, 'OData key field')
+    if (names.has(name))
+      throw new TypeError(`OData typed key field "${name}" is duplicated.`)
+    names.add(name)
+    return { name, literal: typedKeyLiteral(part, key.version) }
+  })
+  return parts.length === 1
+    ? parts[0]!.literal
+    : parts.map(part => `${part.name}=${part.literal}`).join(',')
+}
+
+/** Preserve EDM identity and explicitly select V2 or V4 literal conventions. */
+export function createODataTypedKey(
+  parts: readonly ODataTypedKeyPart[],
+  version: 'v2' | 'v4',
+): ODataTypedKey {
+  const key: ODataTypedKey = {
+    '@odata.key': parts,
+    version,
+  }
+  formatTypedKey(key)
+  return Object.freeze({
+    '@odata.key': Object.freeze(parts.map(part => Object.freeze({ ...part }))),
+    version,
+  })
+}
+
+/** Serializes a primitive, composite, or explicitly typed OData entity key. */
 export function formatODataKey(key: ODataKey): string {
+  if (typeof key === 'object' && key !== null && '@odata.key' in key)
+    return formatTypedKey(key as ODataTypedKey)
   const formatValue = (value: string | number | boolean): string =>
     typeof value === 'string'
       ? `'${encodeURIComponent(value).replace(RE_SINGLE_QUOTE, '\'\'')}'`

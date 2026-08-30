@@ -20,6 +20,33 @@ path string. Navigation root references reuse the same validated entity-key,
 containment, and navigation serializers for expressions such as recursive
 hierarchy transformations.
 
+### Exact typed entity keys
+
+An ordinary string key remains an OData string literal. Do not convert Decimal
+or Int64 identity to a JavaScript number, or pass an unquoted path fragment.
+Use `createODataTypedKey` with the metadata-owned EDM type and explicit protocol:
+
+```ts
+import { createODataEntityPath, createODataTypedKey } from '@me-tools/odx-core'
+
+const key = createODataTypedKey([
+  { field: 'ID', type: 'Edm.Decimal', value: '9007199254740993.1234567890' },
+], 'v4')
+createODataEntityPath('Balances', key)
+// Balances(9007199254740993.1234567890)
+```
+
+The frozen, JSON-serializable key is accepted wherever `ODataKey` is accepted,
+including reads, conditional writes, composite keys, and containment sources.
+Select `v2` explicitly for V2 literal suffixes; this does not change the HTTP
+method, service configuration, or batch protocol. Existing primitive and named
+record keys are unchanged. Metadata ownership and completeness remain the
+caller's responsibility; ODX validates names, duplicates, supported literal
+types, and numeric values, not membership in a particular entity type.
+
+The literal boundary follows the [OData 4.01 URL conventions](https://docs.oasis-open.org/odata/odata/v4.01/os/part2-url-conventions/odata-v4.01-os-part2-url-conventions.html)
+and the [OData V2 URI conventions](https://www.odata.org/documentation/odata-version-2-0/uri-conventions/).
+
 `formatODataV2FunctionImportParameters` keeps the older service-operation
 contract distinct from V4 functions and actions: primitive parameters become
 validated V2 query literals, nullable values are omitted, and POST parameters
