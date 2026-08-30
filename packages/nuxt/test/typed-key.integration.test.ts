@@ -2,7 +2,7 @@ import type { H3Event } from 'h3'
 import type { AddressInfo } from 'node:net'
 import { Buffer } from 'node:buffer'
 import { createServer } from 'node:http'
-import { createODataTypedKey } from '@me-tools/odx-core'
+import { createODataNavigationRootReference, createODataTypedKey } from '@me-tools/odx-core'
 import { expect, it } from 'vitest'
 import { createODataServerMutationService, createODataServerReadService } from '../src/server'
 
@@ -133,6 +133,16 @@ it.each(['v2', 'v4'] as const)('preserves typed %s numeric identity across real 
     ])
     expect(tags).toHaveProperty('totalCount', 1)
     expect(decodeURIComponent(requests.at(-1)!.url!)).toBe(`${containedPath}/Tags?$select=ID&$top=101`)
+    if (version === 'v4') {
+      const rootReference = createODataNavigationRootReference('Balances', source, ['Tags'])
+      expect(rootReference).toBe(`$root/Balances(${value})/Items(9223372036854775807)/Tags`)
+      const apply = `com.sap.vocabularies.Hierarchy.v1.TopLevels(HierarchyNodes=${rootReference},HierarchyQualifier='Catalog',NodeProperty='ID',Levels=1)`
+      const page = await read.fetchNavigationPage(source, ['Tags'], { $apply: apply, $top: 10 })
+      expect(page.items).toEqual([{ ID: value, Name: 'Exact record' }])
+      const requestUrl = new URL(requests.at(-1)!.url!, 'http://127.0.0.1')
+      expect(requestUrl.pathname).toBe(`${containedPath}/Tags`)
+      expect(requestUrl.searchParams.get('$apply')).toBe(apply)
+    }
   }
   finally {
     server.closeAllConnections()
