@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
 import { EventEmitter } from 'node:events'
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
 import { tmpdir } from 'node:os'
@@ -63,6 +63,7 @@ function createNuxtTypeGenerationHarness(serviceName: string, metadataPath = min
   } as any)
 
   return {
+    rootDir,
     buildDir,
     async runPrepareTypes() {
       if (!prepareTypesHook)
@@ -116,6 +117,59 @@ describe('type Generation Logic', () => {
   })
 
   describe('setupTypeGeneration', () => {
+    function rejectMetadataDownload() {
+      const failure = new Error('read ECONNRESET')
+      vi.mocked(https.get).mockImplementation(() => {
+        const request = createMockRequest()
+        queueMicrotask(() => request.emit('error', failure))
+        return request
+      })
+      return failure
+    }
+
+    it('rejects unavailable remote metadata without a cache instead of emitting an incomplete registry', async () => {
+      const failure = rejectMetadataDownload()
+      const harness = createNuxtTypeGenerationHarness('DraftCatalog', 'https://example.com/odata')
+
+      await expect(harness.runPrepareTypes()).rejects.toMatchObject({
+        message: 'Could not download metadata for DraftCatalog and no cached metadata is available.',
+        cause: failure,
+      })
+      expect(execFileSync).not.toHaveBeenCalled()
+      expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
+    })
+
+    it.each(['temporary', 'persistent'])('preserves the validated %s cache fallback when remote metadata is unavailable', async (cacheKind) => {
+      rejectMetadataDownload()
+      const harness = createNuxtTypeGenerationHarness('DraftCatalog', 'https://example.com/odata')
+      const cacheDir = cacheKind === 'temporary'
+        ? join(harness.buildDir, 'odx', 'temp')
+        : join(harness.rootDir, '.odx', 'cache')
+      mkdirSync(cacheDir, { recursive: true })
+      const xml = readFileSync(minimalMetadataPath, 'utf8')
+      writeFileSync(join(cacheDir, 'DraftCatalog.edmx'), xml)
+
+      await expect(harness.runPrepareTypes()).resolves.toEqual([
+        { path: join(harness.buildDir, 'odx-types', 'index.d.ts') },
+      ])
+      expect(execFileSync).toHaveBeenCalledOnce()
+      expect(readFileSync(join(harness.buildDir, 'odx', 'temp', 'DraftCatalog.edmx'), 'utf8')).toBe(xml)
+      expect(readFileSync(join(harness.buildDir, 'odx-types', 'index.d.ts'), 'utf8'))
+        .toContain('DraftCatalog: ODataRuntimeService<"Products"')
+    })
+
+    it('rejects a malformed fallback cache before SDK generation', async () => {
+      rejectMetadataDownload()
+      const harness = createNuxtTypeGenerationHarness('DraftCatalog', 'https://example.com/odata')
+      const cacheDir = join(harness.rootDir, '.odx', 'cache')
+      mkdirSync(cacheDir, { recursive: true })
+      writeFileSync(join(cacheDir, 'DraftCatalog.edmx'), '<edmx:Edmx>')
+
+      await expect(harness.runPrepareTypes()).rejects.toThrow('Could not parse OData metadata')
+      expect(execFileSync).not.toHaveBeenCalled()
+      expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
+    })
+
     it.each(['Sales/Order', 'Sales\\Order'])(
       'rejects service name %s before generating output from the service name',
       async (serviceName) => {

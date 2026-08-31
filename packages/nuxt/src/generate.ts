@@ -220,8 +220,10 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
             inputPath = tempFile
           }
           else {
-            logger.error(`[@me-tools/odx-nuxt] Could not download metadata for ${svc.name}:`, err.message)
-            continue
+            throw new Error(
+              `Could not download metadata for ${svc.name} and no cached metadata is available.`,
+              { cause: err },
+            )
           }
         }
       }

@@ -642,3 +642,13 @@ Registry generation parses each metadata file through `@me-tools/odx-metadata`
 and projects entity sets through the core CSDL adapter before invoking the SDK
 generator. Malformed metadata fails preparation with source-aware diagnostics
 instead of producing a silently incomplete registry.
+
+Remote metadata must also be available during preparation. If a download fails,
+the module warns and reuses the service's temporary metadata cache, or its
+persistent `.odx/cache` copy when the temporary cache is absent. Cached metadata
+still passes through the same CSDL validation before SDK generation. Without
+either cache, preparation rejects with the service name and original failure
+as the error cause; a typecheck or build must not succeed with that service
+silently omitted. Restore service access and rerun preparation. Cached metadata
+is an offline fallback, not evidence that the remote service is currently
+available or that its schema has not changed.
