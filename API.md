@@ -142,7 +142,7 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `defaultProxyMode` | Default proxy response handling mode. | `stream` |
 | `destination` | Global SAP BTP destination fallback. | none |
 | `auth` | Global Basic, Bearer, or mock auth data. | none |
-| `headers` | Global headers merged into outgoing proxy calls and build-time SDK metadata requests. | none |
+| `headers` | Global defaults merged into non-direct proxy calls and build-time SDK metadata requests. | none |
 | `rejectUnauthorized` | TLS certificate validation for metadata/backend calls. | `true` |
 | `forwardAuthHeader` | Forward incoming Authorization header through ODX. | `true` |
 | `services` | Configured OData service definitions. | `[]` |
@@ -181,6 +181,16 @@ Each service is an `ODataServiceConfig`.
 | `headers` | Service-specific outbound headers. |
 | `rules` | Declarative proxy policy rules. |
 | `csrf` | Private server policy. Set `{ mode: 'sap' }` to enable request-scoped SAP token/session preparation; generic OData defaults to `none`. |
+
+For normal proxied data calls, header precedence is global defaults, service
+defaults, then permitted incoming headers; names are case-insensitive. Computed
+Basic/Bearer auth selects `service.auth` or, when absent, global `auth`, and
+overrides incoming Authorization. Explicit empty/partial service profiles do
+not borrow global credential fields. Destination-resolved auth remains separate
+and does not fall back to global auth when the Destination supplies none.
+The `direct` bridge does not inherit global defaults or computed server auth;
+its explicitly configured service headers and allowed incoming headers retain
+their existing behavior. `forwardAuthHeader: false` still blocks incoming auth.
 
 For SDK metadata downloads, service headers override global headers without
 regard to header-name case. The existing service-or-global `auth` selection

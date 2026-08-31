@@ -46,7 +46,7 @@ export async function resolveProxyTarget(
 
   // 1. Absolute URL
   if (absoluteUrl) {
-    const auth = matched.auth || {}
+    const auth = matched.auth || config.auth || {}
     let authHeaderValue = ''
     if (!isDirect) {
       if (auth.bearerToken) {
@@ -107,7 +107,7 @@ export async function resolveProxyTarget(
   }
 
   // 3. Local / Relative URL (Default)
-  const auth = matched.auth || {}
+  const auth = isDirect ? {} : matched.auth || config.auth || {}
   let authHeaderValue = ''
   if (auth.bearerToken) {
     authHeaderValue = `Bearer ${auth.bearerToken}`

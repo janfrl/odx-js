@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3'
 import type { Hookable } from 'hookable'
 import type { ODataProxyHooks } from '../types'
-import { flattenOData, prepareSapCsrfHeaders } from '@me-tools/odx-core'
+import { flattenOData, mergeHeaders, prepareSapCsrfHeaders } from '@me-tools/odx-core'
 import { createError, defineEventHandler, getHeaders, proxyRequest, readBody, removeResponseHeader, setHeader, setResponseStatus } from 'h3'
 import { ofetch } from 'ofetch'
 import { resolveConnectivityRequest } from '../utils/connectivity-proxy'
@@ -158,7 +158,7 @@ export default defineEventHandler(async (event): Promise<any> => {
     // 3. Header Preparation
     const finalHeaders = prepareProxyHeaders(
       getHeaders(event),
-      matched?.headers,
+      targetConfig.strategy === 'direct' ? matched?.headers : mergeHeaders(config.headers, matched?.headers),
       targetConfig.authHeader,
       { forwardAuthorization: config.forwardAuthHeader !== false },
     )

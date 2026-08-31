@@ -46,6 +46,17 @@ files as standalone Node modules.
 
 ## Backend header isolation
 
+Normal proxied calls merge global headers, service headers and permitted
+incoming headers in that order, ignoring header-name case. Configured Basic or
+Bearer auth selects the service profile, or global auth when that profile is
+absent, and overrides incoming Authorization. An explicit `{ auth: {} }` or
+partial profile does not borrow global fields. Destination auth is resolved
+independently; absent Destination credentials do not select global auth.
+
+The `direct` bridge inherits neither global headers nor computed backend auth.
+Explicit service headers and permitted incoming headers remain available.
+The development Destination fallback does not acquire global auth credentials.
+
 Buffered and streamed requests use the same filtered backend headers. Streaming
 replaces H3's incoming-header merge at the final transport dispatch so removed
 browser cookies, forwarding metadata and hop-by-hop credentials cannot reappear.

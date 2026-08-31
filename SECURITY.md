@@ -112,8 +112,16 @@ application type changes without a build and deployment.
 
 ## Header Handling
 
-`prepareProxyHeaders` merges explicit service headers with a filtered set of
-incoming request headers. Ambient browser and reverse-proxy credentials are not
+For non-direct requests, global header defaults are merged case-insensitively
+with service defaults before `prepareProxyHeaders` applies filtered incoming
+overrides. Normal absolute/relative proxied targets select service auth, falling
+back to global auth only when the service profile is absent. Empty or partial
+service profiles do not borrow global credential fields. Destination auth stays
+independent, including when no credentials are returned. The direct bridge
+inherits neither global headers nor computed server auth; explicitly configured
+service headers and permitted incoming headers retain their existing behavior.
+
+Ambient browser and reverse-proxy credentials are not
 forwarded to OData backends: cookies, response cookies, forwarding metadata,
 real-client IP metadata, hop-by-hop headers, and headers named by the incoming
 `Connection` header are removed. An explicitly configured service `Cookie`

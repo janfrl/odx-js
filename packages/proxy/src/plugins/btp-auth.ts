@@ -76,7 +76,7 @@ export default defineNitroPlugin((nitro) => {
     // 1. Resolve Absolute URL (Prioritized)
     if (hasAbsoluteUrl) {
       addTrace('Proxy', `Using absolute URL for ${matched.name}${proxyMode ? ` (Mode: ${proxyMode})` : ''}`, { url: matched.url })
-      const auth = matched.auth || {}
+      const auth = matched.auth || config.auth || {}
       let authHeaderValue = ''
 
       // Only apply auth if not using 'direct' strategy (CORS Bridge Mode)
@@ -145,7 +145,8 @@ export default defineNitroPlugin((nitro) => {
     // 3. Fallback to Local Mock Service (Relative Standard SAP Path)
     addTrace('Proxy', `Routing to local mock for ${matched.name}${proxyMode ? ` (Mode: ${proxyMode})` : ''}`, { path: `/sap/opu/odata/sap` })
 
-    const auth = matched.auth || {}
+    // A development Destination fallback must not acquire global credentials.
+    const auth = isDirect ? {} : matched.auth || (!hasDestination && !isRealCloud ? config.auth : undefined) || {}
     let authHeaderValue = ''
     if (auth.bearerToken) {
       authHeaderValue = `Bearer ${auth.bearerToken}`
