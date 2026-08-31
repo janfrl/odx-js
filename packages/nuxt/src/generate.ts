@@ -185,6 +185,7 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
       assertValidServiceNameForTypeGeneration(svc.name)
 
       let inputPath = svc.url
+      let parsedEntities: EntityMapping[] | undefined
 
       // Handle remote metadata (HTTPS)
       if (svc.url.startsWith('http')) {
@@ -193,14 +194,9 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
         const persistentCacheDir = join(nuxt.options.rootDir, '.odx', 'cache')
         const persistentCacheFile = join(persistentCacheDir, `${svc.name}.edmx`)
 
+        let downloadedXml: string | undefined
         try {
-          const xml = await downloadMetadata(svc, config)
-          fs.writeFileSync(tempFile, xml)
-          // Mirror to persistent cache so it survives .nuxt cleanups
-          if (!fs.existsSync(persistentCacheDir))
-            fs.mkdirSync(persistentCacheDir, { recursive: true })
-          fs.writeFileSync(persistentCacheFile, xml)
-          inputPath = tempFile
+          downloadedXml = await downloadMetadata(svc, config)
         }
         catch (err: any) {
           const fallback = fs.existsSync(tempFile)
@@ -226,13 +222,24 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
             )
           }
         }
+
+        if (downloadedXml !== undefined) {
+          // Reject malformed responses before replacing the last usable cache.
+          // Only transport failures may fall back; invalid metadata still fails preparation.
+          parsedEntities = extractEntitiesFromMetadata(downloadedXml, tempFile)
+          fs.writeFileSync(tempFile, downloadedXml)
+          if (!fs.existsSync(persistentCacheDir))
+            fs.mkdirSync(persistentCacheDir, { recursive: true })
+          fs.writeFileSync(persistentCacheFile, downloadedXml)
+          inputPath = tempFile
+        }
       }
       else {
         inputPath = resolve(nuxt.options.rootDir, svc.url)
       }
 
       // Extract entities for the virtual registry
-      serviceEntities[svc.name] = extractEntitiesFromMetadata(
+      serviceEntities[svc.name] = parsedEntities ?? extractEntitiesFromMetadata(
         fs.readFileSync(inputPath, 'utf8'),
         inputPath,
       )

@@ -8,15 +8,16 @@ import { fileURLToPath } from 'node:url'
 import { expect, it } from 'vitest'
 import { setupTypeGeneration } from '../src/generate'
 
-it('fails a fresh preparation on HTTP failure, then generates and reuses a complete SDK after recovery', async () => {
+it('fails fresh preparation on HTTP failure and preserves a valid SDK cache across malformed downloads and outages', async () => {
   const rootDir = mkdtempSync(join(tmpdir(), 'odx-metadata-http-'))
   const xml = readFileSync(fileURLToPath(new URL('../playground/minimal/edmx/minimal.edmx', import.meta.url)), 'utf8')
   let available = false
+  let malformed = false
   const requests: string[] = []
   const server = createServer((request, response) => {
     requests.push(`${request.method} ${request.url}`)
     response.writeHead(available ? 200 : 503, { 'content-type': 'application/xml' })
-    response.end(available ? xml : 'Unavailable')
+    response.end(available ? malformed ? '<edmx:Edmx>' : xml : 'Unavailable')
   })
 
   try {
@@ -62,9 +63,17 @@ it('fails a fresh preparation on HTTP failure, then generates and reuses a compl
 
     available = true
     await prepare('.nuxt')
+    malformed = true
+    await expect(prepare('.nuxt')).rejects.toThrow('Could not parse OData metadata')
+    for (const cachePath of [
+      join(rootDir, '.nuxt', 'odx', 'temp', 'Catalog.edmx'),
+      join(rootDir, '.odx', 'cache', 'Catalog.edmx'),
+    ]) {
+      expect(readFileSync(cachePath, 'utf8')).toBe(xml)
+    }
     available = false
     await prepare('.nuxt-offline')
-    expect(requests).toEqual(Array.from({ length: 3 }).fill('GET /odata/$metadata'))
+    expect(requests).toEqual(Array.from({ length: 4 }).fill('GET /odata/$metadata'))
   }
   finally {
     await new Promise<void>((resolve) => {

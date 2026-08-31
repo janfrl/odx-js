@@ -652,3 +652,10 @@ as the error cause; a typecheck or build must not succeed with that service
 silently omitted. Restore service access and rerun preparation. Cached metadata
 is an offline fallback, not evidence that the remote service is currently
 available or that its schema has not changed.
+
+Downloaded metadata is validated before either cache copy is replaced. An HTTP
+success containing malformed CSDL fails preparation and preserves the last
+valid cache; it does not silently switch to the old schema. Cache-write errors
+also fail preparation instead of being reported as transport fallback. After
+a later transport outage, the preserved cache can still support offline
+preparation. This does not validate server availability or freshness.
