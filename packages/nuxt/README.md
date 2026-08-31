@@ -666,6 +666,10 @@ returned as a successful download or stored as a new cache. The existing
 validated cache fallback applies to these transport failures; without a cache,
 preparation fails. A normally completed HTTP response still requires valid CSDL.
 
+UTF-8 metadata is decoded across response chunks, so a network boundary inside
+a multibyte character does not corrupt labels or other metadata text. This
+applies before CSDL validation, cache writes and SDK generation.
+
 SDK reuse is separate from the EDMX offline cache. A generated service model
 is reused only when its metadata content, installed `odata2ts` version and
 generation-cache format match, and the recorded model file still has its

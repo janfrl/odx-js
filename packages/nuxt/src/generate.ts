@@ -8,6 +8,7 @@ import http from 'node:http'
 import https from 'node:https'
 import { createRequire } from 'node:module'
 import process from 'node:process'
+import { StringDecoder } from 'node:string_decoder'
 import { extractEntitiesFromCsdlDocument } from '@me-tools/odx-core/server'
 import { parseCsdl } from '@me-tools/odx-metadata'
 import { consola } from 'consola'
@@ -137,9 +138,10 @@ export async function downloadMetadata(svc: ODataServiceConfig, config: ODataPro
         res.resume()
         return reject(new Error(`Status: ${res.statusCode}`))
       }
+      const decoder = new StringDecoder('utf8')
       let data = ''
-      res.on('data', chunk => data += chunk)
-      res.on('end', () => resolve(data))
+      res.on('data', chunk => data += decoder.write(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
+      res.on('end', () => resolve(data + decoder.end()))
     }).on('error', reject)
 
     req.setTimeout(METADATA_DOWNLOAD_TIMEOUT_MS, () => {

@@ -1,4 +1,5 @@
 import type { Nuxt } from '@nuxt/schema'
+import { Buffer } from 'node:buffer'
 import { once } from 'node:events'
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
@@ -12,6 +13,7 @@ import { setupTypeGeneration } from '../src/generate'
 it('fails fresh preparation on HTTP failure and preserves a valid SDK cache across malformed downloads and outages', async () => {
   const rootDir = mkdtempSync(join(tmpdir(), 'odx-metadata-http-'))
   const xml = readFileSync(fileURLToPath(new URL('../playground/minimal/edmx/minimal.edmx', import.meta.url)), 'utf8')
+    .replace('<EntityType Name="Product">', '<EntityType Name="Product"><Annotation Term="com.sap.vocabularies.Common.v1.Label" String="Größe € 商品 🚚"/>')
   let servedXml = xml
   let available = false
   let malformed = false
@@ -24,6 +26,14 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
       response.flushHeaders()
       response.write('<edmx:Edmx>')
       setTimeout(() => response.destroy(), 25)
+      return
+    }
+    if (available && !malformed) {
+      const bytes = Buffer.from(servedXml, 'utf8')
+      const split = bytes.indexOf(Buffer.from('ö')) + 1
+      response.flushHeaders()
+      response.write(bytes.subarray(0, split))
+      setTimeout(() => response.end(bytes.subarray(split)), 25)
       return
     }
     response.end(available ? malformed ? '<edmx:Edmx>' : servedXml : 'Unavailable')
@@ -74,6 +84,12 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
 
     available = true
     await prepare('.nuxt')
+    for (const cachePath of [
+      join(rootDir, '.nuxt', 'odx', 'temp', 'Catalog.edmx'),
+      join(rootDir, '.odx', 'cache', 'Catalog.edmx'),
+    ]) {
+      expect(readFileSync(cachePath, 'utf8')).toBe(xml)
+    }
     const modelPath = join(rootDir, '.nuxt', 'odx-types', 'Catalog', 'MinimalLocalModel.ts')
     expect(readFileSync(modelPath, 'utf8')).toContain('Name: string | null')
     servedXml = xml.replace('Name="Name" Type="Edm.String"', 'Name="Label" Type="Edm.String"')

@@ -343,6 +343,22 @@ describe('type Generation Logic', () => {
   })
 
   describe('downloadMetadata', () => {
+    it.each(['Größe', 'Preis €', '商品', 'Delivery 🚚'])('preserves UTF-8 metadata split at every byte: %s', async (label) => {
+      const response = new EventEmitter() as any
+      response.statusCode = 200
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        callback!(response)
+        return createMockRequest()
+      })
+      const xml = `<Annotation Term="Common.Label" String="${label}"/>`
+      const result = downloadMetadata({ name: 'Catalog', url: 'https://example.com/odata' }, {} as any)
+      const bytes = Buffer.from(xml, 'utf8')
+      for (let index = 0; index < bytes.length; index++)
+        response.emit('data', bytes.subarray(index, index + 1))
+      response.emit('end')
+      await expect(result).resolves.toBe(xml)
+    })
+
     it.each(['aborted', 'close'])('rejects a partial metadata response on %s without waiting for end', async (event) => {
       const response = new EventEmitter() as any
       response.statusCode = 200
