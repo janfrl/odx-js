@@ -15,10 +15,17 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
   let servedXml = xml
   let available = false
   let malformed = false
+  let interrupted = false
   const requests: string[] = []
   const server = createServer((request, response) => {
     requests.push(`${request.method} ${request.url}`)
     response.writeHead(available ? 200 : 503, { 'content-type': 'application/xml' })
+    if (interrupted) {
+      response.flushHeaders()
+      response.write('<edmx:Edmx>')
+      setTimeout(() => response.destroy(), 25)
+      return
+    }
     response.end(available ? malformed ? '<edmx:Edmx>' : servedXml : 'Unavailable')
   })
 
@@ -98,6 +105,10 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
       moduleResolution: ts.ModuleResolutionKind.Bundler,
     })
     expect(ts.getPreEmitDiagnostics(program).map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'))).toEqual([])
+    interrupted = true
+    await prepare('.nuxt', 'Renamed')
+    expect(readFileSync(join(rootDir, '.odx', 'cache', 'Catalog.edmx'), 'utf8')).toBe(servedXml)
+    interrupted = false
     malformed = true
     await expect(prepare('.nuxt')).rejects.toThrow('Could not parse OData metadata')
     for (const cachePath of [
@@ -108,7 +119,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     }
     available = false
     await prepare('.nuxt-offline', 'Renamed')
-    expect(requests).toEqual(Array.from({ length: 6 }).fill('GET /odata/$metadata'))
+    expect(requests).toEqual(Array.from({ length: 7 }).fill('GET /odata/$metadata'))
   }
   finally {
     await new Promise<void>((resolve) => {

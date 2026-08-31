@@ -343,6 +343,74 @@ describe('type Generation Logic', () => {
   })
 
   describe('downloadMetadata', () => {
+    it.each(['aborted', 'close'])('rejects a partial metadata response on %s without waiting for end', async (event) => {
+      const response = new EventEmitter() as any
+      response.statusCode = 200
+      response.complete = false
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        callback!(response)
+        return createMockRequest()
+      })
+      const result = downloadMetadata({ name: 'Catalog', url: 'https://example.com/odata' }, {} as any)
+        .then(value => ({ state: 'resolved', value }), error => ({ state: 'rejected', message: error.message }))
+      response.emit('data', '<edmx:Edmx>')
+      response.emit(event)
+
+      expect(await Promise.race([
+        result,
+        new Promise(resolve => setImmediate(() => resolve({ state: 'pending' }))),
+      ])).toEqual({ state: 'rejected', message: 'Metadata response ended before completion' })
+    })
+
+    it('handles response errors without an unhandled stream exception', async () => {
+      const response = new EventEmitter() as any
+      response.statusCode = 200
+      response.complete = false
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        callback!(response)
+        return createMockRequest()
+      })
+      const result = downloadMetadata({ name: 'Catalog', url: 'https://example.com/odata' }, {} as any)
+        .then(value => ({ state: 'resolved', value }), error => ({ state: 'rejected', error }))
+      const failure = new Error('Response stream failed')
+      expect(() => response.emit('error', failure)).not.toThrow()
+      expect(await Promise.race([
+        result,
+        new Promise(resolve => setImmediate(() => resolve({ state: 'pending' }))),
+      ])).toEqual({ state: 'rejected', error: failure })
+    })
+
+    it('consumes a later response error after rejecting an HTTP status', async () => {
+      const response = new EventEmitter() as any
+      response.statusCode = 503
+      response.complete = false
+      response.resume = vi.fn()
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        callback!(response)
+        return createMockRequest()
+      })
+      const result = downloadMetadata({ name: 'Catalog', url: 'https://example.com/odata' }, {} as any)
+        .catch(error => error)
+      expect(() => response.emit('error', new Error('Response failed during drain'))).not.toThrow()
+      expect(await result).toMatchObject({ message: 'Status: 503' })
+      expect(response.resume).toHaveBeenCalledOnce()
+    })
+
+    it('keeps a fully received metadata response successful when it closes', async () => {
+      const response = new EventEmitter() as any
+      response.statusCode = 200
+      response.complete = true
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        callback!(response)
+        return createMockRequest()
+      })
+      const result = downloadMetadata({ name: 'Catalog', url: 'https://example.com/odata' }, {} as any)
+      response.emit('data', '<metadata/>')
+      response.emit('end')
+      response.emit('close')
+      await expect(result).resolves.toBe('<metadata/>')
+    })
+
     it('sets Bearer token header when provided', async () => {
       const svc = { name: 'Test', url: 'https://example.com/odata' }
       const config = { auth: { bearerToken: 'test-token' }, rejectUnauthorized: false } as any

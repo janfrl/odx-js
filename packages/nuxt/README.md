@@ -660,6 +660,12 @@ also fail preparation instead of being reported as transport fallback. After
 a later transport outage, the preserved cache can still support offline
 preparation. This does not validate server availability or freshness.
 
+A response that aborts or closes before the HTTP message is complete rejects
+the metadata download, as does a response-stream error. A partial body is never
+returned as a successful download or stored as a new cache. The existing
+validated cache fallback applies to these transport failures; without a cache,
+preparation fails. A normally completed HTTP response still requires valid CSDL.
+
 SDK reuse is separate from the EDMX offline cache. A generated service model
 is reused only when its metadata content, installed `odata2ts` version and
 generation-cache format match, and the recorded model file still has its

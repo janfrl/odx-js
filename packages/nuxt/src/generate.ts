@@ -127,6 +127,12 @@ export async function downloadMetadata(svc: ODataServiceConfig, config: ODataPro
       : { headers }
 
     const req = client.get(metadataUrl, requestOptions, (res) => {
+      res.on('error', reject)
+      res.once('aborted', () => reject(new Error('Metadata response ended before completion')))
+      res.once('close', () => {
+        if (!res.complete)
+          reject(new Error('Metadata response ended before completion'))
+      })
       if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
         res.resume()
         return reject(new Error(`Status: ${res.statusCode}`))
