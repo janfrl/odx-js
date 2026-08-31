@@ -390,6 +390,82 @@ describe('type Generation Logic', () => {
 
   describe('downloadMetadata', () => {
     it.each([
+      { auth: undefined, expected: 'Bearer global-token' },
+      { auth: {}, expected: 'Custom service header' },
+      { auth: { username: 'service-user', password: 'service-pass' }, expected: `Basic ${Buffer.from('service-user:service-pass').toString('base64')}` },
+    ])('retains explicit auth selection over merged custom authorization: $expected', async ({ auth, expected }) => {
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        const response = new EventEmitter() as any
+        response.statusCode = 200
+        callback!(response)
+        response.emit('end')
+        return createMockRequest()
+      })
+      await downloadMetadata({
+        name: 'Catalog',
+        url: 'https://example.com/odata',
+        auth,
+        headers: { AUTHORIZATION: 'Custom service header' },
+      }, {
+        auth: { bearerToken: 'global-token' },
+        headers: { authorization: 'Custom global header' },
+      } as any)
+      expect(vi.mocked(https.get).mock.calls[0]?.[1]).toMatchObject({
+        headers: { authorization: expected, accept: 'application/xml, text/xml, */*' },
+      })
+    })
+
+    it('keeps connection, framing, proxy and compression headers under metadata transport control', async () => {
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        const response = new EventEmitter() as any
+        response.statusCode = 200
+        callback!(response)
+        response.emit('end')
+        return createMockRequest()
+      })
+      const managed = ['Host', 'Content-Length', 'Content-Encoding', 'Accept-Encoding', 'Transfer-Encoding', 'Keep-Alive', 'Proxy-Authenticate', 'Proxy-Authorization', 'Proxy-Connection', 'TE', 'Trailer', 'Trailers', 'Upgrade']
+      await downloadMetadata({
+        name: 'Catalog',
+        url: 'https://example.com/odata',
+        headers: { ...Object.fromEntries(managed.map(name => [name, 'ignored'])), 'Connection': 'X-Hop-Token', 'x-hop-token': 'ignored', 'X-Custom': 'preserved' },
+      }, {} as any)
+      expect(vi.mocked(https.get).mock.calls[0]?.[1]).toMatchObject({
+        headers: { 'x-custom': 'preserved', 'accept': 'application/xml, text/xml, */*' },
+      })
+      expect(Object.keys((vi.mocked(https.get).mock.calls[0]?.[1] as any).headers).sort()).toEqual(['accept', 'x-custom'])
+    })
+
+    it('merges configured metadata headers case-insensitively with service and auth priority', async () => {
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        const response = new EventEmitter() as any
+        response.statusCode = 200
+        callback!(response)
+        response.emit('data', '<metadata/>')
+        response.emit('end')
+        return createMockRequest()
+      })
+      await downloadMetadata({
+        name: 'Catalog',
+        url: 'https://example.com/odata',
+        headers: { 'x-api-key': 'service-key', 'ACCEPT': 'application/json', 'Authorization': 'Custom service header' },
+        auth: { bearerToken: 'service-token' },
+      }, {
+        headers: { 'X-Api-Key': 'global-key', 'X-Tenant': 'test-tenant', 'authorization': 'Custom global header' },
+        auth: { bearerToken: 'global-token' },
+        rejectUnauthorized: false,
+      } as any)
+      expect(vi.mocked(https.get).mock.calls[0]?.[1]).toEqual({
+        headers: {
+          'x-api-key': 'service-key',
+          'x-tenant': 'test-tenant',
+          'accept': 'application/xml, text/xml, */*',
+          'authorization': 'Bearer service-token',
+        },
+        rejectUnauthorized: false,
+      })
+    })
+
+    it.each([
       ['https://example.com/odata?sap-client=100', 'https://example.com/odata/$metadata?sap-client=100'],
       ['https://example.com/odata/?sap-client=100', 'https://example.com/odata/$metadata?sap-client=100'],
       ['https://example.com/odata%20catalog?tenant=A%2FB&sap-client=100', 'https://example.com/odata%20catalog/$metadata?tenant=A%2FB&sap-client=100'],
@@ -511,7 +587,7 @@ describe('type Generation Logic', () => {
       expect(https.get).toHaveBeenCalledWith(
         'https://example.com/odata/$metadata',
         expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
+          headers: { authorization: 'Bearer test-token', accept: 'application/xml, text/xml, */*' },
           rejectUnauthorized: false,
         }),
         expect.any(Function),
@@ -539,7 +615,7 @@ describe('type Generation Logic', () => {
       expect(http.get).toHaveBeenCalledWith(
         'http://localhost:4000/odata/$metadata',
         {
-          headers: { Authorization: 'Bearer local-token' },
+          headers: { authorization: 'Bearer local-token', accept: 'application/xml, text/xml, */*' },
         },
         expect.any(Function),
       )
@@ -570,7 +646,7 @@ describe('type Generation Logic', () => {
       expect(https.get).toHaveBeenCalledWith(
         'https://example.com/odata/$metadata',
         expect.objectContaining({
-          headers: { Authorization: expectedBasic },
+          headers: { authorization: expectedBasic, accept: 'application/xml, text/xml, */*' },
         }),
         expect.any(Function),
       )

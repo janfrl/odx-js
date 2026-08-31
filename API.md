@@ -142,7 +142,7 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `defaultProxyMode` | Default proxy response handling mode. | `stream` |
 | `destination` | Global SAP BTP destination fallback. | none |
 | `auth` | Global Basic, Bearer, or mock auth data. | none |
-| `headers` | Global headers merged into outgoing proxy calls. | none |
+| `headers` | Global headers merged into outgoing proxy calls and build-time SDK metadata requests. | none |
 | `rejectUnauthorized` | TLS certificate validation for metadata/backend calls. | `true` |
 | `forwardAuthHeader` | Forward incoming Authorization header through ODX. | `true` |
 | `services` | Configured OData service definitions. | `[]` |
@@ -181,6 +181,14 @@ Each service is an `ODataServiceConfig`.
 | `headers` | Service-specific outbound headers. |
 | `rules` | Declarative proxy policy rules. |
 | `csrf` | Private server policy. Set `{ mode: 'sap' }` to enable request-scoped SAP token/session preparation; generic OData defaults to `none`. |
+
+For SDK metadata downloads, service headers override global headers without
+regard to header-name case. The existing service-or-global `auth` selection
+then overrides custom Authorization when it produces Basic or Bearer auth.
+The metadata transport fixes XML `Accept` and excludes host, framing,
+connection, proxy and compression-negotiation headers, including names listed
+by `Connection`. Header credentials remain private build/server configuration;
+this does not introduce build-time Destination resolution.
 
 ## Environment Overrides
 

@@ -9,6 +9,7 @@ import https from 'node:https'
 import { createRequire } from 'node:module'
 import process from 'node:process'
 import { StringDecoder } from 'node:string_decoder'
+import { mergeHeaders } from '@me-tools/odx-core'
 import { extractEntitiesFromCsdlDocument } from '@me-tools/odx-core/server'
 import { parseCsdl } from '@me-tools/odx-metadata'
 import { consola } from 'consola'
@@ -16,6 +17,23 @@ import { dirname, join, resolve } from 'pathe'
 
 const logger = consola.withTag('@me-tools/odx-nuxt')
 const METADATA_DOWNLOAD_TIMEOUT_MS = 30_000
+const METADATA_ACCEPT_HEADER = 'application/xml, text/xml, */*'
+const RESTRICTED_METADATA_HEADERS = new Set([
+  'host',
+  'connection',
+  'content-length',
+  'content-encoding',
+  'accept-encoding',
+  'transfer-encoding',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'proxy-connection',
+  'te',
+  'trailer',
+  'trailers',
+  'upgrade',
+])
 const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
 const RE_PATH_SEPARATOR = /[/\\]/
@@ -119,13 +137,17 @@ export async function downloadMetadata(svc: ODataServiceConfig, config: ODataPro
   parsedUrl.hash = ''
   const metadataUrl = parsedUrl.toString()
   const auth = svc.auth || config.auth || {}
-  const headers: Record<string, string> = {}
+  const headers = mergeHeaders(config.headers, svc.headers)
+  const connectionHeaders = (headers.connection ?? '').split(',').map(name => name.trim().toLowerCase())
+  for (const name of [...RESTRICTED_METADATA_HEADERS, ...connectionHeaders])
+    delete headers[name]
+  headers.accept = METADATA_ACCEPT_HEADER
 
   if (auth.bearerToken) {
-    headers.Authorization = `Bearer ${auth.bearerToken}`
+    headers.authorization = `Bearer ${auth.bearerToken}`
   }
   else if (auth.username && auth.password) {
-    headers.Authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
+    headers.authorization = `Basic ${Buffer.from(`${auth.username}:${auth.password}`).toString('base64')}`
   }
 
   return new Promise<string>((resolve, reject) => {

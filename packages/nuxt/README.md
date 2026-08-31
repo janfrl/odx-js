@@ -658,6 +658,18 @@ configured query parameters. For example, `/odata?sap-client=100` requests
 `/odata/$metadata?sap-client=100`. Encoded path/query values remain encoded,
 and URL fragments are omitted from the request.
 
+SDK metadata downloads merge configured global and service headers
+case-insensitively, with service values taking precedence. The existing
+`service.auth || global auth` selection is unchanged: computed Basic or Bearer
+authorization overrides a custom Authorization header. Without computed auth,
+an explicitly configured Authorization header is retained. Metadata `Accept`
+is always `application/xml, text/xml, */*`, regardless of a data-request default.
+Host, framing, connection, proxy and compression-negotiation headers are managed
+by the download transport and are not forwarded from configuration; headers
+nominated by `Connection` are excluded too. Keep API keys and other credentials
+in private server configuration, not public runtime config. This does not add
+build-time Destination resolution or change BTP authentication.
+
 Downloaded metadata is validated before either cache copy is replaced. An HTTP
 success containing malformed CSDL fails preparation and preserves the last
 valid cache; it does not silently switch to the old schema. Cache-write errors

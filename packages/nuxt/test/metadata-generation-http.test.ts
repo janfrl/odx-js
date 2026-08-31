@@ -21,6 +21,18 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
   const requests: string[] = []
   const server = createServer((request, response) => {
     requests.push(`${request.method} ${request.url}`)
+    if (request.headers['x-catalog-key'] !== 'service-key'
+      || request.headers['x-tenant'] !== 'fixture-tenant'
+      || request.headers.authorization !== 'Bearer fixture-service-token'
+      || request.headers.accept !== 'application/xml, text/xml, */*'
+      || request.headers['content-length'] !== undefined
+      || request.headers['proxy-authorization'] !== undefined
+      || request.headers['accept-encoding'] !== undefined
+      || request.headers['x-build-hop'] !== undefined) {
+      response.writeHead(403)
+      response.end('Metadata headers required')
+      return
+    }
     response.writeHead(available ? 200 : 503, { 'content-type': 'application/xml' })
     if (interrupted) {
       response.flushHeaders()
@@ -62,7 +74,23 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
         buildDir,
         mode: 'sdk',
         rootDir,
-        services: [{ name: 'Catalog', url: serviceUrl }],
+        headers: { 'X-Catalog-Key': 'global-key', 'X-Tenant': 'fixture-tenant', 'Accept': 'application/json' },
+        auth: { bearerToken: 'fixture-global-token' },
+        services: [{
+          name: 'Catalog',
+          url: serviceUrl,
+          headers: {
+            'x-catalog-key': 'service-key',
+            'accept': 'application/json',
+            'authorization': 'Custom service header',
+            'Content-Length': '999',
+            'Accept-Encoding': 'gzip',
+            'Proxy-Authorization': 'Basic proxy-fixture',
+            'Connection': 'x-build-hop',
+            'X-Build-Hop': 'hop-fixture',
+          },
+          auth: { bearerToken: 'fixture-service-token' },
+        }],
       })
       if (!prepareTypes)
         throw new Error('Missing type preparation hook')
