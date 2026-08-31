@@ -665,6 +665,12 @@ also fail preparation instead of being reported as transport fallback. After
 a later transport outage, the preserved cache can still support offline
 preparation. This does not validate server availability or freshness.
 
+SDK preparation accepts a parsed `Edmx` root in the OData V2 or V4 EDMX
+namespace, independent of its XML prefix. Well-formed HTML or foreign XML is
+not valid SDK metadata and cannot replace existing metadata caches. The same
+envelope check applies to selected offline caches and local metadata inputs.
+This is not a full vocabulary-reference or service-semantics validator.
+
 A response that aborts or closes before the HTTP message is complete rejects
 the metadata download, as does a response-stream error. A partial body is never
 returned as a successful download or stored as a new cache. The existing

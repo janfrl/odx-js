@@ -22,6 +22,10 @@ const RE_PATH_SEPARATOR = /[/\\]/
 const RE_UNSAFE_MODEL_FILE = /[/\\:]/
 const RE_TRAILING_SLASHES = /\/+$/
 const SDK_CACHE_VERSION = 1
+const EDMX_NAMESPACES = new Set([
+  'http://docs.oasis-open.org/odata/ns/edmx',
+  'http://schemas.microsoft.com/ado/2007/06/edmx',
+])
 
 function resolveOData2TsCliPath(): string {
   const projectRequire = createRequire(resolve(process.cwd(), 'package.json'))
@@ -200,13 +204,14 @@ function extractEntitiesFromMetadata(xml: string, sourcePath: string): EntityMap
     format: 'xml',
     source: { id: sourcePath },
   })
-  if (result.document !== null)
+  const root = result.document?.root
+  if (result.document !== null && root?.kind === 'element' && root.name.local === 'Edmx' && EDMX_NAMESPACES.has(root.name.namespace ?? ''))
     return extractEntitiesFromCsdlDocument(result.document)
 
   const reason = result.diagnostics
     .map(diagnostic => diagnostic.message)
     .join('; ')
-  throw new Error(`Could not parse OData metadata at ${sourcePath}: ${reason || 'no CSDL document produced'}`)
+  throw new Error(`Could not parse OData metadata at ${sourcePath}: ${reason || 'expected an OData V2 or V4 EDMX root'}`)
 }
 function assertValidServiceNameForTypeGeneration(serviceName: string): void {
   if (RE_PATH_SEPARATOR.test(serviceName)) {

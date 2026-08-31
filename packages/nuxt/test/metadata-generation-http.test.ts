@@ -16,7 +16,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     .replace('<EntityType Name="Product">', '<EntityType Name="Product"><Annotation Term="com.sap.vocabularies.Common.v1.Label" String="Größe € 商品 🚚"/>')
   let servedXml = xml
   let available = false
-  let malformed = false
+  let malformedXml: string | undefined
   let interrupted = false
   const requests: string[] = []
   const server = createServer((request, response) => {
@@ -28,7 +28,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
       setTimeout(() => response.destroy(), 25)
       return
     }
-    if (available && !malformed) {
+    if (available && malformedXml === undefined) {
       const bytes = Buffer.from(servedXml, 'utf8')
       const split = bytes.indexOf(Buffer.from('ö')) + 1
       response.flushHeaders()
@@ -36,7 +36,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
       setTimeout(() => response.end(bytes.subarray(split)), 25)
       return
     }
-    response.end(available ? malformed ? '<edmx:Edmx>' : servedXml : 'Unavailable')
+    response.end(available ? malformedXml ?? servedXml : 'Unavailable')
   })
 
   try {
@@ -125,17 +125,21 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     await prepare('.nuxt', 'Renamed')
     expect(readFileSync(join(rootDir, '.odx', 'cache', 'Catalog.edmx'), 'utf8')).toBe(servedXml)
     interrupted = false
-    malformed = true
-    await expect(prepare('.nuxt')).rejects.toThrow('Could not parse OData metadata')
-    for (const cachePath of [
-      join(rootDir, '.nuxt', 'odx', 'temp', 'Catalog.edmx'),
-      join(rootDir, '.odx', 'cache', 'Catalog.edmx'),
-    ]) {
-      expect(readFileSync(cachePath, 'utf8')).toBe(servedXml)
+    for (const invalidXml of ['<edmx:Edmx>', '<html><body>Edmx service is unavailable</body></html>', '<Edmx xmlns="urn:not-odata"/>']) {
+      malformedXml = invalidXml
+      const failure = await prepare('.nuxt').then(() => undefined, error => error)
+      for (const cachePath of [
+        join(rootDir, '.nuxt', 'odx', 'temp', 'Catalog.edmx'),
+        join(rootDir, '.odx', 'cache', 'Catalog.edmx'),
+      ]) {
+        expect(readFileSync(cachePath, 'utf8')).toBe(servedXml)
+      }
+      expect(failure).toMatchObject({ message: expect.stringContaining('Could not parse OData metadata') })
     }
+    malformedXml = undefined
     available = false
     await prepare('.nuxt-offline', 'Renamed')
-    expect(requests).toEqual(Array.from({ length: 7 }).fill('GET /odata/$metadata?sap-client=100&sap-language=DE'))
+    expect(requests).toEqual(Array.from({ length: 9 }).fill('GET /odata/$metadata?sap-client=100&sap-language=DE'))
   }
   finally {
     await new Promise<void>((resolve) => {

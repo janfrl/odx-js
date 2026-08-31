@@ -164,14 +164,52 @@ describe('type Generation Logic', () => {
       expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
     })
 
-    it('does not create metadata caches from a malformed successful response', async () => {
-      respondWithMetadata('<edmx:Edmx>')
+    it.each([
+      '<edmx:Edmx>',
+      '<html><body>Edmx service is unavailable</body></html>',
+      '<Edmx xmlns="urn:not-odata"/>',
+    ])('does not create metadata caches from an invalid successful response: %s', async (xml) => {
+      respondWithMetadata(xml)
       const harness = createNuxtTypeGenerationHarness('DraftCatalog', 'https://example.com/odata')
 
       await expect(harness.runPrepareTypes()).rejects.toThrow('Could not parse OData metadata')
       expect(existsSync(join(harness.buildDir, 'odx', 'temp', 'DraftCatalog.edmx'))).toBe(false)
       expect(existsSync(join(harness.rootDir, '.odx', 'cache', 'DraftCatalog.edmx'))).toBe(false)
       expect(execFileSync).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      '<html><body>Edmx service is unavailable</body></html>',
+      '<Edmx xmlns="urn:not-odata"/>',
+    ])('preserves existing SDK metadata caches when successful XML is not EDMX: %s', async (invalidXml) => {
+      const xml = readFileSync(minimalMetadataPath, 'utf8')
+      respondWithMetadata(xml)
+      const harness = createNuxtTypeGenerationHarness('Catalog', 'https://example.com/odata')
+      await harness.runPrepareTypes()
+      respondWithMetadata(invalidXml)
+      const failure = await harness.runPrepareTypes().then(() => undefined, error => error)
+      for (const cachePath of [
+        join(harness.buildDir, 'odx', 'temp', 'Catalog.edmx'),
+        join(harness.rootDir, '.odx', 'cache', 'Catalog.edmx'),
+      ]) {
+        expect(readFileSync(cachePath, 'utf8')).toBe(xml)
+      }
+      expect(failure).toMatchObject({ message: expect.stringContaining('Could not parse OData metadata') })
+      expect(execFileSync).toHaveBeenCalledOnce()
+    })
+
+    it.each(['V2', 'V4 default namespace'])('accepts the parsed %s EDMX envelope for SDK preparation', async (profile) => {
+      const originalXml = readFileSync(minimalMetadataPath, 'utf8')
+      const xml = profile === 'V2'
+        ? originalXml.replace('Version="4.0"', 'Version="1.0"')
+            .replace('http://docs.oasis-open.org/odata/ns/edmx', 'http://schemas.microsoft.com/ado/2007/06/edmx')
+            .replace('http://docs.oasis-open.org/odata/ns/edm', 'http://schemas.microsoft.com/ado/2008/09/edm')
+        : originalXml.replaceAll('edmx:', '').replace('xmlns:edmx', 'xmlns')
+      respondWithMetadata(xml)
+      const harness = createNuxtTypeGenerationHarness('Catalog', 'https://example.com/odata')
+      await harness.runPrepareTypes()
+      expect(readFileSync(join(harness.buildDir, 'odx-types', 'index.d.ts'), 'utf8')).toContain('"Products": CatalogModels.Product')
+      expect(execFileSync).toHaveBeenCalledOnce()
     })
 
     it('does not treat a cache-write failure as a transport outage with fallback', async () => {
@@ -215,13 +253,21 @@ describe('type Generation Logic', () => {
         .toContain('DraftCatalog: ODataRuntimeService<"Products"')
     })
 
-    it('rejects a malformed fallback cache before SDK generation', async () => {
+    it.each(['<edmx:Edmx>', '<html><body>Edmx unavailable</body></html>', '<Edmx xmlns="urn:not-odata"/>'])('rejects an invalid fallback cache before SDK generation: %s', async (xml) => {
       rejectMetadataDownload()
       const harness = createNuxtTypeGenerationHarness('DraftCatalog', 'https://example.com/odata')
       const cacheDir = join(harness.rootDir, '.odx', 'cache')
       mkdirSync(cacheDir, { recursive: true })
-      writeFileSync(join(cacheDir, 'DraftCatalog.edmx'), '<edmx:Edmx>')
+      writeFileSync(join(cacheDir, 'DraftCatalog.edmx'), xml)
 
+      await expect(harness.runPrepareTypes()).rejects.toThrow('Could not parse OData metadata')
+      expect(execFileSync).not.toHaveBeenCalled()
+      expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
+    })
+
+    it.each(['<html><body>Edmx unavailable</body></html>', '<Edmx xmlns="urn:not-odata"/>'])('rejects a local XML input outside the EDMX contract: %s', async (xml) => {
+      const harness = createNuxtTypeGenerationHarness('Catalog', 'foreign.edmx')
+      writeFileSync(join(harness.rootDir, 'foreign.edmx'), xml)
       await expect(harness.runPrepareTypes()).rejects.toThrow('Could not parse OData metadata')
       expect(execFileSync).not.toHaveBeenCalled()
       expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
