@@ -670,6 +670,15 @@ nominated by `Connection` are excluded too. Keep API keys and other credentials
 in private server configuration, not public runtime config. This does not add
 build-time Destination resolution or change BTP authentication.
 
+Nuxt configuration preserves omitted service `auth`, including for services
+discovered from environment URLs. Metadata requests can therefore use global
+credentials when no service profile is configured. An explicit service `auth`
+object (even `{}`), a binding auth override or nonempty service environment
+credentials selects the service profile instead. Missing fields in that profile
+are not filled from global credentials: for example, a service username does
+not borrow a global password. This is metadata authentication, not a change to
+direct-browser authentication or Destination credential resolution.
+
 Downloaded metadata is validated before either cache copy is replaced. An HTTP
 success containing malformed CSDL fails preparation and preserves the last
 valid cache; it does not silently switch to the old schema. Cache-write errors

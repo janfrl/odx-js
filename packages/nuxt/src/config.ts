@@ -87,6 +87,21 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     }
   }
 
+  const resolveServiceAuth = (
+    service: ODataServiceConfig,
+    override: Partial<ODataServiceConfig>,
+    envKey: string,
+  ): ODataServiceConfig['auth'] => {
+    const auth = {
+      username: process.env[`${ENV_PREFIX}${envKey}_AUTH_USERNAME`] || override.auth?.username || service.auth?.username,
+      password: process.env[`${ENV_PREFIX}${envKey}_AUTH_PASSWORD`] || override.auth?.password || service.auth?.password,
+      bearerToken: process.env[`${ENV_PREFIX}${envKey}_AUTH_BEARER_TOKEN`] || override.auth?.bearerToken || service.auth?.bearerToken,
+    }
+    // An explicit profile (including {}) selects service auth. Absence must
+    // remain absent so metadata transports can select the global profile.
+    return service.auth || override.auth || Object.values(auth).some(Boolean) ? auth : undefined
+  }
+
   // 1. Resolve Services (explicitly configured + discovered from env + BTP Overrides)
   const services: ODataServiceConfig[] = (options.services || []).map((s: ODataServiceConfig) => {
     const btpOverride = btpOverrides[s.name] || {}
@@ -111,11 +126,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
       strategy: (process.env[`${ENV_PREFIX}${envKey}_STRATEGY`] as any) || btpOverride.strategy || s.strategy || 'proxied',
       proxyMode: (process.env[`${ENV_PREFIX}${envKey}_PROXY_MODE`] as any) || btpOverride.proxyMode || s.proxyMode,
       csrf: resolveCsrfConfig(s, btpOverride, envKey),
-      auth: {
-        username: process.env[`${ENV_PREFIX}${envKey}_AUTH_USERNAME`] || btpOverride.auth?.username || s.auth?.username,
-        password: process.env[`${ENV_PREFIX}${envKey}_AUTH_PASSWORD`] || btpOverride.auth?.password || s.auth?.password,
-        bearerToken: process.env[`${ENV_PREFIX}${envKey}_AUTH_BEARER_TOKEN`] || btpOverride.auth?.bearerToken || s.auth?.bearerToken,
-      },
+      auth: resolveServiceAuth(s, btpOverride, envKey),
       headers: stringifyHeaders({
         ...s.headers,
         ...btpOverride.headers,
@@ -148,11 +159,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
         strategy: (process.env[`${ENV_PREFIX}${key}_STRATEGY`] as any) || 'proxied',
         destination: process.env[`${ENV_PREFIX}${key}_DESTINATION`],
         csrf: resolveCsrfConfig({ name: key, url }, {}, key),
-        auth: {
-          username: process.env[`${ENV_PREFIX}${key}_AUTH_USERNAME`],
-          password: process.env[`${ENV_PREFIX}${key}_AUTH_PASSWORD`],
-          bearerToken: process.env[`${ENV_PREFIX}${key}_AUTH_BEARER_TOKEN`],
-        },
+        auth: resolveServiceAuth({ name: key, url }, {}, key),
         headers: stringifyHeaders(parseEnvJson(process.env[`${ENV_PREFIX}${key}_HEADERS`])),
       })
     }

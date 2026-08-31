@@ -190,6 +190,13 @@ connection, proxy and compression-negotiation headers, including names listed
 by `Connection`. Header credentials remain private build/server configuration;
 this does not introduce build-time Destination resolution.
 
+An omitted service `auth` remains absent after Nuxt configuration resolution,
+so metadata requests can fall back to global `auth`. Explicit service profiles
+(including `{}`), binding auth overrides and nonempty service environment
+credentials retain service-profile selection. Global credential fields are
+never merged into a partial service profile. Environment-discovered services
+follow the same rule; private credentials remain excluded from public config.
+
 ## Environment Overrides
 
 The Nuxt module reads runtime overrides from environment variables.

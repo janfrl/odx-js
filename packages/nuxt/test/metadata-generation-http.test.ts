@@ -5,10 +5,23 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
-import { expect, it } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { resolveModuleConfig } from '../src/config'
 import { setupTypeGeneration } from '../src/generate'
+
+beforeEach(() => {
+  // Exercise only fixture services/credentials, never ambient host bindings or
+  // environment-discovered production services during SDK preparation.
+  for (const name of Object.keys(process.env)) {
+    if (name === 'VCAP_SERVICES' || name.startsWith('NUXT_ODATA_'))
+      vi.stubEnv(name, undefined)
+  }
+})
+
+afterEach(() => vi.unstubAllEnvs())
 
 it('fails fresh preparation on HTTP failure and preserves a valid SDK cache across malformed downloads and outages', async () => {
   const rootDir = mkdtempSync(join(tmpdir(), 'odx-metadata-http-'))
@@ -19,11 +32,17 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
   let malformedXml: string | undefined
   let interrupted = false
   const requests: string[] = []
+  const authorizations: (string | undefined)[] = []
+  let expectedAuthorization = 'Bearer fixture-global-token'
   const server = createServer((request, response) => {
     requests.push(`${request.method} ${request.url}`)
+    authorizations.push(request.headers.authorization)
+    // Synchronous SDK generation can outlast an idle keep-alive socket. This
+    // fixture tests auth/cache recovery, not idle connection reuse timing.
+    response.setHeader('connection', 'close')
     if (request.headers['x-catalog-key'] !== 'service-key'
       || request.headers['x-tenant'] !== 'fixture-tenant'
-      || request.headers.authorization !== 'Bearer fixture-service-token'
+      || request.headers.authorization !== expectedAuthorization
       || request.headers.accept !== 'application/xml, text/xml, */*'
       || request.headers['content-length'] !== undefined
       || request.headers['proxy-authorization'] !== undefined
@@ -59,7 +78,8 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
       throw new Error('Expected a loopback TCP server')
     const serviceUrl = `http://127.0.0.1:${address.port}/odata?sap-client=100&sap-language=DE`
 
-    async function prepare(buildName: string, modelName = 'MinimalLocal') {
+    async function prepare(buildName: string, modelName = 'MinimalLocal', serviceAuth = false) {
+      expectedAuthorization = serviceAuth ? 'Bearer fixture-service-token' : 'Bearer fixture-global-token'
       const buildDir = join(rootDir, buildName)
       let prepareTypes: ((payload: { references: { path: string }[] }) => Promise<void>) | undefined
       const nuxt = {
@@ -69,11 +89,9 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
             prepareTypes = callback
         },
       } as unknown as Nuxt
-      setupTypeGeneration(nuxt, {
+      setupTypeGeneration(nuxt, resolveModuleConfig({
         basePath: '/api/odx',
-        buildDir,
         mode: 'sdk',
-        rootDir,
         headers: { 'X-Catalog-Key': 'global-key', 'X-Tenant': 'fixture-tenant', 'Accept': 'application/json' },
         auth: { bearerToken: 'fixture-global-token' },
         services: [{
@@ -89,9 +107,9 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
             'Connection': 'x-build-hop',
             'X-Build-Hop': 'hop-fixture',
           },
-          auth: { bearerToken: 'fixture-service-token' },
+          ...(serviceAuth ? { auth: { bearerToken: 'fixture-service-token' } } : {}),
         }],
-      })
+      }, nuxt.options))
       if (!prepareTypes)
         throw new Error('Missing type preparation hook')
       const references: { path: string }[] = []
@@ -112,6 +130,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
 
     available = true
     await prepare('.nuxt')
+    await prepare('.nuxt', 'MinimalLocal', true)
     for (const cachePath of [
       join(rootDir, '.nuxt', 'odx', 'temp', 'Catalog.edmx'),
       join(rootDir, '.odx', 'cache', 'Catalog.edmx'),
@@ -167,7 +186,9 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     malformedXml = undefined
     available = false
     await prepare('.nuxt-offline', 'Renamed')
-    expect(requests).toEqual(Array.from({ length: 9 }).fill('GET /odata/$metadata?sap-client=100&sap-language=DE'))
+    expect(requests).toEqual(Array.from({ length: 10 }).fill('GET /odata/$metadata?sap-client=100&sap-language=DE'))
+    expect(authorizations).toEqual(Array.from({ length: 10 }, (_, index) =>
+      index === 2 ? 'Bearer fixture-service-token' : 'Bearer fixture-global-token'))
   }
   finally {
     await new Promise<void>((resolve) => {

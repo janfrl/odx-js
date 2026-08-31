@@ -1,7 +1,90 @@
 import type { ODataProxyConfig } from '@me-tools/odx-core'
 import process from 'node:process'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPublicODataConfig, resolveModuleConfig } from '../src/config'
+
+describe('private service authentication normalization', () => {
+  beforeEach(() => {
+    vi.stubEnv('VCAP_SERVICES', '')
+    for (const suffix of ['URL', 'AUTH_USERNAME', 'AUTH_PASSWORD', 'AUTH_BEARER_TOKEN'])
+      vi.stubEnv(`NUXT_ODATA_SERVICES_AUTHCATALOG_${suffix}`, undefined)
+    for (const suffix of ['USERNAME', 'PASSWORD', 'BEARER_TOKEN'])
+      vi.stubEnv(`NUXT_ODATA_AUTH_${suffix}`, undefined)
+  })
+
+  afterEach(() => vi.unstubAllEnvs())
+
+  it('preserves absent service auth so metadata can use global credentials', () => {
+    const config = resolveModuleConfig({
+      auth: { bearerToken: 'global-fixture-token' },
+      services: [{ name: 'AuthCatalog', url: 'https://example.test/odata' }],
+    }, { rootDir: '.', buildDir: '.nuxt' })
+
+    expect(config.services[0]?.auth).toBeUndefined()
+    expect(config.auth?.bearerToken).toBe('global-fixture-token')
+    expect(createPublicODataConfig(config)).not.toHaveProperty('auth')
+    expect(createPublicODataConfig(config).services?.[0]).not.toHaveProperty('auth')
+  })
+
+  it('preserves absent auth on environment-discovered services', () => {
+    vi.stubEnv('NUXT_ODATA_SERVICES_AUTHCATALOG_URL', 'https://example.test/odata')
+    const config = resolveModuleConfig({}, { rootDir: '.', buildDir: '.nuxt' })
+    expect(config.services.find(service => service.name === 'AUTHCATALOG')?.auth).toBeUndefined()
+  })
+
+  it('retains global environment auth without creating a service profile', () => {
+    vi.stubEnv('NUXT_ODATA_AUTH_USERNAME', 'global-environment-user')
+    vi.stubEnv('NUXT_ODATA_AUTH_PASSWORD', 'global-environment-password')
+    const config = resolveModuleConfig({
+      services: [{ name: 'AuthCatalog', url: 'https://example.test/odata' }],
+    }, { rootDir: '.', buildDir: '.nuxt' })
+    expect(config.services[0]?.auth).toBeUndefined()
+    expect(config.auth).toMatchObject({ username: 'global-environment-user', password: 'global-environment-password' })
+  })
+
+  it.each([false, true])('ignores empty service environment credentials (discovered: %s)', (discovered) => {
+    vi.stubEnv('NUXT_ODATA_SERVICES_AUTHCATALOG_URL', 'https://example.test/odata')
+    for (const suffix of ['USERNAME', 'PASSWORD', 'BEARER_TOKEN'])
+      vi.stubEnv(`NUXT_ODATA_SERVICES_AUTHCATALOG_AUTH_${suffix}`, '')
+    const config = resolveModuleConfig({
+      services: discovered ? [] : [{ name: 'AuthCatalog' }],
+    }, { rootDir: '.', buildDir: '.nuxt' })
+    expect(config.services[0]?.auth).toBeUndefined()
+  })
+
+  it.each([
+    {},
+    { username: 'service-user' },
+    { username: 'service-user', password: 'service-password' },
+    { bearerToken: 'service-token' },
+  ])('retains an explicitly selected service auth profile: %j', (auth) => {
+    const config = resolveModuleConfig({
+      auth: { bearerToken: 'global-token', password: 'global-password' },
+      services: [{ name: 'AuthCatalog', url: 'https://example.test/odata', auth }],
+    }, { rootDir: '.', buildDir: '.nuxt' })
+
+    expect(config.services[0]?.auth).toEqual({ username: undefined, password: undefined, bearerToken: undefined, ...auth })
+  })
+
+  it.each([false, true])('retains service environment credentials (discovered: %s)', (discovered) => {
+    vi.stubEnv('NUXT_ODATA_SERVICES_AUTHCATALOG_URL', 'https://example.test/odata')
+    vi.stubEnv('NUXT_ODATA_SERVICES_AUTHCATALOG_AUTH_BEARER_TOKEN', 'environment-token')
+    const config = resolveModuleConfig({
+      services: discovered ? [] : [{ name: 'AuthCatalog' }],
+    }, { rootDir: '.', buildDir: '.nuxt' })
+    expect(config.services[0]?.auth).toEqual({ username: undefined, password: undefined, bearerToken: 'environment-token' })
+  })
+
+  it.each([{}, { bearerToken: 'binding-token' }])('retains an explicit local binding override: %j', (auth) => {
+    vi.stubEnv('VCAP_SERVICES', JSON.stringify({
+      'user-provided': [{ name: 'odx-config', credentials: { services: { AuthCatalog: { auth } } } }],
+    }))
+    const config = resolveModuleConfig({
+      services: [{ name: 'AuthCatalog', url: 'https://example.test/odata' }],
+    }, { rootDir: '.', buildDir: '.nuxt' })
+    expect(config.services[0]?.auth).toEqual({ username: undefined, password: undefined, bearerToken: undefined, ...auth })
+  })
+})
 
 describe('public OData runtime configuration', () => {
   it('keeps proxied backend URLs private while preserving direct service URLs', () => {
