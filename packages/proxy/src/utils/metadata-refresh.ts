@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
 import process from 'node:process'
+import { StringDecoder } from 'node:string_decoder'
 import { getHeaders, getRequestURL } from 'h3'
 import { dirname, join, resolve } from 'pathe'
 import { resolveConnectivityRequest } from './connectivity-proxy'
@@ -224,15 +225,22 @@ async function fetchMetadata(
       : { headers }
 
     const request = client.get(url, options, (res) => {
+      res.on('error', reject)
+      res.once('aborted', () => reject(new Error('Metadata response ended before completion')))
+      res.once('close', () => {
+        if (!res.complete)
+          reject(new Error('Metadata response ended before completion'))
+      })
       if (res.statusCode && (res.statusCode < 200 || res.statusCode >= 300)) {
         reject(new Error(`Status: ${res.statusCode} ${res.statusMessage || ''}`.trim()))
         res.resume()
         return
       }
 
+      const decoder = new StringDecoder('utf8')
       let data = ''
-      res.on('data', chunk => data += chunk)
-      res.on('end', () => resolve(data))
+      res.on('data', chunk => data += decoder.write(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)))
+      res.on('end', () => resolve(data + decoder.end()))
     })
 
     request.on('error', reject)

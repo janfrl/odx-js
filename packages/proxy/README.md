@@ -16,6 +16,13 @@ Concurrent production refreshes for the same runtime metadata cache share one
 upstream request, preventing duplicate work and nondeterministic cache-state
 writes. A later explicit refresh always starts a fresh request.
 
+Runtime metadata downloads preserve UTF-8 characters across network chunks.
+Response-stream errors, aborted responses and premature closes fail the refresh
+instead of leaving it pending or storing a partial body. An existing cache may
+be returned with `stale: true` and a sanitized failure reason; without a cache,
+the refresh fails. A later explicit refresh can recover from the upstream
+failure. This runtime refresh does not regenerate deployed TypeScript SDKs.
+
 The exported Nitro module keeps its request plugins and their generated shared
 chunks inside the host bundle. This preserves Nitro's virtual runtime imports
 for both installed packages and workspace builds instead of loading the plugin

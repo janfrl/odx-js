@@ -197,13 +197,21 @@ function writeRuntimeMetadataCache(config: ODataProxyConfig, serviceName: string
   return paths
 }
 
-async function listenMetadataBackend(options: { delayMs?: number, xml?: string, status?: number } = {}) {
+async function listenMetadataBackend(options: { delayMs?: number, xml?: string, status?: number, stream?: 'split-utf8' | 'abort' } = {}) {
   const requests: Array<{ url?: string, headers: Record<string, string | string[] | undefined> }> = []
   const server = createServer((req, res) => {
     requests.push({ url: req.url, headers: req.headers })
     const respond = () => {
       res.statusCode = options.status ?? 200
       res.setHeader('content-type', 'application/xml')
+      if (options.stream) {
+        const bytes = Buffer.from(options.xml ?? metadataXml, 'utf8')
+        const split = options.stream === 'split-utf8' ? bytes.indexOf(Buffer.from('ö')) + 1 : 10
+        res.flushHeaders()
+        res.write(bytes.subarray(0, split))
+        setTimeout(() => options.stream === 'abort' ? res.destroy() : res.end(bytes.subarray(split)), 25)
+        return
+      }
       res.end(options.xml ?? metadataXml)
     }
     if (options.delayMs)
@@ -690,6 +698,58 @@ describe('production Explorer endpoint policy', () => {
     }
     finally {
       await server.close()
+    }
+  })
+
+  it('preserves UTF-8 labels across HTTP chunks in production metadata caches', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const xml = metadataXml.replace('<EntityType Name="Product">', '<EntityType Name="Product"><Annotation Term="com.sap.vocabularies.Common.v1.Label" String="Größe € 商品 🚚"/>')
+    const backend = await listenMetadataBackend({ xml, stream: 'split-utf8' })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const paths = getRuntimeMetadataCachePaths(config, 'RemoteService')
+    const server = await listenExplorerApi(config, { authenticated: true })
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })
+      expect(response).toMatchObject({ success: true, operation: 'metadata-refresh', generated: false, source: 'remote', stale: false, bytes: Buffer.byteLength(xml) })
+      expect(readFileSync(paths.tempFile, 'utf8')).toBe(xml)
+      expect(readFileSync(paths.persistentCacheFile, 'utf8')).toBe(xml)
+      expect(backend.requests).toHaveLength(1)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('recovers from an interrupted runtime metadata response without caching the partial body', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backendOptions: { stream?: 'abort' } = { stream: 'abort' }
+    const backend = await listenMetadataBackend(backendOptions)
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const paths = writeRuntimeMetadataCache(config, 'RemoteService', staleMetadataXml)
+    const server = await listenExplorerApi(config, { authenticated: true })
+    try {
+      const response: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })
+      expect(response).toMatchObject({
+        success: true,
+        generated: false,
+        source: 'cache',
+        stale: true,
+        staleReason: 'Metadata response ended before completion',
+      })
+      expect(readFileSync(paths.tempFile, 'utf8')).toBe(staleMetadataXml)
+      expect(readFileSync(paths.persistentCacheFile, 'utf8')).toBe(staleMetadataXml)
+      backendOptions.stream = undefined
+      const recovery: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })
+      expect(recovery).toMatchObject({ success: true, source: 'remote', stale: false, staleReason: null })
+      expect(readFileSync(paths.persistentCacheFile, 'utf8')).toBe(metadataXml)
+      expect(backend.requests).toHaveLength(2)
+    }
+    finally {
+      await server.close()
+      await backend.close()
     }
   })
 
