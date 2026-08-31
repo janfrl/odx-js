@@ -37,6 +37,12 @@ const metadataXml = `<?xml version="1.0" encoding="utf-8"?>
 </edmx:Edmx>`
 
 const staleMetadataXml = metadataXml.replace('Runtime', 'RuntimeCache').replace('Products', 'CachedProducts')
+const invalidMetadataBodies = [
+  'not-edmx',
+  '<edmx:Edmx>',
+  '<html><body>Edmx service is unavailable</body></html>',
+  '<Edmx xmlns="urn:not-odata"/>',
+]
 
 const securityContext = {
   getAttribute: (name: string) => {
@@ -786,10 +792,10 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
-  it('sanitizes production metadata refresh errors when no cache fallback exists', async () => {
+  it.each(invalidMetadataBodies)('sanitizes invalid metadata refresh errors without a cache: %s', async (invalidXml) => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()
-    const backend = await listenMetadataBackend({ xml: 'not-edmx' })
+    const backend = await listenMetadataBackend({ xml: invalidXml })
     const internalMetadataUrl = 'https://internal.sap.example.local/sap/opu/odata/sap/SENSITIVE/$metadata'
     const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata?upstream=${encodeURIComponent(internalMetadataUrl)}`)
     const paths = getRuntimeMetadataCachePaths(config, 'RemoteService')
@@ -857,10 +863,10 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
-  it('does not expose internal metadata URLs after stale fallback from invalid metadata', async () => {
+  it.each(invalidMetadataBodies)('preserves a good cache without exposing internal URLs after invalid metadata: %s', async (invalidXml) => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()
-    const backend = await listenMetadataBackend({ xml: 'not-edmx' })
+    const backend = await listenMetadataBackend({ xml: invalidXml })
     const internalMetadataUrl = 'https://internal.sap.example.local/sap/opu/odata/sap/SENSITIVE'
     const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata?upstream=${encodeURIComponent(internalMetadataUrl)}`)
     const persistentCacheFile = join(rootDir, '.odx', 'cache', 'RemoteService.edmx')
@@ -870,6 +876,9 @@ describe('production Explorer endpoint policy', () => {
 
     try {
       const refresh: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`)
+      expect(refresh).toMatchObject({ stale: true, source: 'cache' })
+      expect(readFileSync(persistentCacheFile, 'utf8')).toBe(staleMetadataXml)
+      expect(readFileSync(getRuntimeMetadataCachePaths(config, 'RemoteService').tempFile, 'utf8')).toBe(staleMetadataXml)
       const schema: any = await ofetch(`${server.url}/__odx__/schema?service=RemoteService`)
       const explorerConfig: any = await ofetch(`${server.url}/__odx__/config`)
       const serializedRuntimeResponses = JSON.stringify({ refresh, schema, explorerConfig })
@@ -897,6 +906,82 @@ describe('production Explorer endpoint policy', () => {
       })
       expect(serializedRuntimeResponses).not.toContain(internalMetadataUrl)
       expect(serializedRuntimeResponses).not.toContain('internal.sap.example.local')
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it.each([
+    {
+      name: 'V2',
+      xml: metadataXml.replace('Version="4.0"', 'Version="1.0"')
+        .replace('http://docs.oasis-open.org/odata/ns/edmx', 'http://schemas.microsoft.com/ado/2007/06/edmx')
+        .replace('http://docs.oasis-open.org/odata/ns/edm', 'http://schemas.microsoft.com/ado/2008/09/edm'),
+    },
+    {
+      name: 'V4 default-namespace',
+      xml: metadataXml.replaceAll('edmx:', '')
+        .replace('xmlns:edmx', 'xmlns'),
+    },
+  ])('accepts a parsed $name EDMX envelope without relying on a fixed prefix', async ({ xml }) => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ xml })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const paths = getRuntimeMetadataCachePaths(config, 'RemoteService')
+    const server = await listenExplorerApi(config, { authenticated: true })
+    try {
+      const refresh: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })
+      expect(refresh).toMatchObject({ success: true, source: 'remote', stale: false })
+      expect(readFileSync(paths.tempFile, 'utf8')).toBe(xml)
+      expect(readFileSync(paths.persistentCacheFile, 'utf8')).toBe(xml)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it.each(['temporary', 'persistent'])('rejects a corrupted %s cache when the upstream is unavailable', async (cacheKind) => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ status: 503, xml: 'unavailable' })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const paths = getRuntimeMetadataCachePaths(config, 'RemoteService')
+    const cachePath = cacheKind === 'temporary' ? paths.tempFile : paths.persistentCacheFile
+    mkdirSync(join(cachePath, '..'), { recursive: true })
+    writeFileSync(cachePath, '<edmx:Edmx>')
+    const server = await listenExplorerApi(config, { authenticated: true })
+    try {
+      await expect(ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })).rejects.toMatchObject({ status: 500 })
+      expect(readFileSync(cachePath, 'utf8')).toBe('<edmx:Edmx>')
+      expect(existsSync(paths.stateFile)).toBe(false)
+      if (cacheKind === 'persistent')
+        expect(existsSync(paths.tempFile)).toBe(false)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it('recovers from a corrupted temporary cache using the valid persistent copy', async () => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend({ status: 503, xml: 'unavailable' })
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}/odata`)
+    const paths = writeRuntimeMetadataCache(config, 'RemoteService', staleMetadataXml)
+    mkdirSync(join(paths.tempFile, '..'), { recursive: true })
+    writeFileSync(paths.tempFile, '<edmx:Edmx>')
+    const server = await listenExplorerApi(config, { authenticated: true })
+    try {
+      const refresh: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })
+      expect(refresh).toMatchObject({ success: true, source: 'cache', stale: true })
+      expect(refresh.staleReason).toContain('Status: 503')
+      expect(readFileSync(paths.tempFile, 'utf8')).toBe(staleMetadataXml)
+      expect(readFileSync(paths.persistentCacheFile, 'utf8')).toBe(staleMetadataXml)
     }
     finally {
       await server.close()

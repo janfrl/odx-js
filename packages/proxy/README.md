@@ -23,6 +23,16 @@ be returned with `stale: true` and a sanitized failure reason; without a cache,
 the refresh fails. A later explicit refresh can recover from the upstream
 failure. This runtime refresh does not regenerate deployed TypeScript SDKs.
 
+Remote cache updates require XML that the shared CSDL parser can read and an
+`Edmx` root in the OData V2 or V4 EDMX namespace; prefixes are not significant.
+Malformed XML, HTML error pages and foreign envelopes cannot replace a good
+cache even when the upstream returns HTTP 200. Cache fallback checks the
+temporary copy first, then the persistent copy, using the same parser and
+envelope checks. A damaged temporary copy can be restored from a valid
+persistent copy. If neither is valid, refresh fails without reporting corrupt
+metadata as a successful stale snapshot. This validates XML and its envelope,
+not all vocabulary references or the upstream service's current availability.
+
 The exported Nitro module keeps its request plugins and their generated shared
 chunks inside the host bundle. This preserves Nitro's virtual runtime imports
 for both installed packages and workspace builds instead of loading the plugin

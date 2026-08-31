@@ -7,6 +7,7 @@ import http from 'node:http'
 import https from 'node:https'
 import process from 'node:process'
 import { StringDecoder } from 'node:string_decoder'
+import { parseCsdl } from '@me-tools/odx-metadata'
 import { getHeaders, getRequestURL } from 'h3'
 import { dirname, join, resolve } from 'pathe'
 import { resolveConnectivityRequest } from './connectivity-proxy'
@@ -41,6 +42,10 @@ export interface RuntimeMetadataSnapshot {
 }
 
 const METADATA_ACCEPT_HEADER = 'application/xml, text/xml, */*'
+const EDMX_NAMESPACES = new Set([
+  'http://docs.oasis-open.org/odata/ns/edmx',
+  'http://schemas.microsoft.com/ado/2007/06/edmx',
+])
 const REQUEST_TIMEOUT_MS = 15_000
 const RE_TRAILING_SLASHES = /\/+$/
 const RE_HTTP_URL = /https?:\/\/[^\s)"']+/gi
@@ -114,11 +119,6 @@ function readMetadataState(stateFile: string): Partial<Omit<RuntimeMetadataRefre
   }
 }
 
-function restorePersistentCache(tempFile: string, persistentCacheFile: string): void {
-  ensureParentDir(tempFile)
-  fs.copyFileSync(persistentCacheFile, tempFile)
-}
-
 function metadataDigest(xml: string): { hash: string, bytes: number } {
   return {
     hash: createHash('sha256').update(xml).digest('hex'),
@@ -127,9 +127,29 @@ function metadataDigest(xml: string): { hash: string, bytes: number } {
 }
 
 function assertValidMetadata(xml: string, metadataUrl: string): void {
-  if (!xml.trim() || !xml.includes('Edmx')) {
+  const root = parseCsdl(xml, { format: 'xml' }).document?.root
+  if (root?.kind !== 'element' || root.name.local !== 'Edmx' || !EDMX_NAMESPACES.has(root.name.namespace ?? '')) {
     throw new Error(`Received invalid or empty metadata from ${metadataUrl}`)
   }
+}
+
+function readValidMetadataCache(paths: string[]): { path: string, xml: string } | null {
+  let failure: unknown
+  for (const path of paths) {
+    if (!fs.existsSync(path))
+      continue
+    try {
+      const xml = fs.readFileSync(path, 'utf-8')
+      assertValidMetadata(xml, path)
+      return { path, xml }
+    }
+    catch (error) {
+      failure = error
+    }
+  }
+  if (failure)
+    throw failure
+  return null
 }
 
 export function sanitizeMetadataFailureReason(error: unknown): string {
@@ -406,22 +426,18 @@ async function refreshRemoteRuntimeMetadata(event: H3Event, config: ODataProxyCo
     return result
   }
   catch (err: any) {
-    const fallback = fs.existsSync(tempFile)
-      ? tempFile
-      : fs.existsSync(persistentCacheFile)
-        ? persistentCacheFile
-        : null
+    const fallback = readValidMetadataCache([tempFile, persistentCacheFile])
 
     if (!fallback) {
       throw err
     }
 
-    if (fallback === persistentCacheFile) {
-      restorePersistentCache(tempFile, persistentCacheFile)
+    if (fallback.path === persistentCacheFile) {
+      ensureParentDir(tempFile)
+      fs.writeFileSync(tempFile, fallback.xml)
     }
 
-    const xml = fs.readFileSync(tempFile, 'utf-8')
-    const result = createMetadataResult(service, tempFile, xml, 'cache', true, sanitizeMetadataFailureReason(err))
+    const result = createMetadataResult(service, tempFile, fallback.xml, 'cache', true, sanitizeMetadataFailureReason(err))
     writeMetadataState(stateFile, result)
     return result
   }
