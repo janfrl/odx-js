@@ -20,6 +20,7 @@ const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
 const RE_PATH_SEPARATOR = /[/\\]/
 const RE_UNSAFE_MODEL_FILE = /[/\\:]/
+const RE_TRAILING_SLASHES = /\/+$/
 const SDK_CACHE_VERSION = 1
 
 function resolveOData2TsCliPath(): string {
@@ -109,7 +110,10 @@ async function ensureGeneratedODataTypes(inputPath: string, outDir: string, temp
  * Downloads metadata from a remote OData service.
  */
 export async function downloadMetadata(svc: ODataServiceConfig, config: ODataProxyConfig): Promise<string> {
-  const metadataUrl = svc.url!.endsWith('/') ? `${svc.url}$metadata` : `${svc.url}/$metadata`
+  const parsedUrl = new URL(svc.url!)
+  parsedUrl.pathname = `${parsedUrl.pathname.replace(RE_TRAILING_SLASHES, '')}/$metadata`
+  parsedUrl.hash = ''
+  const metadataUrl = parsedUrl.toString()
   const auth = svc.auth || config.auth || {}
   const headers: Record<string, string> = {}
 

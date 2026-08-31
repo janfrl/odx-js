@@ -206,8 +206,11 @@ function resolveRelativeUrl(event: H3Event, value: string): string {
 }
 
 function appendMetadataPath(baseUrl: string, serviceName?: string): string {
-  const normalized = baseUrl.replace(RE_TRAILING_SLASHES, '')
-  return `${normalized}${serviceName ? `/${serviceName}` : ''}/$metadata`
+  const url = new URL(baseUrl)
+  const normalizedPath = url.pathname.replace(RE_TRAILING_SLASHES, '')
+  url.pathname = `${normalizedPath}${serviceName ? `/${serviceName}` : ''}/$metadata`
+  url.hash = ''
+  return url.toString()
 }
 
 function resolveConfiguredAuthHeader(service: ODataServiceConfig, config: ODataProxyConfig): string | undefined {

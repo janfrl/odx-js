@@ -23,6 +23,12 @@ be returned with `stale: true` and a sanitized failure reason; without a cache,
 the refresh fails. A later explicit refresh can recover from the upstream
 failure. This runtime refresh does not regenerate deployed TypeScript SDKs.
 
+Runtime metadata refresh appends `/$metadata` to the resolved URL path before
+its query parameters. A configured or Destination-provided service URL such as
+`/odata?sap-client=100` therefore requests `/odata/$metadata?sap-client=100`.
+Encoded query values are preserved and URL fragments are not sent upstream.
+This URL handling does not change destination authentication or header policy.
+
 Remote cache updates require XML that the shared CSDL parser can read and an
 `Edmx` root in the OData V2 or V4 EDMX namespace; prefixes are not significant.
 Malformed XML, HTML error pages and foreign envelopes cannot replace a good

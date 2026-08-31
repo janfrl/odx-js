@@ -343,6 +343,24 @@ describe('type Generation Logic', () => {
   })
 
   describe('downloadMetadata', () => {
+    it.each([
+      ['https://example.com/odata?sap-client=100', 'https://example.com/odata/$metadata?sap-client=100'],
+      ['https://example.com/odata/?sap-client=100', 'https://example.com/odata/$metadata?sap-client=100'],
+      ['https://example.com/odata%20catalog?tenant=A%2FB&sap-client=100', 'https://example.com/odata%20catalog/$metadata?tenant=A%2FB&sap-client=100'],
+      ['https://example.com/odata?sap-client=100#inspection', 'https://example.com/odata/$metadata?sap-client=100'],
+    ])('appends the metadata path before service query parameters: %s', async (url, expectedUrl) => {
+      vi.mocked(https.get).mockImplementation((_url, _options, callback) => {
+        const response = new EventEmitter() as any
+        response.statusCode = 200
+        callback!(response)
+        response.emit('data', '<metadata/>')
+        response.emit('end')
+        return createMockRequest()
+      })
+      await expect(downloadMetadata({ name: 'Catalog', url }, {} as any)).resolves.toBe('<metadata/>')
+      expect(vi.mocked(https.get).mock.calls[0]?.[0]).toBe(expectedUrl)
+    })
+
     it.each(['Größe', 'Preis €', '商品', 'Delivery 🚚'])('preserves UTF-8 metadata split at every byte: %s', async (label) => {
       const response = new EventEmitter() as any
       response.statusCode = 200

@@ -653,6 +653,11 @@ silently omitted. Restore service access and rerun preparation. Cached metadata
 is an offline fallback, not evidence that the remote service is currently
 available or that its schema has not changed.
 
+Metadata requests append `/$metadata` to the service URL path while retaining
+configured query parameters. For example, `/odata?sap-client=100` requests
+`/odata/$metadata?sap-client=100`. Encoded path/query values remain encoded,
+and URL fragments are omitted from the request.
+
 Downloaded metadata is validated before either cache copy is replaced. An HTTP
 success containing malformed CSDL fails preparation and preserves the last
 valid cache; it does not silently switch to the old schema. Cache-write errors

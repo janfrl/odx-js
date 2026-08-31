@@ -45,7 +45,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     const address = server.address()
     if (!address || typeof address === 'string')
       throw new Error('Expected a loopback TCP server')
-    const serviceUrl = `http://127.0.0.1:${address.port}/odata`
+    const serviceUrl = `http://127.0.0.1:${address.port}/odata?sap-client=100&sap-language=DE`
 
     async function prepare(buildName: string, modelName = 'MinimalLocal') {
       const buildDir = join(rootDir, buildName)
@@ -135,7 +135,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     }
     available = false
     await prepare('.nuxt-offline', 'Renamed')
-    expect(requests).toEqual(Array.from({ length: 7 }).fill('GET /odata/$metadata'))
+    expect(requests).toEqual(Array.from({ length: 7 }).fill('GET /odata/$metadata?sap-client=100&sap-language=DE'))
   }
   finally {
     await new Promise<void>((resolve) => {

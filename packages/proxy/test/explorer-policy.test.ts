@@ -506,19 +506,41 @@ describe('production Explorer endpoint policy', () => {
     }
   })
 
-  it('refreshes production runtime metadata through BTP destination resolution', async () => {
+  it.each([
+    ['/odata?sap-client=100', '/odata/$metadata?sap-client=100'],
+    ['/odata/?sap-client=100', '/odata/$metadata?sap-client=100'],
+    ['/odata?tenant=A%2FB&sap-client=100#inspection', '/odata/$metadata?tenant=A%2FB&sap-client=100'],
+  ])('preserves configured service queries during runtime metadata refresh: %s', async (servicePath, expectedPath) => {
+    process.env.NODE_ENV = 'production'
+    const rootDir = createTempRoot()
+    const backend = await listenMetadataBackend()
+    const config = createRuntimeMetadataConfig(rootDir, `${backend.url}${servicePath}`)
+    const server = await listenExplorerApi(config, { authenticated: true })
+    try {
+      const refresh: any = await ofetch(`${server.url}/__odx__/generate?service=RemoteService`, { retry: 0 })
+      expect(refresh).toMatchObject({ success: true, source: 'remote', stale: false })
+      expect(backend.requests).toHaveLength(1)
+      expect(backend.requests[0]?.url).toBe(expectedPath)
+    }
+    finally {
+      await server.close()
+      await backend.close()
+    }
+  })
+
+  it.each(['', '?sap-client=100&sap-language=DE'])('refreshes production runtime metadata through BTP destination resolution: %s', async (query) => {
     process.env.NODE_ENV = 'production'
     const rootDir = createTempRoot()
     const backend = await listenMetadataBackend()
     const btp = await listenBtpDestinationService({
-      destinationUrl: `${backend.url}/sap/opu/odata/sap/DESTINATION_088`,
+      destinationUrl: `${backend.url}/sap/opu/odata/sap/DESTINATION_088${query}`,
     })
     process.env.VCAP_SERVICES = JSON.stringify({
       destination: [{ credentials: { uri: btp.url } }],
       xsuaa: [{ credentials: { url: btp.url, clientid: 'destination-client', clientsecret: 'destination-secret' } }],
     })
     const generator = vi.fn()
-    const config = createDestinationMetadataConfig(rootDir, 'DestinationSuccess088')
+    const config = createDestinationMetadataConfig(rootDir, query ? 'DestinationQuerySuccess088' : 'DestinationSuccess088')
     const server = await listenExplorerApi(config, { authenticated: true, generator })
 
     try {
@@ -545,7 +567,7 @@ describe('production Explorer endpoint policy', () => {
       expect(backend.requests).toHaveLength(1)
 
       const metadataRequest = backend.requests[0]!
-      expect(metadataRequest.url).toBe('/sap/opu/odata/sap/DESTINATION_088/$metadata')
+      expect(metadataRequest.url).toBe(`/sap/opu/odata/sap/DESTINATION_088/$metadata${query}`)
       expect(metadataRequest.headers.accept).toBe('application/xml, text/xml, */*')
       expect(metadataRequest.headers.authorization).toBe('Bearer destination-auth-token-088')
       expect(metadataRequest.headers.authorization).not.toBe('Bearer incoming-user-token-088')
