@@ -123,6 +123,15 @@ Incoming `Authorization` is forwarded only when `forwardAuthHeader` is not
 `false`. Authentication resolved from service config or a BTP destination
 always overrides the final `Authorization` header.
 
+Streaming enforces that same cleaned header set at the final fetch dispatch.
+H3's convenience proxy merges incoming headers by default, so merely omitting a
+cookie, disabled Authorization or hop-by-hop header from proxy options is not a
+security boundary. ODX replaces those merged headers before the backend fetch,
+including when using the Connectivity transport. Explicit backend cookies,
+computed auth and CSRF session headers remain available; original browser
+credentials are not restored. This does not change host authentication, XSUAA
+scopes or AppRouter access rules.
+
 Production BTP destination resolution fails closed. Missing Destination or
 XSUAA bindings, an unavailable Destination service, and invalid destination
 URLs reject the proxy request instead of routing it to the local SAP mock

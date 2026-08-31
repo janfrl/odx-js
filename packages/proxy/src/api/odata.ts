@@ -286,7 +286,12 @@ export default defineEventHandler(async (event): Promise<any> => {
     return proxyRequest(event, targetUrl, {
       headers: finalHeaders,
       cookieDomainRewrite: { '*': '' },
-      fetch: connectivityRequest.fetch,
+      // H3 merges original request headers into proxyRequest defaults. Replace
+      // that merge at dispatch so removed credentials cannot be reintroduced.
+      fetch: (input, init) => (connectivityRequest.fetch ?? globalThis.fetch)(input, {
+        ...init,
+        headers: finalHeaders,
+      }),
       fetchOptions: {
         ...streamFetchOptions,
         dispatcher: connectivityRequest.dispatcher,

@@ -44,6 +44,16 @@ chunks inside the host bundle. This preserves Nitro's virtual runtime imports
 for both installed packages and workspace builds instead of loading the plugin
 files as standalone Node modules.
 
+## Backend header isolation
+
+Buffered and streamed requests use the same filtered backend headers. Streaming
+replaces H3's incoming-header merge at the final transport dispatch so removed
+browser cookies, forwarding metadata and hop-by-hop credentials cannot reappear.
+`forwardAuthHeader: false` excludes incoming Authorization; configured or resolved
+backend auth can still set its own Authorization. Explicit backend cookies, managed auth,
+CSRF session headers and Connectivity dispatch remain supported; backend
+Set-Cookie is not returned to the browser.
+
 ## SAP BTP On-Premise destinations
 
 Destinations with `ProxyType=OnPremise` are sent through the bound SAP BTP
