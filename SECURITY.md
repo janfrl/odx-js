@@ -251,9 +251,10 @@ Logs may include:
 - request headers
 - proxy trace details
 
-`DevToolsTracer` disables logging when `NODE_ENV=production`. Preserve that
-behavior. Do not add production payload logging without a documented security
-review.
+`DevToolsTracer` disables memory-only logging when `NODE_ENV=production`.
+Explicit persistent SQL storage is the exception described below; production
+payload bodies remain omitted. Do not add production payload logging without
+a documented security review.
 
 Operational telemetry uses a separate allowlisted summary and must never copy
 request context, URLs, query literals, entity keys, headers, bodies, backend
@@ -272,6 +273,21 @@ credential/session material, including:
 - API keys
 - SAP session tokens
 - CSRF/XSRF tokens
+
+New and updated log records also redact URL userinfo and known credential
+query/fragment values in request/target URLs, trace messages and nested trace
+strings. Credential-name matching handles percent encoding, case, camelCase
+and underscores; undecodable parameter names have their values redacted.
+Ordinary OData query bytes remain available for diagnostics. This transforms
+only log copies, not backend URLs or requests, and still applies when payload
+logging is disabled. Custom stores must honor the same sanitization boundary.
+
+This is not general-purpose data-loss prevention: business query literals,
+enabled payload previews and credentials hidden under unknown parameter names
+may remain sensitive. Existing SQL rows and exported logs are not retroactively
+rewritten or deleted. Review previously retained diagnostics under the host's
+retention and credential-response policy; do not treat upgrading as erasing
+earlier exposure.
 
 Development logs must also limit or truncate large request and response bodies
 before they are displayed, retained, exported, or copied into fixtures. The

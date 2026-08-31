@@ -151,6 +151,19 @@ association, and version contracts. Callers parse XML or JSON CSDL through
 `parseCsdl` first; core no longer exposes a second regex- or file-based EDMX
 parser.
 
+## Traffic-log credential handling
+
+`sanitizeODataLog` and the default log store redact sensitive headers, URL
+userinfo and known credential query/fragment parameters before new or updated
+records are stored. The same rule covers URLs embedded in trace messages and
+nested trace strings, even when payload storage is disabled. Ordinary OData
+query bytes remain unchanged, and the original request/log input is not mutated.
+
+This is diagnostic redaction, not transport rewriting or general-purpose secret
+discovery. Unknown credential names and business data still require host policy;
+existing SQL rows and exported logs are not automatically cleaned. Custom
+`OdxLogStore` implementations must retain this boundary before persistence.
+
 ## Installation
 
 ```bash

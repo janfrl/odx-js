@@ -624,8 +624,13 @@ Core log helpers include the `OdxLogStore` interface, `OdxMemoryLogStore`,
 `setOdxLogStore`, `getOdxLogStore`, `resetOdxLogStore`, `addODataLog`,
 `updateODataLog`, `getODataLogs`, `getODataLog`, `clearODataLogs`,
 `redactSensitiveHeaders`, `boundLogPayload`, and `sanitizeODataLog`. Store
-implementations must redact sensitive headers and bound or omit payloads before
-entries are persisted.
+implementations must redact sensitive headers and URL credentials and bound or
+omit payloads before entries are persisted. `sanitizeODataLog` redacts URL
+userinfo and known credential query/fragment values in `url`, `targetUrl`,
+trace messages and nested trace strings, including with `storePayloads: false`.
+Ordinary query bytes and the transport input remain unchanged. This is not
+general-purpose secret discovery or retroactive cleanup of existing SQL rows
+and exports; see [Logging and telemetry](./SECURITY.md#logging-and-telemetry).
 
 The Nitro module is available as `@me-tools/odx-proxy/nitro`.
 

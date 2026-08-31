@@ -78,6 +78,14 @@ export interface OdxLogStore {
 const DEFAULT_MAX_LOGS = 100
 const DEFAULT_MAX_PAYLOAD_BYTES = 32 * 1024
 const REDACTED_HEADER_VALUE = '[Redacted]'
+// Start at the delimiter: searching an unbounded scheme from every character
+// would repeatedly rescan long ordinary trace messages that contain no URL.
+const RE_URL_USER_INFO = /((?::|^|[\s="'(<])\/\/)[^/?#]*@/g
+const RE_URL_PARAMETER = /([?&#])([^=?&#]+)=[^&#]*/g
+const RE_CAMEL_CASE_BOUNDARY = /([a-z\d])([A-Z])/g
+const RE_URL_CREDENTIAL_NAME = /(?:^|-)(?:password|passwd|pwd|signature|sig|credential|jwt|bearer|private-key|client-assertion)(?:$|-)/i
+const RE_QUERY_PLUS = /\+/g
+const RE_QUERY_UNDERSCORE = /_/g
 
 const SENSITIVE_HEADER_PATTERNS = [
   /^authorization$/i,
@@ -165,6 +173,27 @@ function isSensitiveHeader(name: string): boolean {
   return SENSITIVE_HEADER_PATTERNS.some(pattern => pattern.test(name))
 }
 
+function isSensitiveUrlParameter(name: string): boolean {
+  try {
+    const normalized = decodeURIComponent(name.replace(RE_QUERY_PLUS, ' '))
+      .replace(RE_CAMEL_CASE_BOUNDARY, '$1-$2')
+      .replace(RE_QUERY_UNDERSCORE, '-')
+    return isSensitiveHeader(normalized) || RE_URL_CREDENTIAL_NAME.test(normalized)
+  }
+  catch {
+    // An undecodable name cannot safely establish that its value is public.
+    return true
+  }
+}
+
+function redactUrlCredentials(value: string): string {
+  // Work on a diagnostic copy, without URL reserialization changing ordinary
+  // OData query bytes. Never apply this redaction to the transport request.
+  return value.replace(RE_URL_USER_INFO, `$1${REDACTED_HEADER_VALUE}@`)
+    .replace(RE_URL_PARAMETER, (entry, separator: string, name: string) =>
+      isSensitiveUrlParameter(name) ? `${separator}${name}=${REDACTED_HEADER_VALUE}` : entry)
+}
+
 function isTraceHeaderValueKey(key: string): boolean {
   return key === 'actual' || key === 'deniedValue' || key === 'value'
 }
@@ -177,6 +206,9 @@ function getTraceHeaderName(details: Record<string, any>): string | undefined {
 function sanitizeProxyTraceDetails(details: any): any {
   if (details === undefined || details === null)
     return details
+
+  if (typeof details === 'string')
+    return redactUrlCredentials(details)
 
   if (Array.isArray(details))
     return details.map(sanitizeProxyTraceDetails)
@@ -233,11 +265,14 @@ export function boundLogPayload(payload: any, policy: OdxLogPayloadPolicy = {}):
 export function sanitizeODataLog(log: ODataLog, policy: OdxLogPayloadPolicy = {}): ODataLog {
   return {
     ...cloneSerializable(log),
+    url: redactUrlCredentials(log.url),
+    targetUrl: log.targetUrl === undefined ? undefined : redactUrlCredentials(log.targetUrl),
     requestHeaders: log.requestHeaders ? redactSensitiveHeaders(log.requestHeaders) : undefined,
     requestBody: boundLogPayload(log.requestBody, policy),
     responseBody: boundLogPayload(log.responseBody, policy),
     proxyTrace: log.proxyTrace?.map(entry => ({
       ...cloneSerializable(entry),
+      message: redactUrlCredentials(entry.message),
       details: boundLogPayload(sanitizeProxyTraceDetails(entry.details), policy),
     })),
   }

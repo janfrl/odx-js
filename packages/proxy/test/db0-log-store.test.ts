@@ -237,6 +237,32 @@ describe('db0-backed Explorer log store', () => {
     expect((await getODataLogs()).map(log => log.id)).toEqual(['pending-b'])
   })
 
+  it('redacts URL credentials before SQL writes and production log responses without payload storage', async () => {
+    process.env.NODE_ENV = 'production'
+    const config = createConfig('url-credentials')
+    const db = await configureFakeStore(config)
+    const url = '/api/odx/S/Products?access_token=fixture-incoming&$top=1'
+    const targetUrl = 'https://fixture-user:fixture-password@backend.example/Products?clientSecret=fixture-target&$top=1'
+    await addODataLog({
+      id: 'url-log',
+      timestamp: 1,
+      method: 'GET',
+      service: 'S',
+      url,
+      targetUrl,
+      proxyTrace: [{ timestamp: 1, duration: 0, label: 'Proxy', message: `Forwarding request to: ${targetUrl}` }],
+    }, 100, { storePayloads: false })
+    await updateODataLog('url-log', { targetUrl: `${targetUrl}&password=fixture-update` }, { storePayloads: false })
+    const stored = db.rows.get('url-log')?.data ?? ''
+    expect(stored).not.toMatch(/fixture-(?:incoming|user|password|target|update)/)
+    expect(stored).toContain('access_token=[Redacted]&$top=1')
+    expect(stored).toContain('password=[Redacted]')
+    const logs: any = await logsHandler(createLogsEvent('GET', config))
+    expect(logs).toHaveLength(1)
+    expect(JSON.stringify(logs)).not.toMatch(/fixture-(?:incoming|user|password|target|update)/)
+    expect(logs[0]?.targetUrl).toBe('https://[Redacted]@backend.example/Products?clientSecret=[Redacted]&$top=1&password=[Redacted]')
+  })
+
   it('allows production Explorer list and clear when persistent storage is configured', async () => {
     process.env.NODE_ENV = 'production'
     const config = createConfig('production-api')
