@@ -314,7 +314,12 @@ TypeScript SDK generation is driven by `packages/nuxt/src/generate.ts`:
    metadata is read from the configured EDMX file.
 3. Remote EDMX files are cached in `.nuxt/odx/temp` and mirrored into
    `.odx/cache` so metadata can survive `.nuxt` cleanup.
-4. `odata2ts` generates models into `.nuxt/odx-types/<service>`.
+4. A content hash binds SDK reuse to the metadata, installed `odata2ts`
+   version and generation-cache format. The recorded model must exist and
+   match its own content hash. Otherwise `odata2ts` generates into an owned
+   temporary directory, then updates `.nuxt/odx-types/<service>` and its
+   generation stamp only after successful generation. Unrelated files are
+   preserved; the recorded current model filename owns registry imports.
 5. ODX writes an `index.d.ts` file that augments `ODataServiceRegistry`.
 6. Nuxt receives that generated declaration as a type reference.
 

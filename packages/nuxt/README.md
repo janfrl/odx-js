@@ -659,3 +659,17 @@ valid cache; it does not silently switch to the old schema. Cache-write errors
 also fail preparation instead of being reported as transport fallback. After
 a later transport outage, the preserved cache can still support offline
 preparation. This does not validate server availability or freshness.
+
+SDK reuse is separate from the EDMX offline cache. A generated service model
+is reused only when its metadata content, installed `odata2ts` version and
+generation-cache format match, and the recorded model file still has its
+expected content hash. Changed metadata, missing or damaged models, and legacy
+output without a valid `.odx-generation.json` stamp trigger regeneration.
+Generation runs in a new temporary directory first; generator failure leaves
+the previous published model and registry intact and still fails preparation.
+Successful generation updates the service output and records the current model
+filename, including namespace changes, before publishing the new registry.
+Unrelated or obsolete files are not recursively deleted. Generated model files
+are generator-owned and should not be edited by hand. This is not an atomic
+filesystem transaction; write errors still fail preparation. Runtime Explorer
+metadata refresh does not invoke this build-time workflow.

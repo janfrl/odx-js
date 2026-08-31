@@ -40,6 +40,16 @@ function createMockRequest() {
 function createNuxtTypeGenerationHarness(serviceName: string, metadataPath = minimalMetadataPath) {
   const rootDir = createTempRoot()
   const buildDir = join(rootDir, '.nuxt')
+  vi.mocked(execFileSync).mockImplementation((_command, args) => {
+    if (!Array.isArray(args))
+      throw new Error('Expected SDK generator arguments')
+    const output = args[args.indexOf('--output') + 1]
+    if (typeof output !== 'string' || !output.startsWith(join(buildDir, 'odx', 'temp')))
+      throw new Error('Expected an owned SDK staging directory')
+    mkdirSync(output, { recursive: true })
+    writeFileSync(join(output, 'MinimalLocalModel.ts'), 'export interface Product { ID: string }')
+    return ''
+  })
   let prepareTypesHook: ((payload: { references: { path: string }[] }) => Promise<void>) | undefined
 
   const nuxt = {
@@ -79,6 +89,7 @@ function createNuxtTypeGenerationHarness(serviceName: string, metadataPath = min
 describe('type Generation Logic', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(execFileSync).mockReset()
   })
 
   afterEach(() => {
@@ -216,6 +227,79 @@ describe('type Generation Logic', () => {
       expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
     })
 
+    it('reuses unchanged verified SDK output and preserves unrelated files', async () => {
+      const harness = createNuxtTypeGenerationHarness('Catalog')
+      await harness.runPrepareTypes()
+      const outDir = join(harness.buildDir, 'odx-types', 'Catalog')
+      writeFileSync(join(outDir, 'consumer-note.txt'), 'keep this unrelated artifact')
+      await harness.runPrepareTypes()
+
+      expect(execFileSync).toHaveBeenCalledOnce()
+      expect(readFileSync(join(outDir, 'consumer-note.txt'), 'utf8')).toBe('keep this unrelated artifact')
+      expect(fs.readdirSync(join(harness.buildDir, 'odx', 'temp'))).toEqual([])
+    })
+
+    it.each(['missing-model', 'changed-model', 'invalid-manifest', 'old-version', 'unsafe-model-path'])(
+      'regenerates an unverifiable SDK cache: %s',
+      async (condition) => {
+        const harness = createNuxtTypeGenerationHarness('Catalog')
+        await harness.runPrepareTypes()
+        const outDir = join(harness.buildDir, 'odx-types', 'Catalog')
+        const modelPath = join(outDir, 'MinimalLocalModel.ts')
+        const cachePath = join(outDir, '.odx-generation.json')
+        const cache = JSON.parse(readFileSync(cachePath, 'utf8'))
+        if (condition === 'missing-model')
+          fs.unlinkSync(modelPath)
+        else if (condition === 'changed-model')
+          writeFileSync(modelPath, 'incomplete generation')
+        else if (condition === 'invalid-manifest')
+          writeFileSync(cachePath, '{')
+        else
+          writeFileSync(cachePath, JSON.stringify({ ...cache, ...(condition === 'old-version' ? { version: 0 } : { modelFile: '../OtherModel.ts' }) }))
+
+        await harness.runPrepareTypes()
+        expect(execFileSync).toHaveBeenCalledTimes(2)
+        expect(readFileSync(modelPath, 'utf8')).toContain('export interface Product')
+        expect(fs.readdirSync(join(harness.buildDir, 'odx', 'temp'))).toEqual([])
+      },
+    )
+
+    it('preserves the previous SDK and registry after failed regeneration and retries changed metadata', async () => {
+      const root = createTempRoot()
+      const metadataPath = join(root, 'catalog.edmx')
+      const xml = readFileSync(minimalMetadataPath, 'utf8')
+      writeFileSync(metadataPath, xml)
+      const harness = createNuxtTypeGenerationHarness('Catalog', metadataPath)
+      await harness.runPrepareTypes()
+      const outDir = join(harness.buildDir, 'odx-types', 'Catalog')
+      const cachePath = join(outDir, '.odx-generation.json')
+      const previousCache = readFileSync(cachePath, 'utf8')
+      const registryPath = join(harness.buildDir, 'odx-types', 'index.d.ts')
+      const previousRegistry = readFileSync(registryPath, 'utf8')
+      writeFileSync(metadataPath, xml.replace('Name="Name"', 'Name="Label"'))
+      vi.mocked(execFileSync).mockImplementationOnce((_command, args) => {
+        if (!Array.isArray(args))
+          throw new Error('Expected SDK generator arguments')
+        const output = args[args.indexOf('--output') + 1]
+        if (typeof output !== 'string' || !output.startsWith(join(harness.buildDir, 'odx', 'temp')))
+          throw new Error('Expected an owned SDK staging directory')
+        writeFileSync(join(output, 'MinimalLocalModel.ts'), 'partial failed model')
+        throw new Error('Generator failed')
+      })
+
+      await expect(harness.runPrepareTypes()).rejects.toThrow('Generator failed')
+      expect(readFileSync(cachePath, 'utf8')).toBe(previousCache)
+      expect(readFileSync(registryPath, 'utf8')).toBe(previousRegistry)
+      expect(readFileSync(join(outDir, 'MinimalLocalModel.ts'), 'utf8')).toContain('export interface Product')
+      expect(fs.readdirSync(join(harness.buildDir, 'odx', 'temp'))).toEqual([])
+
+      await harness.runPrepareTypes()
+      expect(execFileSync).toHaveBeenCalledTimes(3)
+      expect(readFileSync(cachePath, 'utf8')).not.toBe(previousCache)
+      await harness.runPrepareTypes()
+      expect(execFileSync).toHaveBeenCalledTimes(3)
+    })
+
     it.each(['Sales/Order', 'Sales\\Order'])(
       'rejects service name %s before generating output from the service name',
       async (serviceName) => {
@@ -251,7 +335,7 @@ describe('type Generation Logic', () => {
         process.execPath,
         expect.arrayContaining([
           '--output',
-          join(harness.buildDir, 'odx-types', 'Sales-Order'),
+          expect.stringContaining(join(harness.buildDir, 'odx', 'temp', 'Sales-Order-sdk-')),
         ]),
         { stdio: 'pipe' },
       )

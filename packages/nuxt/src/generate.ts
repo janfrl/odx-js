@@ -2,6 +2,7 @@ import type { EntityMapping, ODataProxyConfig, ODataServiceConfig } from '@me-to
 import type { Nuxt } from '@nuxt/schema'
 import { Buffer } from 'node:buffer'
 import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
@@ -10,13 +11,15 @@ import process from 'node:process'
 import { extractEntitiesFromCsdlDocument } from '@me-tools/odx-core/server'
 import { parseCsdl } from '@me-tools/odx-metadata'
 import { consola } from 'consola'
-import { join, resolve } from 'pathe'
+import { dirname, join, resolve } from 'pathe'
 
 const logger = consola.withTag('@me-tools/odx-nuxt')
 const METADATA_DOWNLOAD_TIMEOUT_MS = 30_000
 const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
 const RE_PATH_SEPARATOR = /[/\\]/
+const RE_UNSAFE_MODEL_FILE = /[/\\:]/
+const SDK_CACHE_VERSION = 1
 
 function resolveOData2TsCliPath(): string {
   const projectRequire = createRequire(resolve(process.cwd(), 'package.json'))
@@ -49,6 +52,55 @@ export async function generateODataTypes(xmlFilePath: string, outputDir: string,
     const output = err.stdout?.toString() || err.stderr?.toString() || err.message
     logger.error(`Failed to generate SDK for ${serviceName}: ${output}`)
     throw err
+  }
+}
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
+}
+
+async function ensureGeneratedODataTypes(inputPath: string, outDir: string, tempDir: string, serviceName: string): Promise<string> {
+  const generatorPackage = JSON.parse(fs.readFileSync(resolve(dirname(resolveOData2TsCliPath()), '../package.json'), 'utf8'))
+  if (typeof generatorPackage.version !== 'string')
+    throw new Error('Could not resolve the odata2ts generator version')
+  const inputHash = sha256(JSON.stringify([SDK_CACHE_VERSION, generatorPackage.version, fs.readFileSync(inputPath, 'utf8')]))
+  const cachePath = join(outDir, '.odx-generation.json')
+  try {
+    const cache = JSON.parse(fs.readFileSync(cachePath, 'utf8'))
+    if (cache?.version === SDK_CACHE_VERSION
+      && cache.inputHash === inputHash
+      && typeof cache.modelFile === 'string'
+      && !RE_UNSAFE_MODEL_FILE.test(cache.modelFile)
+      && cache.modelFile.endsWith('Model.ts')
+      && cache.modelHash === sha256(fs.readFileSync(join(outDir, cache.modelFile), 'utf8'))) {
+      return cache.modelFile
+    }
+  }
+  catch {
+    // A missing, invalid or incomplete cache is regenerated, never trusted.
+  }
+
+  const stagingDir = fs.mkdtempSync(join(tempDir, `${serviceName}-sdk-`))
+  try {
+    await generateODataTypes(inputPath, stagingDir, serviceName)
+    const outputs = fs.readdirSync(stagingDir, { withFileTypes: true })
+    const modelFile = outputs.find(file => file.isFile() && file.name.endsWith('Model.ts'))?.name
+    if (!modelFile || outputs.some(file => !file.isFile()))
+      throw new Error(`SDK generation for ${serviceName} did not produce a flat model output`)
+    fs.mkdirSync(outDir, { recursive: true })
+    for (const file of outputs)
+      fs.copyFileSync(join(stagingDir, file.name), join(outDir, file.name))
+    fs.writeFileSync(cachePath, JSON.stringify({
+      version: SDK_CACHE_VERSION,
+      inputHash,
+      modelFile,
+      modelHash: sha256(fs.readFileSync(join(outDir, modelFile), 'utf8')),
+    }))
+    return modelFile
+  }
+  finally {
+    // Only this invocation's newly created staging directory is removed.
+    fs.rmSync(stagingDir, { recursive: true, force: true })
   }
 }
 
@@ -246,15 +298,8 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
 
       // Run generation
       const outDir = join(outRoot, svc.name)
-      if (!fs.existsSync(outDir) || fs.readdirSync(outDir).length === 0) {
-        await generateODataTypes(inputPath, outDir, svc.name)
-      }
-
-      if (fs.existsSync(outDir)) {
-        const modelFile = fs.readdirSync(outDir).find(f => f.endsWith('Model.ts'))
-        if (modelFile)
-          serviceModelFiles[svc.name] = modelFile.replace('.ts', '')
-      }
+      const modelFile = await ensureGeneratedODataTypes(inputPath, outDir, tempDir, svc.name)
+      serviceModelFiles[svc.name] = modelFile.slice(0, -3)
     }
 
     const indexDtsPath = join(outRoot, 'index.d.ts')
