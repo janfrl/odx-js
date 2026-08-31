@@ -658,6 +658,13 @@ configured query parameters. For example, `/odata?sap-client=100` requests
 `/odata/$metadata?sap-client=100`. Encoded path/query values remain encoded,
 and URL fragments are omitted from the request.
 
+Each build-time HTTP(S) metadata download owns a fresh connection. SDK
+generation can block processing of a pooled socket's idle close before the
+next service is prepared, so downloads deliberately do not reuse the global
+connection pool. This adds a connection handshake per download but no automatic
+retry. TLS validation, request timeouts and validated cache fallback are
+unchanged; application-runtime OData pooling is not affected.
+
 SDK metadata downloads merge configured global and service headers
 case-insensitively, with service values taking precedence. The existing
 `service.auth || global auth` selection is unchanged: computed Basic or Bearer

@@ -153,9 +153,11 @@ export async function downloadMetadata(svc: ODataServiceConfig, config: ODataPro
   return new Promise<string>((resolve, reject) => {
     const isHttps = metadataUrl.startsWith('https://')
     const client = isHttps ? https : http
+    // SDK generation blocks the event loop between downloads. Do not reuse a
+    // pooled socket whose upstream idle close may not have been processed yet.
     const requestOptions = isHttps
-      ? { headers, rejectUnauthorized: config.rejectUnauthorized }
-      : { headers }
+      ? { headers, agent: false as const, rejectUnauthorized: config.rejectUnauthorized }
+      : { headers, agent: false as const }
 
     const req = client.get(metadataUrl, requestOptions, (res) => {
       res.on('error', reject)

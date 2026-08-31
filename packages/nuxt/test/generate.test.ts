@@ -455,6 +455,7 @@ describe('type Generation Logic', () => {
         rejectUnauthorized: false,
       } as any)
       expect(vi.mocked(https.get).mock.calls[0]?.[1]).toEqual({
+        agent: false,
         headers: {
           'x-api-key': 'service-key',
           'x-tenant': 'test-tenant',
@@ -588,6 +589,7 @@ describe('type Generation Logic', () => {
         'https://example.com/odata/$metadata',
         expect.objectContaining({
           headers: { authorization: 'Bearer test-token', accept: 'application/xml, text/xml, */*' },
+          agent: false,
           rejectUnauthorized: false,
         }),
         expect.any(Function),
@@ -616,6 +618,7 @@ describe('type Generation Logic', () => {
         'http://localhost:4000/odata/$metadata',
         {
           headers: { authorization: 'Bearer local-token', accept: 'application/xml, text/xml, */*' },
+          agent: false,
         },
         expect.any(Function),
       )

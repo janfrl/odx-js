@@ -6,11 +6,12 @@ import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
+import { setImmediate } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { resolveModuleConfig } from '../src/config'
-import { setupTypeGeneration } from '../src/generate'
+import { downloadMetadata, setupTypeGeneration } from '../src/generate'
 
 beforeEach(() => {
   // Exercise only fixture services/credentials, never ambient host bindings or
@@ -23,6 +24,40 @@ beforeEach(() => {
 
 afterEach(() => vi.unstubAllEnvs())
 
+it('does not reuse pooled metadata sockets between service preparations', async () => {
+  const sockets = new Set()
+  const connections: (string | undefined)[] = []
+  const server = createServer((request, response) => {
+    sockets.add(request.socket)
+    connections.push(request.headers.connection)
+    response.end('<metadata/>')
+  })
+  try {
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const address = server.address()
+    if (!address || typeof address === 'string')
+      throw new Error('Expected a loopback TCP server')
+    const config = resolveModuleConfig({ services: [] }, { rootDir: process.cwd(), buildDir: process.cwd() })
+    for (const name of ['Catalog', 'DraftCatalog', 'LegacyCatalog']) {
+      await expect(downloadMetadata({ name, url: `http://127.0.0.1:${address.port}/${name}` }, config))
+        .resolves
+        .toBe('<metadata/>')
+      // Let Node's global Agent pool the completed socket, if used. No idle
+      // timeout race or synchronous generator duration is needed for this gate.
+      await setImmediate()
+    }
+    expect(sockets.size).toBe(3)
+    expect(connections).toEqual(['close', 'close', 'close'])
+  }
+  finally {
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve())
+      server.closeAllConnections()
+    })
+  }
+})
+
 it('fails fresh preparation on HTTP failure and preserves a valid SDK cache across malformed downloads and outages', async () => {
   const rootDir = mkdtempSync(join(tmpdir(), 'odx-metadata-http-'))
   const xml = readFileSync(fileURLToPath(new URL('../playground/minimal/edmx/minimal.edmx', import.meta.url)), 'utf8')
@@ -33,13 +68,12 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
   let interrupted = false
   const requests: string[] = []
   const authorizations: (string | undefined)[] = []
+  const connections: (string | undefined)[] = []
   let expectedAuthorization = 'Bearer fixture-global-token'
   const server = createServer((request, response) => {
     requests.push(`${request.method} ${request.url}`)
     authorizations.push(request.headers.authorization)
-    // Synchronous SDK generation can outlast an idle keep-alive socket. This
-    // fixture tests auth/cache recovery, not idle connection reuse timing.
-    response.setHeader('connection', 'close')
+    connections.push(request.headers.connection)
     if (request.headers['x-catalog-key'] !== 'service-key'
       || request.headers['x-tenant'] !== 'fixture-tenant'
       || request.headers.authorization !== expectedAuthorization
@@ -187,6 +221,7 @@ it('fails fresh preparation on HTTP failure and preserves a valid SDK cache acro
     available = false
     await prepare('.nuxt-offline', 'Renamed')
     expect(requests).toEqual(Array.from({ length: 10 }).fill('GET /odata/$metadata?sap-client=100&sap-language=DE'))
+    expect(connections).toEqual(Array.from({ length: 10 }).fill('close'))
     expect(authorizations).toEqual(Array.from({ length: 10 }, (_, index) =>
       index === 2 ? 'Bearer fixture-service-token' : 'Bearer fixture-global-token'))
   }
