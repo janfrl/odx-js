@@ -4,6 +4,7 @@ import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { isSafeHttpBackendUrl, looksLikeHttpBackendUrl } from './backend-url'
 import { isLocalBtpFallbackAllowed, resolveBtpDestination } from './btp-destination'
+import { findODataServiceByRoute } from './service-route'
 
 export interface ResolvedProxyTarget {
   url: string
@@ -31,10 +32,7 @@ export async function resolveProxyTarget(
 ): Promise<ResolvedProxyTarget | null> {
   const allowBtpDestinationFallback = options.allowBtpDestinationFallback
     ?? isLocalBtpFallbackAllowed()
-  const matched = config.services?.find((s: any) =>
-    s.name.toLowerCase() === serviceRoute.toLowerCase()
-    || (s.route && s.route.toLowerCase() === serviceRoute.toLowerCase()),
-  )
+  const matched = findODataServiceByRoute(config.services ?? [], serviceRoute)
 
   if (!matched)
     return null

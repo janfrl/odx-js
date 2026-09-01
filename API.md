@@ -194,6 +194,11 @@ Each service is an `ODataServiceConfig`.
 | `rules` | Declarative proxy policy rules. |
 | `csrf` | Private server policy. Set `{ mode: 'sap' }` to enable request-scoped SAP token/session preparation; generic OData defaults to `none`. |
 
+An explicit `route` is normalized at its outer slash boundary and must remain
+one local URL segment. ODX rejects traversal, interior slashes, backslashes,
+queries, fragments, whitespace, invalid escapes, and case-insensitive aliases
+that collide with another service alias or fallback service name.
+
 For normal proxied data calls, header precedence is global defaults, service
 defaults, then permitted incoming headers; names are case-insensitive. Computed
 Basic/Bearer auth selects `service.auth` or, when absent, global `auth`, and

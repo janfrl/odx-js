@@ -1,6 +1,9 @@
 import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import process from 'node:process'
-import { normalizeODataProxyBasePath } from '@me-tools/odx-proxy'
+import {
+  normalizeODataProxyBasePath,
+  normalizeODataServiceRoutes,
+} from '@me-tools/odx-proxy'
 import { useLogger } from '@nuxt/kit'
 import { parseSafeHttpServiceUrl } from './service-url'
 
@@ -179,6 +182,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     ...options.headers,
     ...parseEnvJson(process.env.NUXT_ODATA_HEADERS),
   })
+  const normalizedServices = normalizeODataServiceRoutes(services)
 
   return {
     basePath: normalizeODataProxyBasePath(options.basePath ?? '/api/odx'),
@@ -189,7 +193,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
     headers: globalHeaders,
     forwardAuthHeader: options.forwardAuthHeader !== false,
     rejectUnauthorized: options.rejectUnauthorized !== false && process.env.NUXT_ODATA_REJECT_UNAUTHORIZED !== 'false',
-    services,
+    services: normalizedServices,
     buildDir: nuxtOptions.buildDir,
     rootDir: nuxtOptions.rootDir,
     telemetry: {
@@ -221,10 +225,11 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
  * browser must contact them itself.
  */
 export function createPublicODataConfig(config: ODataProxyConfig): ODataPublicConfig {
+  const normalizedServices = normalizeODataServiceRoutes(config.services)
   return {
     mode: config.mode,
     basePath: config.basePath,
-    services: config.services.map((service) => {
+    services: normalizedServices.map((service) => {
       let directUrl: string | undefined
       if (service.strategy === 'direct' && service.url !== undefined) {
         const parsed = parseSafeHttpServiceUrl(

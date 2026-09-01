@@ -57,6 +57,9 @@ removes trailing slashes from valid paths such as `/api/odx/` and rejects root,
 absolute, protocol-relative, traversal, empty-segment, query, fragment,
 backslash, and whitespace forms before handler registration. Request parsing
 also requires the incoming path to remain on that exact segment boundary.
+Service aliases follow the same ownership rule at the next boundary: an alias
+may use optional outer slashes, but resolves to exactly one local URL segment.
+Ambiguous aliases and fallback service names fail before target selection.
 
 ## Backend header isolation
 

@@ -13,6 +13,7 @@ import { dirname, join, resolve } from 'pathe'
 import { looksLikeHttpBackendUrl } from './backend-url'
 import { resolveConnectivityRequest } from './connectivity-proxy'
 import { prepareProxyHeaders } from './headers'
+import { normalizeODataServiceRoute } from './service-route'
 import { resolveProxyTarget } from './target'
 
 export interface RuntimeMetadataRefreshResult {
@@ -392,7 +393,7 @@ async function resolveMetadataRequest(event: H3Event, config: ODataProxyConfig, 
   headers: Record<string, string>
   connectivityRequest: Awaited<ReturnType<typeof resolveConnectivityRequest>>
 }> {
-  const route = service.route || service.name
+  const route = normalizeODataServiceRoute(service.route || service.name)
   const target = await resolveProxyTarget(event, config, route, { allowBtpDestinationFallback: false })
   if (!target) {
     throw new Error(`Could not resolve target for ${service.name}`)

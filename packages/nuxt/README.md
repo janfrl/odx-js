@@ -23,6 +23,9 @@ The optional `basePath` is an app-local, non-root route prefix. Module setup
 normalizes trailing slashes and rejects absolute, protocol-relative, traversal,
 query, fragment, backslash, whitespace, and empty-segment forms before the path
 is exposed to Nitro or browser runtime configuration.
+Each optional service `route` is likewise normalized to one local segment.
+Unsafe aliases and case-insensitive collisions with another alias or fallback
+service name fail during module setup instead of selecting the first service.
 
 The server read service invokes unbound V4 functions directly at the configured
 service root. Its entity set provides `fetchOne`, `fetchOneWithResponse`,

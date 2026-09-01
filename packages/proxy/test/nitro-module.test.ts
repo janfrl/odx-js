@@ -45,10 +45,15 @@ describe('nitro runtime adapters', () => {
   it('normalizes the configured proxy handler mount', () => {
     const nitro = createNitroOptions()
     nitro.options.odata.basePath = '/api/odx///'
+    nitro.options.odata.services = [{ name: 'Catalog', route: '/catalog-api/' }]
 
     odxNitroModule.setup(nitro)
 
     expect(nitro.options.handlers[0]?.route).toBe('/api/odx/**')
+    expect(nitro.options.odata).toMatchObject({
+      basePath: '/api/odx',
+      services: [{ name: 'Catalog', route: 'catalog-api' }],
+    })
   })
 
   it('rejects an unsafe proxy handler mount before registering routes', () => {
@@ -56,6 +61,17 @@ describe('nitro runtime adapters', () => {
     nitro.options.odata.basePath = '//remote.example/odx'
 
     expect(() => odxNitroModule.setup(nitro)).toThrow('ODX proxy basePath')
+    expect(nitro.options.handlers).toEqual([])
+  })
+
+  it('rejects ambiguous service ownership before registering routes', () => {
+    const nitro = createNitroOptions()
+    nitro.options.odata.services = [
+      { name: 'Catalog', route: 'products' },
+      { name: 'Products', route: 'other' },
+    ]
+
+    expect(() => odxNitroModule.setup(nitro)).toThrow('ambiguous between services')
     expect(nitro.options.handlers).toEqual([])
   })
 })

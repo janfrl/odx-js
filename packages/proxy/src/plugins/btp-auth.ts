@@ -3,6 +3,7 @@ import process from 'node:process'
 import { defineNitroPlugin, useRuntimeConfig } from 'nitropack/runtime'
 import { isSafeHttpBackendUrl, looksLikeHttpBackendUrl } from '../utils/backend-url'
 import { isLocalBtpFallbackAllowed, resolveBtpDestination } from '../utils/btp-destination'
+import { findODataServiceByRoute } from '../utils/service-route'
 
 const RE_QUERY_SPLIT = /\?/
 const RE_LEADING_SLASH = /^\//
@@ -58,10 +59,7 @@ export default defineNitroPlugin((nitro) => {
       return
     }
 
-    const matched = config.services?.find((s: any) =>
-      s.name.toLowerCase() === serviceRoute.toLowerCase()
-      || (s.route && s.route.toLowerCase() === serviceRoute.toLowerCase()),
-    )
+    const matched = findODataServiceByRoute(config.services ?? [], serviceRoute)
 
     if (!matched) {
       addTrace('Proxy', `Unknown service route: ${serviceRoute}`, { path: event.path }, 'error')
@@ -70,9 +68,11 @@ export default defineNitroPlugin((nitro) => {
 
     const isRealCloud = !!process.env.VCAP_SERVICES
     const hasDestination = !!matched.destination
-    const hasAbsoluteUrl = typeof matched.url === 'string'
-      && looksLikeHttpBackendUrl(matched.url)
-    if (hasAbsoluteUrl && !isSafeHttpBackendUrl(matched.url)) {
+    const configuredUrl = typeof matched.url === 'string' ? matched.url : undefined
+    const absoluteUrl = configuredUrl !== undefined && looksLikeHttpBackendUrl(configuredUrl)
+      ? configuredUrl
+      : undefined
+    if (absoluteUrl !== undefined && !isSafeHttpBackendUrl(absoluteUrl)) {
       throw new Error(
         `Invalid backend URL for OData service "${matched.name}": expected an absolute HTTP(S) base URL without embedded credentials`,
       )
@@ -81,8 +81,8 @@ export default defineNitroPlugin((nitro) => {
     const proxyMode = matched.proxyMode || config.defaultProxyMode
 
     // 1. Resolve Absolute URL (Prioritized)
-    if (hasAbsoluteUrl) {
-      addTrace('Proxy', `Using absolute URL for ${matched.name}${proxyMode ? ` (Mode: ${proxyMode})` : ''}`, { url: matched.url })
+    if (absoluteUrl !== undefined) {
+      addTrace('Proxy', `Using absolute URL for ${matched.name}${proxyMode ? ` (Mode: ${proxyMode})` : ''}`, { url: absoluteUrl })
       const auth = matched.auth || config.auth || {}
       let authHeaderValue = ''
 
@@ -102,7 +102,7 @@ export default defineNitroPlugin((nitro) => {
       }
 
       event.context.proxyTarget = {
-        url: matched.url,
+        url: absoluteUrl,
         authHeader: authHeaderValue,
         isRelative: false,
         strategy: matched.strategy,

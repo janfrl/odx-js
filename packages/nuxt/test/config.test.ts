@@ -109,6 +109,43 @@ describe('public OData runtime configuration', () => {
     })).toThrow('ODX proxy basePath')
   })
 
+  it('normalizes one explicit service alias for every transport owner', () => {
+    const config = resolveModuleConfig({
+      services: [{ name: 'Catalog', route: '/catalog-api/' }],
+    }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })
+
+    expect(config.services[0]?.route).toBe('catalog-api')
+    expect(createPublicODataConfig(config).services?.[0]?.route).toBe('catalog-api')
+  })
+
+  it.each([
+    'catalog/products',
+    '../catalog',
+    'catalog?tenant=one',
+  ])('rejects an unsafe service alias during module setup: %s', (route) => {
+    expect(() => resolveModuleConfig({
+      services: [{ name: 'Catalog', route }],
+    }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })).toThrow('OData service route')
+  })
+
+  it('rejects service aliases that collide with another service name', () => {
+    expect(() => resolveModuleConfig({
+      services: [
+        { name: 'Catalog', route: 'products' },
+        { name: 'Products', route: 'other' },
+      ],
+    }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })).toThrow('ambiguous between services')
+  })
+
   it('keeps proxied backend URLs private while preserving direct service URLs', () => {
     const config: ODataProxyConfig = {
       basePath: '/api/odx',
