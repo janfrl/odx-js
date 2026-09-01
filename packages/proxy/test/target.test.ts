@@ -96,6 +96,24 @@ describe('proxy target resolution', () => {
     })
   })
 
+  it('preserves the local fallback for a marked production-bundle test runtime', async () => {
+    process.env.NODE_ENV = 'production'
+    process.env.ODX_TEST_RUNTIME = 'true'
+    const relativeConfig: ODataProxyConfig = {
+      ...config,
+      services: [{
+        name: 'BusinessPartner',
+        url: '',
+        strategy: 'proxied',
+      }],
+    }
+
+    await expect(resolveProxyTarget(event, relativeConfig, 'BusinessPartner')).resolves.toMatchObject({
+      url: '/sap/opu/odata/sap',
+      isRelative: true,
+    })
+  })
+
   it.each([
     ['production'],
     ['staging'],

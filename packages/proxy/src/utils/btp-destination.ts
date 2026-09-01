@@ -42,7 +42,9 @@ const INVALID_CONNECTIVITY_HOST_CHARACTERS = /[\s/\\]/
 const destinationCache = new Map<string, DestinationCacheEntry>()
 
 export function isLocalBtpFallbackAllowed(): boolean {
-  return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+  return process.env.NODE_ENV === 'development'
+    || process.env.NODE_ENV === 'test'
+    || process.env.ODX_TEST_RUNTIME === 'true'
 }
 
 export function assertLocalProxyFallbackAllowed(serviceName: string): void {

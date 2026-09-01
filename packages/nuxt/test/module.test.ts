@@ -1,9 +1,19 @@
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { $fetch, fetch, setup } from '@nuxt/test-utils/e2e'
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import { createNitroE2ETestConfig } from './nitro-test-config'
 
 describe('nuxt ODX Module Integration', async () => {
+  const originalTestRuntime = process.env.ODX_TEST_RUNTIME
+  process.env.ODX_TEST_RUNTIME = 'true'
+  afterAll(() => {
+    if (originalTestRuntime === undefined)
+      delete process.env.ODX_TEST_RUNTIME
+    else
+      process.env.ODX_TEST_RUNTIME = originalTestRuntime
+  })
+
   await setup({
     rootDir: fileURLToPath(new URL('../../../test/fixtures/basic', import.meta.url)),
     nuxtConfig: createNitroE2ETestConfig() as any,

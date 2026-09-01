@@ -68,8 +68,10 @@ are retained. Whitespace outside a string literal remains invalid.
 The relative SAP mock fallback is a local-only facility. It is enabled only
 when `NODE_ENV` is explicitly `development` or `test`; production, unset, and
 custom environments require an absolute HTTP(S) service URL or a resolved BTP
-Destination. This prevents an incoming `Host` header from selecting the origin
-for a deployed relative backend request.
+Destination. Controlled production-bundle test harnesses may set the reserved
+`ODX_TEST_RUNTIME=true` marker; it must never be set in a deployment. This
+prevents an incoming `Host` header from selecting the origin for a deployed
+relative backend request.
 
 ## Backend header isolation
 
