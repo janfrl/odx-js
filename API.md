@@ -34,6 +34,8 @@ conformance limits and non-goals.
 relationship-reference construction. The navigation-root helper identifies an
 exact related collection below a structured entity or containment source
 without duplicating key serialization in higher layers.
+Path joins insert new resource segments before an existing query or fragment
+and preserve that suffix exactly.
 `validateODataIdentifier` and `validateODataQualifiedName` reject
 path-altering entity, key-field, navigation, and action names before transport.
 `serializeODataChangeSet(requests, options?)` creates one OData V4 multipart
@@ -428,6 +430,8 @@ and `supportsContinuations === true` marker live on the separate additive
 `ODataContinuationEntitySet` capability. This is a typed-client guarantee,
 not wire-response redaction: consumers of the raw proxy body can still observe
 the backend's original absolute next-link URL.
+When a caller-owned direct service path already contains a validated routing
+query, continuation anchoring keeps it before the opaque continuation query.
 Related collections use the corresponding `listNavigationPage`,
 `fetchNavigationPage`, `listNavigationNextPage`, and
 `fetchNavigationNextPage` methods. Their continuation is anchored to the same

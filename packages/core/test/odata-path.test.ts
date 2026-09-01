@@ -164,6 +164,13 @@ describe('portable OData resource paths', () => {
     expect(joinODataPath('https://example.test/odata/', '/Products/', '/Reviews'))
       .toBe('https://example.test/odata/Products/Reviews')
     expect(joinODataPath('/api/odx/', 'catalog')).toBe('/api/odx/catalog')
+    expect(joinODataPath(
+      'HTTPS://example.test/odata/?sap-client=100&signature=a%2Bb%3D#section',
+      '/Products/',
+      '/Reviews',
+    )).toBe(
+      'HTTPS://example.test/odata/Products/Reviews?sap-client=100&signature=a%2Bb%3D#section',
+    )
   })
 
   it('creates exact entity resource paths', () => {

@@ -317,9 +317,18 @@ describe('oData Utils', () => {
         .toBe('/Products?cursor=one&cursor=two%2Bthree')
     })
 
+    it('retains an existing service query before the opaque continuation', () => {
+      expect(createODataContinuationPath(
+        'https://example.test/odata/Products?sap-client=100&signature=a%2Bb%3D',
+        { token: '%24skiptoken=next%2B1' },
+      )).toBe(
+        'https://example.test/odata/Products?sap-client=100&signature=a%2Bb%3D&%24skiptoken=next%2B1',
+      )
+    })
+
     it.each([
       '',
-      '/Products?existing=true',
+      '/Products?',
       '/Products#fragment',
       '/Products\nOther',
     ])('rejects a non-canonical continuation collection path %j', (path) => {

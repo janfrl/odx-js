@@ -141,16 +141,25 @@ export function createODataContinuationPath(
   collectionPath: string,
   continuation: { readonly token: string },
 ): string {
+  const queryIndex = typeof collectionPath === 'string'
+    ? collectionPath.indexOf('?')
+    : -1
   if (
     typeof collectionPath !== 'string'
     || collectionPath.length === 0
     || hasControlCharacter(collectionPath)
-    || collectionPath.includes('?')
     || collectionPath.includes('#')
+    || queryIndex === 0
+    || queryIndex === collectionPath.length - 1
   ) {
-    throw new TypeError('Expected a query-free OData collection path.')
+    throw new TypeError('Expected a valid OData collection path.')
   }
-  return `${collectionPath}?${validateODataContinuationToken(continuation.token)}`
+  const path = queryIndex < 0 ? collectionPath : collectionPath.slice(0, queryIndex)
+  const configuredQuery = queryIndex < 0
+    ? undefined
+    : validateODataContinuationToken(collectionPath.slice(queryIndex + 1))
+  const token = validateODataContinuationToken(continuation.token)
+  return `${path}?${configuredQuery === undefined ? '' : `${configuredQuery}&`}${token}`
 }
 
 function validateODataContinuationToken(token: unknown): string {

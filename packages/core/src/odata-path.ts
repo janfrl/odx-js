@@ -391,15 +391,21 @@ export function formatODataNavigationPath(
 
 /** Joins already-addressable OData path fragments without altering URL schemes. */
 export function joinODataPath(base: string, ...segments: readonly string[]): string {
-  const normalizedBase = base.replace(RE_TRAILING_SLASHES, '')
+  const queryIndex = base.indexOf('?')
+  const fragmentIndex = base.indexOf('#')
+  const suffixIndex = [queryIndex, fragmentIndex]
+    .filter(index => index >= 0)
+    .reduce((lowest, index) => Math.min(lowest, index), base.length)
+  const normalizedBase = base.slice(0, suffixIndex).replace(RE_TRAILING_SLASHES, '')
+  const suffix = base.slice(suffixIndex)
   const normalizedSegments = segments
     .filter(Boolean)
     .map(segment => segment.replace(RE_LEADING_SLASHES, '').replace(RE_TRAILING_SLASHES, ''))
     .filter(Boolean)
 
   return normalizedSegments.length > 0
-    ? [normalizedBase, ...normalizedSegments].join('/')
-    : normalizedBase
+    ? `${[normalizedBase, ...normalizedSegments].join('/')}${suffix}`
+    : `${normalizedBase}${suffix}`
 }
 
 /** Creates an exact entity resource path from a set name and key. */

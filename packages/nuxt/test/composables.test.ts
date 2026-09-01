@@ -41,6 +41,7 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataV2EntityReference,
     createODataV2NavigationReferencePath,
     formatODataV2FunctionImportParameters,
+    joinODataPath,
   } = await import('../../core/src/odata-path')
   return {
     ...actual as any,
@@ -59,6 +60,7 @@ vi.mock('@me-tools/odx-core', async () => {
     createODataV2EntityReference,
     createODataV2NavigationReferencePath,
     formatODataV2FunctionImportParameters,
+    joinODataPath,
     flattenOData,
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
@@ -277,6 +279,21 @@ describe('useOData Composable', () => {
       expect(page.url).not.toContain('private.sap.example')
     })
 
+    it('keeps a direct service query ahead of the continuation query', () => {
+      runtimeConfig.public.odata.services.push({
+        name: 'DirectQueryService',
+        url: 'https://external.com/odata?sap-client=100&signature=a%2Bb%3D',
+        strategy: 'direct',
+      })
+      const page = useOData('DirectQueryService' as any).entitySet('Products').listNextPage({
+        token: '%24skiptoken=next-1',
+      }) as any
+
+      expect(page.url).toBe(
+        'https://external.com/odata/Products?sap-client=100&signature=a%2Bb%3D&%24skiptoken=next-1',
+      )
+    })
+
     it('preserves read headers while allowing an explicit accept override', () => {
       const api = useOData('MyService')
       const result = api.entitySet('Products').get(1, undefined, {
@@ -333,6 +350,20 @@ describe('useOData Composable', () => {
       const api = useOData('UppercaseDirectService' as any)
       const result = api.entitySet('Products').list() as any
       expect(result.url).toBe('HTTPS://external.com/odata/Products')
+    })
+
+    it('inserts direct resource paths before the configured service query', () => {
+      runtimeConfig.public.odata.services.push({
+        name: 'DirectQueryService',
+        url: 'https://external.com/odata?sap-client=100&signature=a%2Bb%3D',
+        strategy: 'direct',
+      })
+
+      const api = useOData('DirectQueryService' as any)
+      const result = api.entitySet('Products').list() as any
+      expect(result.url).toBe(
+        'https://external.com/odata/Products?sap-client=100&signature=a%2Bb%3D',
+      )
     })
 
     it('normalizes direct service URLs with trailing slashes', () => {

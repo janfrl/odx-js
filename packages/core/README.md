@@ -20,6 +20,10 @@ path string. Navigation root references reuse the same validated entity-key,
 containment, and navigation serializers for expressions such as recursive
 hierarchy transformations.
 
+`joinODataPath` inserts resource segments before an existing query or fragment
+without reparsing those suffixes. Continuation anchoring likewise retains a
+validated caller-owned service query before the opaque server continuation.
+
 ## Exact typed entity keys
 
 An ordinary string key remains an OData string literal. Do not convert Decimal

@@ -171,7 +171,9 @@ const second = first.continuation
 The continuation is an opaque, exactly preserved query component. ODX anchors
 it to the caller-owned entity-set path; applications must not parse, edit, or
 construct continuation tokens themselves. This protects the typed client
-boundary. A raw proxy response remains the backend wire representation and can
+boundary. A direct service URL may include routing parameters such as
+`sap-client`; resource paths are inserted before that query, and continuations
+retain it ahead of their opaque query component. A raw proxy response remains the backend wire representation and can
 still contain an absolute next-link URL.
 `entitySet.supportsCollectionPages === true` is the explicit runtime signal
 for this additive capability; the original `ODataEntitySet` structural
