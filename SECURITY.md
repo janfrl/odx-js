@@ -280,7 +280,9 @@ strings. Credential-name matching handles percent encoding, case, camelCase
 and underscores; undecodable parameter names have their values redacted.
 Query or fragment values containing fully or partially percent-encoded URL
 userinfo are redacted as a whole, including when another percent escape in the
-same value is malformed.
+same value is malformed. Repeated encoding is decoded only to a fixed bound;
+credential parameter names and encoded URL delimiters still nested beyond that
+bound are redacted rather than consuming unbounded diagnostic work.
 Ordinary OData query bytes remain available for diagnostics. This transforms
 only log copies, not backend URLs or requests, and still applies when payload
 logging is disabled. Custom stores must honor the same sanitization boundary.

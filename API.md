@@ -631,7 +631,9 @@ trace messages and nested trace strings, including with `storePayloads: false`.
 Values containing fully or partially percent-encoded URL userinfo are replaced
 as a whole, so encoded redirect or callback URLs cannot bypass the same
 boundary. Recognizable ASCII URL delimiters remain fail-closed when unrelated
-percent escapes in that value are malformed.
+percent escapes in that value are malformed. Nested parameter names and URL
+delimiters use bounded repeated decoding; residual escapes after that bound are
+treated as sensitive rather than allowing arbitrary diagnostic decode depth.
 Ordinary query bytes and the transport input remain unchanged. This is not
 general-purpose secret discovery or retroactive cleanup of existing SQL rows
 and exports; see [Logging and telemetry](./SECURITY.md#logging-and-telemetry).

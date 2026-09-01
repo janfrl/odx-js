@@ -83,12 +83,14 @@ const REDACTED_HEADER_VALUE = '[Redacted]'
 const RE_URL_USER_INFO = /((?::|^|[\s="'(<])\/\/)[^/?#]*@/g
 const RE_URL_USER_INFO_VALUE = /(?::|^|[\s="'(<])\/\/[^/?#]*@/
 const RE_URL_PARAMETER = /([?&#])([^=?&#]+)=([^&#]*)/g
-const RE_ENCODED_URL_DELIMITER = /%(?:2f|40)/i
+const RE_ENCODED_URL_DELIMITER = /%(?:25)*(?:2f|40)/i
 const RE_PERCENT_BYTE = /%([\da-f]{2})/gi
+const RE_PERCENT_ESCAPE = /%[\da-f]{2}/i
 const RE_CAMEL_CASE_BOUNDARY = /([a-z\d])([A-Z])/g
 const RE_URL_CREDENTIAL_NAME = /(?:^|-)(?:password|passwd|pwd|signature|sig|credential|jwt|bearer|private-key|client-assertion)(?:$|-)/i
 const RE_QUERY_PLUS = /\+/g
 const RE_QUERY_UNDERSCORE = /_/g
+const MAX_URL_DECODE_PASSES = 8
 
 const SENSITIVE_HEADER_PATTERNS = [
   /^authorization$/i,
@@ -177,16 +179,28 @@ function isSensitiveHeader(name: string): boolean {
 }
 
 function isSensitiveUrlParameter(name: string): boolean {
-  try {
-    const normalized = decodeURIComponent(name.replace(RE_QUERY_PLUS, ' '))
-      .replace(RE_CAMEL_CASE_BOUNDARY, '$1-$2')
-      .replace(RE_QUERY_UNDERSCORE, '-')
-    return isSensitiveHeader(normalized) || RE_URL_CREDENTIAL_NAME.test(normalized)
+  let decoded = name.replace(RE_QUERY_PLUS, ' ')
+  for (let pass = 0; pass < MAX_URL_DECODE_PASSES; pass += 1) {
+    try {
+      const next = decodeURIComponent(decoded)
+      if (next === decoded)
+        break
+      decoded = next
+    }
+    catch {
+      // An undecodable name cannot safely establish that its value is public.
+      return true
+    }
   }
-  catch {
-    // An undecodable name cannot safely establish that its value is public.
+  // Deeply nested escapes are not a useful public parameter-name contract and
+  // must not become a redaction bypass with pathological decode work.
+  if (RE_PERCENT_ESCAPE.test(decoded))
     return true
-  }
+
+  const normalized = decoded
+    .replace(RE_CAMEL_CASE_BOUNDARY, '$1-$2')
+    .replace(RE_QUERY_UNDERSCORE, '-')
+  return isSensitiveHeader(normalized) || RE_URL_CREDENTIAL_NAME.test(normalized)
 }
 
 function containsEncodedUrlUserInfo(value: string): boolean {
@@ -194,10 +208,18 @@ function containsEncodedUrlUserInfo(value: string): boolean {
     || value.includes(`${REDACTED_HEADER_VALUE}@`)) {
     return false
   }
-  const decodedAscii = value.replace(RE_QUERY_PLUS, ' ')
-    .replace(RE_PERCENT_BYTE, (_entry, hexadecimal: string) =>
+  let decodedAscii = value.replace(RE_QUERY_PLUS, ' ')
+  for (let pass = 0; pass < MAX_URL_DECODE_PASSES; pass += 1) {
+    const next = decodedAscii.replace(RE_PERCENT_BYTE, (_entry, hexadecimal: string) =>
       String.fromCharCode(Number.parseInt(hexadecimal, 16)))
+    if (next === decodedAscii)
+      break
+    decodedAscii = next
+  }
   return RE_URL_USER_INFO_VALUE.test(decodedAscii)
+    // Fail closed once the bounded decoder encounters still-nested URL
+    // delimiters instead of allowing arbitrary decode depth in a log path.
+    || RE_ENCODED_URL_DELIMITER.test(decodedAscii)
 }
 
 function redactUrlCredentials(value: string): string {

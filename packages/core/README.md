@@ -160,7 +160,10 @@ nested trace strings, even when payload storage is disabled. Ordinary OData
 query bytes remain unchanged, and the original request/log input is not mutated.
 Fully or partially percent-encoded URL userinfo inside a query or fragment value
 causes that value to be redacted as a whole. A malformed unrelated percent
-escape does not disable recognition of valid encoded URL delimiters.
+escape does not disable recognition of valid encoded URL delimiters. Nested
+percent encoding is decoded through a bounded diagnostic pass; parameter names
+or URL delimiters that remain nested beyond that limit fail closed instead of
+causing unbounded log-processing work.
 
 This is diagnostic redaction, not transport rewriting or general-purpose secret
 discovery. Unknown credential names and business data still require host policy;

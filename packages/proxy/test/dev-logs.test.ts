@@ -287,7 +287,7 @@ describe('proxy Dev Logs', () => {
     expect(sanitizeODataLog(updated!, { storePayloads })).toEqual(updated)
   })
 
-  it.each(['access_token', '%61ccess_token', 'API_KEY', 'clientSecret', 'password', 'X-Amz-Signature', 'sig', 'SAP-SessionId', 'jwt', 'bearer', 'privateKey', 'clientAssertion'])('redacts the credential URL parameter %s without rewriting ordinary query bytes', (name) => {
+  it.each(['access_token', '%61ccess_token', '%2570assword', 'API_KEY', 'clientSecret', 'password', 'X-Amz-Signature', 'sig', 'SAP-SessionId', 'jwt', 'bearer', 'privateKey', 'clientAssertion'])('redacts the credential URL parameter %s without rewriting ordinary query bytes', (name) => {
     const log = sanitizeODataLog({
       id: 'parameter',
       timestamp: 1,
@@ -304,6 +304,7 @@ describe('proxy Dev Logs', () => {
     ['/Products?password=fixture secret&$top=1', '/Products?password=[Redacted]&$top=1'],
     ['/Products#access_token=fixture-secret&view=list', '/Products#access_token=[Redacted]&view=list'],
     ['/Products?redirect=https%3A%2F%2Ffixture-user%3Afixture-password%40backend.example%2Freturn&$top=1', '/Products?redirect=[Redacted]&$top=1'],
+    ['/Products?redirect=https%253A%252F%252Ffixture-user%253Afixture-password%2540backend.example%252Freturn&$top=1', '/Products?redirect=[Redacted]&$top=1'],
     ['/Products?redirect=https:%2F%2Ffixture-user:fixture-password@backend.example%2Freturn&$top=1', '/Products?redirect=[Redacted]&$top=1'],
     ['/Products?redirect=https%3A%2F%2Ffixture-user%3Afixture-password%40backend.example%2Freturn%ZZ&$top=1', '/Products?redirect=[Redacted]&$top=1'],
     ['/Products?api%ZZkey=fixture-secret&$top=1', '/Products?api%ZZkey=[Redacted]&$top=1'],
@@ -313,6 +314,22 @@ describe('proxy Dev Logs', () => {
     ['/Products?clientId=public&tokenization=full&passwordless=true', '/Products?clientId=public&tokenization=full&passwordless=true'],
   ])('sanitizes diagnostic URLs without transport normalization: %s', (url, expected) => {
     expect(sanitizeODataLog({ id: 'syntax', timestamp: 1, method: 'GET', service: 'Catalog', url }).url).toBe(expected)
+  })
+
+  it('fails closed after the bounded nested URL decode depth', () => {
+    const encodeRepeatedly = (value: string) => Array.from({ length: 10 })
+      .reduce(current => encodeURIComponent(current), value)
+    const passwordName = encodeRepeatedly('password')
+    const redirect = encodeRepeatedly('https://fixture-user:fixture-password@backend.example/return')
+    const url = `/Products?${passwordName}=fixture-secret&redirect=${redirect}&$top=1`
+
+    expect(sanitizeODataLog({
+      id: 'nested-depth',
+      timestamp: 1,
+      method: 'GET',
+      service: 'Catalog',
+      url,
+    }).url).toBe(`/Products?${passwordName}=[Redacted]&redirect=[Redacted]&$top=1`)
   })
 
   it.each([
