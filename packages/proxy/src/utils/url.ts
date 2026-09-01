@@ -8,6 +8,8 @@ const RE_LEADING_SLASHES = /^\/+/
 const RE_DOUBLE_SLASHES = /([^:]\/)\/+/g
 const RE_SINGLE_QUOTE = /'/g
 const RE_WHITESPACE = /\s/u
+const RE_TRAILING_DOT = /\.$/u
+const RE_IPV4_LOOPBACK = /^127(?:\.\d{1,3}){3}$/u
 
 function hasControlOrWhitespace(value: string): boolean {
   return [...value].some((character) => {
@@ -21,6 +23,25 @@ function hasControl(value: string): boolean {
     const code = character.codePointAt(0)!
     return code < 0x20 || code === 0x7F
   })
+}
+
+function isLoopbackHostname(value: string): boolean {
+  const hostname = value.toLowerCase().replace(RE_TRAILING_DOT, '')
+  if (hostname === 'localhost' || hostname.endsWith('.localhost'))
+    return true
+  if (hostname === '[::1]')
+    return true
+  return RE_IPV4_LOOPBACK.test(hostname)
+}
+
+function localRelativeTargetOrigin(event: H3Event): string {
+  const url = getRequestURL(event)
+  if (!isLoopbackHostname(url.hostname)) {
+    throw new TypeError(
+      'ODX relative backend targets require a loopback request host; configure an absolute HTTP(S) URL or BTP Destination for non-local access.',
+    )
+  }
+  return `${url.protocol}//${url.host}`
 }
 
 function hasUnsafeResourceWhitespace(value: string): boolean {
@@ -233,8 +254,7 @@ export function resolveTargetUrl(
   targetUrl = targetUrl.replace(RE_DOUBLE_SLASHES, '$1')
 
   if (targetUrl.startsWith('/')) {
-    const url = getRequestURL(event)
-    targetUrl = `${url.protocol}//${url.host}${targetUrl}`
+    targetUrl = `${localRelativeTargetOrigin(event)}${targetUrl}`
   }
 
   return targetUrl

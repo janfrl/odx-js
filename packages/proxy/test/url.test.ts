@@ -247,6 +247,55 @@ describe('oData URL Utilities', () => {
       expect(result).toBe('http://localhost:3000/sap/opu/odata/sap/V2Service/Suppliers')
     })
 
+    it.each([
+      '169.254.169.254',
+      'backend.example',
+      '10.0.0.8:3000',
+    ])('rejects a non-loopback request host for relative targets: %s', (host) => {
+      const event = createEvent({
+        headers: {
+          host,
+          'x-forwarded-proto': 'https',
+        },
+        url: '/',
+        method: 'GET',
+      } as any, {} as any)
+      const requestInfo = {
+        serviceName: 'v2',
+        odataPath: 'Suppliers',
+        query: '',
+        segments: ['v2', 'Suppliers'],
+      }
+
+      expect(() => resolveTargetUrl(
+        event,
+        '/sap/opu/odata/sap',
+        requestInfo,
+        true,
+        'V2Service',
+      )).toThrow('relative backend targets require a loopback request host')
+    })
+
+    it.each([
+      '127.0.0.1:3000',
+      '127.12.34.56:3000',
+      '[::1]:3000',
+      'mock.localhost:3000',
+    ])('keeps an explicit loopback request host for relative targets: %s', (host) => {
+      const event = createEvent({
+        headers: { host },
+        url: '/',
+        method: 'GET',
+      } as any, {} as any)
+
+      expect(resolveTargetUrl(event, '/sap/opu/odata/sap', {
+        serviceName: 'v2',
+        odataPath: 'Suppliers',
+        query: '',
+        segments: ['v2', 'Suppliers'],
+      }, true, 'V2Service')).toContain('/sap/opu/odata/sap/V2Service/Suppliers')
+    })
+
     it('prevents double slashes in the resolved URL', () => {
       const event = createMockEvent()
       const requestInfo = {

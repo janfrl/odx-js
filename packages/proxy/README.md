@@ -73,6 +73,11 @@ Destination. Controlled production-bundle test harnesses may set the reserved
 prevents an incoming `Host` header from selecting the origin for a deployed
 relative backend request.
 
+Relative mock targets additionally require a loopback request host. Incoming
+public, private-network, link-local, or arbitrary DNS `Host` values are never
+used as the outbound backend origin, including in development and controlled
+test harnesses.
+
 ## Backend header isolation
 
 Normal proxied calls merge global headers, service headers and permitted

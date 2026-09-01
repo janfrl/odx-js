@@ -162,6 +162,12 @@ a deployment. Services without an absolute URL or Destination follow the same
 rule, preventing an incoming `Host` header from selecting a deployed backend
 origin through the local mock path.
 
+Even in those local modes, relative mock targets resolve only when the incoming
+request host is loopback (`localhost`, a `.localhost` name, IPv4 `127/8`, or
+IPv6 `::1`). A public, private-network, link-local, or arbitrary DNS `Host`
+cannot select the outbound origin. Use an absolute validated service URL or a
+BTP Destination when the backend is not hosted by the same local process.
+
 Absolute configured and Destination-provided backend bases are parsed as
 HTTP(S) URLs before proxy dispatch. URL userinfo and backslashes are rejected,
 and fragments are removed; authentication remains in the owned header contract.
