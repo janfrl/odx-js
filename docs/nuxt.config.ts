@@ -62,7 +62,6 @@ export default defineNuxtConfig({
       {
         name: 'demo',
         url: './edmx/demo-v4.edmx',
-        strategy: 'direct',
       },
     ],
   },
