@@ -23,10 +23,36 @@ function hasControl(value: string): boolean {
   })
 }
 
+function hasUnsafeResourceWhitespace(value: string): boolean {
+  let insideStringLiteral = false
+
+  for (let index = 0; index < value.length; index++) {
+    const character = value[index]!
+    const code = character.codePointAt(0)!
+
+    if (code < 0x20 || code === 0x7F)
+      return true
+
+    if (character === '\'') {
+      if (insideStringLiteral && value[index + 1] === '\'') {
+        index++
+        continue
+      }
+      insideStringLiteral = !insideStringLiteral
+      continue
+    }
+
+    if (RE_WHITESPACE.test(character) && !insideStringLiteral)
+      return true
+  }
+
+  return insideStringLiteral
+}
+
 function assertSafeODataResourcePath(value: string): void {
   const fail = (): never => {
     throw new TypeError(
-      'ODX proxy request paths must remain service-relative without traversal, malformed encoding, backslashes, fragments, controls, whitespace, or empty segments.',
+      'ODX proxy request paths must remain service-relative without traversal, malformed encoding, backslashes, fragments, controls, unquoted whitespace, or empty segments.',
     )
   }
   if (value.length === 0)
@@ -37,7 +63,7 @@ function assertSafeODataResourcePath(value: string): void {
     || value.includes('\\')
     || value.includes('?')
     || value.includes('#')
-    || hasControlOrWhitespace(value)) {
+    || hasUnsafeResourceWhitespace(value)) {
     return fail()
   }
   for (const segment of value.split('/')) {
@@ -48,7 +74,7 @@ function assertSafeODataResourcePath(value: string): void {
     catch {
       return fail()
     }
-    if (decoded.includes('\\') || hasControl(decoded))
+    if (decoded.includes('\\') || hasControl(decoded) || hasUnsafeResourceWhitespace(decoded))
       return fail()
     if (decoded.split('/').some(part => part === '.' || part === '..'))
       return fail()

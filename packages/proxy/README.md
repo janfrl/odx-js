@@ -62,7 +62,8 @@ may use optional outer slashes, but resolves to exactly one local URL segment.
 Ambiguous aliases and fallback service names fail before target selection.
 Resource paths are validated independently: traversal, malformed encoding,
 backslashes, controls, and ambiguous segments fail before target URL assembly,
-while encoded separators inside ordinary OData key literals are retained.
+while encoded separators and whitespace inside balanced OData string literals
+are retained. Whitespace outside a string literal remains invalid.
 
 ## Backend header isolation
 

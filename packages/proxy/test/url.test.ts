@@ -127,6 +127,47 @@ describe('oData URL Utilities', () => {
         odataPath: 'Products(\'A%2FB\')',
       })
     })
+
+    it('retains encoded spaces inside an OData function string literal', () => {
+      const event = createEvent({
+        headers: { host: 'localhost:3000' },
+        method: 'GET',
+        url: "/api/odx/catalog/Products/Example.Catalog.GetProductDefaults(Name='Office%20Desk',Price=125.50)",
+      } as any, {} as any)
+
+      expect(parseODataRequest(event, '/api/odx')).toMatchObject({
+        serviceName: 'catalog',
+        odataPath: "Products/Example.Catalog.GetProductDefaults(Name='Office%20Desk',Price=125.50)",
+      })
+    })
+
+    it('accepts an OData string literal decoded by the host router', () => {
+      const event = {
+        path: "/api/odx/catalog/Products/Example.Catalog.GetProductDefaults(Name='Office Desk',Price=125.50)",
+      } as any
+
+      expect(parseODataRequest(event, '/api/odx')).toMatchObject({
+        serviceName: 'catalog',
+        odataPath: "Products/Example.Catalog.GetProductDefaults(Name='Office Desk',Price=125.50)",
+      })
+    })
+
+    it.each([
+      '/api/odx/TestService/Products/Bad Segment',
+      '/api/odx/TestService/Products/Bad%20Segment',
+      "/api/odx/TestService/Products(Name='Unclosed)",
+      "/api/odx/TestService/Products(Name='Bad%09Value')",
+    ])('rejects unquoted, unbalanced, or control resource whitespace %s', (path) => {
+      const event = createEvent({
+        headers: { host: 'localhost:3000' },
+        method: 'GET',
+        url: path,
+      } as any, {} as any)
+
+      expect(() => parseODataRequest(event, '/api/odx')).toThrow(
+        'must remain service-relative',
+      )
+    })
   })
 
   describe('resolveTargetUrl', () => {
@@ -169,6 +210,20 @@ describe('oData URL Utilities', () => {
 
       expect(result).toBe(
         'HTTPS://backend.example/odata/Products?sap-client=100&signature=a%2Bb%3D&%24filter=Name%20eq%20%27Desk%27&sap-client=200',
+      )
+    })
+
+    it('resolves spaces inside an OData string literal without weakening path boundaries', () => {
+      const event = createMockEvent()
+      const result = resolveTargetUrl(event, 'https://backend.example/odata', {
+        serviceName: 'catalog',
+        odataPath: "Products/Example.Catalog.GetProductDefaults(Name='Office Desk',Price=125.50)",
+        query: '',
+        segments: ['catalog'],
+      })
+
+      expect(new URL(result).pathname).toBe(
+        "/odata/Products/Example.Catalog.GetProductDefaults(Name='Office%20Desk',Price=125.50)",
       )
     })
 
