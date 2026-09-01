@@ -154,6 +154,13 @@ A configured query is allowed for SAP routing parameters, retained byte-for-byte
 and placed after the appended service resource path rather than being mistaken
 for part of that path.
 
+Nuxt validates direct-service URLs before copying them into browser-visible
+runtime config, and validates remote metadata URLs before starting build-time
+transport. URL userinfo, backslashes, surrounding whitespace, and control
+characters fail with a sanitized service-scoped error; direct fragments also
+fail rather than entering the client payload. Use explicit auth configuration
+instead of URL-embedded credentials.
+
 On-premise destinations also fail closed when the Connectivity binding or its
 declared HTTP proxy endpoint is missing or invalid. Connectivity access tokens
 are used only as the proxy authorization credential and are never forwarded as

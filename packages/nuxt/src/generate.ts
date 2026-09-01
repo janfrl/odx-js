@@ -14,6 +14,7 @@ import { extractEntitiesFromCsdlDocument } from '@me-tools/odx-core/server'
 import { parseCsdl } from '@me-tools/odx-metadata'
 import { consola } from 'consola'
 import { dirname, join, resolve } from 'pathe'
+import { parseSafeHttpServiceUrl } from './service-url'
 
 const logger = consola.withTag('@me-tools/odx-nuxt')
 const METADATA_DOWNLOAD_TIMEOUT_MS = 30_000
@@ -143,7 +144,10 @@ async function ensureGeneratedODataTypes(inputPath: string, outDir: string, temp
  * Downloads metadata from a remote OData service.
  */
 export async function downloadMetadata(svc: ODataServiceConfig, config: ODataProxyConfig): Promise<string> {
-  const parsedUrl = new URL(svc.url!)
+  const parsedUrl = parseSafeHttpServiceUrl(
+    svc.url!,
+    `Metadata URL for OData service "${svc.name}"`,
+  )
   parsedUrl.pathname = `${parsedUrl.pathname.replace(RE_TRAILING_SLASHES, '')}/$metadata`
   parsedUrl.hash = ''
   const metadataUrl = parsedUrl.toString()

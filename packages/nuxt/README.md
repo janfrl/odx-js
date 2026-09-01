@@ -667,6 +667,12 @@ connection pool. This adds a connection handshake per download but no automatic
 retry. TLS validation, request timeouts and validated cache fallback are
 unchanged; application-runtime OData pooling is not affected.
 
+Remote metadata URLs must be exact absolute HTTP(S) URLs without URL userinfo,
+backslashes, surrounding whitespace, or control characters. Direct-service
+URLs use the same validation before they enter public runtime config and also
+reject fragments. Supply authentication through `auth` or host transport
+configuration, never by embedding credentials in a URL.
+
 SDK metadata downloads merge configured global and service headers
 case-insensitively, with service values taking precedence. The existing
 `service.auth || global auth` selection is unchanged: computed Basic or Bearer

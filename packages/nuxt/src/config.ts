@@ -1,6 +1,7 @@
 import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import process from 'node:process'
 import { useLogger } from '@nuxt/kit'
+import { parseSafeHttpServiceUrl } from './service-url'
 
 const RE_UNDERSCORE = /_/g
 const ENV_PREFIX = 'NUXT_ODATA_SERVICES_'
@@ -222,11 +223,26 @@ export function createPublicODataConfig(config: ODataProxyConfig): ODataPublicCo
   return {
     mode: config.mode,
     basePath: config.basePath,
-    services: config.services.map(service => ({
-      name: service.name,
-      strategy: service.strategy || 'proxied',
-      route: service.route,
-      ...(service.strategy === 'direct' ? { url: service.url } : {}),
-    })),
+    services: config.services.map((service) => {
+      let directUrl: string | undefined
+      if (service.strategy === 'direct' && service.url !== undefined) {
+        const parsed = parseSafeHttpServiceUrl(
+          service.url,
+          `Direct URL for OData service "${service.name}"`,
+        )
+        if (parsed.hash.length > 0) {
+          throw new TypeError(
+            `Direct URL for OData service "${service.name}" must not contain a fragment.`,
+          )
+        }
+        directUrl = service.url
+      }
+      return {
+        name: service.name,
+        strategy: service.strategy || 'proxied',
+        route: service.route,
+        ...(service.strategy === 'direct' ? { url: directUrl } : {}),
+      }
+    }),
   }
 }

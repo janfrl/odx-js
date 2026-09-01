@@ -164,6 +164,12 @@ backend URL. Direct services also expose their URL because the browser must call
 that endpoint. Secrets must stay in private runtime config, environment
 variables, or BTP services.
 
+Before public config is created, a direct URL must be an exact absolute HTTP(S)
+URL without URL userinfo, backslashes, surrounding whitespace, control
+characters, or a fragment. Build-time remote metadata downloads apply the same
+credential and normalization checks, while omitting an otherwise valid
+fragment from the `$metadata` request.
+
 ### Service Config
 
 Each service is an `ODataServiceConfig`.

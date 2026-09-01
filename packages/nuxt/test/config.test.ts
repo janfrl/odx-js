@@ -150,6 +150,26 @@ describe('public OData runtime configuration', () => {
     })
   })
 
+  it.each([
+    'https://fixture-user:fixture-password@services.example.test/odata',
+    'https:\\services.example.test\\odata',
+    'https://services.example.test/odata#fragment',
+    ' https://services.example.test/odata',
+  ])('rejects an unsafe direct URL before creating public runtime config', (url) => {
+    const config: ODataProxyConfig = {
+      basePath: '/api/odx',
+      buildDir: '.nuxt',
+      mode: 'sdk',
+      rootDir: '.',
+      services: [{ name: 'PublicService', strategy: 'direct', url }],
+    }
+
+    expect(() => createPublicODataConfig(config)).toThrow(
+      'Direct URL for OData service "PublicService"',
+    )
+    expect(() => createPublicODataConfig(config)).not.toThrow(url)
+  })
+
   it('retains destination-only services without inventing a backend URL', () => {
     const config = resolveModuleConfig({
       services: [{

@@ -400,6 +400,19 @@ describe('type Generation Logic', () => {
 
   describe('downloadMetadata', () => {
     it.each([
+      'https://fixture-user:fixture-password@example.com/odata',
+      'https:\\example.com\\odata',
+      'file:///tmp/catalog.edmx',
+      ' https://example.com/odata',
+    ])('rejects the unsafe remote metadata URL without starting transport', async (url) => {
+      await expect(downloadMetadata({ name: 'Catalog', url }, {} as any)).rejects.toThrow(
+        'Metadata URL for OData service "Catalog"',
+      )
+      expect(https.get).not.toHaveBeenCalled()
+      expect(http.get).not.toHaveBeenCalled()
+    })
+
+    it.each([
       { auth: undefined, expected: 'Bearer global-token' },
       { auth: {}, expected: 'Custom service header' },
       { auth: { username: 'service-user', password: 'service-pass' }, expected: `Basic ${Buffer.from('service-user:service-pass').toString('base64')}` },
