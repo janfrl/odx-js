@@ -41,4 +41,21 @@ describe('nitro runtime adapters', () => {
     expect(nitro.options.externals.inline).toHaveLength(1)
     expect(nitro.options.externals.inline[0]).toMatch(/packages[\\/]proxy[\\/]src$/)
   })
+
+  it('normalizes the configured proxy handler mount', () => {
+    const nitro = createNitroOptions()
+    nitro.options.odata.basePath = '/api/odx///'
+
+    odxNitroModule.setup(nitro)
+
+    expect(nitro.options.handlers[0]?.route).toBe('/api/odx/**')
+  })
+
+  it('rejects an unsafe proxy handler mount before registering routes', () => {
+    const nitro = createNitroOptions()
+    nitro.options.odata.basePath = '//remote.example/odx'
+
+    expect(() => odxNitroModule.setup(nitro)).toThrow('ODX proxy basePath')
+    expect(nitro.options.handlers).toEqual([])
+  })
 })

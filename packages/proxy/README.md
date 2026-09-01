@@ -52,6 +52,12 @@ chunks inside the host bundle. This preserves Nitro's virtual runtime imports
 for both installed packages and workspace builds instead of loading the plugin
 files as standalone Node modules.
 
+The proxy mount is an app-local route boundary. `normalizeODataProxyBasePath`
+removes trailing slashes from valid paths such as `/api/odx/` and rejects root,
+absolute, protocol-relative, traversal, empty-segment, query, fragment,
+backslash, and whitespace forms before handler registration. Request parsing
+also requires the incoming path to remain on that exact segment boundary.
+
 ## Backend header isolation
 
 Normal proxied calls merge global headers, service headers and permitted

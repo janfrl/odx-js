@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineNitroModule } from 'nitropack/kit'
 import { dirname, resolve } from 'pathe'
+import { normalizeODataProxyBasePath } from './utils/url'
 import './types'
 
 const moduleDirectory = dirname(fileURLToPath(import.meta.url))
@@ -19,10 +20,11 @@ export default defineNitroModule({
     if (!config) {
       return
     }
+    const basePath = normalizeODataProxyBasePath(config.basePath || '/api/odx')
 
     // Register handlers using absolute paths
     nitro.options.handlers.push({
-      route: `${config.basePath}/**`,
+      route: `${basePath}/**`,
       handler: resolve(sourceDirectory, `./api/odata${runtimeExtension}`),
     })
 

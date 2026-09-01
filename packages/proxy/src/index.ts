@@ -2,7 +2,7 @@ import type { ODataProxyConfig } from '@me-tools/odx-core'
 import { defineEventHandler } from 'h3'
 import odataHandler from './api/odata'
 import { resolveProxyTarget } from './utils/target'
-import { parseODataRequest } from './utils/url'
+import { normalizeODataProxyBasePath, parseODataRequest } from './utils/url'
 
 export type {
   ODataProxyHooks,
@@ -15,6 +15,7 @@ export type {
   SapSecurityContext,
 } from './types'
 export { odataGuard } from './utils/rules'
+export { normalizeODataProxyBasePath } from './utils/url'
 export {
   addODataLog,
   boundLogPayload,
@@ -51,11 +52,11 @@ export type {
  * @param config The proxy configuration.
  */
 export function createODataHandler(config: ODataProxyConfig): ReturnType<typeof defineEventHandler> {
+  const basePath = normalizeODataProxyBasePath(config.basePath || '/api/odx')
   return defineEventHandler(async (event) => {
     // 1. Inject config into context
     event.context.odataConfig = config
 
-    const basePath = config.basePath || '/api/odx'
     if (!event.path.startsWith(basePath)) {
       return odataHandler(event)
     }

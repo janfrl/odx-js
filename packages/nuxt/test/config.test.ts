@@ -87,6 +87,28 @@ describe('private service authentication normalization', () => {
 })
 
 describe('public OData runtime configuration', () => {
+  it('normalizes a local proxy mount before exposing it to Nitro and browser runtime', () => {
+    const config = resolveModuleConfig({ basePath: '/tenant-a/odx///' }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })
+
+    expect(config.basePath).toBe('/tenant-a/odx')
+    expect(createPublicODataConfig(config).basePath).toBe('/tenant-a/odx')
+  })
+
+  it.each([
+    '//remote.example/odx',
+    'https://remote.example/odx',
+    '/api/../odx',
+    '/api/odx?tenant=one',
+  ])('rejects an unsafe proxy mount during module setup: %s', (basePath) => {
+    expect(() => resolveModuleConfig({ basePath }, {
+      buildDir: '.nuxt',
+      rootDir: '.',
+    })).toThrow('ODX proxy basePath')
+  })
+
   it('keeps proxied backend URLs private while preserving direct service URLs', () => {
     const config: ODataProxyConfig = {
       basePath: '/api/odx',

@@ -1,5 +1,6 @@
 import type { ModuleOptions, ODataProxyConfig, ODataPublicConfig, ODataServiceConfig } from '@me-tools/odx-core'
 import process from 'node:process'
+import { normalizeODataProxyBasePath } from '@me-tools/odx-proxy'
 import { useLogger } from '@nuxt/kit'
 import { parseSafeHttpServiceUrl } from './service-url'
 
@@ -180,7 +181,7 @@ export function resolveModuleConfig(options: ModuleOptions, nuxtOptions: any): O
   })
 
   return {
-    basePath: options.basePath ?? '/api/odx',
+    basePath: normalizeODataProxyBasePath(options.basePath ?? '/api/odx'),
     mode: options.mode ?? 'sdk',
     defaultProxyMode: options.defaultProxyMode ?? 'stream',
     destination: options.destination ?? '',

@@ -3,9 +3,16 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '#imports': fileURLToPath(new URL('./test/imports.mock.ts', import.meta.url)),
-    },
+    alias: [
+      {
+        find: '#imports',
+        replacement: fileURLToPath(new URL('./test/imports.mock.ts', import.meta.url)),
+      },
+      {
+        find: /^@me-tools\/odx-proxy$/u,
+        replacement: fileURLToPath(new URL('../proxy/src/index.ts', import.meta.url)),
+      },
+    ],
   },
   test: {
     name: 'nuxt',

@@ -6,6 +6,54 @@ const RE_TRAILING_SLASHES = /\/+$/
 const RE_LEADING_SLASHES = /^\/+/
 const RE_DOUBLE_SLASHES = /([^:]\/)\/+/g
 const RE_SINGLE_QUOTE = /'/g
+const RE_WHITESPACE = /\s/u
+
+function hasControlOrWhitespace(value: string): boolean {
+  return [...value].some((character) => {
+    const code = character.codePointAt(0)!
+    return code <= 0x20 || code === 0x7F || RE_WHITESPACE.test(character)
+  })
+}
+
+/** Validates and normalizes the local route prefix owned by the ODX proxy. */
+export function normalizeODataProxyBasePath(value: string): string {
+  const fail = (): never => {
+    throw new TypeError(
+      'ODX proxy basePath must be an exact non-root local path without queries, fragments, traversal, or empty segments.',
+    )
+  }
+  if (typeof value !== 'string'
+    || value.length === 0
+    || !value.startsWith('/')
+    || value.startsWith('//')
+    || value.includes('\\')
+    || value.includes('?')
+    || value.includes('#')
+    || hasControlOrWhitespace(value)) {
+    return fail()
+  }
+  const normalized = value.replace(RE_TRAILING_SLASHES, '')
+  if (normalized.length === 0)
+    return fail()
+  for (const segment of normalized.slice(1).split('/')) {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(segment)
+    }
+    catch {
+      return fail()
+    }
+    if (segment.length === 0
+      || decoded === '.'
+      || decoded === '..'
+      || decoded.includes('/')
+      || decoded.includes('\\')
+      || hasControlOrWhitespace(decoded)) {
+      return fail()
+    }
+  }
+  return normalized
+}
 
 /**
  * Parsed information about a proxied OData request.
@@ -27,7 +75,10 @@ export interface ODataRequestInfo {
 export function parseODataRequest(event: H3Event, basePath = '/api/odx'): ODataRequestInfo {
   const queryIndex = event.path.indexOf('?')
   const pathOnly = queryIndex === -1 ? event.path : event.path.slice(0, queryIndex)
-  const normalizedBasePath = basePath.replace(RE_TRAILING_SLASHES, '')
+  const normalizedBasePath = normalizeODataProxyBasePath(basePath)
+  if (pathOnly !== normalizedBasePath && !pathOnly.startsWith(`${normalizedBasePath}/`)) {
+    throw new TypeError('The request path is outside the configured ODX proxy basePath.')
+  }
   const relativePath = pathOnly.slice(normalizedBasePath.length).replace(RE_LEADING_SLASHES, '')
   const segments = relativePath.split('/').filter(Boolean)
 

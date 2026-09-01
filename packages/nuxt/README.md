@@ -19,6 +19,11 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
+The optional `basePath` is an app-local, non-root route prefix. Module setup
+normalizes trailing slashes and rejects absolute, protocol-relative, traversal,
+query, fragment, backslash, whitespace, and empty-segment forms before the path
+is exposed to Nitro or browser runtime configuration.
+
 The server read service invokes unbound V4 functions directly at the configured
 service root. Its entity set provides `fetchOne`, `fetchOneWithResponse`,
 `fetchContainedOneWithResponse`, `fetchNavigationOneWithResponse`, `fetchList`,

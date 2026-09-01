@@ -1,6 +1,39 @@
 import { createEvent } from 'h3'
 import { describe, expect, it } from 'vitest'
-import { parseODataRequest, resolveTargetUrl } from '../src/utils/url'
+import {
+  normalizeODataProxyBasePath,
+  parseODataRequest,
+  resolveTargetUrl,
+} from '../src/utils/url'
+
+describe('oDX proxy base paths', () => {
+  it.each([
+    ['/api/odx', '/api/odx'],
+    ['/tenant-a/odata-proxy/', '/tenant-a/odata-proxy'],
+    ['/%E2%82%AC-api', '/%E2%82%AC-api'],
+  ])('normalizes a local proxy mount %s', (input, expected) => {
+    expect(normalizeODataProxyBasePath(input)).toBe(expected)
+  })
+
+  it.each([
+    '',
+    '/',
+    'api/odx',
+    '//remote.example/odx',
+    'https://remote.example/odx',
+    '/api//odx',
+    '/api/../odx',
+    '/api/%2e%2e/odx',
+    '/api/%2Fodx',
+    '/api\\odx',
+    '/api/odx?tenant=one',
+    '/api/odx#fragment',
+    '/api/odx ',
+    '/api/%ZZ',
+  ])('rejects an unsafe or ambiguous proxy mount %j', (input) => {
+    expect(() => normalizeODataProxyBasePath(input)).toThrow('ODX proxy basePath')
+  })
+})
 
 describe('oData URL Utilities', () => {
   describe('parseODataRequest', () => {
@@ -56,6 +89,13 @@ describe('oData URL Utilities', () => {
       expect(result.serviceName).toBe('TestService')
       expect(result.odataPath).toBe('Products')
       expect(result.query).toBe('?$filter=contains(Name,\'?\')&next=/foo?bar=baz')
+    })
+
+    it('rejects requests outside the configured path boundary', () => {
+      const event = { path: '/api/odx-other/TestService/Products' } as any
+      expect(() => parseODataRequest(event, '/api/odx')).toThrow(
+        'outside the configured ODX proxy basePath',
+      )
     })
   })
 

@@ -160,6 +160,10 @@ Stable options are defined in `packages/core/src/types.ts` as `ModuleOptions`.
 | `devtools.logStore.sql.url` | Database URL for network SQL providers such as PostgreSQL. | none |
 | `devtools.logStore.sql.path` | Local SQLite database path for development or explicit single-instance demos. | none |
 
+`basePath` is a local, non-root route prefix. ODX removes trailing slashes and
+rejects absolute or protocol-relative URLs, empty interior segments, traversal,
+backslashes, whitespace, queries, and fragments before Nitro registers a route.
+
 Only safe public fields are exposed through `runtimeConfig.public.odata`.
 Proxied services expose their name, strategy, and optional route but not their
 backend URL. Direct services also expose their URL because the browser must call
