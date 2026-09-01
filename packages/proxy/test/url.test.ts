@@ -132,31 +132,31 @@ describe('oData URL Utilities', () => {
       const event = createEvent({
         headers: { host: 'localhost:3000' },
         method: 'GET',
-        url: "/api/odx/catalog/Products/Example.Catalog.GetProductDefaults(Name='Office%20Desk',Price=125.50)",
+        url: '/api/odx/catalog/Products/Example.Catalog.GetProductDefaults(Name=\'Office%20Desk\',Price=125.50)',
       } as any, {} as any)
 
       expect(parseODataRequest(event, '/api/odx')).toMatchObject({
         serviceName: 'catalog',
-        odataPath: "Products/Example.Catalog.GetProductDefaults(Name='Office%20Desk',Price=125.50)",
+        odataPath: 'Products/Example.Catalog.GetProductDefaults(Name=\'Office%20Desk\',Price=125.50)',
       })
     })
 
     it('accepts an OData string literal decoded by the host router', () => {
       const event = {
-        path: "/api/odx/catalog/Products/Example.Catalog.GetProductDefaults(Name='Office Desk',Price=125.50)",
+        path: '/api/odx/catalog/Products/Example.Catalog.GetProductDefaults(Name=\'Office Desk\',Price=125.50)',
       } as any
 
       expect(parseODataRequest(event, '/api/odx')).toMatchObject({
         serviceName: 'catalog',
-        odataPath: "Products/Example.Catalog.GetProductDefaults(Name='Office Desk',Price=125.50)",
+        odataPath: 'Products/Example.Catalog.GetProductDefaults(Name=\'Office Desk\',Price=125.50)',
       })
     })
 
     it.each([
       '/api/odx/TestService/Products/Bad Segment',
       '/api/odx/TestService/Products/Bad%20Segment',
-      "/api/odx/TestService/Products(Name='Unclosed)",
-      "/api/odx/TestService/Products(Name='Bad%09Value')",
+      '/api/odx/TestService/Products(Name=\'Unclosed)',
+      '/api/odx/TestService/Products(Name=\'Bad%09Value\')',
     ])('rejects unquoted, unbalanced, or control resource whitespace %s', (path) => {
       const event = createEvent({
         headers: { host: 'localhost:3000' },
@@ -217,13 +217,13 @@ describe('oData URL Utilities', () => {
       const event = createMockEvent()
       const result = resolveTargetUrl(event, 'https://backend.example/odata', {
         serviceName: 'catalog',
-        odataPath: "Products/Example.Catalog.GetProductDefaults(Name='Office Desk',Price=125.50)",
+        odataPath: 'Products/Example.Catalog.GetProductDefaults(Name=\'Office Desk\',Price=125.50)',
         query: '',
         segments: ['catalog'],
       })
 
       expect(new URL(result).pathname).toBe(
-        "/odata/Products/Example.Catalog.GetProductDefaults(Name='Office%20Desk',Price=125.50)",
+        '/odata/Products/Example.Catalog.GetProductDefaults(Name=\'Office%20Desk\',Price=125.50)',
       )
     })
 
