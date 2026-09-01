@@ -20,7 +20,7 @@ path string. Navigation root references reuse the same validated entity-key,
 containment, and navigation serializers for expressions such as recursive
 hierarchy transformations.
 
-### Exact typed entity keys
+## Exact typed entity keys
 
 An ordinary string key remains an OData string literal. Do not convert Decimal
 or Int64 identity to a JavaScript number, or pass an unquoted path fragment.
