@@ -628,6 +628,9 @@ implementations must redact sensitive headers and URL credentials and bound or
 omit payloads before entries are persisted. `sanitizeODataLog` redacts URL
 userinfo and known credential query/fragment values in `url`, `targetUrl`,
 trace messages and nested trace strings, including with `storePayloads: false`.
+Values containing fully or partially percent-encoded URL userinfo are replaced
+as a whole, so encoded redirect or callback URLs cannot bypass the same
+boundary.
 Ordinary query bytes and the transport input remain unchanged. This is not
 general-purpose secret discovery or retroactive cleanup of existing SQL rows
 and exports; see [Logging and telemetry](./SECURITY.md#logging-and-telemetry).

@@ -81,7 +81,9 @@ const REDACTED_HEADER_VALUE = '[Redacted]'
 // Start at the delimiter: searching an unbounded scheme from every character
 // would repeatedly rescan long ordinary trace messages that contain no URL.
 const RE_URL_USER_INFO = /((?::|^|[\s="'(<])\/\/)[^/?#]*@/g
-const RE_URL_PARAMETER = /([?&#])([^=?&#]+)=[^&#]*/g
+const RE_URL_USER_INFO_VALUE = /(?::|^|[\s="'(<])\/\/[^/?#]*@/
+const RE_URL_PARAMETER = /([?&#])([^=?&#]+)=([^&#]*)/g
+const RE_ENCODED_URL_DELIMITER = /%(?:2f|40)/i
 const RE_CAMEL_CASE_BOUNDARY = /([a-z\d])([A-Z])/g
 const RE_URL_CREDENTIAL_NAME = /(?:^|-)(?:password|passwd|pwd|signature|sig|credential|jwt|bearer|private-key|client-assertion)(?:$|-)/i
 const RE_QUERY_PLUS = /\+/g
@@ -186,12 +188,33 @@ function isSensitiveUrlParameter(name: string): boolean {
   }
 }
 
+function containsEncodedUrlUserInfo(value: string): boolean {
+  if (!RE_ENCODED_URL_DELIMITER.test(value)
+    || value.includes(`${REDACTED_HEADER_VALUE}@`)) {
+    return false
+  }
+  try {
+    return RE_URL_USER_INFO_VALUE.test(
+      decodeURIComponent(value.replace(RE_QUERY_PLUS, ' ')),
+    )
+  }
+  catch {
+    return false
+  }
+}
+
 function redactUrlCredentials(value: string): string {
   // Work on a diagnostic copy, without URL reserialization changing ordinary
   // OData query bytes. Never apply this redaction to the transport request.
   return value.replace(RE_URL_USER_INFO, `$1${REDACTED_HEADER_VALUE}@`)
-    .replace(RE_URL_PARAMETER, (entry, separator: string, name: string) =>
-      isSensitiveUrlParameter(name) ? `${separator}${name}=${REDACTED_HEADER_VALUE}` : entry)
+    .replace(RE_URL_PARAMETER, (
+      entry,
+      separator: string,
+      name: string,
+      parameterValue: string,
+    ) => isSensitiveUrlParameter(name) || containsEncodedUrlUserInfo(parameterValue)
+      ? `${separator}${name}=${REDACTED_HEADER_VALUE}`
+      : entry)
 }
 
 function isTraceHeaderValueKey(key: string): boolean {
