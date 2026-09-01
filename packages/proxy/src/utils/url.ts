@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
 import { getRequestURL } from 'h3'
+import { normalizeODataServiceRoute } from './service-route'
 
 const RE_TRAILING_SLASH = /\/$/
 const RE_TRAILING_SLASHES = /\/+$/
@@ -124,7 +125,8 @@ export function resolveTargetUrl(
     : targetBaseWithoutFragment.slice(0, configuredQueryIndex)).replace(RE_TRAILING_SLASH, '')
 
   if (isRelative) {
-    targetUrl += `/${overrideServiceName || requestInfo.serviceName}`
+    const serviceName = normalizeODataServiceRoute(overrideServiceName || requestInfo.serviceName)
+    targetUrl += `/${serviceName}`
   }
 
   let query = requestInfo.query

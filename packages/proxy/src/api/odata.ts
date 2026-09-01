@@ -8,6 +8,7 @@ import { resolveConnectivityRequest } from '../utils/connectivity-proxy'
 import { prepareProxyHeaders } from '../utils/headers'
 import { OdxProxyTelemetry, resolveOdxProxyTargetKind } from '../utils/operational-telemetry'
 import { odataGuard } from '../utils/rules'
+import { findODataServiceByRoute } from '../utils/service-route'
 import { DevToolsTracer } from '../utils/trace'
 import { parseODataRequest, resolveTargetUrl } from '../utils/url'
 
@@ -126,10 +127,7 @@ export default defineEventHandler(async (event): Promise<any> => {
 
     // 1. Request Classification & Telemetry Initialization
     const request = parseODataRequest(event, config?.basePath)
-    const matched = config?.services?.find((svc: any) =>
-      svc.name.toLowerCase() === request.serviceName.toLowerCase()
-      || (svc.route && svc.route.toLowerCase() === request.serviceName.toLowerCase()),
-    )
+    const matched = findODataServiceByRoute(config?.services ?? [], request.serviceName)
     const serviceName = matched?.name || request.serviceName
     const entitySetId = request.segments[1]?.match(ENTITY_SET_IDENTIFIER)?.[0]
     telemetry = config.telemetry?.enabled

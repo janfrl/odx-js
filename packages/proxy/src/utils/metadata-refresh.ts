@@ -210,7 +210,10 @@ function resolveRelativeUrl(event: H3Event, value: string): string {
 function appendMetadataPath(baseUrl: string, serviceName?: string): string {
   const url = new URL(baseUrl)
   const normalizedPath = url.pathname.replace(RE_TRAILING_SLASHES, '')
-  url.pathname = `${normalizedPath}${serviceName ? `/${serviceName}` : ''}/$metadata`
+  const normalizedServiceName = serviceName === undefined
+    ? undefined
+    : normalizeODataServiceRoute(serviceName)
+  url.pathname = `${normalizedPath}${normalizedServiceName ? `/${normalizedServiceName}` : ''}/$metadata`
   url.hash = ''
   return url.toString()
 }

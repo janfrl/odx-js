@@ -176,6 +176,32 @@ describe('oData URL Utilities', () => {
       expect(result).toBe('http://localhost:3000/sap/opu/odata/sap/V2Service/Products')
     })
 
+    it.each([
+      '../OtherService',
+      'Catalog/OtherService',
+      'Catalog%2FOtherService',
+      'Catalog?tenant=other',
+      'Catalog#fragment',
+      'Catalog Service',
+      'Catalog\\OtherService',
+    ])('rejects unsafe technical names for relative targets: %s', (technicalName) => {
+      const event = createMockEvent()
+      const requestInfo = {
+        serviceName: 'catalog',
+        odataPath: 'Products',
+        query: '',
+        segments: ['catalog', 'Products'],
+      }
+
+      expect(() => resolveTargetUrl(
+        event,
+        '/sap/opu/odata/sap',
+        requestInfo,
+        true,
+        technicalName,
+      )).toThrow('must be one exact local URL segment')
+    })
+
     it('escapes single quotes in explorer-style string IDs as OData string literals', () => {
       const event = createMockEvent()
       const requestInfo = {
