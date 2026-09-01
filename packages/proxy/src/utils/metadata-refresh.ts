@@ -13,7 +13,7 @@ import { dirname, join, resolve } from 'pathe'
 import { looksLikeHttpBackendUrl } from './backend-url'
 import { resolveConnectivityRequest } from './connectivity-proxy'
 import { prepareProxyHeaders } from './headers'
-import { normalizeODataServiceRoute } from './service-route'
+import { assertSafeODataServiceName, normalizeODataServiceRoute } from './service-route'
 import { resolveProxyTarget } from './target'
 
 export interface RuntimeMetadataRefreshResult {
@@ -60,6 +60,7 @@ const RE_WHITESPACE = /\s+/g
 const runtimeMetadataRefreshes = new Map<string, Promise<RuntimeMetadataRefreshResult>>()
 
 export function getRuntimeMetadataCachePaths(config: ODataProxyConfig, serviceName: string): { tempFile: string, persistentCacheFile: string, stateFile: string } {
+  assertSafeODataServiceName(serviceName)
   const buildDir = config.buildDir ?? ''
   const rootDir = config.rootDir ?? ''
 

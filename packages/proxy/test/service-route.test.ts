@@ -1,6 +1,7 @@
 import type { ODataServiceConfig } from '@me-tools/odx-core'
 import { describe, expect, it } from 'vitest'
 import {
+  assertSafeODataServiceName,
   assertUnambiguousODataServiceRoutes,
   findODataServiceByRoute,
   normalizeODataServiceRoute,
@@ -8,6 +9,17 @@ import {
 } from '../src/utils/service-route'
 
 describe('oData service routes', () => {
+  it.each(['Catalog', 'R&D Catalog', 'catalog.v2'])('accepts a path-safe service name %j', (name) => {
+    expect(() => assertSafeODataServiceName(name)).not.toThrow()
+  })
+
+  it.each(['', '../Catalog', 'Catalog/Other', 'Catalog\\Other'])('rejects a path-escaping service name %j', (name) => {
+    expect(() => assertSafeODataServiceName(name)).toThrow('must not be empty or contain path separators')
+    expect(() => normalizeODataServiceRoutes([{ name, route: 'catalog' }])).toThrow(
+      'must not be empty or contain path separators',
+    )
+  })
+
   it.each([
     ['catalog', 'catalog'],
     ['/business-partner/', 'business-partner'],

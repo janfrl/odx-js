@@ -1,7 +1,17 @@
 import type { ODataServiceConfig } from '@me-tools/odx-core'
 
 const RE_BOUNDARY_SLASHES = /^\/+|\/+$/g
+const RE_PATH_SEPARATOR = /[\\/]/u
 const RE_WHITESPACE = /\s/u
+
+/** Rejects service identifiers that could escape generated or cached file paths. */
+export function assertSafeODataServiceName(value: string): void {
+  if (typeof value !== 'string' || value.length === 0 || RE_PATH_SEPARATOR.test(value)) {
+    throw new TypeError(
+      `OData service name ${JSON.stringify(value)} must not be empty or contain path separators.`,
+    )
+  }
+}
 
 function fail(value: string): never {
   throw new TypeError(
@@ -42,6 +52,7 @@ export function normalizeODataServiceRoute(value: string): string {
 }
 
 function routeCandidates(service: ODataServiceConfig): readonly string[] {
+  assertSafeODataServiceName(service.name)
   const route = service.route === undefined
     ? undefined
     : normalizeODataServiceRoute(service.route)
@@ -81,12 +92,15 @@ export function assertUnambiguousODataServiceRoutes(
 export function normalizeODataServiceRoutes(
   services: readonly ODataServiceConfig[],
 ): ODataServiceConfig[] {
-  const normalized = services.map(service => ({
-    ...service,
-    ...(service.route === undefined
-      ? {}
-      : { route: normalizeODataServiceRoute(service.route) }),
-  }))
+  const normalized = services.map((service) => {
+    assertSafeODataServiceName(service.name)
+    return {
+      ...service,
+      ...(service.route === undefined
+        ? {}
+        : { route: normalizeODataServiceRoute(service.route) }),
+    }
+  })
   assertUnambiguousODataServiceRoutes(normalized)
   return normalized
 }

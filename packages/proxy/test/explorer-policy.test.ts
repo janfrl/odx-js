@@ -114,6 +114,17 @@ function createTempRoot(): string {
   return root
 }
 
+describe('runtime metadata cache paths', () => {
+  it.each(['../outside', 'nested/service', 'nested\\service'])('rejects a path-escaping service name %j', (serviceName) => {
+    const rootDir = createTempRoot()
+    const config = createRuntimeMetadataConfig(rootDir, 'https://backend.example.test/odata')
+
+    expect(() => getRuntimeMetadataCachePaths(config, serviceName)).toThrow(
+      'must not be empty or contain path separators',
+    )
+  })
+})
+
 function createRuntimeMetadataConfig(rootDir: string, url: string): ODataProxyConfig {
   return {
     basePath: '/api/odx',
