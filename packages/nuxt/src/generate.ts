@@ -39,8 +39,18 @@ const RE_IDENTIFIER_CHARS = /\W/g
 const RE_IDENTIFIER_START = /^[a-z_]/i
 const RE_PATH_SEPARATOR = /[/\\]/
 const RE_UNSAFE_MODEL_FILE = /[/\\:]/
+const RE_NON_PORTABLE_FILENAME_CHARACTER = /[<>:"|?*]/u
+const RE_NON_PORTABLE_FILENAME_END = /[. ]$/u
+const RE_WINDOWS_RESERVED_FILENAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu
 const RE_TRAILING_SLASHES = /\/+$/
 const SDK_CACHE_VERSION = 1
+
+function hasControlCharacter(value: string): boolean {
+  return [...value].some((character) => {
+    const codePoint = character.codePointAt(0) ?? 0
+    return codePoint <= 0x1F || codePoint === 0x7F
+  })
+}
 
 function isAbsoluteHttpUrl(value: string): boolean {
   try {
@@ -253,9 +263,16 @@ function extractEntitiesFromMetadata(xml: string, sourcePath: string): EntityMap
   throw new Error(`Could not parse OData metadata at ${sourcePath}: ${reason || 'expected an OData V2 or V4 EDMX root'}`)
 }
 function assertValidServiceNameForTypeGeneration(serviceName: string): void {
-  if (serviceName === '.' || serviceName === '..' || RE_PATH_SEPARATOR.test(serviceName)) {
+  if (serviceName.length === 0
+    || serviceName === '.'
+    || serviceName === '..'
+    || RE_PATH_SEPARATOR.test(serviceName)
+    || RE_NON_PORTABLE_FILENAME_CHARACTER.test(serviceName)
+    || hasControlCharacter(serviceName)
+    || RE_NON_PORTABLE_FILENAME_END.test(serviceName)
+    || RE_WINDOWS_RESERVED_FILENAME.test(serviceName)) {
     throw new Error(
-      `Invalid OData service name "${serviceName}": relative dot segments and path separators are not allowed in service names used for Nuxt type generation.`,
+      `Invalid OData service name "${serviceName}": service names used for Nuxt type generation must be portable generated-file segments.`,
     )
   }
 }

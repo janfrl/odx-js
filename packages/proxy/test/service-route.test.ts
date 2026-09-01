@@ -13,10 +13,27 @@ describe('oData service routes', () => {
     expect(() => assertSafeODataServiceName(name)).not.toThrow()
   })
 
-  it.each(['', '.', '..', '../Catalog', 'Catalog/Other', 'Catalog\\Other'])('rejects a path-escaping service name %j', (name) => {
-    expect(() => assertSafeODataServiceName(name)).toThrow('must not be empty, a relative dot segment, or contain path separators')
+  it.each([
+    '',
+    '.',
+    '..',
+    '../Catalog',
+    'Catalog/Other',
+    'Catalog\\Other',
+    'catalog:tenant',
+    'catalog*',
+    'catalog?',
+    'catalog\u0000',
+    'CON',
+    'nul.json',
+    'COM1',
+    'LPT9.logs',
+    'Catalog.',
+    'Catalog ',
+  ])('rejects a non-portable generated-file service name %j', (name) => {
+    expect(() => assertSafeODataServiceName(name)).toThrow('must be a portable generated-file segment')
     expect(() => normalizeODataServiceRoutes([{ name, route: 'catalog' }])).toThrow(
-      'must not be empty, a relative dot segment, or contain path separators',
+      'must be a portable generated-file segment',
     )
   })
 

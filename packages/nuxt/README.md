@@ -645,9 +645,10 @@ with dot notation, for example `useOData().V2Service`. For names that are not
 valid identifiers, use bracket or functional access instead, for example
 `useOData()['Sales-Order']` or `useOData('Sales-Order')`.
 
-Service names are also used in generated output and metadata cache paths, so
-relative dot segments (`.` and `..`) and path separator characters such as `/`
-and `\` are rejected.
+Service names are also used as generated directories and metadata cache files,
+so they must be portable filename segments. Relative dot segments (`.` and
+`..`), path separators, control or platform-invalid filename characters,
+trailing dots or spaces, and Windows-reserved device names are rejected.
 
 Registry generation parses each metadata file through `@me-tools/odx-metadata`
 and projects entity sets through the core CSDL adapter before invoking the SDK

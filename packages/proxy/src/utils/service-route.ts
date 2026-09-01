@@ -3,6 +3,16 @@ import type { ODataServiceConfig } from '@me-tools/odx-core'
 const RE_BOUNDARY_SLASHES = /^\/+|\/+$/g
 const RE_PATH_SEPARATOR = /[\\/]/u
 const RE_WHITESPACE = /\s/u
+const RE_NON_PORTABLE_FILENAME_CHARACTER = /[<>:"|?*]/u
+const RE_NON_PORTABLE_FILENAME_END = /[. ]$/u
+const RE_WINDOWS_RESERVED_FILENAME = /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/iu
+
+function hasControlCharacter(value: string): boolean {
+  return [...value].some((character) => {
+    const codePoint = character.codePointAt(0) ?? 0
+    return codePoint <= 0x1F || codePoint === 0x7F
+  })
+}
 
 /** Rejects service identifiers that could escape generated or cached file paths. */
 export function assertSafeODataServiceName(value: string): void {
@@ -10,9 +20,13 @@ export function assertSafeODataServiceName(value: string): void {
     || value.length === 0
     || value === '.'
     || value === '..'
-    || RE_PATH_SEPARATOR.test(value)) {
+    || RE_PATH_SEPARATOR.test(value)
+    || RE_NON_PORTABLE_FILENAME_CHARACTER.test(value)
+    || hasControlCharacter(value)
+    || RE_NON_PORTABLE_FILENAME_END.test(value)
+    || RE_WINDOWS_RESERVED_FILENAME.test(value)) {
     throw new TypeError(
-      `OData service name ${JSON.stringify(value)} must not be empty, a relative dot segment, or contain path separators.`,
+      `OData service name ${JSON.stringify(value)} must be a portable generated-file segment without dot traversal, path separators, reserved names, control characters, or platform-invalid filename characters.`,
     )
   }
 }

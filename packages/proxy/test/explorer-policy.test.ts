@@ -115,12 +115,22 @@ function createTempRoot(): string {
 }
 
 describe('runtime metadata cache paths', () => {
-  it.each(['.', '..', '../outside', 'nested/service', 'nested\\service'])('rejects a path-escaping service name %j', (serviceName) => {
+  it.each([
+    '.',
+    '..',
+    '../outside',
+    'nested/service',
+    'nested\\service',
+    'catalog:tenant',
+    'CON',
+    'LPT1.cache',
+    'catalog.',
+  ])('rejects a non-portable cache service name %j', (serviceName) => {
     const rootDir = createTempRoot()
     const config = createRuntimeMetadataConfig(rootDir, 'https://backend.example.test/odata')
 
     expect(() => getRuntimeMetadataCachePaths(config, serviceName)).toThrow(
-      'must not be empty, a relative dot segment, or contain path separators',
+      'must be a portable generated-file segment',
     )
   })
 })
