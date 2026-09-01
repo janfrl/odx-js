@@ -127,6 +127,19 @@ await useOData().Demo.Items.get({ CompanyCode: '1000', ID: '42' })
 
 Unknown keys are allowed for service-specific parameters.
 
+## Collection Page And Delta Cursor
+
+An `ODataCollectionPage` is the serializable result of a collection snapshot.
+It owns flattened items and may retain a count, a server-driven continuation,
+or an OData V4 delta cursor.
+
+Continuations and delta cursors contain only the server-issued opaque query
+component. ODX binds them back to the known entity-set or navigation collection
+when following them, so an upstream response cannot replace the configured
+origin or resource path. A delta page can contain changed entities, removed
+entity markers, and relationship changes; applying those changes to application
+state belongs to the consuming controller.
+
 ## Generated Registry
 
 The generated ODX registry augments `ODataServiceRegistry` in `@me-tools/odx-core`.

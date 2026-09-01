@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createODataContinuationPath, flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery, toODataCollectionPage } from '../src/odata-utils'
+import { createODataContinuationPath, createODataDeltaPath, flattenOData, mergeHeaders, sanitizeBaseURL, stringifyQuery, toODataCollectionPage } from '../src/odata-utils'
 
 describe('oData Utils', () => {
   describe('sanitizeBaseURL', () => {
@@ -292,6 +292,67 @@ describe('oData Utils', () => {
       })
     })
 
+    it.each(['@odata.deltaLink', '@deltaLink'])('projects an opaque V4 %s without retaining its backend path', (property) => {
+      const page = toODataCollectionPage<{ ID: number }>({
+        [property]: 'https://private.example/odata/Products?%24deltatoken=v4%2Bcursor',
+        value: [{ ID: 1 }],
+      })
+
+      expect(page).toEqual({
+        items: [{ ID: 1 }],
+        delta: { token: expect.stringContaining('%24deltatoken=') },
+      })
+      expect(JSON.stringify(page)).not.toContain('private.example')
+      expect(JSON.parse(JSON.stringify(page))).toEqual(page)
+    })
+
+    it('anchors an opaque delta cursor to the caller-owned collection path', () => {
+      const page = toODataCollectionPage<{ ID: number }>(
+        {
+          '@odata.deltaLink': 'https://hostile.example/other/path?%24deltatoken=opaque%2Btoken',
+          'value': [{ ID: 1 }],
+        },
+      )
+
+      expect(createODataDeltaPath('/api/odx/Catalog/Products', page.delta!))
+        .toBe('/api/odx/Catalog/Products?%24deltatoken=opaque%2Btoken')
+    })
+
+    it('retains changed, removed, and relationship entries in a delta page', () => {
+      expect(toODataCollectionPage({
+        '@odata.deltaLink': '/Products?%24deltatoken=state-2',
+        'value': [
+          { ID: 1, Name: 'Changed' },
+          { '@id': 'Products(2)', '@removed': { reason: 'deleted' } },
+          { '@context': '#Products/$link', 'source': 'Products(1)', 'relationship': 'Category', 'target': 'Categories(3)' },
+        ],
+      })).toEqual({
+        items: [
+          { ID: 1, Name: 'Changed' },
+          { '@id': 'Products(2)', '@removed': { reason: 'deleted' } },
+          { '@context': '#Products/$link', 'source': 'Products(1)', 'relationship': 'Category', 'target': 'Categories(3)' },
+        ],
+        delta: { token: '%24deltatoken=state-2' },
+      })
+    })
+
+    it('preserves configured service queries before the opaque delta cursor', () => {
+      expect(createODataDeltaPath(
+        'https://example.test/odata/Products?sap-client=100',
+        { token: '%24deltatoken=next%2B1' },
+      )).toBe(
+        'https://example.test/odata/Products?sap-client=100&%24deltatoken=next%2B1',
+      )
+    })
+
+    it('rejects a page that advertises continuation and delta links together', () => {
+      expect(() => toODataCollectionPage({
+        '@odata.nextLink': '/Products?%24skiptoken=next',
+        '@odata.deltaLink': '/Products?%24deltatoken=state',
+        'value': [],
+      })).toThrow('both continuation and delta links')
+    })
+
     it('anchors an opaque continuation to the caller-owned collection path', () => {
       const page = toODataCollectionPage<{ ID: number }>({
         d: {
@@ -370,6 +431,22 @@ describe('oData Utils', () => {
       expect(() => toODataCollectionPage({
         d: { results: [], __next: nextLink },
       })).toThrow('continuation')
+    })
+
+    it.each([
+      null,
+      42,
+      '',
+      'https://private.sap.example/Products',
+      'https://private.sap.example/Products?',
+      '?=unnamed',
+      `?%24deltatoken=${'x'.repeat(8192)}`,
+      '?%24deltatoken=line\nbreak',
+    ])('rejects the malformed delta link %j', (deltaLink) => {
+      expect(() => toODataCollectionPage({
+        '@odata.deltaLink': deltaLink,
+        'value': [],
+      })).toThrow('delta')
     })
 
     it.each([

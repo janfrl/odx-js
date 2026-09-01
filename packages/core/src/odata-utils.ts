@@ -93,6 +93,10 @@ function isEmptyObject(value: unknown): value is Record<string, never> {
  */
 export function toODataCollectionPage<T>(data: unknown): ODataCollectionPage<T> {
   const continuation = readODataContinuation(data)
+  const delta = readODataDelta(data)
+  if (continuation && delta) {
+    throw new TypeError('An OData collection page cannot contain both continuation and delta links.')
+  }
   const sourceCount = Array.isArray(data) && Object.hasOwn(data, 'totalCount')
     ? (data as T[] & { totalCount?: unknown }).totalCount
     : undefined
@@ -104,13 +108,27 @@ export function toODataCollectionPage<T>(data: unknown): ODataCollectionPage<T> 
   const count = sourceCount ?? (flattened as T[] & { totalCount?: unknown }).totalCount
   const items = Array.from(flattened) as T[]
   const totalCount = normalizeODataCount(count)
-  if (totalCount === undefined) {
-    return { items, ...(continuation ? { continuation } : {}) }
+  return {
+    items,
+    ...(totalCount === undefined ? {} : { totalCount }),
+    ...(continuation ? { continuation } : {}),
+    ...(delta ? { delta } : {}),
   }
-  return { items, totalCount, ...(continuation ? { continuation } : {}) }
 }
 
 function readODataContinuation(data: unknown): { token: string } | undefined {
+  return readODataCollectionLink(data, ['__next', '@odata.nextLink'], 'continuation')
+}
+
+function readODataDelta(data: unknown): { token: string } | undefined {
+  return readODataCollectionLink(data, ['@deltaLink', '@odata.deltaLink'], 'delta')
+}
+
+function readODataCollectionLink(
+  data: unknown,
+  properties: readonly string[],
+  label: 'continuation' | 'delta',
+): { token: string } | undefined {
   if (!data || typeof data !== 'object' || Array.isArray(data))
     return undefined
 
@@ -120,20 +138,19 @@ function readODataContinuation(data: unknown): { token: string } | undefined {
     return undefined
 
   const collection = envelope as Record<string, unknown>
-  const nextLink = Object.hasOwn(collection, '__next')
-    ? collection.__next
-    : collection['@odata.nextLink']
-  if (nextLink === undefined)
+  const property = properties.find(candidate => Object.hasOwn(collection, candidate))
+  if (property === undefined)
     return undefined
-  if (typeof nextLink !== 'string')
-    throw new TypeError('Expected the OData continuation link to be a string.')
+  const link = collection[property]
+  if (typeof link !== 'string')
+    throw new TypeError(`Expected the OData ${label} link to be a string.`)
 
-  const queryStart = nextLink.indexOf('?')
+  const queryStart = link.indexOf('?')
   if (queryStart < 0)
-    throw new TypeError('Expected the OData continuation link to contain a query.')
-  const fragmentStart = nextLink.indexOf('#', queryStart)
-  const token = nextLink.slice(queryStart + 1, fragmentStart < 0 ? undefined : fragmentStart)
-  return { token: validateODataContinuationToken(token) }
+    throw new TypeError(`Expected the OData ${label} link to contain a query.`)
+  const fragmentStart = link.indexOf('#', queryStart)
+  const token = link.slice(queryStart + 1, fragmentStart < 0 ? undefined : fragmentStart)
+  return { token: validateODataOpaqueQuery(token, label) }
 }
 
 /** Anchors an opaque continuation to the caller-owned collection path. */
@@ -157,12 +174,38 @@ export function createODataContinuationPath(
   const path = queryIndex < 0 ? collectionPath : collectionPath.slice(0, queryIndex)
   const configuredQuery = queryIndex < 0
     ? undefined
-    : validateODataContinuationToken(collectionPath.slice(queryIndex + 1))
-  const token = validateODataContinuationToken(continuation.token)
+    : validateODataOpaqueQuery(collectionPath.slice(queryIndex + 1), 'continuation')
+  const token = validateODataOpaqueQuery(continuation.token, 'continuation')
   return `${path}?${configuredQuery === undefined ? '' : `${configuredQuery}&`}${token}`
 }
 
-function validateODataContinuationToken(token: unknown): string {
+/** Anchors an opaque delta cursor to the caller-owned collection path. */
+export function createODataDeltaPath(
+  collectionPath: string,
+  delta: { readonly token: string },
+): string {
+  const queryIndex = typeof collectionPath === 'string'
+    ? collectionPath.indexOf('?')
+    : -1
+  if (
+    typeof collectionPath !== 'string'
+    || collectionPath.length === 0
+    || hasControlCharacter(collectionPath)
+    || collectionPath.includes('#')
+    || queryIndex === 0
+    || queryIndex === collectionPath.length - 1
+  ) {
+    throw new TypeError('Expected a valid OData collection path.')
+  }
+  const path = queryIndex < 0 ? collectionPath : collectionPath.slice(0, queryIndex)
+  const configuredQuery = queryIndex < 0
+    ? undefined
+    : validateODataOpaqueQuery(collectionPath.slice(queryIndex + 1), 'delta')
+  const token = validateODataOpaqueQuery(delta.token, 'delta')
+  return `${path}?${configuredQuery === undefined ? '' : `${configuredQuery}&`}${token}`
+}
+
+function validateODataOpaqueQuery(token: unknown, label: 'continuation' | 'delta'): string {
   if (
     typeof token !== 'string'
     || token.length === 0
@@ -170,7 +213,7 @@ function validateODataContinuationToken(token: unknown): string {
     || hasControlCharacter(token)
     || token.includes('#')
   ) {
-    throw new TypeError('Expected a valid OData continuation token.')
+    throw new TypeError(`Expected a valid OData ${label} token.`)
   }
 
   const parameters = new URLSearchParams(token)
@@ -178,10 +221,10 @@ function validateODataContinuationToken(token: unknown): string {
   for (const key of parameters.keys()) {
     parameterCount += 1
     if (key.length === 0)
-      throw new TypeError('Expected a valid OData continuation token.')
+      throw new TypeError(`Expected a valid OData ${label} token.`)
   }
   if (parameterCount === 0)
-    throw new TypeError('Expected a valid OData continuation token.')
+    throw new TypeError(`Expected a valid OData ${label} token.`)
   return token
 }
 

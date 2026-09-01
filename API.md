@@ -304,15 +304,19 @@ Entity-set methods:
 | `list(query?, options?)` | `GET` | Nuxt `AsyncData<T[]>` compatible promise |
 | `listPage(query?, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<T>>` compatible promise |
 | `listNextPage(continuation, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<T>>` compatible promise |
+| `listDelta(delta, options?)` | `GET` | Nuxt `AsyncData<ODataDeltaPage<T>>` compatible promise |
 | `fetchList(query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchPage(query?, options?)` | `GET` | `Promise<ODataCollectionPage<T>>` |
 | `fetchNextPage(continuation, options?)` | `GET` | `Promise<ODataCollectionPage<T>>` |
+| `fetchDelta(delta, options?)` | `GET` | `Promise<ODataDeltaPage<T>>` |
 | `listNavigation<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<TResult[]>` compatible promise |
 | `listNavigationPage<TResult>(source, path, query?, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<TResult>>` compatible promise |
 | `listNavigationNextPage<TResult>(source, path, continuation, options?)` | `GET` | Nuxt `AsyncData<ODataCollectionPage<TResult>>` compatible promise |
+| `listNavigationDelta<TResult>(source, path, delta, options?)` | `GET` | Nuxt `AsyncData<ODataDeltaPage<TResult>>` compatible promise |
 | `fetchNavigationList(source, navigationPath, query?, options?)` | `GET` | `Promise<T[]>` |
 | `fetchNavigationPage<TResult>(source, path, query?, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
 | `fetchNavigationNextPage<TResult>(source, path, continuation, options?)` | `GET` | `Promise<ODataCollectionPage<TResult>>` |
+| `fetchNavigationDelta<TResult>(source, path, delta, options?)` | `GET` | `Promise<ODataDeltaPage<TResult>>` |
 | `createNavigationRootReference(source, path)` | none | Validated service-relative `$root/...` collection reference |
 | `fetchOne(key, query?, options?)` | `GET` | `Promise<T>` |
 | `fetchOneWithResponse(key, query?, options?)` | `GET` | `Promise<{ data: T; etag?: string }>` |
@@ -424,7 +428,7 @@ compatible with transports that do not implement V2 service operations.
 
 Use `listPage` or `fetchPage` when the consumer needs an OData V4
 `@odata.count` or V2 `__count`. Their explicit
-`{ items, totalCount, continuation }` result
+`{ items, totalCount, continuation, delta }` result
 survives Nuxt SSR serialization; custom properties attached to arrays do not.
 Request the matching protocol count option with `$count: true` for V4 or
 `$inlinecount: 'allpages'` for V2. Runtime entity sets expose
@@ -448,6 +452,17 @@ Related collections use the corresponding `listNavigationPage`,
 `fetchNavigationNextPage` methods. Their continuation is anchored to the same
 validated parent source and navigation path, which keeps object-page line-item
 paging from trusting a path supplied by the backend.
+
+Tracked V4 collection responses may additionally expose `@odata.deltaLink` or
+the OData 4.01 shorthand `@deltaLink`.
+`ODataCollectionPage.delta` retains only the
+validated opaque query component; `listDelta` and `fetchDelta` anchor it to the
+same caller-owned entity-set path. `listNavigationDelta` and
+`fetchNavigationDelta` do the same for the exact parent source and navigation
+path. Runtime entity sets advertise the additive `ODataDeltaEntitySet`
+contract with `supportsDeltaLinks === true`. Delta response items retain their
+change or removal annotations. A page advertising both a continuation and a
+delta link is rejected as an invalid wire response.
 
 Use `fetchOneWithResponse` when a later update or delete must carry the
 entity's optimistic-concurrency validator. It intentionally exposes only the

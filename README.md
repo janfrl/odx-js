@@ -116,6 +116,9 @@ imperative reads. If a continuation is present, pass it unchanged to
 `listNextPage()` or `fetchNextPage()` on the same entity set. ODX retains the
 backend's exact query component but anchors it to the configured entity-set
 path instead of following an absolute next-link URL.
+When a tracked V4 collection returns `@odata.deltaLink` or `@deltaLink`, the same page object
+exposes an opaque `delta` cursor. `listDelta()` and `fetchDelta()` retrieve
+subsequent changes without trusting a backend-provided origin or resource path.
 
 ## 🛠️ Development
 The supported toolchain is Node.js 22 or 24 with pnpm 10 or 11. The repository

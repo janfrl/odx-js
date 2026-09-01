@@ -2185,9 +2185,25 @@
       }
     ]
   },
+  "createODataTypedKey": {
+    "title": "createODataTypedKey",
+    "description": "Preserve EDM identity and explicitly select V2 or V4 literal conventions.",
+    "properties": [
+      {
+        "name": "parts",
+        "type": "readonly ODataTypedKeyPart[]",
+        "required": true
+      },
+      {
+        "name": "version",
+        "type": "\"v2\" | \"v4\"",
+        "required": true
+      }
+    ]
+  },
   "formatODataKey": {
     "title": "formatODataKey",
-    "description": "Serializes a primitive or composite OData entity key for a resource path.",
+    "description": "Serializes a primitive, composite, or explicitly typed OData entity key.",
     "properties": [
       {
         "name": "key",
@@ -2377,6 +2393,22 @@
       },
       {
         "name": "continuation",
+        "type": "{ readonly token: string; }",
+        "required": true
+      }
+    ]
+  },
+  "createODataDeltaPath": {
+    "title": "createODataDeltaPath",
+    "description": "Anchors an opaque delta cursor to the caller-owned collection path.",
+    "properties": [
+      {
+        "name": "collectionPath",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "delta",
         "type": "{ readonly token: string; }",
         "required": true
       }
@@ -2636,6 +2668,64 @@
       }
     ]
   },
+  "ODataDelta": {
+    "title": "ODataDelta",
+    "description": "Opaque query component for a server-issued collection delta link.",
+    "properties": [
+      {
+        "name": "token",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
+  "ODataDeltaRemovedEntity": {
+    "title": "ODataDeltaRemovedEntity",
+    "description": "Removed-entity marker returned inside an OData delta payload.",
+    "properties": [
+      {
+        "name": "'@id'",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "'@odata.id'",
+        "type": "string | undefined",
+        "required": false
+      },
+      {
+        "name": "'@removed'",
+        "type": "Readonly<{ reason?: string; }> | undefined",
+        "required": false
+      },
+      {
+        "name": "'@odata.removed'",
+        "type": "Readonly<{ reason?: string; }> | undefined",
+        "required": false
+      }
+    ]
+  },
+  "ODataDeltaLinkChange": {
+    "title": "ODataDeltaLinkChange",
+    "description": "Added or deleted relationship marker returned inside an OData delta payload.",
+    "properties": [
+      {
+        "name": "source",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "relationship",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "target",
+        "type": "string",
+        "required": true
+      }
+    ]
+  },
   "ODataCollectionPage": {
     "title": "ODataCollectionPage",
     "description": "Serializable collection result for list UIs that need the server-side count.\nUnlike an extra property attached to an array, this shape survives Nuxt SSR\npayload serialization.",
@@ -2654,6 +2744,12 @@
         "name": "continuation",
         "type": "ODataContinuation | undefined",
         "description": "Safe server-driven continuation without a backend origin or path.",
+        "required": false
+      },
+      {
+        "name": "delta",
+        "type": "ODataDelta | undefined",
+        "description": "Safe server-issued delta cursor without a backend origin or path.",
         "required": false
       }
     ]
@@ -2834,6 +2930,43 @@
       }
     ]
   },
+  "ODataTypedKeyPart": {
+    "title": "ODataTypedKeyPart",
+    "description": "One metadata-owned key part before protocol serialization.",
+    "properties": [
+      {
+        "name": "field",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "type",
+        "type": "string",
+        "required": true
+      },
+      {
+        "name": "value",
+        "type": "string | number | boolean",
+        "required": true
+      }
+    ]
+  },
+  "ODataTypedKey": {
+    "title": "ODataTypedKey",
+    "description": "Explicit protocol-owned key identity; never a preformatted resource path.",
+    "properties": [
+      {
+        "name": "'@odata.key'",
+        "type": "readonly ODataTypedKeyPart[]",
+        "required": true
+      },
+      {
+        "name": "'version'",
+        "type": "\"v2\" | \"v4\"",
+        "required": true
+      }
+    ]
+  },
   "ODataContainedEntitySegment": {
     "title": "ODataContainedEntitySegment",
     "description": "One containment hop below an entity-set root. To-one hops omit the key.",
@@ -2925,6 +3058,7 @@
       {
         "name": "value",
         "type": "ODataFunctionParameterValue",
+        "description": "Integer values must fit their EDM range; use a string for Int64 outside the safe JS integer range.",
         "required": true
       }
     ]
@@ -3393,6 +3527,41 @@
         "name": "fetchOneWithResponse",
         "type": "(key: ODataKey, query?: ODataQuery<T>, options?: ODataRequestOptions) => Promise<ODataEntityResponse<T>>",
         "description": "Imperatively reads one entity and preserves its ETag for a subsequent\nconditional mutation. Existing `fetchOne` remains body-only.",
+        "required": true
+      }
+    ]
+  },
+  "ODataDeltaEntitySet": {
+    "title": "ODataDeltaEntitySet",
+    "description": "Entity-set client that can follow server-issued collection delta links.",
+    "properties": [
+      {
+        "name": "supportsDeltaLinks",
+        "type": "true",
+        "required": true
+      },
+      {
+        "name": "listDelta",
+        "type": "(delta: ODataDelta, options?: any) => ODataAsyncDataPromise<ODataDeltaPage<T>>",
+        "description": "Reads changes since a previous root collection snapshot through Nuxt AsyncData.",
+        "required": true
+      },
+      {
+        "name": "fetchDelta",
+        "type": "(delta: ODataDelta, options?: ODataRequestOptions) => Promise<ODataDeltaPage<T>>",
+        "description": "Imperatively reads changes since a previous root collection snapshot.",
+        "required": true
+      },
+      {
+        "name": "listNavigationDelta",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], delta: ODataDelta, options?: any) => ODataAsyncDataPromise<ODataDeltaPage<TResult>>",
+        "description": "Reads changes since a previous related-collection snapshot through Nuxt AsyncData.",
+        "required": true
+      },
+      {
+        "name": "fetchNavigationDelta",
+        "type": "<TResult = unknown>(source: ODataNavigationSource, navigationPath: string | readonly string[], delta: ODataDelta, options?: ODataRequestOptions) => Promise<ODataDeltaPage<TResult>>",
+        "description": "Imperatively reads changes since a previous related-collection snapshot.",
         "required": true
       }
     ]

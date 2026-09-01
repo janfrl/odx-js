@@ -30,15 +30,16 @@ service name fail during module setup instead of selecting the first service.
 The server read service invokes unbound V4 functions directly at the configured
 service root. Its entity set provides `fetchOne`, `fetchOneWithResponse`,
 `fetchContainedOneWithResponse`, `fetchNavigationOneWithResponse`, `fetchList`,
-`fetchPage`, `fetchNextPage`, `fetchNavigationList`, `fetchNavigationPage`,
-`fetchNavigationNextPage`, and typed `invokeFunction` operations. Exact entity
+`fetchPage`, `fetchNextPage`, `fetchDelta`, `fetchNavigationList`,
+`fetchNavigationPage`, `fetchNavigationNextPage`, `fetchNavigationDelta`, and
+typed `invokeFunction` operations. Exact entity
 response variants preserve the entity and its optional ETag for conditional
 follow-up mutations. All methods validate structured entity and navigation
-identities. Page reads retain server-driven count and continuation metadata;
-continuation methods anchor the opaque token to the same validated
+identities. Page reads retain server-driven count, continuation, and delta
+metadata; continuation and delta methods anchor the opaque query component to the same validated
 request-scoped proxy path and never follow a backend-owned URL.
 The request-scoped entity set advertises these additive read families through
-`supportsCollectionPages`, `supportsContinuations`,
+`supportsCollectionPages`, `supportsContinuations`, `supportsDeltaLinks`,
 `supportsEntityResponses`, `supportsNavigationEntityResponses`, and
 `supportsContainedEntityResponses`, so shared host code can negotiate the same
 capabilities during SSR without probing for individual methods.
@@ -161,7 +162,7 @@ const { data: page } = await useOData('Northwind')
   .entitySet('Products')
   .listPage({ $inlinecount: 'allpages', $top: 20 })
 
-// page.value?.items, page.value?.totalCount, and page.value?.continuation
+// page.value?.items, page.value?.totalCount, page.value?.continuation, and page.value?.delta
 ```
 
 `fetchPage()` is the imperative equivalent. OData V4 services use
@@ -194,6 +195,13 @@ The same capability covers related collections through
 `listNavigationPage()`, `fetchNavigationPage()`,
 `listNavigationNextPage()`, and `fetchNavigationNextPage()`. ODX anchors those
 tokens to the validated parent key and navigation path.
+When a V4 service returns `@odata.deltaLink` or `@deltaLink`, the page exposes only its
+validated query component as `delta`.
+Pass it unchanged to `listDelta()` or `fetchDelta()`; related collections use
+`listNavigationDelta()` or `fetchNavigationDelta()`. The
+`supportsDeltaLinks === true` marker advertises this additive contract. Delta
+payload items retain change and removal annotations so the consumer can apply
+them to its existing collection state.
 `supportsNavigationRootReferences === true` separately advertises
 `createNavigationRootReference(source, path)`. It returns the validated
 service-relative `$root/...` identity of that exact related collection for

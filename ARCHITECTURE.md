@@ -166,6 +166,11 @@ The runtime composable maps structured independent read batches, typed service-l
 contained-entity mutations and media streams, and non-contained relationship
 links to framework-neutral atomic or independent changesets and owns service
 URL resolution plus `$batch` transport.
+Collection snapshots and delta payloads cross that boundary as serializable,
+renderer-neutral page objects. Server-issued V4 delta URLs are reduced to an
+opaque query cursor and re-anchored to the caller-owned root or navigation
+collection path; backend origins and resource paths never become client-owned
+follow-up targets.
 The request-scoped Nitro read service owns structured V4 and SAP Gateway V2
 read-only batches, preserving ordered per-read outcomes without exposing
 executable backend paths. The request-scoped Nitro mutation service exposes the same independent V4

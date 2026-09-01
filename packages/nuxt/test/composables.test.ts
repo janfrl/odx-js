@@ -26,7 +26,7 @@ vi.mock('#imports', () => ({
 // Mock core library
 vi.mock('@me-tools/odx-core', async () => {
   const actual = await vi.importActual('@me-tools/odx-core')
-  const { createODataContinuationPath, flattenOData, toODataCollectionPage } = await import('../../core/src/odata-utils')
+  const { createODataContinuationPath, createODataDeltaPath, flattenOData, toODataCollectionPage } = await import('../../core/src/odata-utils')
   const {
     parseODataBatchChangeSetsResponse,
     serializeODataBatchChangeSets,
@@ -54,6 +54,7 @@ vi.mock('@me-tools/odx-core', async () => {
     $odataPage: vi.fn(() => Promise.resolve({ items: [{ ID: 1 }], totalCount: 49 })),
     $odataWithResponse: vi.fn(() => Promise.resolve({ data: { success: true }, etag: 'W/"entity-1"' })),
     createODataContinuationPath,
+    createODataDeltaPath,
     createODataEntityReference,
     createODataMediaPath,
     createODataNavigationRootReference,
@@ -156,6 +157,7 @@ describe('useOData Composable', () => {
     expect(entitySet.supportsNavigationMerge).toBe(true)
     expect(entitySet.supportsMediaStreams).toBe(true)
     expect(entitySet.supportsContinuations).toBe(true)
+    expect(entitySet.supportsDeltaLinks).toBe(true)
   })
 
   describe('key Formatting', () => {
@@ -817,6 +819,36 @@ describe('useOData Composable', () => {
       )
     })
 
+    it('follows an opaque delta cursor on the current entity set', async () => {
+      vi.mocked(core.$odataPage).mockResolvedValueOnce({
+        items: [{ ID: 2, Name: 'Changed' }],
+        delta: { token: '%24deltatoken=next-state' },
+      })
+      const signal = new AbortController().signal
+      const entitySet = useOData('MyService').entitySet('Products')
+
+      const reactive = entitySet.listDelta(
+        { token: '%24deltatoken=state-1' },
+        { headers: { 'X-Correlation-ID': 'delta-1' } },
+      ) as any
+      const imperative = await entitySet.fetchDelta(
+        { token: '%24deltatoken=state-2' },
+        { signal },
+      )
+
+      expect(reactive.url).toBe('/api/odx/MyService/Products?%24deltatoken=state-1')
+      expect(reactive.options.key).toBe('odx-delta:/api/odx/MyService/Products?%24deltatoken=state-1')
+      expect(imperative).toEqual({
+        items: [{ ID: 2, Name: 'Changed' }],
+        delta: { token: '%24deltatoken=next-state' },
+      })
+      expect(core.$odataPage).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/MyService/Products?%24deltatoken=state-2',
+        { signal },
+      )
+    })
+
     it('reads and continues a related collection page on its navigation path', async () => {
       const entitySet = useOData('MyService').entitySet('Categories')
       const reactivePage = entitySet.listNavigationPage<{ ProductID: number }>(
@@ -874,6 +906,29 @@ describe('useOData Composable', () => {
         expect.any(Function),
         '/api/odx/MyService/Categories(1)/Products?%24skiptoken=ProductID-1',
         { signal },
+      )
+    })
+
+    it('follows a related collection delta on its owning navigation path', async () => {
+      const entitySet = useOData('RoutedService' as any).entitySet('Categories')
+      const reactive = entitySet.listNavigationDelta<{ ProductID: number }>(
+        1,
+        ['Products'],
+        { token: '%24deltatoken=related-1' },
+      ) as any
+
+      await entitySet.fetchNavigationDelta<{ ProductID: number }>(
+        1,
+        ['Products'],
+        { token: '%24deltatoken=related-2' },
+      )
+
+      expect(reactive.url)
+        .toBe('/api/odx/routed-api/Categories(1)/Products?%24deltatoken=related-1')
+      expect(core.$odataPage).toHaveBeenCalledWith(
+        expect.any(Function),
+        '/api/odx/routed-api/Categories(1)/Products?%24deltatoken=related-2',
+        undefined,
       )
     })
 

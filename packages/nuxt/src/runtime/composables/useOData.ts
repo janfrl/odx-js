@@ -1,4 +1,4 @@
-import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataBatchRead, ODataBatchReadResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContainedEntitySource, ODataContinuation, ODataCreateResponse, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
+import type { ODataActionInvocation, ODataActionResponse, ODataAsyncDataPromise, ODataAtomicMutation, ODataBatchChangeSetResult, ODataBatchRead, ODataBatchReadResult, ODataChangeSetMethod, ODataChangeSetRequest, ODataChangeSetResponse, ODataCollectionPage, ODataContainedEntitySource, ODataContinuation, ODataCreateResponse, ODataDelta, ODataDeltaItem, ODataDeltaPage, ODataEntityResponse, ODataFunctionInvocation, ODataKey, ODataMediaCreateOptions, ODataMediaCreateResponse, ODataMediaMutationResponse, ODataMediaRequestOptions, ODataMediaResponse, ODataMediaUpdateOptions, ODataMutationResponse, ODataNavigationEntityRead, ODataNavigationSource, ODataNavigationUpdate, ODataPublicConfig, ODataQuery, ODataRequestOptions, ODataRuntimeEntitySet, ODataRuntimeService, ODataServiceRegistry, ODataV2AtomicMutation, ODataV2FunctionImportInvocation, RegisteredServiceNames } from '@me-tools/odx-core'
 import { useFetch, useRequestEvent, useRequestFetch, useRuntimeConfig } from '#imports'
 import {
   $odata,
@@ -14,6 +14,7 @@ import {
   correlateODataBatchChangeSetResponses,
   correlateODataChangeSetResponses,
   createODataContinuationPath,
+  createODataDeltaPath,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
@@ -194,6 +195,7 @@ export function useOData(service?: string): any {
       supportsNavigationMerge: true,
       supportsMediaStreams: true,
       supportsContinuations: true,
+      supportsDeltaLinks: true,
       createNavigationRootReference: (
         source: ODataNavigationSource,
         navigationPath: string | readonly string[],
@@ -262,6 +264,24 @@ export function useOData(service?: string): any {
         const continuationPath = createODataContinuationPath(fullPath, continuation)
         return $odataPage<TModel>(client, continuationPath, options as any)
       },
+      listDelta: (
+        delta: ODataDelta,
+        options?: unknown,
+      ): ODataAsyncDataPromise<ODataDeltaPage<TModel>> => {
+        const requestOptions = createJsonReadOptions(options)
+        const deltaPath = createODataDeltaPath(fullPath, delta)
+        return useFetch(deltaPath, {
+          ...requestOptions,
+          key: requestOptions.key ?? `odx-delta:${deltaPath}`,
+          transform: (data: any) => toODataCollectionPage<ODataDeltaItem<TModel>>(data),
+        }) as unknown as ODataAsyncDataPromise<ODataDeltaPage<TModel>>
+      },
+      fetchDelta: (
+        delta: ODataDelta,
+        options?: ODataRequestOptions,
+      ): Promise<ODataDeltaPage<TModel>> => {
+        return $odataPage<ODataDeltaItem<TModel>>(client, createODataDeltaPath(fullPath, delta), options as any)
+      },
       listNavigationPage: <TResult = unknown>(
         source: ODataNavigationSource,
         navigationPath: string | readonly string[],
@@ -326,6 +346,36 @@ export function useOData(service?: string): any {
         )
         const continuationPath = createODataContinuationPath(navigationUrl, continuation)
         return $odataPage<TResult>(client, continuationPath, options as any)
+      },
+      listNavigationDelta: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        delta: ODataDelta,
+        options?: unknown,
+      ): ODataAsyncDataPromise<ODataDeltaPage<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        const deltaPath = createODataDeltaPath(navigationUrl, delta)
+        const requestOptions = createJsonReadOptions(options)
+        return useFetch(deltaPath, {
+          ...requestOptions,
+          key: requestOptions.key ?? `odx-delta:${deltaPath}`,
+          transform: (data: any) => toODataCollectionPage<ODataDeltaItem<TResult>>(data),
+        }) as unknown as ODataAsyncDataPromise<ODataDeltaPage<TResult>>
+      },
+      fetchNavigationDelta: <TResult = unknown>(
+        source: ODataNavigationSource,
+        navigationPath: string | readonly string[],
+        delta: ODataDelta,
+        options?: ODataRequestOptions,
+      ): Promise<ODataDeltaPage<TResult>> => {
+        const navigationUrl = joinODataPath(
+          navigationSourcePath(source),
+          formatODataNavigationPath(navigationPath),
+        )
+        return $odataPage<ODataDeltaItem<TResult>>(client, createODataDeltaPath(navigationUrl, delta), options as any)
       },
 
       listNavigation: <TResult = unknown>(

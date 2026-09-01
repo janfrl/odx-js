@@ -18,6 +18,9 @@ import type {
   ODataDeleteResponse,
   ODataDeleteResponseEntitySet,
   ODataDeleteResponseService,
+  ODataDeltaEntitySet,
+  ODataDeltaPage,
+  ODataDeltaService,
   ODataEntityResponse,
   ODataEntitySet,
   ODataMediaCreateResponse,
@@ -232,6 +235,18 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<ODataMutationResponse<Product>>()
   })
 
+  it('specializes additive delta reads without widening page-only services', () => {
+    type ProductsService = ODataDeltaService<'Products', { Products: Product }>
+    type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
+
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataDeltaEntitySet<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchDelta']>>>()
+      .toEqualTypeOf<ODataDeltaPage<Product>>()
+    expectTypeOf<ODataPagedEntitySet<Product>>()
+      .not
+      .toHaveProperty('fetchDelta')
+  })
+
   it('adds navigation MERGE without widening root MERGE clients', () => {
     type ProductsService = ODataNavigationMergeService<'Products', { Products: Product }>
     type ProductsEntitySet = ReturnType<ProductsService['entitySet']>
@@ -364,6 +379,7 @@ describe('portable imperative transport types', () => {
     expectTypeOf<ProductsEntitySet>().toExtend<ODataActionResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataDeleteResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataContinuationEntitySet<Product>>()
+    expectTypeOf<ProductsEntitySet>().toExtend<ODataDeltaEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataVersionedNavigationEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataNavigationReferenceResponseEntitySet<Product>>()
     expectTypeOf<ProductsEntitySet>().toExtend<ODataV2NavigationReferenceEntitySet<Product>>()
@@ -371,6 +387,10 @@ describe('portable imperative transport types', () => {
       .toEqualTypeOf<ODataCollectionPage<Product>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationPage']>>>()
       .toEqualTypeOf<ODataCollectionPage<unknown>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchDelta']>>>()
+      .toEqualTypeOf<ODataDeltaPage<Product>>()
+    expectTypeOf<Awaited<ReturnType<ProductsEntitySet['fetchNavigationDelta']>>>()
+      .toEqualTypeOf<ODataDeltaPage<unknown>>()
     expectTypeOf<Awaited<ReturnType<ProductsEntitySet['updateMedia']>>>()
       .toEqualTypeOf<ODataMediaMutationResponse>()
     expectTypeOf<ODataMediaMutationResponse['sapMessage']>()

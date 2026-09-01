@@ -12,6 +12,9 @@ import type {
   ODataContainedEntitySource,
   ODataContinuation,
   ODataCreateResponse,
+  ODataDelta,
+  ODataDeltaItem,
+  ODataDeltaPage,
   ODataEntityResponse,
   ODataFunctionInvocation,
   ODataKey,
@@ -47,6 +50,7 @@ import {
   correlateODataBatchChangeSetResponses,
   correlateODataChangeSetResponses,
   createODataContinuationPath,
+  createODataDeltaPath,
   createODataEntityPath,
   createODataEntityReference,
   createODataMediaPath,
@@ -83,6 +87,7 @@ export interface ODataServerReadEntitySet {
   readonly supportsTypedEntityKeys: true
   readonly supportsCollectionPages: true
   readonly supportsContinuations: true
+  readonly supportsDeltaLinks: true
   readonly supportsContainedEntityResponses: true
   readonly supportsEntityResponses: true
   readonly supportsNavigationEntityResponses: true
@@ -117,6 +122,10 @@ export interface ODataServerReadEntitySet {
     continuation: ODataContinuation,
     options?: ODataRequestOptions,
   ) => Promise<ODataCollectionPage<TResult>>
+  fetchDelta: <TResult = unknown>(
+    delta: ODataDelta,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataDeltaPage<TResult>>
   fetchNavigationList: <TResult = unknown>(
     source: ODataNavigationSource,
     navigationPath: readonly string[],
@@ -135,6 +144,12 @@ export interface ODataServerReadEntitySet {
     continuation: ODataContinuation,
     options?: ODataRequestOptions,
   ) => Promise<ODataCollectionPage<TResult>>
+  fetchNavigationDelta: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: readonly string[],
+    delta: ODataDelta,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataDeltaPage<TResult>>
   invokeFunction: <TResult = unknown>(
     functionName: string,
     invocation?: ODataFunctionInvocation,
@@ -716,6 +731,7 @@ export function createODataServerReadService(
         supportsTypedEntityKeys: true,
         supportsCollectionPages: true,
         supportsContinuations: true,
+        supportsDeltaLinks: true,
         supportsContainedEntityResponses: true,
         supportsEntityResponses: true,
         supportsNavigationEntityResponses: true,
@@ -793,6 +809,14 @@ export function createODataServerReadService(
           createODataContinuationPath(collectionPath, continuation),
           options as Record<string, unknown> | undefined,
         ),
+        fetchDelta: <TResult>(
+          delta: ODataDelta,
+          options?: ODataRequestOptions,
+        ): Promise<ODataDeltaPage<TResult>> => $odataPage<ODataDeltaItem<TResult>>(
+          client,
+          createODataDeltaPath(collectionPath, delta),
+          options as Record<string, unknown> | undefined,
+        ),
         fetchNavigationList: <TResult>(
           source: ODataNavigationSource,
           path: readonly string[],
@@ -819,6 +843,16 @@ export function createODataServerReadService(
         ): Promise<ODataCollectionPage<TResult>> => $odataPage<TResult>(
           client,
           createODataContinuationPath(navigationPath(source, path), continuation),
+          options as Record<string, unknown> | undefined,
+        ),
+        fetchNavigationDelta: <TResult>(
+          source: ODataNavigationSource,
+          path: readonly string[],
+          delta: ODataDelta,
+          options?: ODataRequestOptions,
+        ): Promise<ODataDeltaPage<TResult>> => $odataPage<ODataDeltaItem<TResult>>(
+          client,
+          createODataDeltaPath(navigationPath(source, path), delta),
           options as Record<string, unknown> | undefined,
         ),
         invokeFunction: <TResult>(

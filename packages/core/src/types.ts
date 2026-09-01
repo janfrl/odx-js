@@ -115,6 +115,31 @@ export interface ODataContinuation {
   readonly token: string
 }
 
+/** Opaque query component for a server-issued collection delta link. */
+export interface ODataDelta {
+  readonly token: string
+}
+
+/** Removed-entity marker returned inside an OData delta payload. */
+export interface ODataDeltaRemovedEntity {
+  readonly '@id'?: string
+  readonly '@odata.id'?: string
+  readonly '@removed'?: Readonly<{ reason?: string }>
+  readonly '@odata.removed'?: Readonly<{ reason?: string }>
+  readonly [key: string]: unknown
+}
+
+/** Added or deleted relationship marker returned inside an OData delta payload. */
+export interface ODataDeltaLinkChange {
+  readonly source: string
+  readonly relationship: string
+  readonly target: string
+  readonly [key: string]: unknown
+}
+
+/** Changed entity, removed entity, or relationship change in a delta payload. */
+export type ODataDeltaItem<T> = T | ODataDeltaRemovedEntity | ODataDeltaLinkChange
+
 /**
  * Serializable collection result for list UIs that need the server-side count.
  * Unlike an extra property attached to an array, this shape survives Nuxt SSR
@@ -125,7 +150,12 @@ export interface ODataCollectionPage<T> {
   totalCount?: number
   /** Safe server-driven continuation without a backend origin or path. */
   continuation?: ODataContinuation
+  /** Safe server-issued delta cursor without a backend origin or path. */
+  delta?: ODataDelta
 }
+
+/** One page of changes returned after following a server-issued delta link. */
+export type ODataDeltaPage<T> = ODataCollectionPage<ODataDeltaItem<T>>
 
 /**
  * An entity read together with its optimistic-concurrency validator.
@@ -693,6 +723,35 @@ export interface ODataVersionedEntitySet<T = any> extends ODataPagedEntitySet<T>
   ) => Promise<ODataEntityResponse<T>>
 }
 
+/** Entity-set client that can follow server-issued collection delta links. */
+export interface ODataDeltaEntitySet<T = any> extends ODataContinuationEntitySet<T> {
+  readonly supportsDeltaLinks: true
+  /** Reads changes since a previous root collection snapshot through Nuxt AsyncData. */
+  listDelta: (
+    delta: ODataDelta,
+    options?: any,
+  ) => ODataAsyncDataPromise<ODataDeltaPage<T>>
+  /** Imperatively reads changes since a previous root collection snapshot. */
+  fetchDelta: (
+    delta: ODataDelta,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataDeltaPage<T>>
+  /** Reads changes since a previous related-collection snapshot through Nuxt AsyncData. */
+  listNavigationDelta: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    delta: ODataDelta,
+    options?: any,
+  ) => ODataAsyncDataPromise<ODataDeltaPage<TResult>>
+  /** Imperatively reads changes since a previous related-collection snapshot. */
+  fetchNavigationDelta: <TResult = unknown>(
+    source: ODataNavigationSource,
+    navigationPath: string | readonly string[],
+    delta: ODataDelta,
+    options?: ODataRequestOptions,
+  ) => Promise<ODataDeltaPage<TResult>>
+}
+
 /** Exact related-entity read below a root or contained entity. */
 export interface ODataNavigationEntityRead<TResult = unknown> {
   readonly source: ODataNavigationSource
@@ -870,7 +929,7 @@ export type ODataRuntimeEntitySet<T = any>
     & ODataContainedEntityResponseSet<T>
     & ODataActionResponseEntitySet<T>
     & ODataDeleteResponseEntitySet<T>
-    & ODataContinuationEntitySet<T>
+    & ODataDeltaEntitySet<T>
     & ODataCreateEntitySet<T>
     & ODataMediaEntitySet<T>
     & ODataNavigationReferenceResponseEntitySet<T>
@@ -1125,23 +1184,25 @@ type ODataEntitySetWithModel<TEntitySet extends ODataEntitySet<any>, TModel>
             ? ODataActionResponseEntitySet<TModel>
             : TEntitySet extends ODataCreateEntitySet<any>
               ? ODataCreateEntitySet<TModel>
-              : TEntitySet extends ODataContinuationEntitySet<any>
-                ? ODataContinuationEntitySet<TModel>
-                : TEntitySet extends ODataConcurrencyEntitySet<any>
-                  ? ODataConcurrencyEntitySet<TModel>
-                  : TEntitySet extends ODataVersionedNavigationEntitySet<any>
-                    ? ODataVersionedNavigationEntitySet<TModel>
-                    : TEntitySet extends ODataVersionedEntitySet<any>
-                      ? ODataVersionedEntitySet<TModel>
-                      : TEntitySet extends ODataV2NavigationReferenceEntitySet<any>
-                        ? ODataV2NavigationReferenceEntitySet<TModel>
-                        : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
-                          ? ODataNavigationReferenceResponseEntitySet<TModel>
-                          : TEntitySet extends ODataNavigationReferenceEntitySet<any>
-                            ? ODataNavigationReferenceEntitySet<TModel>
-                            : TEntitySet extends ODataPagedEntitySet<any>
-                              ? ODataPagedEntitySet<TModel>
-                              : ODataEntitySet<TModel>
+              : TEntitySet extends ODataDeltaEntitySet<any>
+                ? ODataDeltaEntitySet<TModel>
+                : TEntitySet extends ODataContinuationEntitySet<any>
+                  ? ODataContinuationEntitySet<TModel>
+                  : TEntitySet extends ODataConcurrencyEntitySet<any>
+                    ? ODataConcurrencyEntitySet<TModel>
+                    : TEntitySet extends ODataVersionedNavigationEntitySet<any>
+                      ? ODataVersionedNavigationEntitySet<TModel>
+                      : TEntitySet extends ODataVersionedEntitySet<any>
+                        ? ODataVersionedEntitySet<TModel>
+                        : TEntitySet extends ODataV2NavigationReferenceEntitySet<any>
+                          ? ODataV2NavigationReferenceEntitySet<TModel>
+                          : TEntitySet extends ODataNavigationReferenceResponseEntitySet<any>
+                            ? ODataNavigationReferenceResponseEntitySet<TModel>
+                            : TEntitySet extends ODataNavigationReferenceEntitySet<any>
+                              ? ODataNavigationReferenceEntitySet<TModel>
+                              : TEntitySet extends ODataPagedEntitySet<any>
+                                ? ODataPagedEntitySet<TModel>
+                                : ODataEntitySet<TModel>
 
 export type ODataService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataEntitySet<any>>
@@ -1160,6 +1221,10 @@ export type ODataV2FunctionImportResponseService<E extends string = string, M ex
  */
 export type ODataPagedService<E extends string = string, M extends Record<string, any> = any>
   = ODataServiceContract<E, M, ODataPagedEntitySet<any>>
+
+/** OData service whose entity sets can follow server-issued delta links. */
+export type ODataDeltaService<E extends string = string, M extends Record<string, any> = any>
+  = ODataServiceContract<E, M, ODataDeltaEntitySet<any>>
 
 /** OData service whose entity sets expose explicit entity response metadata. */
 export type ODataVersionedService<E extends string = string, M extends Record<string, any> = any>

@@ -52,6 +52,7 @@ describe('nitro server read service', () => {
     expect(products).toMatchObject({
       supportsCollectionPages: true,
       supportsContinuations: true,
+      supportsDeltaLinks: true,
       supportsContainedEntityResponses: true,
       supportsEntityResponses: true,
       supportsNavigationEntityResponses: true,
@@ -301,6 +302,12 @@ describe('nitro server read service', () => {
   it('anchors opaque entity-set and navigation continuations to their owning proxy paths', async () => {
     const requestFetch = vi.fn<typeof globalThis.fetch>(async (request) => {
       const url = requestUrl(request)
+      if (url.includes('/Reviews?%24deltatoken=review-state')) {
+        return Response.json({
+          '@odata.deltaLink': 'https://private.example.test/elsewhere?%24deltatoken=review-next',
+          'value': [{ ID: 12, Text: 'Updated' }],
+        })
+      }
       if (url.includes('/Reviews?cursor=review-2')) {
         return Response.json({
           d: { results: [{ ID: 11, Text: 'Detailed' }] },
@@ -317,6 +324,12 @@ describe('nitro server read service', () => {
       }
       if (url.includes('%24skiptoken=product-2')) {
         return Response.json({ value: [{ ID: 2, Name: 'Mouse' }] })
+      }
+      if (url.includes('%24deltatoken=product-state')) {
+        return Response.json({
+          '@odata.deltaLink': 'https://private.example.test/elsewhere?%24deltatoken=product-next',
+          'value': [{ ID: 1, Name: 'Mechanical Keyboard' }],
+        })
       }
       return Response.json({
         '@odata.count': 2,
@@ -347,12 +360,32 @@ describe('nitro server read service', () => {
     )).resolves.toEqual({
       items: [{ ID: 11, Text: 'Detailed' }],
     })
+    await expect(products.fetchDelta<{ ID: number, Name: string }>(
+      { token: '%24deltatoken=product-state' },
+    )).resolves.toEqual({
+      items: [{ ID: 1, Name: 'Mechanical Keyboard' }],
+      delta: { token: '%24deltatoken=product-next' },
+    })
+    await expect(products.fetchNavigationDelta<{ ID: number, Text: string }>(
+      { ID: 1, Locale: 'en' },
+      ['Reviews'],
+      { token: '%24deltatoken=review-state' },
+    )).resolves.toEqual({
+      items: [{ ID: 12, Text: 'Updated' }],
+      delta: { token: '%24deltatoken=review-next' },
+    })
 
     expect(requestUrl(requestFetch.mock.calls[1]![0])).toBe(
       '/api/odx/catalog-api/Products?%24skiptoken=product-2',
     )
     expect(requestUrl(requestFetch.mock.calls[3]![0])).toBe(
       '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews?cursor=review-2',
+    )
+    expect(requestUrl(requestFetch.mock.calls[4]![0])).toBe(
+      '/api/odx/catalog-api/Products?%24deltatoken=product-state',
+    )
+    expect(requestUrl(requestFetch.mock.calls[5]![0])).toBe(
+      '/api/odx/catalog-api/Products(ID=1,Locale=\'en\')/Reviews?%24deltatoken=review-state',
     )
   })
 
@@ -432,6 +465,14 @@ describe('nitro server read service', () => {
       ['Reviews'],
       { token: '' },
     )).toThrow('valid OData continuation token')
+    expect(() => products.fetchDelta({ token: '#unsafe' })).toThrow(
+      'valid OData delta token',
+    )
+    expect(() => products.fetchNavigationDelta(
+      1,
+      ['Reviews'],
+      { token: '' },
+    )).toThrow('valid OData delta token')
     expect(() => products.fetchNavigationOneWithResponse({
       source: 1,
       navigationPath: ['Reviews', '../Secret'],
