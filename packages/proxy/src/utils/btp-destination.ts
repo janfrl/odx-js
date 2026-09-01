@@ -45,6 +45,15 @@ export function isLocalBtpFallbackAllowed(): boolean {
   return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
 }
 
+export function assertLocalProxyFallbackAllowed(serviceName: string): void {
+  if (isLocalBtpFallbackAllowed())
+    return
+
+  throw new Error(
+    `Relative backend fallback for OData service "${serviceName}" is available only in development or test; configure an absolute HTTP(S) URL or BTP Destination for deployed environments`,
+  )
+}
+
 function createDestinationCacheKey(serviceName: string, userToken?: string): string {
   if (!userToken) {
     return `${serviceName}:technical`

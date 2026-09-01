@@ -65,6 +65,12 @@ backslashes, controls, and ambiguous segments fail before target URL assembly,
 while encoded separators and whitespace inside balanced OData string literals
 are retained. Whitespace outside a string literal remains invalid.
 
+The relative SAP mock fallback is a local-only facility. It is enabled only
+when `NODE_ENV` is explicitly `development` or `test`; production, unset, and
+custom environments require an absolute HTTP(S) service URL or a resolved BTP
+Destination. This prevents an incoming `Host` header from selecting the origin
+for a deployed relative backend request.
+
 ## Backend header isolation
 
 Normal proxied calls merge global headers, service headers and permitted

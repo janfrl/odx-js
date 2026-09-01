@@ -66,6 +66,42 @@ afterEach(async () => {
 })
 
 describe.each(['standalone', 'nitro'] as const)('%s proxy global defaults', (entry) => {
+  it('fails closed before an untrusted Host can own a deployed relative target', async () => {
+    const config: ODataProxyConfig = {
+      basePath: '/api/odx',
+      buildDir: '.nuxt',
+      rootDir: '.',
+      mode: 'sdk',
+      services: [{ name: 'Catalog', url: '', strategy: 'proxied' }],
+    }
+    const event = {
+      path: '/api/odx/Catalog/Products',
+      headers: new Headers({ host: '169.254.169.254' }),
+      context: {},
+    } as unknown as H3Event
+
+    if (entry === 'standalone') {
+      await expect(resolveProxyTarget(event, config, 'Catalog')).rejects.toThrow(
+        'Relative backend fallback for OData service "Catalog" is available only in development or test',
+      )
+    }
+    else {
+      runtime.config = config
+      let requestHook: ((event: H3Event) => Promise<void>) | undefined
+      await targetPlugin({
+        hooks: {
+          hook(_name: string, callback: typeof requestHook) {
+            requestHook = callback
+          },
+        },
+      } as any)
+      await expect(requestHook!(event)).rejects.toThrow(
+        'Relative backend fallback for OData service "Catalog" is available only in development or test',
+      )
+      expect(event.context.proxyTarget).toBeUndefined()
+    }
+  })
+
   it('treats an uppercase HTTP scheme as an absolute configured backend', async () => {
     const config: ODataProxyConfig = {
       basePath: '/api/odx',

@@ -156,7 +156,9 @@ XSUAA bindings, an unavailable Destination service, and invalid destination
 URLs reject the proxy request instead of routing it to the local SAP mock
 prefix. The relative fallback remains available only when `NODE_ENV` is
 explicitly `development` or `test`; unset and custom deployment environments
-fail closed.
+fail closed. Services without an absolute URL or Destination follow the same
+rule, preventing an incoming `Host` header from selecting a deployed backend
+origin through the local mock path.
 
 Absolute configured and Destination-provided backend bases are parsed as
 HTTP(S) URLs before proxy dispatch. URL userinfo and backslashes are rejected,

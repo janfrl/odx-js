@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { defineNitroPlugin, useRuntimeConfig } from 'nitropack/runtime'
 import { isSafeHttpBackendUrl, looksLikeHttpBackendUrl } from '../utils/backend-url'
-import { isLocalBtpFallbackAllowed, resolveBtpDestination } from '../utils/btp-destination'
+import { assertLocalProxyFallbackAllowed, isLocalBtpFallbackAllowed, resolveBtpDestination } from '../utils/btp-destination'
 import { findODataServiceByRoute } from '../utils/service-route'
 
 const RE_QUERY_SPLIT = /\?/
@@ -150,6 +150,7 @@ export default defineNitroPlugin((nitro) => {
     }
 
     // 3. Fallback to Local Mock Service (Relative Standard SAP Path)
+    assertLocalProxyFallbackAllowed(matched.name)
     addTrace('Proxy', `Routing to local mock for ${matched.name}${proxyMode ? ` (Mode: ${proxyMode})` : ''}`, { path: `/sap/opu/odata/sap` })
 
     // A development Destination fallback must not acquire global credentials.

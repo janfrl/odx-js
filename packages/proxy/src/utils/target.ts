@@ -3,7 +3,7 @@ import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { isSafeHttpBackendUrl, looksLikeHttpBackendUrl } from './backend-url'
-import { isLocalBtpFallbackAllowed, resolveBtpDestination } from './btp-destination'
+import { assertLocalProxyFallbackAllowed, isLocalBtpFallbackAllowed, resolveBtpDestination } from './btp-destination'
 import { findODataServiceByRoute } from './service-route'
 
 export interface ResolvedProxyTarget {
@@ -98,7 +98,7 @@ export async function resolveProxyTarget(
       }
     }
     catch (err) {
-      if (!allowBtpDestinationFallback) {
+      if (!allowBtpDestinationFallback || !isLocalBtpFallbackAllowed()) {
         throw err
       }
 
@@ -114,6 +114,8 @@ export async function resolveProxyTarget(
   }
 
   // 3. Local / Relative URL (Default)
+  assertLocalProxyFallbackAllowed(matched.name)
+
   const auth = isDirect ? {} : matched.auth || config.auth || {}
   let authHeaderValue = ''
   if (auth.bearerToken) {

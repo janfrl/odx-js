@@ -96,6 +96,41 @@ describe('proxy target resolution', () => {
     })
   })
 
+  it.each([
+    ['production'],
+    ['staging'],
+    [undefined],
+  ])('fails closed for an unconfigured relative target with NODE_ENV %s', async (nodeEnv) => {
+    if (nodeEnv === undefined)
+      delete process.env.NODE_ENV
+    else
+      process.env.NODE_ENV = nodeEnv
+    const relativeConfig: ODataProxyConfig = {
+      ...config,
+      services: [{
+        name: 'BusinessPartner',
+        url: '',
+        strategy: 'proxied',
+      }],
+    }
+    const untrustedHostEvent = {
+      headers: new Headers({ host: '169.254.169.254' }),
+    } as H3Event
+
+    await expect(resolveProxyTarget(untrustedHostEvent, relativeConfig, 'BusinessPartner')).rejects.toThrow(
+      'Relative backend fallback for OData service "BusinessPartner" is available only in development or test',
+    )
+  })
+
+  it('does not let an explicit destination fallback override the deployed environment boundary', async () => {
+    process.env.NODE_ENV = 'production'
+    vi.mocked(resolveBtpDestination).mockRejectedValue(new Error('destination unavailable'))
+
+    await expect(resolveProxyTarget(event, config, 'BusinessPartner', {
+      allowBtpDestinationFallback: true,
+    })).rejects.toThrow('destination unavailable')
+  })
+
   it('recognizes an uppercase HTTP scheme without treating the backend as local', async () => {
     const absoluteConfig: ODataProxyConfig = {
       ...config,
