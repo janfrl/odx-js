@@ -253,9 +253,9 @@ function extractEntitiesFromMetadata(xml: string, sourcePath: string): EntityMap
   throw new Error(`Could not parse OData metadata at ${sourcePath}: ${reason || 'expected an OData V2 or V4 EDMX root'}`)
 }
 function assertValidServiceNameForTypeGeneration(serviceName: string): void {
-  if (RE_PATH_SEPARATOR.test(serviceName)) {
+  if (serviceName === '.' || serviceName === '..' || RE_PATH_SEPARATOR.test(serviceName)) {
     throw new Error(
-      `Invalid OData service name "${serviceName}": path separators are not allowed in service names used for Nuxt type generation.`,
+      `Invalid OData service name "${serviceName}": relative dot segments and path separators are not allowed in service names used for Nuxt type generation.`,
     )
   }
 }

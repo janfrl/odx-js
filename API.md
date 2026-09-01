@@ -182,7 +182,7 @@ Each service is an `ODataServiceConfig`.
 
 | Field | Purpose |
 | --- | --- |
-| `name` | Stable service identifier used by `useOData()` and Explorer APIs. |
+| `name` | Stable service identifier used by `useOData()` and Explorer APIs. Relative dot segments and path separators are rejected before generated or cached paths are resolved. |
 | `url` | Absolute HTTP(S) backend base URL or local EDMX path, depending on context. Backend bases may carry an exactly preserved query, reject URL userinfo and backslashes, and remove fragments before dispatch. |
 | `route` | Optional URL segment under `basePath`; defaults by service name where needed. |
 | `icon` | Optional Iconify class used by Explorer. |

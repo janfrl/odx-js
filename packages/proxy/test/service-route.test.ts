@@ -13,10 +13,10 @@ describe('oData service routes', () => {
     expect(() => assertSafeODataServiceName(name)).not.toThrow()
   })
 
-  it.each(['', '../Catalog', 'Catalog/Other', 'Catalog\\Other'])('rejects a path-escaping service name %j', (name) => {
-    expect(() => assertSafeODataServiceName(name)).toThrow('must not be empty or contain path separators')
+  it.each(['', '.', '..', '../Catalog', 'Catalog/Other', 'Catalog\\Other'])('rejects a path-escaping service name %j', (name) => {
+    expect(() => assertSafeODataServiceName(name)).toThrow('must not be empty, a relative dot segment, or contain path separators')
     expect(() => normalizeODataServiceRoutes([{ name, route: 'catalog' }])).toThrow(
-      'must not be empty or contain path separators',
+      'must not be empty, a relative dot segment, or contain path separators',
     )
   })
 

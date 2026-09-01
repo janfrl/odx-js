@@ -6,9 +6,13 @@ const RE_WHITESPACE = /\s/u
 
 /** Rejects service identifiers that could escape generated or cached file paths. */
 export function assertSafeODataServiceName(value: string): void {
-  if (typeof value !== 'string' || value.length === 0 || RE_PATH_SEPARATOR.test(value)) {
+  if (typeof value !== 'string'
+    || value.length === 0
+    || value === '.'
+    || value === '..'
+    || RE_PATH_SEPARATOR.test(value)) {
     throw new TypeError(
-      `OData service name ${JSON.stringify(value)} must not be empty or contain path separators.`,
+      `OData service name ${JSON.stringify(value)} must not be empty, a relative dot segment, or contain path separators.`,
     )
   }
 }

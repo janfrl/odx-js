@@ -356,13 +356,13 @@ describe('type Generation Logic', () => {
       expect(execFileSync).toHaveBeenCalledTimes(3)
     })
 
-    it.each(['Sales/Order', 'Sales\\Order'])(
+    it.each(['.', '..', 'Sales/Order', 'Sales\\Order'])(
       'rejects service name %s before generating output from the service name',
       async (serviceName) => {
         const harness = createNuxtTypeGenerationHarness(serviceName)
 
         await expect(harness.runPrepareTypes()).rejects.toThrow(
-          `Invalid OData service name "${serviceName}": path separators are not allowed`,
+          `Invalid OData service name "${serviceName}": relative dot segments and path separators are not allowed`,
         )
 
         expect(execFileSync).not.toHaveBeenCalled()

@@ -646,7 +646,8 @@ valid identifiers, use bracket or functional access instead, for example
 `useOData()['Sales-Order']` or `useOData('Sales-Order')`.
 
 Service names are also used in generated output and metadata cache paths, so
-avoid path separator characters such as `/` and `\` in service names.
+relative dot segments (`.` and `..`) and path separator characters such as `/`
+and `\` are rejected.
 
 Registry generation parses each metadata file through `@me-tools/odx-metadata`
 and projects entity sets through the core CSDL adapter before invoking the SDK
