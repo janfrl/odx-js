@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 import { defineNitroPlugin, useRuntimeConfig } from 'nitropack/runtime'
+import { isSafeHttpBackendUrl, looksLikeHttpBackendUrl } from '../utils/backend-url'
 import { isLocalBtpFallbackAllowed, resolveBtpDestination } from '../utils/btp-destination'
 
 const RE_QUERY_SPLIT = /\?/
@@ -69,7 +70,13 @@ export default defineNitroPlugin((nitro) => {
 
     const isRealCloud = !!process.env.VCAP_SERVICES
     const hasDestination = !!matched.destination
-    const hasAbsoluteUrl = matched.url?.startsWith('http')
+    const hasAbsoluteUrl = typeof matched.url === 'string'
+      && looksLikeHttpBackendUrl(matched.url)
+    if (hasAbsoluteUrl && !isSafeHttpBackendUrl(matched.url)) {
+      throw new Error(
+        `Invalid backend URL for OData service "${matched.name}": expected an absolute HTTP(S) base URL without embedded credentials`,
+      )
+    }
     const isDirect = matched.strategy === 'direct'
     const proxyMode = matched.proxyMode || config.defaultProxyMode
 

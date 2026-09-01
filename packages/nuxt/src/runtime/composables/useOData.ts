@@ -45,6 +45,8 @@ import { createFetch } from 'ofetch'
 import { computed, isReactive, isRef, toValue } from 'vue'
 import { useODataBasePath } from './useODataBasePath'
 
+const HTTP_SCHEME = /^https?:/iu
+
 interface ODataFetchClient {
   <T>(path: string, options?: any): Promise<T>
   raw: <T>(path: string, options?: any) => Promise<{
@@ -129,7 +131,7 @@ export function useOData(service?: string): any {
 
   const resolveServicePath = (serviceName: string): string => {
     const basePath = useODataBasePath(serviceName)
-    if (basePath.startsWith('http'))
+    if (HTTP_SCHEME.test(basePath))
       return joinODataPath(basePath)
     return joinODataPath(basePath, resolveServiceRoute(serviceName))
   }

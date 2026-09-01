@@ -8,7 +8,7 @@ import http from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { refreshRuntimeMetadata } from '../src/utils/metadata-refresh'
+import { refreshRuntimeMetadata, shouldUseRemoteRuntimeMetadata } from '../src/utils/metadata-refresh'
 import { resolveProxyTarget } from '../src/utils/target'
 
 vi.mock('../src/utils/target', async importOriginal => ({
@@ -51,6 +51,13 @@ async function startRefresh(statusCode = 200) {
 }
 
 describe('runtime metadata response streams', () => {
+  it('recognizes a remote service with an uppercase HTTP scheme', () => {
+    expect(shouldUseRemoteRuntimeMetadata({
+      name: 'Catalog',
+      url: 'HTTPS://example.test/odata',
+    })).toBe(true)
+  })
+
   it.each(['Größe', 'Preis €', '商品', 'Delivery 🚚'])('preserves a byte-split UTF-8 label: %s', async (label) => {
     const { response, result, rootDir } = await startRefresh()
     const xml = `<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0"><edmx:DataServices><Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="Catalog"><Annotation Term="com.sap.vocabularies.Common.v1.Label" String="${label}"/></Schema></edmx:DataServices></edmx:Edmx>`

@@ -40,6 +40,17 @@ const RE_PATH_SEPARATOR = /[/\\]/
 const RE_UNSAFE_MODEL_FILE = /[/\\:]/
 const RE_TRAILING_SLASHES = /\/+$/
 const SDK_CACHE_VERSION = 1
+
+function isAbsoluteHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'http:' || url.protocol === 'https:'
+  }
+  catch {
+    return false
+  }
+}
+
 const EDMX_NAMESPACES = new Set([
   'http://docs.oasis-open.org/odata/ns/edmx',
   'http://schemas.microsoft.com/ado/2007/06/edmx',
@@ -281,7 +292,7 @@ export function setupTypeGeneration(nuxt: Nuxt, config: ODataProxyConfig): void 
       let parsedEntities: EntityMapping[] | undefined
 
       // Handle remote metadata (HTTPS)
-      if (svc.url.startsWith('http')) {
+      if (isAbsoluteHttpUrl(svc.url)) {
         const tempFile = join(tempDir, `${svc.name}.edmx`)
         // Persistent cache outside .nuxt — survives server restarts and .nuxt cleanups
         const persistentCacheDir = join(nuxt.options.rootDir, '.odx', 'cache')

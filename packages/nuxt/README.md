@@ -656,7 +656,9 @@ available or that its schema has not changed.
 Metadata requests append `/$metadata` to the service URL path while retaining
 configured query parameters. For example, `/odata?sap-client=100` requests
 `/odata/$metadata?sap-client=100`. Encoded path/query values remain encoded,
-and URL fragments are omitted from the request.
+and URL fragments are omitted from the request. HTTP(S) scheme matching is
+case-insensitive across SDK preparation, runtime metadata refresh, proxy target
+selection, and direct composable URLs.
 
 Each build-time HTTP(S) metadata download owns a fresh connection. SDK
 generation can block processing of a pooled socket's idle close before the

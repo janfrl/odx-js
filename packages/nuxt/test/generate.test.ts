@@ -164,6 +164,16 @@ describe('type Generation Logic', () => {
       expect(existsSync(join(harness.buildDir, 'odx-types', 'index.d.ts'))).toBe(false)
     })
 
+    it('recognizes a remote metadata URL with an uppercase HTTP scheme', async () => {
+      const failure = rejectMetadataDownload()
+      const harness = createNuxtTypeGenerationHarness('UppercaseCatalog', 'HTTPS://example.com/odata')
+
+      await expect(harness.runPrepareTypes()).rejects.toMatchObject({
+        message: 'Could not download metadata for UppercaseCatalog and no cached metadata is available.',
+        cause: failure,
+      })
+    })
+
     it.each([
       '<edmx:Edmx>',
       '<html><body>Edmx service is unavailable</body></html>',

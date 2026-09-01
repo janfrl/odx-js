@@ -10,6 +10,7 @@ import { StringDecoder } from 'node:string_decoder'
 import { parseCsdl } from '@me-tools/odx-metadata'
 import { getHeaders, getRequestURL } from 'h3'
 import { dirname, join, resolve } from 'pathe'
+import { looksLikeHttpBackendUrl } from './backend-url'
 import { resolveConnectivityRequest } from './connectivity-proxy'
 import { prepareProxyHeaders } from './headers'
 import { resolveProxyTarget } from './target'
@@ -275,7 +276,9 @@ async function fetchMetadata(
 }
 
 function shouldFetchRemoteMetadata(service: ODataServiceConfig): boolean {
-  return service.url?.startsWith('http') || !!service.destination || (!!process.env.VCAP_SERVICES && service.strategy !== 'direct')
+  return (typeof service.url === 'string' && looksLikeHttpBackendUrl(service.url))
+    || !!service.destination
+    || (!!process.env.VCAP_SERVICES && service.strategy !== 'direct')
 }
 
 export function shouldUseRemoteRuntimeMetadata(service: ODataServiceConfig): boolean {

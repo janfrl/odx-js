@@ -323,6 +323,18 @@ describe('useOData Composable', () => {
       expect(result.url).toBe('https://external.com/odata/Products')
     })
 
+    it('constructs direct URLs with a case-insensitive HTTP scheme', () => {
+      runtimeConfig.public.odata.services.push({
+        name: 'UppercaseDirectService',
+        url: 'HTTPS://external.com/odata',
+        strategy: 'direct',
+      })
+
+      const api = useOData('UppercaseDirectService' as any)
+      const result = api.entitySet('Products').list() as any
+      expect(result.url).toBe('HTTPS://external.com/odata/Products')
+    })
+
     it('normalizes direct service URLs with trailing slashes', () => {
       runtimeConfig.public.odata.services.push({
         name: 'DirectSlashService',

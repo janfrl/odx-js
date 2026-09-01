@@ -66,6 +66,41 @@ afterEach(async () => {
 })
 
 describe.each(['standalone', 'nitro'] as const)('%s proxy global defaults', (entry) => {
+  it('treats an uppercase HTTP scheme as an absolute configured backend', async () => {
+    const config: ODataProxyConfig = {
+      basePath: '/api/odx',
+      buildDir: '.nuxt',
+      rootDir: '.',
+      mode: 'sdk',
+      services: [{ name: 'Catalog', url: 'HTTPS://backend.example/odata' }],
+    }
+    const event = { path: '/api/odx/Catalog/Products', headers: new Headers(), context: {} } as unknown as H3Event
+
+    if (entry === 'standalone') {
+      expect(await resolveProxyTarget(event, config, 'Catalog')).toMatchObject({
+        url: 'HTTPS://backend.example/odata',
+        isRelative: false,
+      })
+    }
+    else {
+      runtime.config = config
+      let requestHook: ((event: H3Event) => Promise<void>) | undefined
+      await targetPlugin({
+        hooks: {
+          hook(_name: string, callback: typeof requestHook) {
+            requestHook = callback
+          },
+        },
+      } as any)
+      await requestHook!(event)
+      expect(event.context.proxyTarget).toMatchObject({
+        url: 'HTTPS://backend.example/odata',
+        isRelative: false,
+      })
+      expect(resolveBtpDestination).not.toHaveBeenCalled()
+    }
+  })
+
   it.each([
     { strategy: 'proxied', auth: undefined, destination: false, expected: 'Bearer global-token' },
     { strategy: 'proxied', auth: {}, destination: false, expected: '' },
