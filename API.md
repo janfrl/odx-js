@@ -41,8 +41,10 @@ path-altering entity, key-field, navigation, and action names before transport.
 `serializeODataChangeSet(requests, options?)` creates one OData V4 multipart
 batch containing an atomic changeset. Each non-GET operation retains its
 service-relative path, JSON body, headers, and unique Content-ID. Unsafe
-absolute paths, control characters, empty sets, and invalid or duplicate MIME
-boundaries fail before transport.
+absolute paths, raw backslashes, empty or traversing path segments, malformed
+percent encoding, fragments, control characters, empty sets, and invalid or
+duplicate MIME boundaries fail before transport. The read-batch serializer
+applies the same service-relative path boundary.
 
 `serializeODataBatchChangeSets(changeSets, options?)` emits multiple independent
 changesets in one batch with unique boundaries and Content-IDs. Its paired

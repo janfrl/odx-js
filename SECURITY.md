@@ -110,6 +110,11 @@ update cached EDMX state for Explorer views. It may fall back to stale cached
 metadata, but production must not write generated TypeScript SDK files or imply
 application type changes without a build and deployment.
 
+Multipart batch request members remain inside their configured OData service.
+Both read and mutation serializers reject absolute paths, raw backslashes,
+fragments, malformed encoding, empty segments, and raw or percent-encoded dot
+segments before creating an embedded HTTP request line.
+
 ## Header Handling
 
 For non-direct requests, global header defaults are merged case-insensitively

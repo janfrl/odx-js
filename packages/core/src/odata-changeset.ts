@@ -106,11 +106,39 @@ function validBoundary(value: string, label: string): string {
   return value
 }
 
+function isSafeServiceRelativePath(path: string): boolean {
+  if (path.length === 0
+    || path.startsWith('/')
+    || path.includes('://')
+    || path.includes('\\')
+    || path.includes('#')
+    || RE_CONTROL.test(path)) {
+    return false
+  }
+  const queryIndex = path.indexOf('?')
+  if (queryIndex === path.length - 1)
+    return false
+  const resourcePath = queryIndex < 0 ? path : path.slice(0, queryIndex)
+  const segments = resourcePath.split('/')
+  if (segments.some(segment => segment.length === 0))
+    return false
+  return segments.every((segment) => {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(segment)
+    }
+    catch {
+      return false
+    }
+    return !decoded
+      .replaceAll('\\', '/')
+      .split('/')
+      .some(part => part === '.' || part === '..')
+  })
+}
+
 function validateRequest(request: ODataChangeSetRequest): void {
-  if (request.path.length === 0
-    || request.path.startsWith('/')
-    || request.path.includes('://')
-    || RE_CONTROL.test(request.path)) {
+  if (!isSafeServiceRelativePath(request.path)) {
     throw new ODataChangeSetError(
       'core.changeset.invalid-path',
       'A changeset operation requires a safe service-relative path.',
@@ -137,10 +165,7 @@ function validateRequest(request: ODataChangeSetRequest): void {
 }
 
 function validateReadRequest(request: ODataBatchReadRequest): void {
-  if (request.path.length === 0
-    || request.path.startsWith('/')
-    || request.path.includes('://')
-    || RE_CONTROL.test(request.path)) {
+  if (!isSafeServiceRelativePath(request.path)) {
     throw new ODataChangeSetError(
       'core.batch-reads.invalid-path',
       'An OData batch read requires a safe service-relative path.',

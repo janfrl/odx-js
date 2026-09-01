@@ -44,6 +44,22 @@ describe('oData changesets', () => {
     }])).toThrow(ODataChangeSetError)
   })
 
+  it.each([
+    'Products/../Admin',
+    'Products/%2e%2e/Admin',
+    'Products/%2E%2E%2FAdmin',
+    'Products/%5c..%5cAdmin',
+    'Products\\..\\Admin',
+    'Products//Admin',
+    'Products/%',
+    'Products#fragment',
+    'Products?',
+  ])('rejects traversing batch read path %j', (path) => {
+    expect(() => serializeODataBatchReads([{ path }])).toThrowError(
+      expect.objectContaining({ code: 'core.batch-reads.invalid-path' }),
+    )
+  })
+
   it('serializes multiple writes as one atomic multipart changeset', () => {
     const payload = serializeODataChangeSet([
       {
@@ -147,6 +163,38 @@ describe('oData changesets', () => {
       headers: { 'Content-Type': 'image/png' },
       body: new TextEncoder().encode('--changeset_test--'),
     }], boundaries)).toThrow('MIME boundary')
+  })
+
+  it.each([
+    'Products(1)/../Admin',
+    'Products(1)/%2e%2e/Admin',
+    'Products(1)/%2E%2E%2FAdmin',
+    'Products(1)/%5c..%5cAdmin',
+    'Products(1)\\..\\Admin',
+    'Products(1)//Admin',
+    'Products(1)/%',
+    'Products(1)#fragment',
+    'Products(1)?',
+  ])('rejects traversing changeset path %j', (path) => {
+    expect(() => serializeODataChangeSet([{
+      method: 'PATCH',
+      path,
+      body: {},
+    }], boundaries)).toThrowError(
+      expect.objectContaining({ code: 'core.changeset.invalid-path' }),
+    )
+  })
+
+  it('retains encoded separators inside OData key literals', () => {
+    const payload = serializeODataChangeSet([{
+      method: 'PATCH',
+      path: 'Products(\'parent%2F7\')',
+      body: { Name: 'Desk' },
+    }], boundaries)
+
+    expect(payload.body).toContain(
+      'PATCH Products(\'parent%2F7\') HTTP/1.1',
+    )
   })
 
   it('serializes independent changesets with unique content identities', () => {
