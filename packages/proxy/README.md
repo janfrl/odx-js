@@ -60,6 +60,9 @@ also requires the incoming path to remain on that exact segment boundary.
 Service aliases follow the same ownership rule at the next boundary: an alias
 may use optional outer slashes, but resolves to exactly one local URL segment.
 Ambiguous aliases and fallback service names fail before target selection.
+Resource paths are validated independently: traversal, malformed encoding,
+backslashes, controls, and ambiguous segments fail before target URL assembly,
+while encoded separators inside ordinary OData key literals are retained.
 
 ## Backend header isolation
 

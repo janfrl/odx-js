@@ -16,6 +16,45 @@ function hasControlOrWhitespace(value: string): boolean {
   })
 }
 
+function hasControl(value: string): boolean {
+  return [...value].some((character) => {
+    const code = character.codePointAt(0)!
+    return code < 0x20 || code === 0x7F
+  })
+}
+
+function assertSafeODataResourcePath(value: string): void {
+  const fail = (): never => {
+    throw new TypeError(
+      'ODX proxy request paths must remain service-relative without traversal, malformed encoding, backslashes, fragments, controls, whitespace, or empty segments.',
+    )
+  }
+  if (value.length === 0)
+    return
+  if (value.startsWith('/')
+    || value.endsWith('/')
+    || value.includes('//')
+    || value.includes('\\')
+    || value.includes('?')
+    || value.includes('#')
+    || hasControlOrWhitespace(value)) {
+    return fail()
+  }
+  for (const segment of value.split('/')) {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(segment)
+    }
+    catch {
+      return fail()
+    }
+    if (decoded.includes('\\') || hasControl(decoded))
+      return fail()
+    if (decoded.split('/').some(part => part === '.' || part === '..'))
+      return fail()
+  }
+}
+
 /** Validates and normalizes the local route prefix owned by the ODX proxy. */
 export function normalizeODataProxyBasePath(value: string): string {
   const fail = (): never => {
@@ -80,8 +119,12 @@ export function parseODataRequest(event: H3Event, basePath = '/api/odx'): ODataR
   if (pathOnly !== normalizedBasePath && !pathOnly.startsWith(`${normalizedBasePath}/`)) {
     throw new TypeError('The request path is outside the configured ODX proxy basePath.')
   }
-  const relativePath = pathOnly.slice(normalizedBasePath.length).replace(RE_LEADING_SLASHES, '')
-  const segments = relativePath.split('/').filter(Boolean)
+  const relativePath = pathOnly
+    .slice(normalizedBasePath.length)
+    .replace(RE_LEADING_SLASHES, '')
+    .replace(RE_TRAILING_SLASHES, '')
+  assertSafeODataResourcePath(relativePath)
+  const segments = relativePath.length === 0 ? [] : relativePath.split('/')
 
   return {
     serviceName: segments[0] || 'unknown',
@@ -131,6 +174,7 @@ export function resolveTargetUrl(
 
   let query = requestInfo.query
   let odataPath = requestInfo.odataPath
+  assertSafeODataResourcePath(odataPath)
 
   // Special handling for explorer-style id parameter: ?id=XYZ
   // We rewrite this into the OData path format: EntitySet('XYZ')

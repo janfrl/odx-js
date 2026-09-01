@@ -115,6 +115,12 @@ Both read and mutation serializers reject absolute paths, raw backslashes,
 fragments, malformed encoding, empty segments, and raw or percent-encoded dot
 segments before creating an embedded HTTP request line.
 
+Ordinary proxied resource requests enforce the same service-root ownership at
+the H3 boundary and again before target URL assembly. Raw or percent-encoded
+dot traversal, encoded traversal separators, backslashes, malformed encoding,
+controls, and ambiguous path segments fail before an upstream request. Encoded
+separators inside non-traversing OData key literals remain intact.
+
 ## Header Handling
 
 For non-direct requests, global header defaults are merged case-insensitively

@@ -97,6 +97,36 @@ describe('oData URL Utilities', () => {
         'outside the configured ODX proxy basePath',
       )
     })
+
+    it.each([
+      '/api/odx/TestService/../Secret',
+      '/api/odx/TestService/%2e%2e/Secret',
+      '/api/odx/TestService/Products/%2F..%2F/Secret',
+      '/api/odx/TestService/Products/%5c..%5c/Secret',
+      '/api/odx/TestService/Products\\..\\Secret',
+      '/api/odx/TestService/Products/%00/Secret',
+      '/api/odx/TestService/Products/%ZZ',
+      '/api/odx/TestService//Secret',
+    ])('rejects a traversing or malformed H3 resource path %s', (path) => {
+      const event = createEvent({
+        headers: { host: 'localhost:3000' },
+        method: 'GET',
+        url: path,
+      } as any, {} as any)
+
+      expect(() => parseODataRequest(event, '/api/odx')).toThrow(
+        'must remain service-relative',
+      )
+    })
+
+    it('retains encoded separators inside an OData key literal', () => {
+      const event = { path: '/api/odx/TestService/Products(\'A%2FB\')' } as any
+
+      expect(parseODataRequest(event, '/api/odx')).toMatchObject({
+        serviceName: 'TestService',
+        odataPath: 'Products(\'A%2FB\')',
+      })
+    })
   })
 
   describe('resolveTargetUrl', () => {
@@ -174,6 +204,17 @@ describe('oData URL Utilities', () => {
 
       const result = resolveTargetUrl(event, targetBase, requestInfo, true, 'V2Service')
       expect(result).toBe('http://localhost:3000/sap/opu/odata/sap/V2Service/Products')
+    })
+
+    it('rejects a manually constructed traversing resource path', () => {
+      const event = createMockEvent()
+
+      expect(() => resolveTargetUrl(event, 'https://backend.example/odata', {
+        serviceName: 'catalog',
+        odataPath: '../Secret',
+        query: '',
+        segments: ['catalog', '..', 'Secret'],
+      })).toThrow('must remain service-relative')
     })
 
     it.each([
