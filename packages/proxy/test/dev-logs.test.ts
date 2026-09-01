@@ -318,7 +318,7 @@ describe('proxy Dev Logs', () => {
 
   it('fails closed after the bounded nested URL decode depth', () => {
     const encodeRepeatedly = (value: string) => Array.from({ length: 10 })
-      .reduce(current => encodeURIComponent(current), value)
+      .reduce<string>(current => encodeURIComponent(current), value)
     const passwordName = encodeRepeatedly('password')
     const redirect = encodeRepeatedly('https://fixture-user:fixture-password@backend.example/return')
     const url = `/Products?${passwordName}=fixture-secret&redirect=${redirect}&$top=1`
