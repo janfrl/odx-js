@@ -84,6 +84,7 @@ const RE_URL_USER_INFO = /((?::|^|[\s="'(<])\/\/)[^/?#]*@/g
 const RE_URL_USER_INFO_VALUE = /(?::|^|[\s="'(<])\/\/[^/?#]*@/
 const RE_URL_PARAMETER = /([?&#])([^=?&#]+)=([^&#]*)/g
 const RE_ENCODED_URL_DELIMITER = /%(?:2f|40)/i
+const RE_PERCENT_BYTE = /%([\da-f]{2})/gi
 const RE_CAMEL_CASE_BOUNDARY = /([a-z\d])([A-Z])/g
 const RE_URL_CREDENTIAL_NAME = /(?:^|-)(?:password|passwd|pwd|signature|sig|credential|jwt|bearer|private-key|client-assertion)(?:$|-)/i
 const RE_QUERY_PLUS = /\+/g
@@ -193,14 +194,10 @@ function containsEncodedUrlUserInfo(value: string): boolean {
     || value.includes(`${REDACTED_HEADER_VALUE}@`)) {
     return false
   }
-  try {
-    return RE_URL_USER_INFO_VALUE.test(
-      decodeURIComponent(value.replace(RE_QUERY_PLUS, ' ')),
-    )
-  }
-  catch {
-    return false
-  }
+  const decodedAscii = value.replace(RE_QUERY_PLUS, ' ')
+    .replace(RE_PERCENT_BYTE, (_entry, hexadecimal: string) =>
+      String.fromCharCode(Number.parseInt(hexadecimal, 16)))
+  return RE_URL_USER_INFO_VALUE.test(decodedAscii)
 }
 
 function redactUrlCredentials(value: string): string {

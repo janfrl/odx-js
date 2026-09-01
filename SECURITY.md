@@ -279,7 +279,8 @@ query/fragment values in request/target URLs, trace messages and nested trace
 strings. Credential-name matching handles percent encoding, case, camelCase
 and underscores; undecodable parameter names have their values redacted.
 Query or fragment values containing fully or partially percent-encoded URL
-userinfo are redacted as a whole.
+userinfo are redacted as a whole, including when another percent escape in the
+same value is malformed.
 Ordinary OData query bytes remain available for diagnostics. This transforms
 only log copies, not backend URLs or requests, and still applies when payload
 logging is disabled. Custom stores must honor the same sanitization boundary.

@@ -305,6 +305,7 @@ describe('proxy Dev Logs', () => {
     ['/Products#access_token=fixture-secret&view=list', '/Products#access_token=[Redacted]&view=list'],
     ['/Products?redirect=https%3A%2F%2Ffixture-user%3Afixture-password%40backend.example%2Freturn&$top=1', '/Products?redirect=[Redacted]&$top=1'],
     ['/Products?redirect=https:%2F%2Ffixture-user:fixture-password@backend.example%2Freturn&$top=1', '/Products?redirect=[Redacted]&$top=1'],
+    ['/Products?redirect=https%3A%2F%2Ffixture-user%3Afixture-password%40backend.example%2Freturn%ZZ&$top=1', '/Products?redirect=[Redacted]&$top=1'],
     ['/Products?api%ZZkey=fixture-secret&$top=1', '/Products?api%ZZkey=[Redacted]&$top=1'],
     ['/Products?$filter=Name%20eq%20%27a+b%27&search=desk%20chair&$top=10#details', '/Products?$filter=Name%20eq%20%27a+b%27&search=desk%20chair&$top=10#details'],
     ['/Products?$filter=Name eq \'a?password=not-a-credential\'&$top=1', '/Products?$filter=Name eq \'a?password=not-a-credential\'&$top=1'],
