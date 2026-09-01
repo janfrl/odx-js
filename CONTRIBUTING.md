@@ -227,7 +227,11 @@ type accurately describes the content.
 The five public ODX packages ship as one coordinated version. `pnpm
 release:check` derives that identity from the public package manifests, rejects
 version drift, runs the complete verifier, and performs npm dry-runs without
-publishing. The private workspace version is not a release identity.
+publishing. Packing skips package lifecycle scripts because the complete
+verifier has already tested and built the coordinated artifact set; rerunning
+individual `prepack` scripts after earlier packages have been rebuilt would
+make the result depend on package order. The private workspace version is not
+a release identity.
 
 A deliberately pushed `v*` tag sets every public package to the tag version,
 publishes the coordinated set under the guarded `next` dist-tag, and creates a

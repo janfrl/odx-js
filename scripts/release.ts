@@ -56,6 +56,7 @@ async function main() {
       'publish',
       '--access',
       'public',
+      '--ignore-scripts',
       '--no-git-checks',
       '--tag',
       tag,
