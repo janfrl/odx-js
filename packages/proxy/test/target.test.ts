@@ -96,6 +96,57 @@ describe('proxy target resolution', () => {
     })
   })
 
+  it('recognizes an uppercase HTTP scheme without treating the backend as local', async () => {
+    const absoluteConfig: ODataProxyConfig = {
+      ...config,
+      services: [{
+        name: 'BusinessPartner',
+        url: 'HTTPS://example.test/odata',
+        strategy: 'proxied',
+      }],
+    }
+
+    await expect(resolveProxyTarget(event, absoluteConfig, 'BusinessPartner')).resolves.toMatchObject({
+      url: 'HTTPS://example.test/odata',
+      isRelative: false,
+    })
+  })
+
+  it.each([
+    'https://fixture-user:fixture-password@example.test/odata',
+    'https:\\example.test\\odata',
+    ' https://example.test/odata',
+  ])('rejects the unsafe configured HTTP backend %s', async (url) => {
+    const unsafeConfig: ODataProxyConfig = {
+      ...config,
+      services: [{
+        name: 'BusinessPartner',
+        url,
+        strategy: 'proxied',
+      }],
+    }
+
+    await expect(resolveProxyTarget(event, unsafeConfig, 'BusinessPartner')).rejects.toThrow(
+      'Invalid backend URL for OData service "BusinessPartner"',
+    )
+  })
+
+  it('preserves a configured backend query for request URL composition', async () => {
+    const absoluteConfig: ODataProxyConfig = {
+      ...config,
+      services: [{
+        name: 'BusinessPartner',
+        url: 'https://example.test/odata?sap-client=100&signature=a%2Bb%3D',
+        strategy: 'proxied',
+      }],
+    }
+
+    await expect(resolveProxyTarget(event, absoluteConfig, 'BusinessPartner')).resolves.toMatchObject({
+      url: 'https://example.test/odata?sap-client=100&signature=a%2Bb%3D',
+      isRelative: false,
+    })
+  })
+
   it('preserves Connectivity routing credentials from an OnPremise destination', async () => {
     process.env.NODE_ENV = 'production'
     vi.mocked(resolveBtpDestination).mockResolvedValue({

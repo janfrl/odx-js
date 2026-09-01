@@ -29,6 +29,14 @@ its query parameters. A configured or Destination-provided service URL such as
 Encoded query values are preserved and URL fragments are not sent upstream.
 This URL handling does not change destination authentication or header policy.
 
+Proxied data calls apply the same base-URL ownership: they append the OData
+resource path before a configured query and then append the incoming request
+query without reparsing either component. Absolute configured and
+Destination-provided bases accept case-insensitive HTTP(S) schemes, reject URL
+userinfo and browser-normalized backslashes, and remove fragments. This keeps
+Basic or Bearer authentication in the explicit auth contract rather than
+embedding credentials in a request or diagnostic URL.
+
 Remote cache updates require XML that the shared CSDL parser can read and an
 `Edmx` root in the OData V2 or V4 EDMX namespace; prefixes are not significant.
 Malformed XML, HTML error pages and foreign envelopes cannot replace a good

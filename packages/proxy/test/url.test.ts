@@ -85,6 +85,23 @@ describe('oData URL Utilities', () => {
       expect(result).toBe('https://sapes5.sapdevcenter.com/sap/opu/odata/sap/TEST_SERVICE/Products')
     })
 
+    it('appends the OData path before a configured query and preserves both query components', () => {
+      const event = createMockEvent()
+      const requestInfo = {
+        serviceName: 'TestService',
+        odataPath: 'Products',
+        query: '?%24filter=Name%20eq%20%27Desk%27&sap-client=200',
+        segments: ['TestService', 'Products'],
+      }
+      const targetBase = 'HTTPS://backend.example/odata?sap-client=100&signature=a%2Bb%3D#inspection'
+
+      const result = resolveTargetUrl(event, targetBase, requestInfo, false)
+
+      expect(result).toBe(
+        'HTTPS://backend.example/odata/Products?sap-client=100&signature=a%2Bb%3D&%24filter=Name%20eq%20%27Desk%27&sap-client=200',
+      )
+    })
+
     it('resolves relative target URL with technical service name (aliasing fix)', () => {
       const event = createMockEvent()
       // Scenario: Request uses route 'v2', but technical name is 'V2Service'

@@ -147,6 +147,13 @@ prefix. The relative fallback remains available only when `NODE_ENV` is
 explicitly `development` or `test`; unset and custom deployment environments
 fail closed.
 
+Absolute configured and Destination-provided backend bases are parsed as
+HTTP(S) URLs before proxy dispatch. URL userinfo and backslashes are rejected,
+and fragments are removed; authentication remains in the owned header contract.
+A configured query is allowed for SAP routing parameters, retained byte-for-byte,
+and placed after the appended service resource path rather than being mistaken
+for part of that path.
+
 On-premise destinations also fail closed when the Connectivity binding or its
 declared HTTP proxy endpoint is missing or invalid. Connectivity access tokens
 are used only as the proxy authorization credential and are never forwarded as

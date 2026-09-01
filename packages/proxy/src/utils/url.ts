@@ -60,7 +60,17 @@ export function resolveTargetUrl(
   isRelative = false,
   overrideServiceName?: string,
 ): string {
-  let targetUrl = targetBaseUrl.replace(RE_TRAILING_SLASH, '')
+  const configuredFragmentIndex = targetBaseUrl.indexOf('#')
+  const targetBaseWithoutFragment = configuredFragmentIndex < 0
+    ? targetBaseUrl
+    : targetBaseUrl.slice(0, configuredFragmentIndex)
+  const configuredQueryIndex = targetBaseWithoutFragment.indexOf('?')
+  const configuredQuery = configuredQueryIndex < 0
+    ? ''
+    : targetBaseWithoutFragment.slice(configuredQueryIndex + 1)
+  let targetUrl = (configuredQueryIndex < 0
+    ? targetBaseWithoutFragment
+    : targetBaseWithoutFragment.slice(0, configuredQueryIndex)).replace(RE_TRAILING_SLASH, '')
 
   if (isRelative) {
     targetUrl += `/${overrideServiceName || requestInfo.serviceName}`
@@ -91,7 +101,11 @@ export function resolveTargetUrl(
     }
   }
 
-  targetUrl += `/${odataPath}${query}`
+  const requestQuery = query.startsWith('?') ? query.slice(1) : query
+  const combinedQuery = [configuredQuery, requestQuery]
+    .filter(value => value.length > 0)
+    .join('&')
+  targetUrl += `/${odataPath}${combinedQuery.length > 0 ? `?${combinedQuery}` : ''}`
   // Ensure no double slashes (except after protocol)
   targetUrl = targetUrl.replace(RE_DOUBLE_SLASHES, '$1')
 

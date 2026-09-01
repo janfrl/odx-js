@@ -171,7 +171,7 @@ Each service is an `ODataServiceConfig`.
 | Field | Purpose |
 | --- | --- |
 | `name` | Stable service identifier used by `useOData()` and Explorer APIs. |
-| `url` | Absolute backend URL or local EDMX path, depending on context. |
+| `url` | Absolute HTTP(S) backend base URL or local EDMX path, depending on context. Backend bases may carry an exactly preserved query, reject URL userinfo and backslashes, and remove fragments before dispatch. |
 | `route` | Optional URL segment under `basePath`; defaults by service name where needed. |
 | `icon` | Optional Iconify class used by Explorer. |
 | `strategy` | `proxied` routes through Nitro; `direct` can use browser access. |
@@ -191,6 +191,11 @@ and does not fall back to global auth when the Destination supplies none.
 The `direct` bridge does not inherit global defaults or computed server auth;
 its explicitly configured service headers and allowed incoming headers retain
 their existing behavior. `forwardAuthHeader: false` still blocks incoming auth.
+
+For proxied data calls, ODX appends the resource path before any configured
+backend-base query, then preserves that query ahead of the incoming OData query.
+HTTP schemes are case-insensitive. Configured and Destination-provided backend
+bases reject URL userinfo and backslashes; fragments are removed before dispatch.
 
 For SDK metadata downloads, service headers override global headers without
 regard to header-name case. The existing service-or-global `auth` selection

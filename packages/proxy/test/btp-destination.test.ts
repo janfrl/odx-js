@@ -288,6 +288,24 @@ describe('btp Destination Resolution', () => {
     )
   })
 
+  it.each([
+    ['UserinfoUrlProductionService', 'https://fixture-user:fixture-password@backend.example'],
+    ['BackslashUrlProductionService', 'https:\\backend.example\\odata'],
+  ])('throws in production when Destination Service returns an unsafe backend base URL', async (serviceName, url) => {
+    process.env.NODE_ENV = 'production'
+    mockBtpBindings()
+
+    vi.mocked(ofetch)
+      .mockResolvedValueOnce({ access_token: 'dest-token' })
+      .mockResolvedValueOnce({
+        destinationConfiguration: { URL: url },
+      })
+
+    await expect(resolveBtpDestination(serviceName)).rejects.toThrow(
+      `Failed to resolve BTP destination "${serviceName}": invalid destination URL`,
+    )
+  })
+
   it('does not cache invalid production destination URLs', async () => {
     process.env.NODE_ENV = 'production'
     mockBtpBindings()

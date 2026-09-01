@@ -2,6 +2,7 @@ import type { ODataProxyConfig } from '@me-tools/odx-core'
 import type { H3Event } from 'h3'
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
+import { isSafeHttpBackendUrl, looksLikeHttpBackendUrl } from './backend-url'
 import { isLocalBtpFallbackAllowed, resolveBtpDestination } from './btp-destination'
 
 export interface ResolvedProxyTarget {
@@ -40,7 +41,15 @@ export async function resolveProxyTarget(
 
   const isRealCloud = !!process.env.VCAP_SERVICES
   const hasDestination = !!matched.destination
-  const absoluteUrl = matched.url?.startsWith('http') ? matched.url : undefined
+  const configuredUrl = typeof matched.url === 'string' ? matched.url : undefined
+  const absoluteUrl = configuredUrl !== undefined && looksLikeHttpBackendUrl(configuredUrl)
+    ? configuredUrl
+    : undefined
+  if (absoluteUrl !== undefined && !isSafeHttpBackendUrl(absoluteUrl)) {
+    throw new Error(
+      `Invalid backend URL for OData service "${matched.name}": expected an absolute HTTP(S) base URL without embedded credentials`,
+    )
+  }
   const isDirect = matched.strategy === 'direct'
   const proxyMode = matched.proxyMode || config.defaultProxyMode
 
@@ -118,8 +127,8 @@ export async function resolveProxyTarget(
 
   // If the URL is relative (e.g. points to an local EDMX file), we route it to the local SAP OData prefix.
   // This is where the mock server or local SAP backend is usually reachable.
-  const isRelative = !matched.url?.startsWith('http')
-  const baseUrl = isRelative ? '/sap/opu/odata/sap' : (matched.url || '/sap/opu/odata/sap')
+  const isRelative = absoluteUrl === undefined
+  const baseUrl = isRelative ? '/sap/opu/odata/sap' : absoluteUrl
 
   return {
     url: baseUrl,

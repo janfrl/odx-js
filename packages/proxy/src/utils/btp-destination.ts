@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { ofetch } from 'ofetch'
+import { isSafeHttpBackendUrl } from './backend-url'
 
 /**
  * Structure of a BTP Destination configuration.
@@ -87,16 +88,6 @@ function cacheDestination(cacheKey: string, destination: BtpDestination): void {
 
   cacheEntry.evictionTimer.unref?.()
   destinationCache.set(cacheKey, cacheEntry)
-}
-
-function isAbsoluteHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  }
-  catch {
-    return false
-  }
 }
 
 function resolveConnectivityProxy(credentials: any): { host: string, port: number } {
@@ -234,8 +225,8 @@ export async function resolveBtpDestination(
       throw new Error('invalid destination URL: destinationConfiguration.URL is missing or blank')
     }
 
-    if (!isAbsoluteHttpUrl(destinationUrl)) {
-      throw new Error('invalid destination URL: destinationConfiguration.URL must be an absolute HTTP(S) URL')
+    if (!isSafeHttpBackendUrl(destinationUrl)) {
+      throw new Error('invalid destination URL: destinationConfiguration.URL must be an absolute HTTP(S) base URL without embedded credentials')
     }
 
     const resolvedDestination: BtpDestination = {
