@@ -208,6 +208,11 @@ OData behavior belongs in `core`; loss-aware CSDL ingestion belongs in
 
 ### `packages/explorer`
 
+As a packaged Nuxt layer, Explorer declares Nuxt and Vue as host-owned peers,
+not nested runtime dependencies. Its standalone repository builds use pinned
+development dependencies. This prevents an installed layer from bringing a
+second framework and incompatible build-tool peers into a newer host app.
+
 Explorer has two delivery modes:
 
 - In local Nuxt development, it is embedded as a Nuxt DevTools tab at

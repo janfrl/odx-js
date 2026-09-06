@@ -10,6 +10,12 @@ pnpm add @me-tools/odx-explorer
 
 ## Verification
 
+Explorer is a Nuxt layer: its consumer supplies compatible Nuxt 4 and Vue 3
+peer dependencies (`nuxt >=4.4.8 <5`, `vue >=3.5.39 <4`). It does not install a
+second framework runtime below the layer. Standalone repository builds retain
+their pinned development versions; an application extending the published
+layer uses its own framework installation.
+
 Run the Explorer package tests without the full workspace test suite:
 
 ```bash
