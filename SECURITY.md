@@ -272,6 +272,11 @@ never use that override as a production default.
 
 ## Logging And Telemetry
 
+The public Core `createODataClient` never automatically logs backend error
+bodies or response objects. Errors still reject and explicit host response-error
+hooks still receive their context. Hosts must redact any chosen logging rather
+than forwarding complete errors, URLs, headers, or business payloads to a sink.
+
 Development logging stores OData traffic in memory for Explorer inspection
 through the core `OdxLogStore` boundary. The default store is
 `OdxMemoryLogStore`; the proxy also has an opt-in SQL store implemented with

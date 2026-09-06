@@ -1876,6 +1876,7 @@
   },
   "createODataClient": {
     "title": "createODataClient",
+    "description": "Creates a typed fetch client; the host owns error presentation and logging.",
     "properties": [
       {
         "name": "options",

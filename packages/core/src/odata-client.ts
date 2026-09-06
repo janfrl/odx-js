@@ -6,7 +6,8 @@ export interface ODataClientOptions {
   authorization?: string
 }
 
-export function createODataClient(options: ODataClientOptions): any {
+/** Creates a typed fetch client; the host owns error presentation and logging. */
+export function createODataClient(options: ODataClientOptions): ReturnType<typeof ofetch.create> {
   const { config, authorization } = options
   const baseURL = config.basePath || '/api/sap-odata'
 
@@ -19,9 +20,6 @@ export function createODataClient(options: ODataClientOptions): any {
         }
         options.headers.append('authorization', authorization)
       }
-    },
-    onResponseError({ response }) {
-      console.error('[@me-tools/odx-core] request failed', response?._data || response)
     },
   })
 }

@@ -3,6 +3,12 @@
 Framework-agnostic OData types and low-level utilities for handling results,
 metadata, query stringification, and safe resource-path construction.
 
+`createODataClient` returns a typed fetch client with parsed and raw response
+methods. Failed HTTP requests reject without automatically logging backend
+payloads, headers, or response objects. The host can inspect the rejected error
+or provide an explicit `onResponseError` hook for presentation and redacted
+telemetry; do not log the complete error or response in production.
+
 The package also exports `prepareSapCsrfHeaders` and `fetchWithCsrf` for
 server/edge transports. These helpers are not browser transports: browsers
 cannot read SAP `Set-Cookie` responses or emit the matching `Cookie` header.

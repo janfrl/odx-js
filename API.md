@@ -28,6 +28,9 @@ conformance limits and non-goals.
 ## Core Package
 
 `@me-tools/odx-core` exposes framework-neutral OData request utilities.
+`createODataClient` retains the typed fetch client's generic parsed and raw
+response methods. HTTP failures reject without automatic console logging;
+explicit host error hooks remain available and own any redaction or reporting.
 `formatODataKey`, `createODataEntityPath`, `createODataEntityReference`,
 `createODataNavigationRootReference`, `formatODataNavigationPath`, and
 `joinODataPath` provide validated, transport-neutral OData resource-path and
