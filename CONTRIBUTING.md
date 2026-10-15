@@ -166,6 +166,39 @@ final summary.
 
 ## Checks
 
+### Remote Linux and Codex Cloud
+
+Use Node 24.11+ (24.x) for the shared ODX/Fiori remote development environment.
+This does not remove the supported Node 22 local/CI matrix. Install ODX with its
+own pinned manager, currently `corepack pnpm@10.33.0 install --frozen-lockfile`,
+then run `corepack pnpm@10.33.0 dev:prepare`. Do not reuse Windows dependency or
+build directories in Linux. Ordinary fixture work needs no real SAP service,
+release token, personal desktop tooling or published ODX packages.
+
+For cross-repository work, include the Nuxt Fiori checkout in the same cloud
+environment. Paths need not be siblings: set `ODX_REPOSITORY` to this checkout's
+absolute path. From Fiori, use its own pinned pnpm 11.11.0, install Chromium and
+OS dependencies with `corepack pnpm@11.11.0 exec playwright install --with-deps
+chromium`, and follow Fiori's `UI_WORKFLOW.md` remote setup/acceptance checklist.
+Its `pnpm dev:doctor -- --browser --odx-root <path>` checks prerequisites; the
+existing `pnpm verify:external-consumer -- --odx-root <path>` packs the eleven
+unpublished product packages without publishing or repository-link dependencies.
+When using `--skip-build`, build **both** repositories first; installation's
+prepare stubs are not public package emission evidence.
+
+Cloud repositories must contain the selected revisions: local unpushed work is
+not automatically synchronized. Record both revisions, actual commands/exit
+codes and remaining work at each bounded handoff. Recreate UI before/after
+evidence in the same Linux environment instead of comparing Windows raster
+scores. Keep credentials and private artifacts out of commits and logs.
+
+Remote-ready setup is not a cloud acceptance result or a guarantee of unlimited
+24/7 execution. Environment publication, GitHub access, network/secret policy,
+resource/usage limits and task continuation need explicit owner setup. Do not
+push, deploy, publish packages, create services, schedule work or merge changes
+merely because a task runs unattended. See the current
+[Codex Cloud environment guide](https://learn.chatgpt.com/docs/environments/cloud-environments).
+
 Use judgment when deciding which checks to run locally.
 
 For small documentation changes, isolated refactors, or clearly local edits, a

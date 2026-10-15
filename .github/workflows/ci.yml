@@ -56,4 +56,7 @@ jobs:
       - name: Verify packed Nuxt Fiori consumer
         if: matrix.node-version == 24
         working-directory: .integration/nuxt-fiori
-        run: corepack pnpm@11.11.0 verify:odx-consumer -- --odx-root "$GITHUB_WORKSPACE" --skip-build
+        run: |
+          corepack pnpm@11.11.0 build
+          corepack pnpm@11.11.0 exec playwright install --with-deps chromium
+          corepack pnpm@11.11.0 verify:external-consumer -- --odx-root "$GITHUB_WORKSPACE" --skip-build
